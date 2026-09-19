@@ -107,5 +107,6 @@ graph TD
    - Quá trình huấn luyện sinh ra file kết quả trong `runs/` và không can thiệp vào các tiến trình Backend đang chạy.
    - Khi có mô hình mới tốt hơn, chỉ cần copy vào `models/classroom_best.pt`.
 
-3. **Cơ chế Tương Thích Ngược 100% (Zero Breaking Change):**
-   - Các lệnh chạy quen thuộc ở thư mục gốc (`app.py`, `run.bat`, `train_yolo.py`, `prepare_dataset.py`, `train_gpu.bat`) được giữ nguyên dưới dạng Chuyển tiếp (Proxy), không làm gãy bất kỳ tài liệu hay kịch bản tự động nào trước đây.
+3. **Cơ cấu điều khiển trực quan & Tinh gọn thư mục gốc:**
+   - Thư mục gốc được tinh gọn tối đa chỉ còn 9 tệp tin điều khiển cốt lõi (`run.bat`, `run_backend.bat`, `run_frontend.bat`, `xem_tien_do.bat`, `app.py`,...).
+   - Toàn bộ công cụ huấn luyện AI chuyên sâu được gom gọn gàng trong `training/` (`training/train_gpu.bat`, `training/train_yolo.py`, `training/prepare_dataset.py`, `training/sample_extractor.py`), giúp môi trường phát triển luôn sạch sẽ, rõ ràng.
