@@ -35,10 +35,15 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Cấu hình thư mục tĩnh & templates
-templates = Jinja2Templates(directory=str(settings.BASE_DIR / "web" / "templates"))
+# Cấu hình thư mục tĩnh & templates - MIGRATED TO FRONTEND/
+templates = Jinja2Templates(directory=str(settings.BASE_DIR / "frontend" / "pages"))
 
-app.mount("/static", StaticFiles(directory=str(settings.BASE_DIR / "web" / "static")), name="static")
+# Mount frontend assets
+app.mount("/css", StaticFiles(directory=str(settings.BASE_DIR / "frontend" / "css")), name="css")
+app.mount("/js", StaticFiles(directory=str(settings.BASE_DIR / "frontend" / "js")), name="js")
+app.mount("/assets", StaticFiles(directory=str(settings.BASE_DIR / "frontend" / "assets")), name="assets")
+
+# Mount backend storage
 app.mount("/storage", StaticFiles(directory=str(settings.STORAGE_DIR)), name="storage")
 app.mount("/dataset", StaticFiles(directory=str(settings.BASE_DIR / "dataset")), name="dataset")
 
