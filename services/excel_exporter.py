@@ -277,12 +277,13 @@ class ExcelExporter:
             size_kb = round(stat.st_size / 1024, 1)
             mtime = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
             rel_path = f.relative_to(settings.REPORTS_DIR)
+            rel_str = str(rel_path).replace("\\", "/")
             reports.append({
                 "filename": f.name,
-                "relative_path": str(rel_path).replace("\\", "/"),
+                "relative_path": rel_str,
                 "size_kb": size_kb,
                 "created_at": mtime,
-                "download_url": f"/storage/reports/{str(rel_path).replace('\\', '/')}"
+                "download_url": f"/storage/reports/{rel_str}"
             })
 
         # Sắp xếp mới nhất lên đầu

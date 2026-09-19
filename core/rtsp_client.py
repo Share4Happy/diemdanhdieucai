@@ -69,22 +69,30 @@ class RTSPCameraClient:
         except Exception as e:
             logger.debug(f"Lỗi lấy tên webcam qua PowerShell: {e}")
 
-        # 2. Quét nhanh các cổng index 0, 1, 2, 3...
+        # 2. Quét các cổng index 0, 1, 2, 3, 4
         webcams = []
-        consecutive_failures = 0
-        for idx in range(4):
+        for idx in range(5):
+            cap = None
             try:
-                # DirectShow mở cực nhanh trên Windows (~100ms)
+                # Thử DirectShow trước trên Windows (~100ms), fallback sang MSMF và Default
                 cap = cv2.VideoCapture(idx, cv2.CAP_DSHOW)
-                if not cap.isOpened() and idx == 0:
+                if not cap.isOpened():
+                    cap = cv2.VideoCapture(idx, cv2.CAP_MSMF)
+                if not cap.isOpened():
                     cap = cv2.VideoCapture(idx)
 
                 if cap.isOpened():
-                    consecutive_failures = 0
-                    w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                    h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                    ret, frame = cap.read()
+                    w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)) or 640
+                    h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)) or 480
+                    
+                    # Đọc 2-3 frame khởi động để cảm biến camera mở đủ sáng, không bị frame đen
+                    ret, frame = False, None
+                    for _ in range(4):
+                        ret, frame = cap.read()
+                        if ret and frame is not None:
+                            break
                     cap.release()
+                    cap = None
 
                     # Xác định chất lượng
                     if w >= 1920 or h >= 1080:
@@ -128,15 +136,14 @@ class RTSPCameraClient:
                         "is_default": (idx == 0),
                         "is_active": True
                     })
-                else:
-                    consecutive_failures += 1
-                    if consecutive_failures >= 1 and idx >= 2:
-                        break
             except Exception as e:
                 logger.debug(f"Lỗi thăm dò webcam index {idx}: {e}")
-                consecutive_failures += 1
-                if consecutive_failures >= 1 and idx >= 2:
-                    break
+            finally:
+                if cap is not None and hasattr(cap, 'release'):
+                    try:
+                        cap.release()
+                    except Exception:
+                        pass
 
         cls._cached_webcams = webcams
         cls._cached_webcams_time = now
@@ -157,19 +164,33 @@ class RTSPCameraClient:
         # 1. Kiểm tra nếu là Webcam cắm máy tính (0, 1, 2...)
         if source_str.isdigit():
             cam_idx = int(source_str)
+            cap = None
             try:
-                # Thử DirectShow trước trên Windows để mở nhanh
+                # Thử DirectShow trước trên Windows để mở nhanh, fallback MSMF và Default
                 cap = cv2.VideoCapture(cam_idx, cv2.CAP_DSHOW)
+                if not cap.isOpened():
+                    cap = cv2.VideoCapture(cam_idx, cv2.CAP_MSMF)
                 if not cap.isOpened():
                     cap = cv2.VideoCapture(cam_idx)
                 if cap.isOpened():
-                    ret, frame = cap.read()
+                    ret, frame = False, None
+                    for _ in range(4):
+                        ret, frame = cap.read()
+                        if ret and frame is not None:
+                            break
                     cap.release()
+                    cap = None
                     if ret and frame is not None:
                         return True, frame, "WEBCAM", ""
                 return False, None, "WEBCAM", f"Không thể mở Webcam ID {cam_idx}"
             except Exception as e:
                 return False, None, "WEBCAM", str(e)
+            finally:
+                if cap is not None and hasattr(cap, 'release'):
+                    try:
+                        cap.release()
+                    except Exception:
+                        pass
 
         # 2. Kiểm tra nếu là File video hoặc ảnh cục bộ
         local_path = Path(source_str)
@@ -310,17 +331,6 @@ class RTSPCameraClient:
                 frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
                 frame[:] = (220, 220, 220)
 
-            # Đóng dấu thông tin lớp học thực tế
-            now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            cv2.putText(
-                frame,
-                f"CAM {classroom_name} | TIME: {now_str} | CAMERA STREAM",
-                (40, 60),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                1.0,
-                (0, 0, 200),
-                2
-            )
             is_success = True
 
         # Lưu ảnh vào thư mục máy chủ: storage/captures/YYYY-MM-DD/Lop_X.jpg

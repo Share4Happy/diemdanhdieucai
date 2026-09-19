@@ -160,7 +160,8 @@ class StudentDetector:
         conf_threshold: float = None,
         classroom_name: str = "Lớp Học",
         standard_count: int = 40,
-        apply_clahe: bool = True
+        apply_clahe: bool = True,
+        roi_dims: Optional[Tuple[int, int]] = None
     ) -> Tuple[int, List[Dict[str, Any]], np.ndarray]:
         """
         Quy trình xử lý AI toàn diện:
@@ -176,6 +177,13 @@ class StudentDetector:
         h, w = image.shape[:2]
         if conf_threshold is None:
             conf_threshold = settings.AI_CONFIDENCE_THRESHOLD
+
+        # Tự động đồng bộ tỉ lệ đa giác ROI nếu kích thước ảnh khác kích thước cấu hình ROI
+        if roi_dims and len(roi_dims) == 2:
+            rw, rh = roi_dims
+            if rw > 0 and rh > 0 and (rw != w or rh != h):
+                red_zone = ROIManager.scale_polygon(red_zone, rw, rh, w, h)
+                green_zone = ROIManager.scale_polygon(green_zone, rw, rh, w, h)
 
         # 1. Tiền xử lý chống ngược sáng cửa sổ
         processed_img = image.copy()
@@ -258,64 +266,75 @@ class StudentDetector:
         # Vẽ Red Zone & Green Zone bán trong suốt
         annotated_img = ROIManager.draw_roi_overlays(annotated_img, red_zone, green_zone, alpha=0.20)
 
-        # Vẽ bounding box cho từng học sinh hợp lệ
+        # Vẽ bounding box và Huy hiệu số thứ tự (Smart High-Contrast Badges) cho từng học sinh
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 0.52
+        font_thickness = 1
+
         for idx, student in enumerate(valid_students, 1):
             hx1, hy1, hx2, hy2 = student["head_bbox"]
             conf = student["confidence"]
 
-            # Bounding box đầu/thân trên màu xanh dương sáng
-            cv2.rectangle(annotated_img, (hx1, hy1), (hx2, hy2), (255, 140, 0), 2)
-            # Điểm chấm tâm đầu màu xanh lá
-            cx, cy = [int(v) for v in student["centroid"]]
-            cv2.circle(annotated_img, (cx, cy), 4, (0, 255, 0), -1)
+            # 1. Bounding box đầu/thân trên màu xanh neon sáng với nét khử răng cưa
+            cv2.rectangle(annotated_img, (hx1, hy1), (hx2, hy2), (255, 140, 0), 2, cv2.LINE_AA)
 
-            # Nhãn số thứ tự học sinh
+            # 2. Điểm chấm tâm đầu định vị chính xác (chấm xanh lá viền đen chống chìm)
+            cx, cy = [int(v) for v in student["centroid"]]
+            cv2.circle(annotated_img, (cx, cy), 5, (0, 0, 0), -1, cv2.LINE_AA)
+            cv2.circle(annotated_img, (cx, cy), 3, (0, 255, 120), -1, cv2.LINE_AA)
+
+            # 3. Huy hiệu số thứ tự tương phản cao (High-Contrast Number Badge)
             label = f"#{idx:02d}"
+            (tw, th), baseline = cv2.getTextSize(label, font, font_scale, font_thickness)
+            badge_pad_x = 4
+            badge_pad_y = 3
+            bw = tw + badge_pad_x * 2
+            bh = th + badge_pad_y * 2
+
+            # Đặt nhãn căn giữa phía trên đầu học sinh (hoặc lọt trong box nếu sát mép trên)
+            bx1 = max(2, min(w - bw - 2, int((hx1 + hx2) / 2 - bw / 2)))
+            by2 = hy1 - 4
+            if by2 - bh < 2:
+                by2 = hy1 + bh + 4
+            by1 = by2 - bh
+            bx2 = bx1 + bw
+
+            # Nền tối tương phản cao
+            cv2.rectangle(annotated_img, (bx1, by1), (bx2, by2), (18, 22, 26), -1)
+            # Viền neon vàng sáng sắc nét
+            cv2.rectangle(annotated_img, (bx1, by1), (bx2, by2), (0, 235, 255), 1, cv2.LINE_AA)
+            # Chữ số trắng tinh siêu nét
             cv2.putText(
                 annotated_img,
                 label,
-                (hx1, max(20, hy1 - 6)),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.55,
-                (255, 140, 0),
-                2
+                (bx1 + badge_pad_x, by2 - badge_pad_y - 1),
+                font,
+                font_scale,
+                (255, 255, 255),
+                font_thickness,
+                cv2.LINE_AA
             )
 
-        # Vẽ bounding box màu xám mờ cho người bị loại trừ (nếu có, ví dụ giáo viên ở bục giảng)
-        for ignored in ignored_people:
-            ix1, iy1, ix2, iy2 = ignored["bbox"]
-            cv2.rectangle(annotated_img, (ix1, iy1), (ix2, iy2), (120, 120, 120), 1, cv2.LINE_AA)
+        # Vẽ bounding box mảnh & thanh lịch cho giáo viên/người ở bục giảng (loại trừ)
+        if ignored_people:
+            for ignored in ignored_people:
+                ix1, iy1, ix2, iy2 = ignored["bbox"]
+                cv2.rectangle(annotated_img, (ix1, iy1), (ix2, iy2), (120, 120, 120), 1, cv2.LINE_AA)
+
+            first_ignored = ignored_people[0]
+            ix1, iy1, ix2, iy2 = first_ignored["bbox"]
             cv2.putText(
                 annotated_img,
-                "LOAI TRU (BUC GIANG)",
-                (ix1, max(20, iy1 - 5)),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.5,
-                (100, 100, 100),
-                1
+                "Giao vien (Buc giang)",
+                (ix1, max(18, iy1 - 6)),
+                font,
+                0.48,
+                (160, 160, 160),
+                1,
+                cv2.LINE_AA
             )
 
-        # Banner thông số tổng hợp ở đầu ảnh
-        banner_h = 75
-        overlay_banner = annotated_img.copy()
-        cv2.rectangle(overlay_banner, (0, 0), (w, banner_h), (20, 25, 30), -1)
-        cv2.addWeighted(overlay_banner, 0.85, annotated_img, 0.15, 0, annotated_img)
-
-        # Text banner không dấu sạch sẽ cho OpenCV
-        import unicodedata
-        nfd = unicodedata.normalize('NFD', str(classroom_name))
-        clean_name = ''.join([c for c in nfd if unicodedata.category(c) != 'Mn']).replace('đ', 'd').replace('Đ', 'D')
-        clean_name = ''.join([c if ord(c) < 128 else '' for c in clean_name]).strip().upper()
-        header_name = clean_name if clean_name.startswith("LOP") else f"LOP {clean_name}"
-
-        status_color = (0, 255, 100) if absent_count == 0 else ((0, 200, 255) if absent_count <= 2 else (50, 50, 255))
-        summary_text = (
-            f"{header_name}  |  "
-            f"SI SO CHUAN: {standard_count}  |  "
-            f"HIEN DIEN: {present_count}  |  "
-            f"VANG: {absent_count}"
-        )
-        cv2.putText(annotated_img, summary_text, (30, 48), cv2.FONT_HERSHEY_SIMPLEX, 1.0, status_color, 2)
+        # GỠ BỎ BANNER ĐEN 75px: 100% diện tích camera được giữ trọn vẹn, không che khuất học sinh hàng đầu.
 
         return present_count, valid_students, annotated_img
 

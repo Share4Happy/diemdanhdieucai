@@ -113,13 +113,15 @@ class AttendanceEngine:
 
                 if frame is not None:
                     # Chạy AI Object Detection & Masking
+                    roi_dims = (cls.roi.image_width, cls.roi.image_height) if (cls.roi and cls.roi.image_width and cls.roi.image_height) else None
                     present_count, detected_students, annotated_img = detector.detect_students_in_classroom(
                         image=frame,
                         red_zone=red_zone,
                         green_zone=green_zone,
                         classroom_name=c_name,
                         standard_count=std_count,
-                        apply_clahe=settings.USE_IMAGE_ENHANCEMENT
+                        apply_clahe=settings.USE_IMAGE_ENHANCEMENT,
+                        roi_dims=roi_dims
                     )
 
                     # Lưu ảnh đối chứng đã vẽ bounding box

@@ -16,14 +16,22 @@ MODELS_DIR = BASE_DIR / "models"
 DATASET_DIR = BASE_DIR / "dataset"
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 def parse_args():
+    default_checkpoint = str(MODELS_DIR / "classroom_best.pt") if (MODELS_DIR / "classroom_best.pt").exists() else "yolov8s.pt"
     parser = argparse.ArgumentParser(description="Huấn luyện mô hình YOLOv8 nhận diện học sinh lớp học Điều Cải")
     parser.add_argument("--data", type=str, default=str(DATASET_DIR / "classroom.yaml"), help="Đường dẫn file cấu hình dataset.yaml")
-    parser.add_argument("--model", type=str, default="yolov8s.pt", help="Mô hình checkpoint ban đầu (yolov8n.pt hoặc yolov8s.pt)")
-    parser.add_argument("--epochs", type=int, default=50, help="Số lượt huấn luyện (epochs)")
-    parser.add_argument("--imgsz", type=int, default=1280, help="Kích thước phân giải ảnh huấn luyện (khuyến nghị 1280 cho camera 2K)")
-    parser.add_argument("--batch", type=int, default=8, help="Kích thước batch (giảm xuống 4 nếu thiếu VRAM GPU)")
+    parser.add_argument("--model", type=str, default=default_checkpoint, help="Mô hình checkpoint ban đầu (yolov8s.pt hoặc models/classroom_best.pt)")
+    parser.add_argument("--epochs", type=int, default=25, help="Số lượt huấn luyện (epochs)")
+    parser.add_argument("--imgsz", type=int, default=640, help="Kích thước phân giải ảnh huấn luyện (mặc định 640 tối ưu cho GPU 4GB)")
+    parser.add_argument("--batch", type=int, default=4, help="Kích thước batch (khuyến nghị 4 cho GPU 4GB VRAM)")
     parser.add_argument("--device", type=str, default="", help="Thiết bị: '0' (GPU CUDA) hoặc 'cpu'")
+    parser.add_argument("--resume", action="store_true", help="Tiếp tục huấn luyện từ checkpoint last.pt gần nhất")
     parser.add_argument("--prepare-sample", action="store_true", help="Tự động tạo khung thư mục dataset mẫu nếu chưa có dữ liệu gán nhãn")
     return parser.parse_args()
 
@@ -71,13 +79,24 @@ def main():
         prepare_sample_dataset_structure()
         return
 
-    # 3. Nạp mô hình gốc
-    print(f"[*] Đang tải mô hình nền tảng checkpoint: {args.model}...")
-    try:
-        model = YOLO(args.model)
-    except Exception as e:
-        print(f"[LỖI] Không thể tải checkpoint {args.model}: {e}")
-        return
+    last_weight = BASE_DIR / "runs" / "train" / "dieucai_classroom" / "weights" / "last.pt"
+    is_resuming = args.resume and last_weight.exists()
+
+    # 3. Nạp mô hình
+    if is_resuming:
+        print(f"[*] Tiếp tục huấn luyện từ checkpoint dở dang: {last_weight}...")
+        try:
+            model = YOLO(str(last_weight))
+        except Exception as e:
+            print(f"[LỖI] Không thể tải checkpoint {last_weight}: {e}")
+            return
+    else:
+        print(f"[*] Đang tải mô hình nền tảng checkpoint: {args.model}...")
+        try:
+            model = YOLO(args.model)
+        except Exception as e:
+            print(f"[LỖI] Không thể tải checkpoint {args.model}: {e}")
+            return
 
     # 4. Bắt đầu quá trình huấn luyện (Fine-tuning)
     print("\n[*] Bắt đầu quá trình huấn luyện tự động...")
@@ -85,24 +104,34 @@ def main():
     print(f" - Số epochs: {args.epochs}")
     print(f" - Phân giải ảnh: {args.imgsz}x{args.imgsz}")
     print(f" - Batch size: {args.batch}")
-    print(f" - Device: {device}\n")
+    print(f" - Device: {device}")
+    if is_resuming:
+        print(" - Trạng thái: Resume từ checkpoint trước đó\n")
+    else:
+        print(" - Trạng thái: Khởi tạo huấn luyện mới\n")
 
     try:
-        results = model.train(
-            data=str(yaml_path),
-            epochs=args.epochs,
-            imgsz=args.imgsz,
-            batch=args.batch,
-            device=device,
-            project=str(BASE_DIR / "runs" / "train"),
-            name="dieucai_classroom",
-            exist_ok=True,
-            pretrained=True,
-            optimizer="AdamW",
-            lr0=0.001,
-            augment=True, # Tự động tăng cường dữ liệu (lật ngang, xoay nhẹ, đổi sáng)
-            verbose=True
-        )
+        if is_resuming:
+            results = model.train(resume=True, device=device)
+        else:
+            results = model.train(
+                data=str(yaml_path),
+                epochs=args.epochs,
+                imgsz=args.imgsz,
+                batch=args.batch,
+                device=device,
+                project=str(BASE_DIR / "runs" / "train"),
+                name="dieucai_classroom",
+                exist_ok=True,
+                pretrained=True,
+                optimizer="AdamW",
+                lr0=0.001,
+                augment=True, # Tự động tăng cường dữ liệu (lật ngang, xoay nhẹ, đổi sáng)
+                single_cls=True, # Nhận diện toàn bộ học sinh về 1 lớp chuẩn duy nhất
+                workers=2, # Số luồng tải ảnh an toàn chống nghẽn RAM trên Windows
+                plots=True, # Tự động vẽ đồ thị Loss / mAP sau khi huấn luyện
+                verbose=True
+            )
 
         # 5. Xuất mô hình tốt nhất vào thư mục models/
         best_weight = BASE_DIR / "runs" / "train" / "dieucai_classroom" / "weights" / "best.pt"
