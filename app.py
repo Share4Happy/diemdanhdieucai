@@ -91,6 +91,7 @@ async def cameras_page(request: Request):
     )
 
 
+
 # --- REST API Endpoints ---
 
 @app.get("/api/classrooms")
@@ -433,6 +434,10 @@ class ZaloTestRequest(BaseModel):
     webhook_url: Optional[str] = None
     access_token: Optional[str] = None
     user_id: Optional[str] = None
+    phone: Optional[str] = None
+    bot_id: Optional[str] = None
+    api_key: Optional[str] = None
+    api_base_url: Optional[str] = None
     session_id: Optional[int] = None
 
 class ZaloConfigSaveRequest(BaseModel):
@@ -441,6 +446,10 @@ class ZaloConfigSaveRequest(BaseModel):
     webhook_url: Optional[str] = ""
     access_token: Optional[str] = ""
     recipient_user_id: Optional[str] = ""
+    bot_api_base_url: Optional[str] = ""
+    bot_id: Optional[str] = ""
+    bot_api_key: Optional[str] = ""
+    recipient_phones: Optional[str] = ""
 
 @app.get("/api/cameras")
 async def get_all_cameras(db: Session = Depends(get_db)):
@@ -608,7 +617,11 @@ async def send_zalo_report(req: ZaloTestRequest):
             target_type=req.target_type or "WEBHOOK",
             webhook_url=req.webhook_url,
             access_token=req.access_token,
-            user_id=req.user_id
+            user_id=req.user_id,
+            phone=req.phone,
+            bot_id=req.bot_id,
+            api_key=req.api_key,
+            api_base_url=req.api_base_url
         )
     return res
 
@@ -629,6 +642,14 @@ async def save_zalo_config(req: ZaloConfigSaveRequest):
         settings.ZALO_OA_ACCESS_TOKEN = req.access_token.strip()
     if req.recipient_user_id is not None:
         settings.ZALO_RECIPIENT_USER_ID = req.recipient_user_id.strip()
+    if req.bot_api_base_url is not None:
+        settings.ZALO_BOT_API_BASE_URL = req.bot_api_base_url.strip()
+    if req.bot_id is not None:
+        settings.ZALO_BOT_ID = req.bot_id.strip()
+    if req.bot_api_key is not None:
+        settings.ZALO_BOT_API_KEY = req.bot_api_key.strip()
+    if req.recipient_phones is not None:
+        settings.ZALO_RECIPIENT_PHONES = req.recipient_phones.strip()
     return {"success": True, "message": "Đã cập nhật cấu hình Zalo thành công!"}
 
 @app.get("/health")
