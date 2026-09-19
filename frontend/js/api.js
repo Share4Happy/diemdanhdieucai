@@ -48,6 +48,7 @@ export const AttendanceAPI = {
     getLatest: () => fetchAPI('/api/attendance/latest'),
     triggerScan: () => fetchAPI('/api/attendance/trigger', { method: 'POST' }),
     getHistory: (limit = 150) => fetchAPI(`/api/attendance/history?limit=${limit}`),
+    clearHistory: () => fetchAPI('/api/attendance/clear-history', { method: 'DELETE' }),
     getDownloadExcelUrl: () => `${API_BASE}/api/attendance/download-excel`
 };
 

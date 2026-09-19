@@ -163,3 +163,20 @@ async def get_attendance_history(limit: int = 150, db: Session = Depends(get_db)
         })
 
     return {"records": records}
+    
+@router.post("/clear-history")
+@router.delete("/clear-history")
+async def clear_attendance_history(db: Session = Depends(get_db)):
+    """Xóa toàn bộ lịch sử các phiên điểm danh để làm mới hệ thống."""
+    try:
+        db.query(AttendanceDetail).delete()
+        num_sessions = db.query(AttendanceSession).delete()
+        db.commit()
+        return {
+            "success": True, 
+            "message": f"Đã xóa sạch toàn bộ lịch sử ({num_sessions} phiên điểm danh) thành công."
+        }
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Lỗi khi xóa lịch sử điểm danh: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

@@ -29,7 +29,14 @@ export async function loadLatestAttendance() {
         const data = await AttendanceAPI.getLatest();
         if (!data || !data.session) {
             document.getElementById('sessionTitle').innerText = 'Chưa có dữ liệu điểm danh';
-            document.getElementById('sessionSubtitle').innerText = 'Bấm nút "Quét Điểm Danh Ngay" để quét tự động toàn bộ 30 lớp học.';
+            document.getElementById('sessionSubtitle').innerText = 'Bấm nút "Quét Điểm Danh" để bắt đầu quét dữ liệu mới.';
+            document.getElementById('kpiClasses').innerText = '0';
+            document.getElementById('kpiStandard').innerText = '0';
+            document.getElementById('kpiPresent').innerText = '0';
+            document.getElementById('kpiAbsent').innerText = '0';
+            document.getElementById('kpiRate').innerText = '0%';
+            currentDetails = [];
+            renderClassGrid();
             return;
         }
 

@@ -66,6 +66,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnReload = document.getElementById('btnReloadDb');
     if (btnReload) btnReload.addEventListener('click', loadAttendanceHistory);
 
+    // Clear Attendance History
+    const btnClearHistory = document.getElementById('btnClearAttendanceHistory');
+    if (btnClearHistory) {
+        btnClearHistory.addEventListener('click', async () => {
+            if (!confirm('Bạn có chắc chắn muốn XÓA TOÀN BỘ lịch sử điểm danh cũ để làm mới dữ liệu không?\n\n(Lưu ý: Danh sách Camera và cấu hình ROI của bạn vẫn được giữ nguyên an toàn 100%)')) {
+                return;
+            }
+
+            btnClearHistory.disabled = true;
+            btnClearHistory.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xóa...';
+
+            try {
+                const res = await AttendanceAPI.clearHistory();
+                if (res.success) {
+                    showToast(res.message || 'Đã làm mới dữ liệu thành công', 'success');
+                    await loadAttendanceHistory();
+                } else {
+                    alert('Lỗi: ' + (res.message || 'Không thể xóa'));
+                }
+            } catch (err) {
+                alert('Lỗi kết nối: ' + (err.message || err));
+            } finally {
+                btnClearHistory.disabled = false;
+                btnClearHistory.innerHTML = '<i class="fa-solid fa-trash-can"></i> Xóa Lịch Sử';
+            }
+        });
+    }
+
     // Filter DB
     const filterInput = document.getElementById('filterDbInput');
     if (filterInput) {
