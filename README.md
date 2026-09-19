@@ -57,103 +57,82 @@ Hệ thống điểm danh tự động 30 lớp học bằng thị giác máy t�
 
 ---
 
-## 📂 CẤU TRÚC DỰ ÁN CHI TIẾT
+## 📂 CẤU TRÚC 4 PHÂN HỆ ĐỘC LẬP & PHÂN CHIA VAI TRÒ
+
+Dự án được tổ chức thành **4 phân hệ độc lập** giúp dễ dàng phân chia nhân sự phụ trách từng phần mà không gây xung đột hay ảnh hưởng lẫn nhau:
 
 ```text
 hethongdiemdanh Dieu Cai/
-├── backend/                       # Máy chủ Backend REST API (FastAPI)
-│   ├── main.py                    # Điểm khởi chạy server chính, CORS, Static Files & Web Routes
-│   ├── api/
-│   │   ├── __init__.py
-│   │   └── routers/               # Các Router định tuyến phân hệ nghiệp vụ
-│   │       ├── attendance.py      # API quét điểm danh, đối chứng AI, kích hoạt thủ công
-│   │       ├── cameras.py         # API CRUD camera, snapshot test, quét kiểm tra kết nối
-│   │       ├── roi.py             # API tọa độ ROI đa giác, tải frame mẫu, reset vùng
-│   │       ├── reports.py         # API lịch sử điểm danh, tải file Excel báo cáo
-│   │       └── system.py          # API trạng thái hệ thống, GPU CUDA, bộ nhớ
-│   └── schemas/                   # Khung dữ liệu Pydantic v2 xác thực request/response
-│       ├── camera_schemas.py      # Data schemas cho Quản lý Camera
-│       ├── report_schemas.py      # Data schemas cho Báo cáo & Lịch sử
-│       └── roi_schemas.py         # Data schemas cho Tọa độ ROI đa giác
 │
-├── frontend/                      # Giao diện người dùng Web Dashboard (HTML5 / Vanilla CSS & JS)
-│   ├── index.html                 # Trang Dashboard giám sát điểm danh thời gian thực 30 lớp
-│   ├── cameras.html               # Trang quản lý danh sách & kiểm tra kết nối Camera/Webcam
-│   ├── roi-config.html            # Công cụ trực quan vẽ phân vùng đa giác ROI (HTML5 Canvas)
-│   ├── reports.html               # Bảng tra cứu lịch sử & tải báo cáo Excel
-│   ├── css/                       # Thiết kế giao diện hiện đại Glassmorphism & Dark mode
-│   │   ├── main.css               # Hệ thống design tokens, bố cục chung, thanh điều hướng
-│   │   ├── dashboard.css          # Giao diện thẻ lớp học, lightbox zoom/pan, thanh thống kê
-│   │   ├── cameras.css            # Giao diện lưới camera, video stream, form thêm/sửa
-│   │   ├── roi_config.css         # Giao diện khung vẽ canvas, bảng điều khiển tọa độ
-│   │   └── reports.css            # Giao diện bộ lọc ngày tháng và bảng dữ liệu báo cáo
-│   └── js/                        # Logic tương tác phía Client & gọi REST API
-│       ├── api.js                 # Wrapper HTTP Client chuẩn hóa các lời gọi API backend
-│       ├── dashboard.js           # Xử lý dữ liệu dashboard, quét tự động/thủ công, lightbox
-│       ├── cameras.js             # Xử lý danh sách camera, live snapshot, modal form
-│       ├── roi_canvas.js          # Thuật toán vẽ đa giác Canvas (Red Zone & Green Zone)
-│       ├── roi_config.js          # Điều phối chọn lớp học, tải/lưu tọa độ ROI
-│       └── reports.js             # Tra cứu lịch sử, xuất báo cáo Excel
+├── 🎨 frontend/                     # [TEAM FRONTEND] Giao diện người dùng Web Dashboard
+│   ├── index.html                  # Dashboard giám sát điểm danh thời gian thực 30 lớp
+│   ├── cameras.html                # Quản lý danh sách & kiểm tra kết nối Camera/Webcam
+│   ├── roi-config.html             # Công cụ vẽ phân vùng đa giác ROI (HTML5 Canvas)
+│   ├── reports.html                # Bảng tra cứu lịch sử & xuất báo cáo Excel, gửi Zalo
+│   ├── css/                        # Stylesheet Glassmorphism & Responsive layout
+│   ├── js/                         # API Client trung tâm (api.js) và logic các trang
+│   └── README_FRONTEND.md          # Tài liệu quy chuẩn cho lập trình viên Frontend
 │
-├── core/                          # Các module lõi xử lý AI & Thị giác máy tính
-│   ├── detector.py                # AI YOLOv8 nhận diện học sinh & bộ lọc không gian ROI
-│   ├── attendance_engine.py       # Bộ máy điều phối quét điểm danh đồng loạt 30 lớp
-│   ├── rtsp_client.py             # Kết nối đa luồng Camera RTSP, Webcam, Video file
-│   ├── roi_manager.py             # Thuật toán kiểm tra điểm trong đa giác (Ray-casting)
-│   ├── relay_service.py           # Module điều khiển phần cứng Relay đèn LED báo hiệu
-│   └── image_enhancer.py          # Thuật toán cân bằng sáng CLAHE & khử lóa ngược sáng
+├── ⚙️ backend/                      # [TEAM BACKEND] Máy chủ REST API & Xử lý nghiệp vụ
+│   ├── main.py                     # Entry point khởi động FastAPI, CORS, Static Files
+│   ├── api/routers/                # Router định tuyến theo chức năng:
+│   │   ├── attendance.py           # /api/attendance: Quét điểm danh & phiên làm việc
+│   │   ├── cameras.py              # /api/cameras: CRUD Camera, snapshot test
+│   │   ├── roi.py                  # /api/roi: Tọa độ ROI đa giác, test nhận diện tức thì
+│   │   ├── reports.py              # /api/reports: Lịch sử điểm danh, báo cáo Excel
+│   │   └── system.py               # /api/system: CSDL, HealthCheck, sample media
+│   ├── schemas/                    # Pydantic Schemas xác thực dữ liệu request/response
+│   └── README_BACKEND.md           # Hướng dẫn phát triển API & Swagger Docs
 │
-├── services/                      # Các dịch vụ nền & Tích hợp ngoại vi
-│   ├── scheduler.py               # Lập lịch điểm danh tự động 06:45 AM (APScheduler)
-│   ├── excel_exporter.py          # Xuất file Excel báo cáo chuẩn hóa theo mẫu GD&ĐT
-│   ├── notification.py            # Quản lý kênh thông báo (Zalo / Email)
-│   └── zalo_service.py            # Tích hợp gửi tin nhắn báo cáo qua Zalo Webhook / OA
+├── 🧱 core/                         # [CỐT LÕI HỆ THỐNG] Động cơ AI & Giao tiếp phần cứng
+│   ├── detector.py                 # AI YOLOv8 nhận diện học sinh + Tiled SAHI + CLAHE
+│   ├── attendance_engine.py        # Điều phối quét điểm danh đồng loạt 30 lớp
+│   ├── rtsp_client.py              # Thu nhận luồng hình ảnh đa luồng (RTSP/Webcam/File)
+│   ├── roi_manager.py              # Thuật toán Point-in-Polygon lọc khu vực Red/Green zone
+│   ├── relay_service.py            # Điều khiển phần cứng Relay đèn LED báo hiệu
+│   └── image_enhancer.py           # Cân bằng sáng thích nghi CLAHE chống ngược sáng
 │
-├── config/                        # Cấu hình tập trung toàn hệ thống
-│   ├── settings.py                # Biến môi trường, cổng mạng, đường dẫn, ngưỡng AI
-│   └── logging_config.py          # Cấu hình ghi log màu Console & File log xoay vòng
+├── 🔌 services/                     # [DỊCH VỤ MỞ RỘNG] Ngoại vi & Tự động hóa
+│   ├── scheduler.py                # Lập lịch điểm danh tự động 06:45 AM (APScheduler)
+│   ├── excel_exporter.py           # Xuất báo cáo Excel chuẩn hóa theo mẫu GD&ĐT
+│   ├── zalo_service.py             # Tích hợp gửi tin nhắn Zalo Webhook / OA
+│   └── notification.py             # Quản lý kênh thông báo Email Ban Giám Hiệu
 │
-├── database/                      # Cơ sở dữ liệu SQLite & ORM
-│   ├── models.py                  # Định nghĩa Models (Classroom, AttendanceSession, ROIConfig)
-│   ├── db_session.py              # Phiên kết nối SQLAlchemy & hàm tự động khởi tạo Seeder
-│   └── attendance.db              # Tệp CSDL SQLite chính thức
+├── 🗄️ database/                     # [TEAM DATABASE] Cơ sở dữ liệu quan hệ
+│   ├── models.py                   # SQLAlchemy ORM Models (Classroom, ROIPolygon,...)
+│   ├── db_session.py               # Quản lý Session & Hàm nạp sẵn 30 lớp học (init_db)
+│   ├── attendance.db               # Tệp CSDL SQLite chính thức
+│   └── README_DATABASE.md          # Sơ đồ thực thể quan hệ (ERD) & Quy chuẩn CSDL
 │
-├── dataset/                       # Dữ liệu phục vụ nghiên cứu & huấn luyện AI
-│   ├── samples/                   # Ảnh chụp & video mẫu thực tế tại trường Điều Cải
-│   ├── extracted_frames/          # Khung hình trích xuất phục vụ gán nhãn
-│   └── classroom.yaml             # Cấu hình tập dữ liệu YOLOv8 (classes, train/val path)
+├── 🧠 training/                     # [TEAM AI TRAINING] Huấn luyện mô hình YOLOv8
+│   ├── train_yolo.py               # Huấn luyện YOLOv8 GPU CUDA PyTorch / CPU
+│   ├── prepare_dataset.py          # Chuẩn hóa nhãn học sinh Điều Cải
+│   ├── sample_extractor.py         # Trích xuất khung hình mẫu phục vụ gán nhãn
+│   ├── generate_classrooms_media.py# Bộ sinh 150 ảnh 1080p và 30 video 15s cho 30 lớp
+│   ├── train_gpu.bat               # File thực thi 1-click kích hoạt GPU NVIDIA RTX
+│   └── README_TRAINING.md          # Quy chuẩn bộ dữ liệu & huấn luyện mô hình
 │
-├── models/                        # Trọng số mô hình AI chính thức
-│   └── classroom_best.pt          # Model YOLOv8 Custom đã huấn luyện tối ưu cho THPT Điều Cải
+├── 📁 dataset/                      # Dữ liệu hình ảnh, video & cấu hình huấn luyện
+│   ├── classroom.yaml              # Cấu hình dataset cho YOLOv8
+│   ├── classroom_data/             # Ảnh & nhãn đã gán phục vụ train/val
+│   └── classrooms_media/           # Bộ dữ liệu 30 lớp học (5 ảnh Full HD + 1 video 15s)
 │
-├── weights/                       # Trọng số tiền huấn luyện cơ sở
-│   └── yolo26n.pt                 # Mô hình base
+├── 📦 models/                       # Trọng số mô hình AI chính thức
+│   └── classroom_best.pt           # Model YOLOv8 Custom đã tinh chỉnh cho THPT Điều Cải
 │
-├── storage/                       # Lưu trữ tệp tin vận hành (tự động quản lý theo ngày)
-│   ├── captures/                  # Ảnh gốc chụp từ camera theo định dạng YYYY-MM-DD
-│   ├── annotated/                 # Ảnh đối chứng AI đã vẽ bounding box và số thứ tự
-│   └── reports/                   # Báo cáo điểm danh Excel (.xlsx) xuất theo phiên quét
+├── ⚙️ config/                       # Cấu hình tập trung (settings.py, logging_config.py)
+├── 🧪 tests/                        # Bộ kiểm thử tự động Pytest (6 test suites)
 │
-├── tests/                         # Bộ kiểm thử tự động (Unit / Integration Tests)
-│   ├── test_attendance_engine.py  # Kiểm thử luồng điểm danh
-│   ├── test_camera_management.py  # Kiểm thử API & quản lý camera
-│   ├── test_excel_export.py       # Kiểm thử định dạng file báo cáo Excel
-│   ├── test_roi_masking.py        # Kiểm thử thuật toán mặt nạ đa giác ROI
-│   ├── test_rtsp_mock.py          # Kiểm thử chụp ảnh RTSP giả lập
-│   └── test_zalo_service.py       # Kiểm thử tạo payload thông báo Zalo
+├── 🚀 KỊCH BẢN CHẠY ĐỘC LẬP CHO TỪNG VAI TRÒ:
+│   ├── run_backend.bat             # Chỉ chạy Backend FastAPI (Cổng 8000, Swagger /docs)
+│   ├── run_frontend.bat            # Chỉ chạy Frontend độc lập (Cổng 3000, tự gọi API 8000)
+│   ├── train_gpu.bat               # Huấn luyện AI với GPU NVIDIA RTX (chuyển tiếp tới training/)
+│   ├── xem_tien_do.bat             # Bảng kiểm tra nhanh tiến độ & trạng thái các phân hệ
+│   └── run.bat                     # Chạy trọn gói toàn bộ hệ thống (1-click)
 │
-├── logs/                          # Nhật ký hoạt động hệ thống
-│   └── attendance_system.log      # File ghi nhật ký chi tiết
-│
-├── app.py                         # Điểm kích hoạt tương thích ngược (chuyển tiếp backend.main)
-├── run.bat                        # Script 1-click khởi chạy toàn bộ hệ thống trên Windows
-├── train_gpu.bat                  # Script 1-click huấn luyện AI trên GPU NVIDIA RTX 3050
-├── train_yolo.py                  # Script huấn luyện AI YOLOv8 hỗ trợ tiếp tục checkpoint (Resume)
-├── prepare_dataset.py             # Script chuẩn bị & phân chia dữ liệu huấn luyện
-├── sample_extractor.py            # Script trích xuất khung hình hoặc tạo dữ liệu lớp học giả lập
-├── requirements.txt               # Danh mục thư viện Python phụ thuộc
-├── HDSD_VanHanh.md                # Sổ tay hướng dẫn vận hành hệ thống chi tiết
-└── HUONG_DAN_TRAINING_AI.md       # Sổ tay hướng dẫn gán nhãn và huấn luyện AI chi tiết
+└── 📖 TÀI LIỆU DỰ ÁN:
+    ├── KIEN_TRUC_HE_THONG.md       # Sơ đồ kiến trúc & quy ước cộng tác nhóm
+    └── training/HUONG_DAN_TRAINING_AI.md # Sổ tay hướng dẫn huấn luyện AI chi tiết
 ```
 
 ---

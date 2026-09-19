@@ -24,7 +24,7 @@ if %errorlevel% neq 0 (
 echo.
 echo [2/3] Đang khởi tạo CSDL và chuẩn bị dữ liệu mẫu...
 %PYTHON_EXEC% -c "from database.db_session import init_db; init_db()"
-%PYTHON_EXEC% sample_extractor.py
+%PYTHON_EXEC% training\sample_extractor.py
 
 echo.
 echo [3/3] Đang khởi động Web Server và Bộ Lập Lịch 06:45 AM...

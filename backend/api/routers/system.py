@@ -27,3 +27,54 @@ async def health_check():
         "version": settings.APP_VERSION,
         "architecture": "Decoupled Backend (FastAPI REST API)"
     }
+
+@router.get("/system/classrooms-media")
+async def get_classrooms_media():
+    """Lấy danh mục dữ liệu 5 ảnh và 1 video 15s của 30 lớp học kèm thông tin sĩ số."""
+    import json
+    json_path = settings.CLASSROOMS_MEDIA_DIR / "danh_sach_si_so_toan_truong.json"
+    if not json_path.exists():
+        return {"success": False, "message": "Chưa khởi tạo bộ dữ liệu classrooms_media", "classes": []}
+
+    with open(json_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return {"success": True, "data": data}
+
+@router.post("/system/bind-sample-media")
+async def bind_sample_media(media_type: str = "video"):
+    """
+    Tùy chọn tự động gán nguồn rtsp_url của 30 lớp trong CSDL trỏ tới file video 15s hoặc ảnh mẫu
+    để người dùng có thể chạy thử nghiệm tính năng điểm danh toàn diện ngay mà không cần camera vật lý.
+    media_type: 'video' (mặc định video 15s) hoặc 'image' (ảnh 1)
+    """
+    from database.db_session import SessionLocal
+    from database.models import Classroom
+    db = SessionLocal()
+    try:
+        classrooms = db.query(Classroom).all()
+        updated_count = 0
+        for c in classrooms:
+            clean_code = c.code.replace("LOP_", "")
+            class_folder = settings.CLASSROOMS_MEDIA_DIR / f"Lop_{clean_code}"
+            if class_folder.exists():
+                if media_type == "image":
+                    target_file = class_folder / "image_1.jpg"
+                else:
+                    target_file = class_folder / "video_15s.mp4"
+                
+                if target_file.exists():
+                    rel_path = f"dataset/classrooms_media/Lop_{clean_code}/{target_file.name}"
+                    c.rtsp_url = rel_path
+                    updated_count += 1
+        db.commit()
+        return {
+            "success": True, 
+            "message": f"Đã liên kết thành công nguồn dữ liệu mẫu {media_type} cho {updated_count} lớp học!",
+            "updated_count": updated_count
+        }
+    except Exception as e:
+        db.rollback()
+        return {"success": False, "message": f"Lỗi khi liên kết nguồn: {str(e)}"}
+    finally:
+        db.close()
+

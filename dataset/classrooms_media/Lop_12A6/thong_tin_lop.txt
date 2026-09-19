@@ -1,0 +1,10 @@
+TRƯỜNG THPT ĐIỀU CẢI - THÔNG TIN LỚP HỌC
+----------------------------------------
+Lớp:               Lớp 12A6
+Mã định danh:      LOP_12A6
+Khối học:          Khối 12
+Phòng học:         Phòng 126
+Sĩ số chuẩn:       40 học sinh
+Số lượng ảnh cấp:  5 ảnh (1920x1080)
+Số lượng video:    1 video 15 giây (225 khung hình, 15 fps)
+Tình trạng video:  Hiện diện 39 HS | Vắng 1 HS
