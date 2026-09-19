@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản Lý Camera & Nguồn Test - THPT Điều Cải</title>
     <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/static/css/modal-system.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="/static/js/modal-notifications.js"></script>
     <style>
         .camera-section {
             background: white;
@@ -15,6 +18,7 @@
             box-shadow: var(--shadow-sm);
             margin-bottom: 2rem;
         }
+
         .section-header {
             display: flex;
             align-items: center;
@@ -23,23 +27,27 @@
             flex-wrap: wrap;
             gap: 12px;
         }
+
         .filter-group {
             display: flex;
             align-items: center;
             gap: 10px;
             flex-wrap: wrap;
         }
+
         .data-table-container {
             overflow-x: auto;
             border-radius: 8px;
             border: 1px solid var(--border-color);
         }
+
         .custom-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 0.9rem;
             text-align: left;
         }
+
         .custom-table th {
             background: #f8fafc;
             padding: 12px 14px;
@@ -48,20 +56,24 @@
             border-bottom: 2px solid var(--border-color);
             white-space: nowrap;
         }
+
         .custom-table td {
             padding: 12px 14px;
             border-bottom: 1px solid var(--border-color);
             vertical-align: middle;
         }
+
         .custom-table tr:hover {
             background: #fbfcfe;
         }
+
         .preset-badge-group {
             display: flex;
             gap: 8px;
             margin-bottom: 12px;
             flex-wrap: wrap;
         }
+
         .preset-btn {
             background: #f1f5f9;
             border: 1px solid #cbd5e1;
@@ -73,11 +85,13 @@
             transition: all 0.2s;
             color: var(--text-main);
         }
+
         .preset-btn:hover {
             background: var(--primary-light);
             border-color: var(--primary);
             color: var(--primary);
         }
+
         .test-box {
             background: #f8fafc;
             border: 2px dashed #cbd5e1;
@@ -86,6 +100,7 @@
             margin-top: 1rem;
             text-align: center;
         }
+
         .test-preview-img {
             max-width: 100%;
             max-height: 280px;
@@ -95,6 +110,7 @@
             display: none;
             box-shadow: var(--shadow-sm);
         }
+
         .badge-source {
             padding: 3px 8px;
             border-radius: 4px;
@@ -102,20 +118,43 @@
             font-weight: 700;
             text-transform: uppercase;
         }
-        .badge-rtsp { background: #dbeafe; color: #1e40af; }
-        .badge-webcam { background: #fef3c7; color: #92400e; }
-        .badge-file { background: #e0e7ff; color: #3730a3; }
-        .badge-http { background: #ede9fe; color: #5b21b6; }
-        .badge-unknown { background: #f1f5f9; color: #475569; }
+
+        .badge-rtsp {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-webcam {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-file {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+
+        .badge-http {
+            background: #ede9fe;
+            color: #5b21b6;
+        }
+
+        .badge-unknown {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
         .action-btns {
             display: flex;
             gap: 6px;
             align-items: center;
         }
+
         /* Style cho bộ chọn nguồn & Thẻ Webcam */
         .source-type-selector {
             margin-bottom: 14px;
         }
+
         .source-tabs {
             display: flex;
             gap: 8px;
@@ -124,6 +163,7 @@
             border-radius: 8px;
             border: 1px solid #e2e8f0;
         }
+
         .source-tab {
             flex: 1;
             padding: 8px 12px;
@@ -141,16 +181,19 @@
             justify-content: center;
             gap: 6px;
         }
+
         .source-tab:hover {
             color: var(--primary);
             background: rgba(255, 255, 255, 0.6);
         }
+
         .source-tab.active {
             background: white;
             color: var(--primary);
-            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
             font-weight: 700;
         }
+
         .source-panel {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
@@ -158,12 +201,14 @@
             padding: 12px;
             margin-bottom: 14px;
         }
+
         .webcam-card-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
             gap: 10px;
             margin-top: 8px;
         }
+
         .webcam-card {
             border: 2px solid #cbd5e1;
             border-radius: 8px;
@@ -175,16 +220,19 @@
             display: flex;
             flex-direction: column;
         }
+
         .webcam-card:hover {
             border-color: #60a5fa;
             transform: translateY(-2px);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
+
         .webcam-card.selected {
             border-color: #2563eb;
             background: #eff6ff;
             box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
         }
+
         .webcam-thumb-box {
             width: 100%;
             height: 95px;
@@ -196,11 +244,13 @@
             align-items: center;
             justify-content: center;
         }
+
         .webcam-thumb-img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
+
         .webcam-badge-res {
             position: absolute;
             bottom: 4px;
@@ -212,6 +262,7 @@
             border-radius: 4px;
             font-weight: 600;
         }
+
         .webcam-badge-id {
             position: absolute;
             top: 4px;
@@ -223,6 +274,7 @@
             border-radius: 4px;
             font-weight: 700;
         }
+
         .webcam-selected-check {
             position: absolute;
             top: 4px;
@@ -237,24 +289,29 @@
             justify-content: center;
             font-size: 0.7rem;
         }
+
         .webcam-card.selected .webcam-selected-check {
             display: flex;
         }
+
         .webcam-card-info {
             margin-top: 6px;
         }
+
         .webcam-card-title {
             font-size: 0.82rem;
             font-weight: 700;
             color: var(--text-main);
             line-height: 1.3;
         }
+
         .webcam-card-sub {
             font-size: 0.72rem;
             color: #059669;
             font-weight: 600;
             margin-top: 2px;
         }
+
         .webcam-empty-box {
             text-align: center;
             padding: 1.5rem;
@@ -266,6 +323,7 @@
         }
     </style>
 </head>
+
 <body>
     <header class="navbar">
         <div class="nav-brand">
@@ -288,10 +346,12 @@
         <div class="action-banner">
             <div class="banner-info">
                 <h2>Trung Tâm Quản Trị Camera & Lớp Học</h2>
-                <p>Hỗ trợ đa dạng nguồn camera: Camera IP RTSP thực của trường, Webcam cá nhân (ID 0, 1, 2...) để test nhanh tại máy tính, hoặc File Video mẫu để mô phỏng.</p>
+                <p>Hỗ trợ đa dạng nguồn camera: Camera IP RTSP thực của trường, Webcam cá nhân (ID 0, 1, 2...) để test
+                    nhanh tại máy tính, hoặc File Video mẫu để mô phỏng.</p>
             </div>
             <div class="banner-actions">
-                <button id="btnWebcamBanner" class="btn btn-secondary" onclick="openModalWithWebcam()" title="Xem và cấu hình camera máy tính cá nhân">
+                <button id="btnWebcamBanner" class="btn btn-secondary" onclick="openModalWithWebcam()"
+                    title="Xem và cấu hình camera máy tính cá nhân">
                     <i class="fa-solid fa-camera"></i> <span id="webcamBannerText">Webcam máy: Đang dò...</span>
                 </button>
                 <button id="btnOpenAddModal" class="btn btn-primary">
@@ -338,16 +398,19 @@
         <!-- Danh Sách Camera -->
         <div class="camera-section">
             <div class="section-header">
-                <h3><i class="fa-solid fa-list-check" style="color: var(--primary);"></i> Danh Sách Camera & Lớp Học</h3>
+                <h3><i class="fa-solid fa-list-check" style="color: var(--primary);"></i> Danh Sách Camera & Lớp Học
+                </h3>
                 <div class="filter-group">
-                    <input type="text" id="filterCameraInput" placeholder="Tìm theo tên lớp, mã, phòng..." class="form-control" style="width: 250px; padding: 6px 12px;">
+                    <input type="text" id="filterCameraInput" placeholder="Tìm theo tên lớp, mã, phòng..."
+                        class="form-control" style="width: 250px; padding: 6px 12px;">
                     <select id="filterSourceSelect" class="form-control" style="width: 140px; padding: 6px 10px;">
                         <option value="ALL">Tất cả nguồn</option>
                         <option value="RTSP">RTSP NVR</option>
                         <option value="WEBCAM">Webcam (0)</option>
                         <option value="FILE">File Video/Ảnh</option>
                     </select>
-                    <button id="btnRefreshList" class="btn btn-secondary btn-sm"><i class="fa-solid fa-rotate-right"></i> Làm Mới</button>
+                    <button id="btnRefreshList" class="btn btn-secondary btn-sm"><i
+                            class="fa-solid fa-rotate-right"></i> Làm Mới</button>
                 </div>
             </div>
 
@@ -375,165 +438,307 @@
         </div>
     </main>
 
-    <!-- MODAL THÊM / CHỈNH SỬA CAMERA -->
+    <!-- MODAL THÊM / CHỈNH SỬA CAMERA - NEW DESIGN -->
     <div class="modal-backdrop" id="cameraModal">
-        <div class="modal-content" style="max-width: 650px;">
-            <div class="modal-header">
-                <div>
-                    <h3 id="modalTitle" style="font-size: 1.2rem; font-weight: 700;">Thêm Camera / Lớp Học Mới</h3>
-                    <p style="font-size: 0.85rem; color: var(--text-muted);">Cấu hình thông tin lớp học và nguồn hình ảnh cho AI quét</p>
-                </div>
-                <button class="modal-close" id="modalCloseBtn">&times;</button>
+        <div class="modal-container modal-lg">
+            <!-- Loading Overlay -->
+            <div class="modal-loading-overlay" id="cameraModalLoading">
+                <div class="modal-loading-spinner"></div>
             </div>
+
+            <!-- Header -->
+            <div class="modal-header">
+                <div class="modal-header-content">
+                    <h3 class="modal-title" id="modalTitle">
+                        <i class="fa-solid fa-video modal-title-icon"></i>
+                        Thêm Camera / Lớp Học Mới
+                    </h3>
+                    <p class="modal-subtitle">Cấu hình thông tin lớp học và nguồn hình ảnh cho AI quét điểm danh</p>
+                </div>
+                <button class="modal-close-btn" id="modalCloseBtn">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Body -->
             <div class="modal-body">
-                <form id="cameraForm" onsubmit="return false;">
+                <form id="cameraForm">
                     <input type="hidden" id="formCamId" value="">
 
-                    <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                        <div class="form-group">
-                            <label>Mã Lớp / Camera (*):</label>
-                            <input type="text" id="formCode" class="form-control" placeholder="Ví dụ: LOP_10A1" required>
+                    <!-- Section 1: Thông Tin Cơ Bản -->
+                    <div class="modal-section">
+                        <h4 class="modal-section-title">
+                            <i class="fa-solid fa-circle-info modal-section-title-icon"></i>
+                            Thông Tin Cơ Bản
+                        </h4>
+
+                        <div class="modal-form-grid modal-form-grid-2">
+                            <div class="modal-form-field">
+                                <label class="modal-form-label required">
+                                    <i class="fa-solid fa-tag modal-form-label-icon"></i>
+                                    Mã Lớp / Camera
+                                </label>
+                                <input type="text" id="formCode" class="modal-form-input" placeholder="Ví dụ: LOP_10A1"
+                                    required>
+                                <span class="modal-form-helper">Mã định danh duy nhất cho lớp học</span>
+                            </div>
+
+                            <div class="modal-form-field">
+                                <label class="modal-form-label required">
+                                    <i class="fa-solid fa-school modal-form-label-icon"></i>
+                                    Tên Lớp Học
+                                </label>
+                                <input type="text" id="formName" class="modal-form-input" placeholder="Ví dụ: Lớp 10A1"
+                                    required>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>Tên Lớp Học (*):</label>
-                            <input type="text" id="formName" class="form-control" placeholder="Ví dụ: Lớp 10A1" required>
+
+                        <div class="modal-form-grid modal-form-grid-2">
+                            <div class="modal-form-field">
+                                <label class="modal-form-label">
+                                    <i class="fa-solid fa-door-open modal-form-label-icon"></i>
+                                    Phòng Học
+                                </label>
+                                <input type="text" id="formRoom" class="modal-form-input"
+                                    placeholder="Ví dụ: Phòng 101">
+                            </div>
+
+                            <div class="modal-form-field">
+                                <label class="modal-form-label required">
+                                    <i class="fa-solid fa-users modal-form-label-icon"></i>
+                                    Sĩ Số Chuẩn Của Lớp
+                                </label>
+                                <input type="number" id="formStandard" class="modal-form-input" value="40" min="1"
+                                    max="60" required>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                        <div class="form-group">
-                            <label>Phòng Học:</label>
-                            <input type="text" id="formRoom" class="form-control" placeholder="Ví dụ: Phòng 101">
-                        </div>
-                        <div class="form-group">
-                            <label>Sĩ Số Chuẩn Của Lớp (*):</label>
-                            <input type="number" id="formStandard" class="form-control" value="40" min="1" max="60" required>
-                        </div>
-                    </div>
+                    <div class="modal-divider"></div>
 
-                    <!-- BỘ CHỌN NGUỒN TẬP TRUNG -->
-                    <div class="source-type-selector">
-                        <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 6px;">
-                            <i class="fa-solid fa-sliders" style="color: var(--primary);"></i> Chọn Loại Nguồn Hình Ảnh:
-                        </label>
-                        <div class="source-tabs">
-                            <button type="button" class="source-tab active" id="tabBtnWebcam" onclick="switchSourceTab('WEBCAM')">
-                                <i class="fa-solid fa-camera"></i> Webcam Máy Tính (PC)
-                            </button>
-                            <button type="button" class="source-tab" id="tabBtnRtsp" onclick="switchSourceTab('RTSP')">
-                                <i class="fa-solid fa-server"></i> Camera IP Trường (RTSP)
-                            </button>
-                            <button type="button" class="source-tab" id="tabBtnFile" onclick="switchSourceTab('FILE')">
-                                <i class="fa-solid fa-file-video"></i> Video / Ảnh Mẫu (File)
-                            </button>
-                        </div>
-                    </div>
+                    <!-- Section 2: Nguồn Camera -->
+                    <div class="modal-section">
+                        <h4 class="modal-section-title">
+                            <i class="fa-solid fa-camera modal-section-title-icon"></i>
+                            Nguồn Hình Ảnh Camera
+                        </h4>
 
-                    <!-- PANEL 1: WEBCAM MÁY TÍNH -->
-                    <div id="panelWebcam" class="source-panel">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <span style="font-size: 0.85rem; font-weight: 700; color: #1e40af;">
-                                <i class="fa-solid fa-desktop"></i> Các Camera Đang Có Trên Máy Tính Của Bạn:
-                            </span>
-                            <button type="button" class="btn btn-secondary btn-sm" id="btnRefreshWebcams" onclick="loadAvailableWebcams(true)" style="padding: 3px 8px; font-size: 0.75rem;">
-                                <i class="fa-solid fa-rotate-right" id="webcamRefreshIcon"></i> Dò Tìm Lại
-                            </button>
-                        </div>
-                        
-                        <div id="webcamListContainer" class="webcam-card-grid">
-                            <!-- Render bằng Javascript -->
-                            <div class="webcam-empty-box"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải danh sách camera trên máy...</div>
-                        </div>
-
-                        <div style="margin-top: 8px; font-size: 0.78rem; color: #64748b; display: flex; justify-content: space-between; align-items: center;">
-                            <span><i class="fa-solid fa-circle-info" style="color: #3b82f6;"></i> Bấm vào camera để chọn làm nguồn điểm danh.</span>
-                            <a href="javascript:void(0)" onclick="toggleAdvancedInput()" style="color: #2563eb; text-decoration: underline;">Nhập ID tùy chỉnh</a>
-                        </div>
-                    </div>
-
-                    <!-- PANEL 2: RTSP NVR TRƯỜNG -->
-                    <div id="panelRtsp" class="source-panel" style="display: none;">
-                        <div class="preset-badge-group">
-                            <span style="font-size: 0.78rem; font-weight: 600; color: #64748b; align-self: center;">Mẫu nhanh:</span>
-                            <button type="button" class="preset-btn" onclick="applyPreset('DAHUA')"><i class="fa-solid fa-server"></i> Dahua NVR Trường</button>
-                            <button type="button" class="preset-btn" onclick="applyPreset('HIK')"><i class="fa-solid fa-video"></i> Hikvision RTSP</button>
-                        </div>
-                        <div class="form-group" style="margin-top: 8px;">
-                            <label>Đường Dẫn Luồng RTSP:</label>
-                            <input type="text" id="inputRtsp" class="form-control" placeholder="rtsp://admin:matkhau@192.168.10.200:554/cam/realmonitor?channel=1&subtype=0" oninput="syncManualUrl(this.value)">
-                        </div>
-                    </div>
-
-                    <!-- PANEL 3: FILE VIDEO / ẢNH MẪU -->
-                    <div id="panelFile" class="source-panel" style="display: none;">
-                        <div class="preset-badge-group">
-                            <button type="button" class="preset-btn" onclick="applyPreset('FILE_VIDEO')"><i class="fa-solid fa-film"></i> Video Mẫu (15s MP4)</button>
-                            <button type="button" class="preset-btn" onclick="applyPreset('FILE_IMG')"><i class="fa-solid fa-image"></i> Ảnh Lớp Học Mẫu (JPG)</button>
-                        </div>
-                        <div class="form-group" style="margin-top: 8px;">
-                            <label>Đường Dẫn File Cục Bộ:</label>
-                            <input type="text" id="inputFile" class="form-control" placeholder="dataset/samples/classroom_sample_15s.mp4" oninput="syncManualUrl(this.value)">
-                        </div>
-                    </div>
-
-                    <!-- Ô URL ĐƯỢC ĐỒNG BỘ ĐỂ GỬI LÊN SERVER (Có thể ẩn/hiện) -->
-                    <div id="advancedUrlBox" style="display: none; margin-bottom: 12px; background: #f1f5f9; padding: 10px; border-radius: 6px; border: 1px dashed #cbd5e1;">
-                        <label style="font-size: 0.8rem; font-weight: 700; color: #334155;">Đường dẫn nguồn chính thức (Gửi tới hệ thống):</label>
-                        <input type="text" id="formRtspUrl" class="form-control" style="font-family: monospace; font-size: 0.85rem;" required>
-                    </div>
-
-                    <div class="form-grid" style="grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px;">
-                        <div class="form-group">
-                            <label>Địa Chỉ IP Relay Đèn LED (Tùy chọn):</label>
-                            <input type="text" id="formRelayIp" class="form-control" placeholder="Ví dụ: 192.168.10.200">
-                        </div>
-                        <div class="form-group" style="justify-content: flex-end;">
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding-bottom: 8px;">
-                                <input type="checkbox" id="formActive" checked style="width: 18px; height: 18px;">
-                                <span>Kích hoạt</span>
+                        <div class="source-type-selector">
+                            <label class="modal-form-label">
+                                <i class="fa-solid fa-sliders modal-form-label-icon"></i>
+                                Chọn Loại Nguồn
                             </label>
+                            <div class="source-tabs">
+                                <button type="button" class="source-tab active" id="tabBtnWebcam"
+                                    onclick="switchSourceTab('WEBCAM')">
+                                    <i class="fa-solid fa-camera"></i> Webcam Máy Tính
+                                </button>
+                                <button type="button" class="source-tab" id="tabBtnRtsp"
+                                    onclick="switchSourceTab('RTSP')">
+                                    <i class="fa-solid fa-server"></i> Camera IP (RTSP)
+                                </button>
+                                <button type="button" class="source-tab" id="tabBtnFile"
+                                    onclick="switchSourceTab('FILE')">
+                                    <i class="fa-solid fa-file-video"></i> File Video/Ảnh
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- PANEL 1: WEBCAM MÁY TÍNH -->
+                        <div id="panelWebcam" class="source-panel">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                <span class="modal-form-label" style="margin: 0;">
+                                    <i class="fa-solid fa-desktop modal-form-label-icon"></i>
+                                    Camera Đang Có Trên Máy Tính
+                                </span>
+                                <button type="button" class="modal-btn modal-btn-secondary modal-btn-sm"
+                                    id="btnRefreshWebcams" onclick="loadAvailableWebcams(true)">
+                                    <i class="fa-solid fa-rotate-right" id="webcamRefreshIcon"></i> Dò Tìm Lại
+                                </button>
+                            </div>
+
+                            <div id="webcamListContainer" class="webcam-card-grid">
+                                <!-- Render bằng Javascript -->
+                                <div class="webcam-empty-box"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải danh
+                                    sách
+                                    camera trên máy...</div>
+                            </div>
+
+                            <div class="modal-form-helper"
+                                style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+                                <span><i class="fa-solid fa-circle-info"></i> Bấm vào camera để chọn làm nguồn điểm
+                                    danh</span>
+                                <a href="javascript:void(0)" onclick="toggleAdvancedInput()" class="modal-link">Nhập ID
+                                    tùy chỉnh</a>
+                            </div>
+                        </div>
+
+                        <!-- PANEL 2: RTSP NVR TRƯỜNG -->
+                        <div id="panelRtsp" class="source-panel" style="display: none;">
+                            <div class="preset-badge-group">
+                                <span class="modal-form-helper" style="margin: 0;">Mẫu nhanh:</span>
+                                <button type="button" class="preset-btn" onclick="applyPreset('DAHUA')">
+                                    <i class="fa-solid fa-server"></i> Dahua NVR
+                                </button>
+                                <button type="button" class="preset-btn" onclick="applyPreset('HIK')">
+                                    <i class="fa-solid fa-video"></i> Hikvision
+                                </button>
+                            </div>
+                            <div class="modal-form-field" style="margin-top: 12px;">
+                                <label class="modal-form-label">Đường Dẫn Luồng RTSP</label>
+                                <input type="text" id="inputRtsp" class="modal-form-input"
+                                    placeholder="rtsp://admin:matkhau@192.168.10.200:554/cam/realmonitor?channel=1&subtype=0"
+                                    oninput="syncManualUrl(this.value)">
+                            </div>
+                        </div>
+
+                        <!-- PANEL 3: FILE VIDEO / ẢNH MẪU -->
+                        <div id="panelFile" class="source-panel" style="display: none;">
+                            <div class="preset-badge-group">
+                                <button type="button" class="preset-btn" onclick="applyPreset('FILE_VIDEO')">
+                                    <i class="fa-solid fa-film"></i> Video Mẫu (MP4)
+                                </button>
+                                <button type="button" class="preset-btn" onclick="applyPreset('FILE_IMG')">
+                                    <i class="fa-solid fa-image"></i> Ảnh Mẫu (JPG)
+                                </button>
+                            </div>
+                            <div class="modal-form-field" style="margin-top: 12px;">
+                                <label class="modal-form-label">Đường Dẫn File Cục Bộ</label>
+                                <input type="text" id="inputFile" class="modal-form-input"
+                                    placeholder="dataset/samples/classroom_sample_15s.mp4"
+                                    oninput="syncManualUrl(this.value)">
+                            </div>
+                        </div>
+
+                        <!-- Ô URL ĐƯỢC ĐỒNG BỘ ĐỂ GỬI LÊN SERVER (Có thể ẩn/hiện) -->
+                        <div id="advancedUrlBox" class="modal-form-field"
+                            style="display: none; margin-top: 12px; padding: 16px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px;">
+                            <label class="modal-form-label">
+                                <i class="fa-solid fa-code modal-form-label-icon"></i>
+                                Đường Dẫn Nguồn Chính Thức
+                            </label>
+                            <input type="text" id="formRtspUrl" class="modal-form-input"
+                                style="font-family: 'Courier New', monospace; font-size: 0.85rem;" required>
+                            <span class="modal-form-helper">Đường dẫn này sẽ được gửi đến hệ thống backend</span>
                         </div>
                     </div>
 
-                    <!-- Khung Test Kết Nối Live -->
-                    <div class="test-box">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-weight: 700; font-size: 0.88rem; color: var(--text-main);">
-                                <i class="fa-solid fa-satellite-dish"></i> Kiểm Tra Thông Mạng & Bắt Khung Hình
-                            </span>
-                            <button type="button" id="btnTestStream" class="btn btn-secondary btn-sm">
-                                <i class="fa-solid fa-play"></i> Kiểm Tra Kết Nối Ngay
-                            </button>
+                    <div class="modal-divider"></div>
+
+                    <!-- Section 3: Cấu Hình Nâng Cao -->
+                    <div class="modal-section">
+                        <h4 class="modal-section-title">
+                            <i class="fa-solid fa-sliders modal-section-title-icon"></i>
+                            Cấu Hình Nâng Cao
+                        </h4>
+
+                        <div class="modal-form-grid modal-form-grid-2">
+                            <div class="modal-form-field">
+                                <label class="modal-form-label">
+                                    <i class="fa-solid fa-network-wired modal-form-label-icon"></i>
+                                    Địa Chỉ IP Relay Đèn LED
+                                </label>
+                                <input type="text" id="formRelayIp" class="modal-form-input"
+                                    placeholder="Ví dụ: 192.168.10.200">
+                                <span class="modal-form-helper">Địa chỉ IP thiết bị relay điều khiển đèn báo</span>
+                            </div>
+
+                            <div class="modal-form-field">
+                                <label class="modal-form-label">
+                                    <i class="fa-solid fa-toggle-on modal-form-label-icon"></i>
+                                    Trạng Thái
+                                </label>
+                                <label class="modal-form-checkbox">
+                                    <input type="checkbox" id="formActive" checked>
+                                    <span class="modal-form-checkbox-label">Kích hoạt camera ngay sau khi lưu</span>
+                                </label>
+                            </div>
                         </div>
-                        <div id="testStatusMsg" style="font-size: 0.82rem; margin-top: 6px; color: var(--text-muted);">
-                            Bấm nút để thử kết nối và chụp 1 ảnh xem trước từ nguồn camera trên.
-                        </div>
-                        <img id="testPreviewImg" class="test-preview-img" alt="Ảnh xem trước từ Camera">
                     </div>
 
-                    <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 10px;">
-                        <button type="button" id="btnCancelModal" class="btn btn-secondary">Hủy</button>
-                        <button type="button" id="btnSaveCamera" class="btn btn-primary">
-                            <i class="fa-solid fa-floppy-disk"></i> Lưu Camera
-                        </button>
+                    <div class="modal-divider"></div>
+
+                    <!-- Section 4: Test Kết Nối -->
+                    <div class="modal-section">
+                        <h4 class="modal-section-title">
+                            <i class="fa-solid fa-satellite-dish modal-section-title-icon"></i>
+                            Kiểm Tra Kết Nối
+                        </h4>
+
+                        <div class="test-box"
+                            style="background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 8px; padding: 20px; text-align: center;">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                <span style="font-weight: 700; font-size: 0.9rem; color: var(--text-main);">
+                                    <i class="fa-solid fa-plug"></i> Bắt Khung Hình Thử Nghiệm
+                                </span>
+                                <button type="button" id="btnTestStream"
+                                    class="modal-btn modal-btn-secondary modal-btn-sm">
+                                    <i class="fa-solid fa-play"></i> Kiểm Tra Ngay
+                                </button>
+                            </div>
+                            <div id="testStatusMsg" class="modal-form-helper"
+                                style="margin: 0 0 12px 0; text-align: left;">
+                                Bấm nút để thử kết nối và chụp 1 ảnh xem trước từ nguồn camera
+                            </div>
+                            <img id="testPreviewImg" class="test-preview-img" alt="Ảnh xem trước từ Camera"
+                                style="max-width: 100%; max-height: 280px; border-radius: 8px; border: 1px solid #cbd5e1; display: none; margin-top: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        </div>
                     </div>
                 </form>
+            </div>
+
+            <!-- Footer -->
+            <div class="modal-footer">
+                <button type="button" id="btnCancelModal" class="modal-btn modal-btn-secondary">
+                    <i class="fa-solid fa-xmark"></i>
+                    Hủy
+                </button>
+                <button type="button" id="btnSaveCamera" class="modal-btn modal-btn-primary">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    Lưu Camera
+                </button>
             </div>
         </div>
     </div>
 
     <!-- MODAL XEM TRỰC TIẾP SNAPSHOT NHANH -->
     <div class="modal-backdrop" id="liveViewModal">
-        <div class="modal-content" style="max-width: 800px;">
-            <div class="modal-header">
-                <div>
-                    <h3 id="liveViewTitle" style="font-size: 1.2rem; font-weight: 700;">Xem Thử Khung Hình Trực Tiếp</h3>
-                    <p id="liveViewSubtitle" style="font-size: 0.85rem; color: var(--text-muted);"></p>
-                </div>
-                <button class="modal-close" onclick="closeLiveModal()">&times;</button>
+        <div class="modal-container modal-lg">
+            <!-- Loading Overlay -->
+            <div class="modal-loading-overlay" id="liveViewModalLoading">
+                <div class="modal-loading-spinner"></div>
             </div>
-            <div class="modal-body" style="text-align: center;">
-                <img id="liveViewImg" src="" alt="Snapshot Camera" style="max-width: 100%; max-height: 480px; border-radius: 8px; border: 1px solid #cbd5e1;">
+
+            <!-- Header -->
+            <div class="modal-header">
+                <div class="modal-header-content">
+                    <h3 class="modal-title" id="liveViewTitle">
+                        <i class="fa-solid fa-eye modal-title-icon"></i>
+                        Xem Thử Khung Hình Trực Tiếp
+                    </h3>
+                    <p class="modal-subtitle" id="liveViewSubtitle"></p>
+                </div>
+                <button class="modal-close-btn" onclick="closeLiveModal()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="modal-body" style="text-align: center; padding: 32px;">
+                <div class="modal-section">
+                    <img id="liveViewImg" src="" alt="Snapshot Camera"
+                        style="max-width: 100%; max-height: 480px; border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="modal-footer">
+                <button type="button" class="modal-btn modal-btn-secondary" onclick="closeLiveModal()">
+                    <i class="fa-solid fa-xmark"></i>
+                    Đóng
+                </button>
             </div>
         </div>
     </div>
@@ -630,7 +835,7 @@
                 card.id = `webcam_card_${cam.id}`;
                 card.onclick = () => selectWebcam(cam.id);
 
-                const thumbHtml = cam.thumbnail 
+                const thumbHtml = cam.thumbnail
                     ? `<img src="${cam.thumbnail}" class="webcam-thumb-img" alt="${cam.name}">`
                     : `<div style="text-align: center; color: #64748b;"><i class="fa-solid fa-camera" style="font-size: 1.8rem;"></i></div>`;
 
@@ -749,9 +954,9 @@
 
             const filtered = allCameras.filter(c => {
                 const matchText = (c.name || '').toLowerCase().includes(filterText) ||
-                                  (c.code || '').toLowerCase().includes(filterText) ||
-                                  (c.room_number || '').toLowerCase().includes(filterText) ||
-                                  (c.rtsp_url || '').toLowerCase().includes(filterText);
+                    (c.code || '').toLowerCase().includes(filterText) ||
+                    (c.room_number || '').toLowerCase().includes(filterText) ||
+                    (c.rtsp_url || '').toLowerCase().includes(filterText);
                 const matchSource = filterSource === 'ALL' || c.source_type === filterSource;
                 return matchText && matchSource;
             });
@@ -913,7 +1118,7 @@
         async function testCurrentInputSource() {
             const url = document.getElementById('formRtspUrl').value.trim();
             if (!url) {
-                alert('Vui lòng nhập Đường dẫn nguồn Camera trước khi test!');
+                showWarning('Vui lòng nhập Đường dẫn nguồn Camera trước khi test!');
                 return;
             }
 
@@ -953,10 +1158,14 @@
 
         // Test trực tiếp từ nút ngoài bảng
         async function testCameraDirectly(url, name) {
-            document.getElementById('liveViewTitle').innerText = `Xem Thử Trực Tiếp: ${name}`;
+            document.getElementById('liveViewTitle').innerHTML = `<i class="fa-solid fa-eye modal-title-icon"></i> Xem Thử Trực Tiếp: ${name}`;
             document.getElementById('liveViewSubtitle').innerText = `Nguồn: ${url}`;
             document.getElementById('liveViewImg').src = '';
             document.getElementById('liveViewModal').classList.add('active');
+
+            // Show loading
+            const loadingOverlay = document.getElementById('liveViewModalLoading');
+            if (loadingOverlay) loadingOverlay.style.display = 'flex';
 
             try {
                 const res = await fetch('/api/cameras/test-connection', {
@@ -965,21 +1174,42 @@
                     body: JSON.stringify({ source_url: url })
                 });
                 const data = await res.json();
+
+                // Hide loading
+                if (loadingOverlay) loadingOverlay.style.display = 'none';
+
                 if (data.success && data.preview_url) {
                     document.getElementById('liveViewImg').src = data.preview_url;
                     document.getElementById('liveViewSubtitle').innerText = `${data.message}`;
                 } else {
-                    alert(`Không thể kết nối camera: ${data.message}`);
+                    showError(`Không thể kết nối camera: ${data.message}`);
                     closeLiveModal();
                 }
             } catch (err) {
-                alert('Lỗi kết nối kiểm tra camera: ' + err);
+                // Hide loading
+                if (loadingOverlay) loadingOverlay.style.display = 'none';
+                showError('Lỗi kết nối kiểm tra camera: ' + err);
                 closeLiveModal();
             }
         }
 
         function closeLiveModal() {
             document.getElementById('liveViewModal').classList.remove('active');
+        }
+
+        // Modal Loading State Helpers
+        function showModalLoading() {
+            const overlay = document.getElementById('cameraModalLoading');
+            if (overlay) {
+                overlay.style.display = 'flex';
+            }
+        }
+
+        function hideModalLoading() {
+            const overlay = document.getElementById('cameraModalLoading');
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
         }
 
         // Lưu Camera (Create hoặc Update)
@@ -994,9 +1224,12 @@
             const is_active = document.getElementById('formActive').checked;
 
             if (!name || !rtsp_url) {
-                alert('Vui lòng nhập đầy đủ Tên lớp và Đường dẫn camera!');
+                showWarning('Vui lòng nhập đầy đủ Tên lớp và Đường dẫn camera!');
                 return;
             }
+
+            // Show loading overlay
+            showModalLoading();
 
             try {
                 let res;
@@ -1012,7 +1245,8 @@
                 } else {
                     // Create
                     if (!code) {
-                        alert('Vui lòng nhập Mã lớp!');
+                        showWarning('Vui lòng nhập Mã lớp!');
+                        hideModalLoading();
                         return;
                     }
                     res = await fetch('/api/cameras', {
@@ -1026,56 +1260,76 @@
 
                 const result = await res.json();
                 if (res.ok && result.success) {
+                    hideModalLoading();
                     closeModal();
                     await loadCameras();
-                    alert(result.message);
+                    showSuccess(result.message);
                 } else {
-                    alert('Lỗi: ' + (result.detail || result.message || 'Không thể lưu camera.'));
+                    hideModalLoading();
+                    showError('Lỗi: ' + (result.detail || result.message || 'Không thể lưu camera.'));
                 }
             } catch (err) {
-                alert('Lỗi kết nối máy chủ: ' + err);
+                hideModalLoading();
+                showError('Lỗi kết nối máy chủ: ' + err);
             }
         }
 
         // Xóa Camera
         async function deleteCamera(id, name) {
-            if (!confirm(`Bạn có chắc chắn muốn xóa Camera/Lớp "${name}" khỏi hệ thống? Dữ liệu ROI của camera này cũng sẽ bị xóa.`)) {
-                return;
-            }
+            confirmAction(
+                `Bạn có chắc chắn muốn xóa Camera/Lớp "${name}" khỏi hệ thống? Dữ liệu ROI của camera này cũng sẽ bị xóa.`,
+                async () => {
+                    // User confirmed, proceed with delete
+                    showGlobalLoading('Đang xóa camera...');
+                    try {
+                        const res = await fetch(`/api/cameras/${id}`, { method: 'DELETE' });
+                        const result = await res.json();
+                        hideGlobalLoading();
 
-            try {
-                const res = await fetch(`/api/cameras/${id}`, { method: 'DELETE' });
-                const result = await res.json();
-                if (res.ok) {
-                    await loadCameras();
-                    alert(result.message);
-                } else {
-                    alert('Lỗi: ' + (result.detail || 'Không thể xóa camera.'));
-                }
-            } catch (err) {
-                alert('Lỗi kết nối máy chủ: ' + err);
-            }
+                        if (res.ok) {
+                            await loadCameras();
+                            showSuccess(result.message);
+                        } else {
+                            showError('Lỗi: ' + (result.detail || 'Không thể xóa camera.'));
+                        }
+                    } catch (err) {
+                        hideGlobalLoading();
+                        showError('Lỗi kết nối máy chủ: ' + err);
+                    }
+                },
+                null, // onCancel
+                'Xác Nhận Xóa Camera'
+            );
         }
 
         // Khôi phục mặc định 30 lớp
         async function resetDefaults() {
-            if (!confirm('Khôi phục danh sách 30 lớp học chuẩn của trường THPT Điều Cải? Các camera test bạn vừa thêm có thể sẽ bị đặt lại.')) {
-                return;
-            }
+            confirmAction(
+                'Khôi phục danh sách 30 lớp học chuẩn của trường THPT Điều Cải? Các camera test bạn vừa thêm có thể sẽ bị đặt lại.',
+                async () => {
+                    // User confirmed, proceed with reset
+                    showGlobalLoading('Đang khôi phục danh sách lớp...');
+                    try {
+                        const res = await fetch('/api/cameras/reset-defaults', { method: 'POST' });
+                        const result = await res.json();
+                        hideGlobalLoading();
 
-            try {
-                const res = await fetch('/api/cameras/reset-defaults', { method: 'POST' });
-                const result = await res.json();
-                if (res.ok) {
-                    await loadCameras();
-                    alert(result.message);
-                } else {
-                    alert('Lỗi: ' + result.message);
-                }
-            } catch (err) {
-                alert('Lỗi kết nối máy chủ: ' + err);
-            }
+                        if (res.ok) {
+                            await loadCameras();
+                            showSuccess(result.message);
+                        } else {
+                            showError('Lỗi: ' + result.message);
+                        }
+                    } catch (err) {
+                        hideGlobalLoading();
+                        showError('Lỗi kết nối máy chủ: ' + err);
+                    }
+                },
+                null, // onCancel
+                'Xác Nhận Khôi Phục'
+            );
         }
     </script>
 </body>
+
 </html>
