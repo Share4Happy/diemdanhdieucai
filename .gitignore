@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Testing & Cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# YOLO Runs & Training Cache
+runs/
+*.cache
+
+# Local Database
+database/attendance.db
+
+# Local Storage Captures & Reports (Tránh đẩy ảnh camera trường lên git)
+storage/captures/
+storage/annotated/
+storage/reports/
+storage/*.jpg
+storage/*.png
+
+# Logs
+logs/*.log
+
+# Scratch / Temp
+scratch/
+
+# OS specific
+.DS_Store
+Thumbs.db
+desktop.ini

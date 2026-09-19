@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  attendance-ai:
+    build: .
+    container_name: diemdanh_dieucai_app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./storage:/app/storage
+      - ./dataset:/app/dataset
+      - ./database:/app/database
+      - ./logs:/app/logs
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+      - SCHEDULE_TIME_HOUR=6
+      - SCHEDULE_TIME_MINUTE=45
+      - RELAY_TYPE=MOCK
+      - ENABLE_EMAIL_NOTIFICATION=false

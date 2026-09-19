@@ -1,0 +1,15 @@
+# Cấu hình tập dữ liệu huấn luyện AI Điểm Danh Lớp Học - THPT Điều Cải
+# Chuẩn định dạng Ultralytics YOLOv8
+
+path: ../dataset/classroom_data # Thư mục gốc chứa dataset
+train: images/train              # Ảnh huấn luyện (50 - 200 ảnh)
+val: images/val                  # Ảnh đánh giá kiểm định (10 - 30 ảnh)
+# test: images/test                # Ảnh kiểm thử độc lập (tùy chọn)
+
+# Danh sách phân lớp đối tượng (Classes)
+names:
+  0: student_head                # Đầu & nửa thân trên học sinh ngồi bàn
+
+# Ghi chú:
+# - Gán nhãn bằng Roboflow hoặc Label Studio
+# - Xuất nhãn định dạng YOLOv8 (tọa độ chuẩn hóa 0..1: <class_id> <x_center> <y_center> <width> <height>)
