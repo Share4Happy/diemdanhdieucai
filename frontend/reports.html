@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản Lý Dữ Liệu & Báo Cáo Điểm Danh - THPT Điều Cải</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/main.css?v=2.5">
-    <link rel="stylesheet" href="css/reports.css?v=2.5">
+    <link rel="stylesheet" href="css/main.css?v=3.2">
+    <link rel="stylesheet" href="css/reports.css?v=3.2">
 </head>
 
 <body>
@@ -32,11 +32,19 @@
         <!-- Banner Hành Động Nhanh -->
         <div class="action-banner">
             <div class="banner-info">
-                <h2>Trung Tâm Dữ Liệu & Báo Cáo Điểm Danh</h2>
+                <div class="banner-icon"
+                    style="background: linear-gradient(135deg, #fef3c7, #fde68a); color: #b45309; border: 1px solid #fcd34d;">
+                    <i class="fa-solid fa-file-excel"></i>
+                </div>
+                <div>
+                    <h2>Trung Tâm Dữ Liệu & Báo Cáo Điểm Danh</h2>
+                    <p>Truy xuất CSDL điểm danh, xuất file Excel chuẩn và phân phối thông báo Ban Giám Hiệu</p>
+                </div>
             </div>
             <div class="banner-actions">
-                <button id="btnExportExcelNow" class="btn btn-primary">
-                    <i class="fa-solid fa-file-arrow-down"></i> Xuất Báo Cáo
+                <button id="btnExportExcelNow" class="btn btn-primary"
+                    style="background: linear-gradient(135deg, #10b981, #059669); border: none; font-weight: 700;">
+                    <i class="fa-solid fa-file-arrow-down"></i> Xuất Báo Cáo Excel Ngay
                 </button>
             </div>
         </div>
@@ -241,7 +249,7 @@
     <!-- Toast Container -->
     <div id="toastContainer" class="toast-container"></div>
 
-    <script type="module" src="js/reports.js?v=2.5"></script>
+    <script type="module" src="js/reports.js?v=3.2"></script>
 </body>
 
 </html>

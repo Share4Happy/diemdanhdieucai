@@ -754,21 +754,12 @@ class ROICanvasEditor {
                     btnSave.innerHTML = '<i class="fa-solid fa-check"></i> ĐÃ LƯU & ĐỒNG BỘ AI!';
                 }
 
-                const aiNotice = (result.present_count !== undefined && result.present_count !== null)
-                    ? ` — Kết quả AI: Có mặt ${result.present_count} HS (Vắng ${result.absent_count} HS)`
-                    : '';
-
-                this.showToast(
-                    "✓ Đã Lưu & Phân Tích AI!",
-                    `Tọa độ Red Zone (${this.redZone.length} điểm) & Green Zone (${this.greenZone.length} điểm) đã được lưu CSDL và phân tích AI thành công${aiNotice}.`
-                );
-
                 this.updateStatsBar(nowTime, result);
 
                 setTimeout(() => {
                     if (btnSave) {
                         btnSave.disabled = false;
-                        btnSave.className = 'btn btn-primary';
+                        btnSave.className = 'btn btn-save';
                         btnSave.innerHTML = originalBtnHtml || '<i class="fa-solid fa-floppy-disk"></i> Lưu Tọa Độ Vùng';
                     }
                 }, 2500);

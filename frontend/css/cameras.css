@@ -45,9 +45,32 @@
     padding: 12px 14px;
     border-bottom: 1px solid var(--border-color);
     vertical-align: middle;
+    white-space: nowrap;
 }
 .custom-table tr:hover {
     background: #fbfcfe;
+}
+.delete-cam-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 12px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background 0.15s, border-color 0.15s;
+}
+.delete-cam-item:hover {
+    background: #fee2e2;
+    border-color: #fca5a5;
+}
+.delete-cam-item input[type="checkbox"] {
+    width: 17px;
+    height: 17px;
+    cursor: pointer;
+    accent-color: #dc2626;
 }
 .preset-badge-group {
     display: flex;

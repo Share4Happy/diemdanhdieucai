@@ -345,7 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnTrigger) {
         btnTrigger.addEventListener('click', async () => {
             btnTrigger.disabled = true;
-            btnTrigger.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang bật đèn LED & quét 30 camera...';
+            btnTrigger.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang quét 30 camera...';
 
             try {
                 const result = await AttendanceAPI.triggerScan();
@@ -359,7 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showToast('Lỗi kết nối máy chủ: ' + err.message, 'danger');
             } finally {
                 btnTrigger.disabled = false;
-                btnTrigger.innerHTML = '<i class="fa-solid fa-bolt"></i> Quét Điểm Danh Ngay (30 Lớp)';
+                btnTrigger.innerHTML = '<i class="fa-solid fa-bolt"></i> Quét Điểm Danh';
             }
         });
     }

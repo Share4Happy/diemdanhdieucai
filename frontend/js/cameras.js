@@ -61,6 +61,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const btnLiveClose = document.getElementById('liveViewCloseBtn');
     if (btnLiveClose) btnLiveClose.addEventListener('click', closeLiveModal);
+
+    // Sự kiện Modal Xóa Camera Chọn Lọc
+    const btnOpenDelete = document.getElementById('btnOpenBatchDeleteModal');
+    if (btnOpenDelete) btnOpenDelete.addEventListener('click', openDeleteModal);
+
+    const btnCloseDel = document.getElementById('deleteModalCloseBtn');
+    if (btnCloseDel) btnCloseDel.addEventListener('click', closeDeleteModal);
+
+    const btnCancelDel = document.getElementById('btnCancelDeleteModal');
+    if (btnCancelDel) btnCancelDel.addEventListener('click', closeDeleteModal);
+
+    const btnCheckAll = document.getElementById('btnDeleteCheckAll');
+    if (btnCheckAll) btnCheckAll.addEventListener('click', () => {
+        const checklist = document.getElementById('deleteModalChecklist');
+        if (checklist) checklist.querySelectorAll('.cam-del-cb').forEach(cb => cb.checked = true);
+    });
+
+    const btnUncheckAll = document.getElementById('btnDeleteUncheckAll');
+    if (btnUncheckAll) btnUncheckAll.addEventListener('click', () => {
+        const checklist = document.getElementById('deleteModalChecklist');
+        if (checklist) checklist.querySelectorAll('.cam-del-cb').forEach(cb => cb.checked = false);
+        const selQuick = document.getElementById('deleteModalSelectQuick');
+        if (selQuick) selQuick.value = '';
+    });
+
+    const btnConfirmDel = document.getElementById('btnConfirmDeleteBatch');
+    if (btnConfirmDel) btnConfirmDel.addEventListener('click', confirmBatchDelete);
 });
 
 // Load available webcams
@@ -624,6 +651,125 @@ export async function deleteCamera(id, name) {
     }
 }
 
+export function openDeleteModal() {
+    const modal = document.getElementById('deleteCameraModal');
+    const selectQuick = document.getElementById('deleteModalSelectQuick');
+    const checklist = document.getElementById('deleteModalChecklist');
+
+    if (!modal) return;
+
+    // Cập nhật danh sách chọn nhanh 1 camera
+    if (selectQuick) {
+        selectQuick.innerHTML = '<option value="">-- Bấm vào đây để chọn camera --</option>' + 
+            allCameras.map(c => `
+                <option value="${c.id}">${c.name} (${c.room_number || 'Phòng ' + c.id}) - Mã: ${c.code}</option>
+            `).join('');
+    }
+
+    // Cập nhật danh sách checklist chọn nhiều camera
+    if (checklist) {
+        if (!allCameras || allCameras.length === 0) {
+            checklist.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 16px; font-size: 0.85rem;"><i class="fa-solid fa-circle-info"></i> Hiện không có camera nào trong danh sách</div>';
+        } else {
+            checklist.innerHTML = allCameras.map(c => `
+                <label class="delete-cam-item">
+                    <input type="checkbox" value="${c.id}" class="cam-del-cb" data-name="${encodeURIComponent(c.name)}">
+                    <span style="flex: 1; font-weight: 500;">
+                        <strong style="color: #0f172a;">${c.code}</strong> - ${c.name} 
+                        <span style="color: #64748b; font-size: 0.8rem;">(${c.room_number || '--'})</span>
+                    </span>
+                    <span class="badge ${c.source_type === 'WEBCAM' ? 'badge-warning' : (c.source_type === 'FILE' ? 'badge-primary' : 'badge-success')}" style="font-size: 0.72rem;">
+                        ${c.source_type || 'RTSP'}
+                    </span>
+                </label>
+            `).join('');
+
+            // Khi tích chọn từng checkbox, đồng bộ với dropdown chọn nhanh
+            checklist.querySelectorAll('.cam-del-cb').forEach(cb => {
+                cb.addEventListener('change', () => {
+                    const checked = checklist.querySelectorAll('.cam-del-cb:checked');
+                    if (checked.length === 1 && selectQuick) {
+                        selectQuick.value = checked[0].value;
+                    } else if (selectQuick) {
+                        selectQuick.value = '';
+                    }
+                });
+            });
+        }
+    }
+
+    // Khi chọn từ dropdown, tự động tích checkbox tương ứng
+    if (selectQuick) {
+        selectQuick.onchange = () => {
+            const val = selectQuick.value;
+            if (checklist) {
+                checklist.querySelectorAll('.cam-del-cb').forEach(cb => {
+                    cb.checked = (String(cb.value) === String(val));
+                });
+            }
+        };
+    }
+
+    modal.classList.add('active');
+}
+
+export function closeDeleteModal() {
+    const modal = document.getElementById('deleteCameraModal');
+    if (modal) modal.classList.remove('active');
+}
+
+export async function confirmBatchDelete() {
+    const checklist = document.getElementById('deleteModalChecklist');
+    const checkedBoxes = checklist ? Array.from(checklist.querySelectorAll('.cam-del-cb:checked')) : [];
+
+    if (checkedBoxes.length === 0) {
+        alert('Vui lòng chọn ít nhất 1 camera bạn muốn xóa.');
+        return;
+    }
+
+    const count = checkedBoxes.length;
+    const names = checkedBoxes.slice(0, 3).map(cb => decodeURIComponent(cb.dataset.name)).join(', ') + (count > 3 ? ` và ${count - 3} camera khác` : '');
+
+    if (!confirm(`Bạn có chắc chắn muốn xóa ${count} camera (${names}) khỏi hệ thống? Dữ liệu ROI của các lớp này cũng sẽ bị xóa.`)) {
+        return;
+    }
+
+    const btnConfirm = document.getElementById('btnConfirmDeleteBatch');
+    if (btnConfirm) {
+        btnConfirm.disabled = true;
+        btnConfirm.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xóa...';
+    }
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const cb of checkedBoxes) {
+        const id = parseInt(cb.value);
+        try {
+            const res = await CameraAPI.delete(id);
+            if (res.success) successCount++;
+            else failCount++;
+        } catch (err) {
+            console.error('Lỗi xóa camera ID', id, err);
+            failCount++;
+        }
+    }
+
+    if (btnConfirm) {
+        btnConfirm.disabled = false;
+        btnConfirm.innerHTML = '<i class="fa-solid fa-trash-can"></i> Xác Nhận Xóa';
+    }
+
+    closeDeleteModal();
+    await loadCameras();
+
+    if (failCount === 0) {
+        showToast(`Đã xóa thành công ${successCount} camera đã chọn!`, 'info');
+    } else {
+        showToast(`Đã xóa ${successCount} camera, thất bại ${failCount} camera.`, 'warning');
+    }
+}
+
 export async function resetDefaults() {
     if (!confirm('Khôi phục danh sách 30 lớp học chuẩn của trường THPT Điều Cải? Các camera test bạn vừa thêm có thể sẽ bị đặt lại.')) {
         return;
@@ -654,3 +800,5 @@ window.selectWebcam = selectWebcam;
 window.applyPreset = applyPreset;
 window.switchSourceTab = switchSourceTab;
 window.closeLiveModal = closeLiveModal;
+window.openDeleteModal = openDeleteModal;
+window.closeDeleteModal = closeDeleteModal;

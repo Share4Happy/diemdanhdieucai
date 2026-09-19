@@ -4,33 +4,69 @@
 .action-banner {
   background: white;
   border-radius: var(--radius);
-  padding: 1.5rem 2rem;
-  margin-bottom: 2rem;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-color);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1.5rem;
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  gap: 1.25rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.banner-info {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 14px;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-wrap: nowrap !important;
+  overflow: hidden;
 }
 
 .banner-info h2 {
-  font-size: 1.35rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: var(--text-main);
-  margin-bottom: 4px;
+  margin: 0;
+  white-space: nowrap !important;
+  flex-shrink: 0;
 }
 
 .banner-info p {
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: 0.86rem;
+  margin: 0;
+  white-space: nowrap !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
 }
 
 .banner-actions {
-  display: flex;
-  gap: 12px;
-  align-items: center;
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 10px;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+}
+
+#btnTriggerScan {
+  min-width: 170px;
+  justify-content: center;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+#btnDownloadExcel {
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
 }
 
 /* KPI Cards */

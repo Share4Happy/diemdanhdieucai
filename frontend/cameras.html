@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản Lý Camera & Nguồn Test - THPT Điều Cải</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/main.css?v=2.5">
-    <link rel="stylesheet" href="css/cameras.css?v=2.5">
+    <link rel="stylesheet" href="css/main.css?v=3.2">
+    <link rel="stylesheet" href="css/cameras.css?v=3.2">
 </head>
 
 <body>
@@ -31,14 +31,20 @@
         <!-- Banner Hành Động Nhanh -->
         <div class="action-banner">
             <div class="banner-info">
-                <h2>Trung Tâm Quản Trị Camera & Lớp Học</h2>
-
+                <div class="banner-icon"
+                    style="background: linear-gradient(135deg, #eff6ff, #dbeafe); color: #2563eb; border: 1px solid #bfdbfe;">
+                    <i class="fa-solid fa-video"></i>
+                </div>
+                <div>
+                    <h2>Trung Tâm Quản Trị Camera & Lớp Học</h2>
+                    <p>Quản lý luồng và cấu hình hệ thống AI</p>
+                </div>
             </div>
             <div class="banner-actions">
                 <button id="btnWebcamBanner" class="btn btn-secondary" title="Xem và cấu hình camera máy tính cá nhân">
                     <i class="fa-solid fa-camera"></i> <span id="webcamBannerText">Webcam máy: Đang dò...</span>
                 </button>
-                <button id="btnOpenAddModal" class="btn btn-primary">
+                <button id="btnOpenAddModal" class="btn btn-primary" style="font-weight: 700;">
                     <i class="fa-solid fa-plus"></i> Thêm Camera / Lớp Học Mới
                 </button>
                 <button id="btnResetDefaults" class="btn btn-secondary">
@@ -95,6 +101,10 @@
                     </select>
                     <button id="btnRefreshList" class="btn btn-secondary btn-sm"><i
                             class="fa-solid fa-rotate-right"></i> Làm Mới</button>
+                    <button id="btnOpenBatchDeleteModal" class="btn btn-danger btn-sm" style="font-weight: 600;"
+                        title="Xóa một hoặc nhiều camera khỏi hệ thống">
+                        <i class="fa-solid fa-trash-can"></i> Xóa Camera
+                    </button>
                 </div>
             </div>
 
@@ -330,10 +340,82 @@
         </div>
     </div>
 
+    <!-- MODAL XÓA CAMERA / LỚP HỌC (CHỌN ĐỂ XÓA) -->
+    <div class="modal-backdrop" id="deleteCameraModal">
+        <div class="modal-content" style="max-width: 580px;">
+            <div class="modal-header" style="border-bottom: 2px solid #fee2e2;">
+                <div>
+                    <h3 style="font-size: 1.2rem; font-weight: 700; color: #dc2626;">
+                        <i class="fa-solid fa-trash-can"></i> Xóa Camera / Lớp Học
+                    </h3>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 2px;">
+                        Chọn camera bạn muốn xóa khỏi hệ thống điểm danh
+                    </p>
+                </div>
+                <button class="modal-close" id="deleteModalCloseBtn">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 1.25rem 1.5rem;">
+                <div class="form-group" style="margin-bottom: 1.15rem;">
+                    <label
+                        style="font-weight: 700; font-size: 0.88rem; color: #1e293b; margin-bottom: 6px; display: block;">
+                        <i class="fa-solid fa-video" style="color: var(--primary);"></i> Chọn 1 camera cần xóa nhanh:
+                    </label>
+                    <select id="deleteModalSelectQuick" class="form-control"
+                        style="width: 100%; padding: 8px 12px; font-weight: 600; font-size: 0.88rem;">
+                        <option value="">-- Bấm vào đây để chọn camera --</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 1.15rem;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <label style="font-weight: 700; font-size: 0.88rem; color: #1e293b; margin: 0;">
+                            <i class="fa-solid fa-list-check" style="color: #64748b;"></i> Hoặc tích chọn nhiều camera:
+                        </label>
+                        <div style="display: flex; gap: 6px;">
+                            <button type="button" id="btnDeleteCheckAll" class="btn btn-secondary btn-sm"
+                                style="font-size: 0.78rem; padding: 4px 10px;">
+                                Chọn tất cả
+                            </button>
+                            <button type="button" id="btnDeleteUncheckAll" class="btn btn-secondary btn-sm"
+                                style="font-size: 0.78rem; padding: 4px 10px;">
+                                Bỏ chọn
+                            </button>
+                        </div>
+                    </div>
+                    <div id="deleteModalChecklist"
+                        style="max-height: 220px; overflow-y: auto; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 8px; background: #f8fafc; display: flex; flex-direction: column; gap: 6px;">
+                        <!-- Render danh sách camera kèm checkbox qua JS -->
+                    </div>
+                </div>
+
+                <div
+                    style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 14px; display: flex; gap: 10px; align-items: flex-start;">
+                    <i class="fa-solid fa-triangle-exclamation"
+                        style="color: #d97706; font-size: 1.15rem; margin-top: 2px;"></i>
+                    <div style="font-size: 0.82rem; color: #92400e; line-height: 1.45;">
+                        <strong>Cảnh báo:</strong> Việc xóa camera sẽ đồng thời xóa cấu hình vùng nhận diện ROI của lớp
+                        học đó. Thao tác này không thể hoàn tác.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer"
+                style="display: flex; justify-content: flex-end; gap: 10px; padding: 1rem 1.5rem; background: #f8fafc; border-top: 1px solid var(--border-color); border-radius: 0 0 var(--radius) var(--radius);">
+                <button type="button" id="btnCancelDeleteModal" class="btn btn-secondary" style="padding: 8px 18px;">
+                    <i class="fa-solid fa-xmark"></i> Hủy
+                </button>
+                <button type="button" id="btnConfirmDeleteBatch" class="btn btn-danger"
+                    style="padding: 8px 20px; font-weight: 700;">
+                    <i class="fa-solid fa-trash-can"></i> Xác Nhận Xóa
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification Container -->
     <div id="toastContainer" class="toast-container"></div>
 
-    <script type="module" src="js/cameras.js?v=2.5"></script>
+    <script type="module" src="js/cameras.js?v=3.2"></script>
 </body>
 
 </html>
