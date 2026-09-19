@@ -86,3 +86,11 @@ async def save_zalo_config(req: ZaloConfigSaveRequest):
     if req.recipient_user_id is not None:
         settings.ZALO_RECIPIENT_USER_ID = req.recipient_user_id.strip()
     return {"success": True, "message": "Đã cập nhật cấu hình Zalo thành công!"}
+
+@router.post("/clear-history")
+@router.delete("/clear-history")
+async def clear_reports_history(db: Session = Depends(get_db)):
+    """Xóa toàn bộ lịch sử điểm danh để làm mới hệ thống (Endpoint dự phòng cho Reports)."""
+    from backend.api.routers.attendance import clear_attendance_history
+    return await clear_attendance_history(db)
+
