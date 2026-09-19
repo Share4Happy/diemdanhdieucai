@@ -19,26 +19,19 @@ Hệ thống sử dụng trí tuệ nhân tạo (Computer Vision & YOLO) kết h
 ## 2. CẤU TRÚC THƯ MỤC
 ```
 hethongdiemdanh Dieu Cai/
-├── config/                  # Cấu hình hệ thống (RTSP, Database, Cron, Email, Relay)
-├── core/
-│   ├── detector.py          # AI Engine nhận diện đầu người & thân trên
-│   ├── roi_manager.py       # Quản lý mặt nạ Red Zone & Green Zone
-│   ├── rtsp_client.py       # Chụp ảnh 30 camera đồng loạt qua đa luồng
-│   ├── relay_service.py     # Điều khiển Relay đèn LED hồng ngoại
-│   ├── image_enhancer.py    # Xử lý chống ngược sáng và lóa cửa sổ
-│   └── attendance_engine.py # Điều phối toàn bộ quy trình điểm danh
-├── database/                # SQLite / PostgreSQL & Seeder 30 lớp học
-├── dataset/
-│   ├── samples/             # Nơi thả 5 ảnh mẫu và 1 video 15s của trường
-│   └── extracted_frames/    # Khung hình chất lượng cao trích xuất
-├── storage/
-│   ├── captures/            # Ảnh gốc camera: YYYY-MM-DD/Lop_X.jpg
-│   ├── annotated/           # Ảnh AI đối chứng: YYYY-MM-DD/Lop_X_result.jpg
-│   └── reports/             # Báo cáo Excel: YYYY-MM-DD/BaoCaoDiemDanh_*.xlsx
-├── web/                     # Web App (FastAPI + HTML5 Canvas + Inter UI)
-├── app.py                   # Điểm khởi chạy Web Server & API
-├── run.bat                  # File 1-click khởi chạy trên Windows
-├── Dockerfile & docker-compose.yml
+├── backend/                 # Backend REST API (FastAPI, Routers, Schemas)
+├── frontend/                # Giao diện Web Dashboard (HTML5, Canvas ROI, Glassmorphism CSS)
+├── core/                    # AI Engine (YOLOv8, ROI Manager, RTSP Client, CLAHE Enhancer)
+├── services/                # Dịch vụ nền (Lập lịch APScheduler, Xuất Excel, Thông báo Zalo)
+├── config/                  # Cấu hình tập trung (Settings, Logging)
+├── database/                # SQLite / SQLAlchemy & Seeder 30 lớp học
+├── dataset/                 # Ảnh/video mẫu và khung hình trích xuất
+├── models/                  # Trọng số mô hình AI (classroom_best.pt)
+├── storage/                 # Ảnh chụp camera, ảnh đối chứng AI và báo cáo Excel
+├── tests/                   # Bộ kiểm thử tự động
+├── app.py                   # Điểm khởi chạy tương thích ngược
+├── run.bat                  # File 1-click khởi chạy trên Windows (hỗ trợ NVIDIA CUDA)
+├── train_gpu.bat            # File 1-click huấn luyện AI trên GPU
 └── requirements.txt
 ```
 
@@ -48,14 +41,16 @@ hethongdiemdanh Dieu Cai/
 
 ### Cách 1: Chạy trực tiếp trên máy chủ Windows (Khuyến nghị)
 1. Nhấp đúp chuột vào file `run.bat`.
-2. Hệ thống sẽ tự kiểm tra môi trường, khởi tạo CSDL 30 lớp và mở server.
+2. Hệ thống sẽ tự kiểm tra môi trường Python/CUDA, khởi tạo CSDL 30 lớp và mở server.
 3. Mở trình duyệt Web (Chrome, Edge) truy cập:
    - **Bảng điều khiển điểm danh**: `http://localhost:8000`
+   - **Quản lý Camera**: `http://localhost:8000/cameras`
    - **Công cụ vẽ không gian ROI**: `http://localhost:8000/roi-config`
+   - **Báo cáo & Lịch sử**: `http://localhost:8000/reports`
 
-### Cách 2: Triển khai bằng Docker
-```bash
-docker-compose up -d --build
+### Cách 2: Chạy qua dòng lệnh
+```powershell
+python app.py
 ```
 
 ---
