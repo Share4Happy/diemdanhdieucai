@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,13 +9,14 @@
     <link rel="stylesheet" href="css/dashboard.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
     <header class="navbar">
         <div class="nav-brand">
             <div class="logo-badge">ĐC</div>
             <div>
                 <h1>THPT ĐIỀU CẢI - BẢNG ĐIỀU KHIỂN ĐIỂM DANH AI CAMERA</h1>
-                <span>Giám Sát Sĩ Số Tự Động 30 Lớp Học | Tự Động Quét 06:45 Hàng Ngày</span>
+
             </div>
         </div>
         <div class="nav-links">
@@ -30,11 +32,12 @@
         <div class="action-banner">
             <div class="banner-info">
                 <h2 id="sessionTitle">Phiên Điểm Danh Mới Nhất</h2>
-                <p id="sessionSubtitle">Lịch tự động: 06:45 AM (Thứ 2 - Thứ 7) | Trạng thái Camera & Đèn LED sẵn sàng.</p>
+                <p id="sessionSubtitle">Lịch tự động: 06:45 AM (Thứ 2 - Thứ 7) | Trạng thái Camera & Đèn LED sẵn sàng.
+                </p>
             </div>
             <div class="banner-actions">
                 <button id="btnTriggerScan" class="btn btn-primary">
-                    <i class="fa-solid fa-bolt"></i> Quét Điểm Danh Ngay (30 Lớp)
+                    <i class="fa-solid fa-bolt"></i> Quét Điểm Danh
                 </button>
                 <a id="btnDownloadExcel" href="/api/attendance/download-excel" class="btn btn-success" target="_blank">
                     <i class="fa-solid fa-file-excel"></i> Tải Báo Cáo Excel
@@ -93,8 +96,8 @@
                 <button class="filter-pill" data-filter="absent">Có Học Sinh Vắng</button>
             </div>
             <div>
-                <input type="text" id="searchInput" placeholder="Tìm kiếm tên lớp hoặc phòng học..." 
-                       style="padding: 8px 16px; border: 1px solid var(--border-color); border-radius: 20px; font-size: 0.85rem; width: 280px;">
+                <input type="text" id="searchInput" placeholder="Tìm kiếm tên lớp hoặc phòng học..."
+                    style="padding: 8px 16px; border: 1px solid var(--border-color); border-radius: 20px; font-size: 0.85rem; width: 280px;">
             </div>
         </div>
 
@@ -109,14 +112,20 @@
         <div class="modal-content">
             <div class="modal-header" style="flex-wrap: wrap; gap: 12px;">
                 <div>
-                    <h3 id="modalClassTitle" style="font-size: 1.15rem; font-weight: 700; color: #0f172a;">Chi Tiết Đối Chứng Điểm Danh</h3>
-                    <p id="modalClassSub" style="font-size: 0.85rem; color: #475569; font-weight: 600; margin-top: 2px;"></p>
+                    <h3 id="modalClassTitle" style="font-size: 1.15rem; font-weight: 700; color: #0f172a;">Chi Tiết Đối
+                        Chứng Điểm Danh</h3>
+                    <p id="modalClassSub"
+                        style="font-size: 0.85rem; color: #475569; font-weight: 600; margin-top: 2px;"></p>
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center; margin-left: auto;">
-                    <a id="modalBtnEditRoi" href="roi-config.html" class="btn btn-secondary btn-sm" style="font-size: 0.8rem; padding: 6px 12px; font-weight: 600;" title="Mở trang cấu hình tọa độ vùng ROI cho lớp này">
+                    <a id="modalBtnEditRoi" href="roi-config.html" class="btn btn-secondary btn-sm"
+                        style="font-size: 0.8rem; padding: 6px 12px; font-weight: 600;"
+                        title="Mở trang cấu hình tọa độ vùng ROI cho lớp này">
                         <i class="fa-solid fa-draw-polygon" style="color: #2563eb;"></i> Cấu Hình Lại ROI
                     </a>
-                    <button id="modalBtnRescan" class="btn btn-primary btn-sm" style="font-size: 0.8rem; padding: 6px 12px; font-weight: 600;" title="Chạy lại AI nhận diện ngay cho lớp này">
+                    <button id="modalBtnRescan" class="btn btn-primary btn-sm"
+                        style="font-size: 0.8rem; padding: 6px 12px; font-weight: 600;"
+                        title="Chạy lại AI nhận diện ngay cho lớp này">
                         <i class="fa-solid fa-rotate"></i> Quét Lại Lớp Này
                     </button>
                     <button class="modal-close" id="modalClose">&times;</button>
@@ -126,17 +135,22 @@
                 <div class="comparison-view">
                     <div class="view-box" id="btnOpenLightboxRaw" title="Bấm vào để phóng to toàn màn hình">
                         <div class="view-box-header">
-                            <h4 style="font-size: 0.95rem; font-weight: 600;"><i class="fa-solid fa-camera"></i> Ảnh Gốc Camera</h4>
-                            <span class="badge badge-primary"><i class="fa-solid fa-magnifying-glass-plus"></i> Phóng to</span>
+                            <h4 style="font-size: 0.95rem; font-weight: 600;"><i class="fa-solid fa-camera"></i> Ảnh Gốc
+                                Camera</h4>
+                            <span class="badge badge-primary"><i class="fa-solid fa-magnifying-glass-plus"></i> Phóng
+                                to</span>
                         </div>
                         <div class="view-box-img-wrap">
                             <img id="modalRawImg" src="" alt="Ảnh gốc Camera">
                         </div>
                     </div>
-                    <div class="view-box" id="btnOpenLightboxAnnotated" title="Bấm vào để phóng to toàn màn hình soi tracking AI">
+                    <div class="view-box" id="btnOpenLightboxAnnotated"
+                        title="Bấm vào để phóng to toàn màn hình soi tracking AI">
                         <div class="view-box-header">
-                            <h4 style="font-size: 0.95rem; font-weight: 600;"><i class="fa-solid fa-brain"></i> Ảnh AI Đã Phân Tích (Huy Hiệu Số Sắc Nét)</h4>
-                            <span class="badge badge-success"><i class="fa-solid fa-magnifying-glass-plus"></i> Soi tracking</span>
+                            <h4 style="font-size: 0.95rem; font-weight: 600;"><i class="fa-solid fa-brain"></i> Ảnh AI
+                                Đã Phân Tích (Huy Hiệu Số Sắc Nét)</h4>
+                            <span class="badge badge-success"><i class="fa-solid fa-magnifying-glass-plus"></i> Soi
+                                tracking</span>
                         </div>
                         <div class="view-box-img-wrap">
                             <img id="modalAnnotatedImg" src="" alt="Ảnh AI đối chứng">
@@ -151,10 +165,11 @@
     <div class="lightbox-modal" id="lightboxModal">
         <div class="lightbox-header">
             <div class="lightbox-title-wrap">
-                <h3 id="lbClassTitle" class="lightbox-title"><i class="fa-solid fa-brain" style="color: #60a5fa;"></i> Lớp Học - Soi Chi Tiết AI Tracking</h3>
+                <h3 id="lbClassTitle" class="lightbox-title"><i class="fa-solid fa-brain" style="color: #60a5fa;"></i>
+                    Lớp Học - Soi Chi Tiết AI Tracking</h3>
                 <span id="lbClassBadge" class="badge badge-primary" style="font-size: 0.8rem;">Sĩ số chuẩn</span>
             </div>
-            
+
             <div class="lightbox-tools">
                 <button id="lbTabAnnotated" class="lightbox-btn active">
                     <i class="fa-solid fa-brain"></i> Ảnh AI (Tracking)
@@ -163,11 +178,15 @@
                     <i class="fa-solid fa-camera"></i> Ảnh Gốc Camera
                 </button>
                 <div style="width: 1px; height: 24px; background: rgba(255,255,255,0.2); margin: 0 4px;"></div>
-                <button id="btnZoomOut" class="lightbox-btn" title="Thu nhỏ (Lăn chuột xuống)"><i class="fa-solid fa-minus"></i></button>
+                <button id="btnZoomOut" class="lightbox-btn" title="Thu nhỏ (Lăn chuột xuống)"><i
+                        class="fa-solid fa-minus"></i></button>
                 <span id="lbZoomLevel" class="lightbox-zoom-badge">100%</span>
-                <button id="btnZoomIn" class="lightbox-btn" title="Phóng to (Lăn chuột lên)"><i class="fa-solid fa-plus"></i></button>
-                <button id="btnZoomReset" class="lightbox-btn" title="Đặt lại kích thước ban đầu (Phím 0)"><i class="fa-solid fa-rotate-left"></i> Đặt lại</button>
-                <button id="btnLightboxClose" class="lightbox-btn" style="background: rgba(239, 68, 68, 0.3);" title="Đóng (Phím Esc)"><i class="fa-solid fa-xmark"></i></button>
+                <button id="btnZoomIn" class="lightbox-btn" title="Phóng to (Lăn chuột lên)"><i
+                        class="fa-solid fa-plus"></i></button>
+                <button id="btnZoomReset" class="lightbox-btn" title="Đặt lại kích thước ban đầu (Phím 0)"><i
+                        class="fa-solid fa-rotate-left"></i> Đặt lại</button>
+                <button id="btnLightboxClose" class="lightbox-btn" style="background: rgba(239, 68, 68, 0.3);"
+                    title="Đóng (Phím Esc)"><i class="fa-solid fa-xmark"></i></button>
             </div>
         </div>
 
@@ -178,11 +197,14 @@
         </div>
 
         <div class="lightbox-footer">
-            <div><i class="fa-solid fa-computer-mouse"></i> Cuộn chuột để <b>Phóng to / Thu nhỏ</b> • Giữ chuột & kéo để <b>Di chuyển soi từng bàn</b> • Phím <b>Space / Tab</b> đổi ảnh • Phím <b>Esc</b> để đóng</div>
+            <div><i class="fa-solid fa-computer-mouse"></i> Cuộn chuột để <b>Phóng to / Thu nhỏ</b> • Giữ chuột & kéo để
+                <b>Di chuyển soi từng bàn</b> • Phím <b>Space / Tab</b> đổi ảnh • Phím <b>Esc</b> để đóng
+            </div>
             <div>Trường THPT Điều Cải - AI Vision System</div>
         </div>
     </div>
 
     <script type="module" src="js/dashboard.js?v=2.5"></script>
 </body>
+
 </html>

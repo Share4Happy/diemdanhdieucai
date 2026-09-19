@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,13 +9,14 @@
     <link rel="stylesheet" href="css/main.css?v=2.5">
     <link rel="stylesheet" href="css/cameras.css?v=2.5">
 </head>
+
 <body>
     <header class="navbar">
         <div class="nav-brand">
             <div class="logo-badge">ĐC</div>
             <div>
                 <h1>THPT ĐIỀU CẢI - QUẢN LÝ CAMERA & PHÒNG HỌC</h1>
-                <span>Thêm, Sửa, Xóa Nguồn RTSP / Webcam Máy Tính / Video File Phục Vụ Kiểm Thử & Vận Hành</span>
+
             </div>
         </div>
         <div class="nav-links">
@@ -30,7 +32,7 @@
         <div class="action-banner">
             <div class="banner-info">
                 <h2>Trung Tâm Quản Trị Camera & Lớp Học</h2>
-                <p>Hỗ trợ đa dạng nguồn camera: Camera IP RTSP thực của trường, Webcam cá nhân (ID 0, 1, 2...) để test nhanh tại máy tính, hoặc File Video mẫu để mô phỏng.</p>
+
             </div>
             <div class="banner-actions">
                 <button id="btnWebcamBanner" class="btn btn-secondary" title="Xem và cấu hình camera máy tính cá nhân">
@@ -80,16 +82,19 @@
         <!-- Danh Sách Camera -->
         <div class="camera-section">
             <div class="section-header">
-                <h3><i class="fa-solid fa-list-check" style="color: var(--primary);"></i> Danh Sách Camera & Lớp Học</h3>
+                <h3><i class="fa-solid fa-list-check" style="color: var(--primary);"></i> Danh Sách Camera & Lớp Học
+                </h3>
                 <div class="filter-group">
-                    <input type="text" id="filterCameraInput" placeholder="Tìm theo tên lớp, mã, phòng..." class="form-control" style="width: 250px; padding: 6px 12px;">
+                    <input type="text" id="filterCameraInput" placeholder="Tìm theo tên lớp, mã, phòng..."
+                        class="form-control" style="width: 250px; padding: 6px 12px;">
                     <select id="filterSourceSelect" class="form-control" style="width: 140px; padding: 6px 10px;">
                         <option value="ALL">Tất cả nguồn</option>
                         <option value="RTSP">RTSP NVR</option>
                         <option value="WEBCAM">Webcam (0)</option>
                         <option value="FILE">File Video/Ảnh</option>
                     </select>
-                    <button id="btnRefreshList" class="btn btn-secondary btn-sm"><i class="fa-solid fa-rotate-right"></i> Làm Mới</button>
+                    <button id="btnRefreshList" class="btn btn-secondary btn-sm"><i
+                            class="fa-solid fa-rotate-right"></i> Làm Mới</button>
                 </div>
             </div>
 
@@ -123,7 +128,8 @@
             <div class="modal-header">
                 <div>
                     <h3 id="modalTitle" style="font-size: 1.2rem; font-weight: 700;">Thêm Camera / Lớp Học Mới</h3>
-                    <p style="font-size: 0.85rem; color: var(--text-muted);">Cấu hình thông tin lớp học và nguồn hình ảnh cho AI quét</p>
+                    <p style="font-size: 0.85rem; color: var(--text-muted);">Cấu hình thông tin lớp học và nguồn hình
+                        ảnh cho AI quét</p>
                 </div>
                 <button class="modal-close" id="modalCloseBtn">&times;</button>
             </div>
@@ -133,29 +139,37 @@
 
                     <div class="form-grid">
                         <div class="form-group">
-                            <label><i class="fa-solid fa-barcode" style="color: var(--primary);"></i> Mã Lớp / Camera (*):</label>
-                            <input type="text" id="formCode" class="form-control" placeholder="Ví dụ: LOP_10A1" required>
+                            <label><i class="fa-solid fa-barcode" style="color: var(--primary);"></i> Mã Lớp / Camera
+                                (*):</label>
+                            <input type="text" id="formCode" class="form-control" placeholder="Ví dụ: LOP_10A1"
+                                required>
                         </div>
                         <div class="form-group">
-                            <label><i class="fa-solid fa-chalkboard-user" style="color: var(--primary);"></i> Tên Lớp Học (*):</label>
-                            <input type="text" id="formName" class="form-control" placeholder="Ví dụ: Lớp 10A1" required>
+                            <label><i class="fa-solid fa-chalkboard-user" style="color: var(--primary);"></i> Tên Lớp
+                                Học (*):</label>
+                            <input type="text" id="formName" class="form-control" placeholder="Ví dụ: Lớp 10A1"
+                                required>
                         </div>
                     </div>
 
                     <div class="form-grid">
                         <div class="form-group">
-                            <label><i class="fa-solid fa-door-open" style="color: var(--primary);"></i> Phòng Học:</label>
+                            <label><i class="fa-solid fa-door-open" style="color: var(--primary);"></i> Phòng
+                                Học:</label>
                             <input type="text" id="formRoom" class="form-control" placeholder="Ví dụ: Phòng 101">
                         </div>
                         <div class="form-group">
-                            <label><i class="fa-solid fa-users" style="color: var(--primary);"></i> Sĩ Số Chuẩn Của Lớp (*):</label>
-                            <input type="number" id="formStandard" class="form-control" value="40" min="1" max="60" required>
+                            <label><i class="fa-solid fa-users" style="color: var(--primary);"></i> Sĩ Số Chuẩn Của Lớp
+                                (*):</label>
+                            <input type="number" id="formStandard" class="form-control" value="40" min="1" max="60"
+                                required>
                         </div>
                     </div>
 
                     <!-- BỘ CHỌN NGUỒN TẬP TRUNG -->
                     <div class="source-type-selector">
-                        <label style="font-size: 0.88rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                        <label
+                            style="font-size: 0.88rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
                             <i class="fa-solid fa-sliders" style="color: var(--primary);"></i> Chọn Loại Nguồn Hình Ảnh:
                         </label>
                         <div class="source-tabs">
@@ -173,64 +187,85 @@
 
                     <!-- PANEL 1: WEBCAM MÁY TÍNH -->
                     <div id="panelWebcam" class="source-panel">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                             <span style="font-size: 0.85rem; font-weight: 700; color: #1e40af;">
                                 <i class="fa-solid fa-desktop"></i> Các Camera Đang Có Trên Máy Tính Của Bạn:
                             </span>
-                            <button type="button" class="btn btn-secondary btn-sm" id="btnRefreshWebcams" style="padding: 4px 10px; font-size: 0.78rem;">
+                            <button type="button" class="btn btn-secondary btn-sm" id="btnRefreshWebcams"
+                                style="padding: 4px 10px; font-size: 0.78rem;">
                                 <i class="fa-solid fa-rotate-right" id="webcamRefreshIcon"></i> Dò Tìm Lại
                             </button>
                         </div>
-                        
+
                         <div id="webcamListContainer" class="webcam-card-grid">
-                            <div class="webcam-empty-box"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải danh sách camera trên máy...</div>
+                            <div class="webcam-empty-box"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải danh sách
+                                camera trên máy...</div>
                         </div>
 
-                        <div style="margin-top: 10px; font-size: 0.8rem; color: #64748b; display: flex; justify-content: space-between; align-items: center;">
-                            <span><i class="fa-solid fa-circle-info" style="color: #3b82f6;"></i> Bấm vào camera để chọn làm nguồn điểm danh.</span>
-                            <a href="javascript:void(0)" id="linkToggleAdvanced" style="color: #2563eb; font-weight: 600; text-decoration: underline;">Nhập ID tùy chỉnh</a>
+                        <div
+                            style="margin-top: 10px; font-size: 0.8rem; color: #64748b; display: flex; justify-content: space-between; align-items: center;">
+                            <span><i class="fa-solid fa-circle-info" style="color: #3b82f6;"></i> Bấm vào camera để chọn
+                                làm nguồn điểm danh.</span>
+                            <a href="javascript:void(0)" id="linkToggleAdvanced"
+                                style="color: #2563eb; font-weight: 600; text-decoration: underline;">Nhập ID tùy
+                                chỉnh</a>
                         </div>
                     </div>
 
                     <!-- PANEL 2: RTSP NVR TRƯỜNG -->
                     <div id="panelRtsp" class="source-panel" style="display: none;">
                         <div class="preset-badge-group">
-                            <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; align-self: center;">Mẫu nhanh:</span>
-                            <button type="button" class="preset-btn" data-preset="DAHUA"><i class="fa-solid fa-server"></i> Dahua NVR Trường</button>
-                            <button type="button" class="preset-btn" data-preset="HIK"><i class="fa-solid fa-video"></i> Hikvision RTSP</button>
+                            <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; align-self: center;">Mẫu
+                                nhanh:</span>
+                            <button type="button" class="preset-btn" data-preset="DAHUA"><i
+                                    class="fa-solid fa-server"></i> Dahua NVR Trường</button>
+                            <button type="button" class="preset-btn" data-preset="HIK"><i class="fa-solid fa-video"></i>
+                                Hikvision RTSP</button>
                         </div>
                         <div class="form-group" style="margin-top: 8px;">
-                            <label><i class="fa-solid fa-link" style="color: var(--primary);"></i> Đường Dẫn Luồng RTSP:</label>
-                            <input type="text" id="inputRtsp" class="form-control" placeholder="rtsp://admin:matkhau@192.168.10.200:554/cam/realmonitor?channel=1&subtype=0">
+                            <label><i class="fa-solid fa-link" style="color: var(--primary);"></i> Đường Dẫn Luồng
+                                RTSP:</label>
+                            <input type="text" id="inputRtsp" class="form-control"
+                                placeholder="rtsp://admin:matkhau@192.168.10.200:554/cam/realmonitor?channel=1&subtype=0">
                         </div>
                     </div>
 
                     <!-- PANEL 3: FILE VIDEO / ẢNH MẪU -->
                     <div id="panelFile" class="source-panel" style="display: none;">
                         <div class="preset-badge-group">
-                            <button type="button" class="preset-btn" data-preset="FILE_VIDEO"><i class="fa-solid fa-film"></i> Video Mẫu (15s MP4)</button>
-                            <button type="button" class="preset-btn" data-preset="FILE_IMG"><i class="fa-solid fa-image"></i> Ảnh Lớp Học Mẫu (JPG)</button>
+                            <button type="button" class="preset-btn" data-preset="FILE_VIDEO"><i
+                                    class="fa-solid fa-film"></i> Video Mẫu (15s MP4)</button>
+                            <button type="button" class="preset-btn" data-preset="FILE_IMG"><i
+                                    class="fa-solid fa-image"></i> Ảnh Lớp Học Mẫu (JPG)</button>
                         </div>
                         <div class="form-group" style="margin-top: 8px;">
-                            <label><i class="fa-solid fa-folder-open" style="color: var(--primary);"></i> Đường Dẫn File Cục Bộ:</label>
-                            <input type="text" id="inputFile" class="form-control" placeholder="dataset/samples/classroom_sample_15s.mp4">
+                            <label><i class="fa-solid fa-folder-open" style="color: var(--primary);"></i> Đường Dẫn File
+                                Cục Bộ:</label>
+                            <input type="text" id="inputFile" class="form-control"
+                                placeholder="dataset/samples/classroom_sample_15s.mp4">
                         </div>
                     </div>
 
                     <!-- Ô URL ĐƯỢC ĐỒNG BỘ ĐỂ GỬI LÊN SERVER -->
-                    <div id="advancedUrlBox" style="display: none; margin-bottom: 14px; background: #f1f5f9; padding: 12px; border-radius: 8px; border: 1.5px dashed #cbd5e1;">
-                        <label style="font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 6px; display: block;">
+                    <div id="advancedUrlBox"
+                        style="display: none; margin-bottom: 14px; background: #f1f5f9; padding: 12px; border-radius: 8px; border: 1.5px dashed #cbd5e1;">
+                        <label
+                            style="font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 6px; display: block;">
                             <i class="fa-solid fa-code"></i> Đường dẫn nguồn chính thức (Gửi tới hệ thống AI):
                         </label>
-                        <input type="text" id="formRtspUrl" class="form-control" style="font-family: monospace; font-size: 0.88rem;" required>
+                        <input type="text" id="formRtspUrl" class="form-control"
+                            style="font-family: monospace; font-size: 0.88rem;" required>
                     </div>
 
                     <!-- KHỐI ĐIỀU KHIỂN RELAY ĐÈN LED -->
                     <div class="relay-card-box">
                         <div class="relay-header">
                             <div>
-                                <span class="relay-title"><i class="fa-solid fa-lightbulb" style="color: #eab308;"></i> Báo Động Relay Đèn LED</span>
-                                <span class="relay-desc">Tự động kích hoạt chuông / đèn LED cảnh báo khi vắng quá nhiều</span>
+                                <span class="relay-title"><i class="fa-solid fa-lightbulb" style="color: #eab308;"></i>
+                                    Báo Động Relay Đèn LED</span>
+                                <span class="relay-desc">Tự động kích hoạt chuông / đèn LED cảnh báo khi vắng quá
+                                    nhiều</span>
                             </div>
                             <label class="toggle-switch" title="Bật/Tắt kích hoạt camera này">
                                 <input type="checkbox" id="formActive" checked>
@@ -238,8 +273,10 @@
                             </label>
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
-                            <label><i class="fa-solid fa-network-wired" style="color: var(--primary);"></i> Địa Chỉ IP Module Relay (Tùy chọn):</label>
-                            <input type="text" id="formRelayIp" class="form-control" placeholder="Ví dụ: 192.168.10.200 (hoặc để trống nếu chưa dùng)">
+                            <label><i class="fa-solid fa-network-wired" style="color: var(--primary);"></i> Địa Chỉ IP
+                                Module Relay (Tùy chọn):</label>
+                            <input type="text" id="formRelayIp" class="form-control"
+                                placeholder="Ví dụ: 192.168.10.200 (hoặc để trống nếu chưa dùng)">
                         </div>
                     </div>
 
@@ -247,9 +284,11 @@
                     <div class="test-box">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <span style="font-weight: 700; font-size: 0.88rem; color: var(--text-main);">
-                                <i class="fa-solid fa-satellite-dish" style="color: var(--primary);"></i> Kiểm Tra Thông Mạng & Bắt Khung Hình
+                                <i class="fa-solid fa-satellite-dish" style="color: var(--primary);"></i> Kiểm Tra Thông
+                                Mạng & Bắt Khung Hình
                             </span>
-                            <button type="button" id="btnTestStream" class="btn btn-secondary btn-sm" style="font-weight: 600;">
+                            <button type="button" id="btnTestStream" class="btn btn-secondary btn-sm"
+                                style="font-weight: 600;">
                                 <i class="fa-solid fa-play"></i> Kiểm Tra Kết Nối Ngay
                             </button>
                         </div>
@@ -263,7 +302,8 @@
                         <button type="button" id="btnCancelModal" class="btn btn-secondary" style="padding: 8px 18px;">
                             <i class="fa-solid fa-xmark"></i> Hủy
                         </button>
-                        <button type="button" id="btnSaveCamera" class="btn btn-primary" style="padding: 8px 22px; font-weight: 700;">
+                        <button type="button" id="btnSaveCamera" class="btn btn-primary"
+                            style="padding: 8px 22px; font-weight: 700;">
                             <i class="fa-solid fa-floppy-disk"></i> Lưu Camera
                         </button>
                     </div>
@@ -277,13 +317,15 @@
         <div class="modal-content" style="max-width: 800px;">
             <div class="modal-header">
                 <div>
-                    <h3 id="liveViewTitle" style="font-size: 1.2rem; font-weight: 700;">Xem Thử Khung Hình Trực Tiếp</h3>
+                    <h3 id="liveViewTitle" style="font-size: 1.2rem; font-weight: 700;">Xem Thử Khung Hình Trực Tiếp
+                    </h3>
                     <p id="liveViewSubtitle" style="font-size: 0.85rem; color: var(--text-muted);"></p>
                 </div>
                 <button class="modal-close" id="liveViewCloseBtn">&times;</button>
             </div>
             <div class="modal-body" style="text-align: center;">
-                <img id="liveViewImg" src="" alt="Snapshot Camera" style="max-width: 100%; max-height: 480px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                <img id="liveViewImg" src="" alt="Snapshot Camera"
+                    style="max-width: 100%; max-height: 480px; border-radius: 8px; border: 1px solid #cbd5e1;">
             </div>
         </div>
     </div>
@@ -293,4 +335,5 @@
 
     <script type="module" src="js/cameras.js?v=2.5"></script>
 </body>
+
 </html>

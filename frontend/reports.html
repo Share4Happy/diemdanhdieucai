@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,20 +9,22 @@
     <link rel="stylesheet" href="css/main.css?v=2.5">
     <link rel="stylesheet" href="css/reports.css?v=2.5">
 </head>
+
 <body>
     <header class="navbar">
         <div class="nav-brand">
             <div class="logo-badge">ĐC</div>
             <div>
                 <h1>THPT ĐIỀU CẢI - QUẢN LÝ DỮ LIỆU & BÁO CÁO</h1>
-                <span>CSDL PostgreSQL/MySQL/SQLite | Tự Động Hóa Excel (pandas & openpyxl) | Email Hiệu Trưởng</span>
+
             </div>
         </div>
         <div class="nav-links">
             <a href="index.html" class="nav-link"><i class="fa-solid fa-chart-line"></i> Dashboard Điểm Danh</a>
             <a href="cameras.html" class="nav-link"><i class="fa-solid fa-video"></i> Quản Lý Camera</a>
             <a href="roi-config.html" class="nav-link"><i class="fa-solid fa-draw-polygon"></i> Cấu Hình ROI</a>
-            <a href="reports.html" class="nav-link active"><i class="fa-solid fa-file-excel"></i> Quản Lý Dữ Liệu & Báo Cáo</a>
+            <a href="reports.html" class="nav-link active"><i class="fa-solid fa-file-excel"></i> Quản Lý Dữ Liệu & Báo
+                Cáo</a>
         </div>
     </header>
 
@@ -30,11 +33,10 @@
         <div class="action-banner">
             <div class="banner-info">
                 <h2>Trung Tâm Dữ Liệu & Báo Cáo Điểm Danh</h2>
-                <p>Hệ thống tự động lưu trữ thông số điểm danh vào CSDL, xử lý thống kê bằng pandas, định dạng mẫu báo cáo chuẩn bằng openpyxl và phân phối qua email cho Hiệu trưởng.</p>
             </div>
             <div class="banner-actions">
                 <button id="btnExportExcelNow" class="btn btn-primary">
-                    <i class="fa-solid fa-file-arrow-down"></i> Xuất Báo Cáo Excel Tổng Hợp 30 Lớp
+                    <i class="fa-solid fa-file-arrow-down"></i> Xuất Báo Cáo
                 </button>
             </div>
         </div>
@@ -42,10 +44,13 @@
         <!-- PHẦN 1: BẢNG DỮ LIỆU ĐIỂM DANH TRONG CƠ SỞ DỮ LIỆU -->
         <div class="report-section">
             <div class="section-title">
-                <h3><i class="fa-solid fa-database" style="color: var(--primary);"></i> 1. Lưu Trữ Kết Quả Điểm Danh (CSDL)</h3>
+                <h3><i class="fa-solid fa-database" style="color: var(--primary);"></i> 1. Lưu Trữ Kết Quả Điểm Danh
+                    (CSDL)</h3>
                 <div style="display: flex; gap: 10px; align-items: center;">
-                    <input type="text" id="filterDbInput" placeholder="Lọc theo tên lớp hoặc phòng..." class="form-control" style="width: 240px; padding: 6px 12px;">
-                    <button id="btnReloadDb" class="btn btn-secondary btn-sm"><i class="fa-solid fa-rotate-right"></i> Làm Mới</button>
+                    <input type="text" id="filterDbInput" placeholder="Lọc theo tên lớp hoặc phòng..."
+                        class="form-control" style="width: 240px; padding: 6px 12px;">
+                    <button id="btnReloadDb" class="btn btn-secondary btn-sm"><i class="fa-solid fa-rotate-right"></i>
+                        Làm Mới</button>
                 </div>
             </div>
 
@@ -78,11 +83,14 @@
         <!-- PHẦN 2: TỰ ĐỘNG HÓA XUẤT EXCEL (pandas & openpyxl) -->
         <div class="report-section">
             <div class="section-title">
-                <h3><i class="fa-solid fa-file-excel" style="color: #10b981;"></i> 2. Kho Lưu Trữ File Excel Đã Xuất (pandas & openpyxl)</h3>
-                <span style="font-size: 0.85rem; color: var(--text-muted);">Tự động sinh sau mỗi ca quét 06:45 sáng</span>
+                <h3><i class="fa-solid fa-file-excel" style="color: #10b981;"></i> 2. Kho Lưu Trữ File Excel Đã Xuất
+                    (pandas & openpyxl)</h3>
+                <span style="font-size: 0.85rem; color: var(--text-muted);">Tự động sinh sau mỗi ca quét 06:45
+                    sáng</span>
             </div>
             <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
-                Mỗi file Excel bao gồm đầy đủ tiêu đề Trường THPT Điều Cải, tỷ lệ chuyên cần, công thức tự động tính tổng (SUM), highlight màu sắc cảnh báo theo 3 cấp độ (Xanh lá - Vàng cam - Đỏ nhạt) và chữ ký duyệt.
+                Mỗi file Excel bao gồm đầy đủ tiêu đề Trường THPT Điều Cải, tỷ lệ chuyên cần, công thức tự động tính
+                tổng (SUM), highlight màu sắc cảnh báo theo 3 cấp độ (Xanh lá - Vàng cam - Đỏ nhạt) và chữ ký duyệt.
             </p>
             <div class="data-table-container">
                 <table class="custom-table">
@@ -105,20 +113,23 @@
         <!-- PHẦN 3: PHÂN PHỐI BÁO CÁO & GỬI EMAIL HIỆU TRƯỞNG -->
         <div class="report-section">
             <div class="section-title">
-                <h3><i class="fa-solid fa-paper-plane" style="color: #f59e0b;"></i> 3. Phân Phối Báo Cáo & Gửi Email Cho Hiệu Trưởng</h3>
+                <h3><i class="fa-solid fa-paper-plane" style="color: #f59e0b;"></i> 3. Phân Phối Báo Cáo & Gửi Email Cho
+                    Hiệu Trưởng</h3>
                 <span id="emailStatusBadge" class="status-pill" style="background: #fef3c7; color: #b45309;">
                     <i class="fa-solid fa-circle-info"></i> Sẵn sàng cấu hình
                 </span>
             </div>
-            
+
             <div class="form-grid">
                 <div class="form-group">
                     <label><i class="fa-solid fa-envelope"></i> Email Người Nhận (Hiệu Trưởng):</label>
-                    <input type="email" id="principalEmailInput" class="form-control" value="hieutruong@truongdieucai.edu.vn">
+                    <input type="email" id="principalEmailInput" class="form-control"
+                        value="hieutruong@truongdieucai.edu.vn">
                 </div>
                 <div class="form-group">
                     <label><i class="fa-solid fa-folder"></i> Thư Mục Lưu Bản Sao Dùng Chung:</label>
-                    <input type="text" id="internalPathInput" class="form-control" value="storage/reports/latest/" readonly style="background: #f8fafc;">
+                    <input type="text" id="internalPathInput" class="form-control" value="storage/reports/latest/"
+                        readonly style="background: #f8fafc;">
                 </div>
             </div>
 
@@ -133,7 +144,7 @@
         <div class="report-section" style="border-left: 4px solid #0068ff;">
             <div class="section-title">
                 <h3>
-                    <i class="fa-solid fa-comments" style="color: #0068ff;"></i> 
+                    <i class="fa-solid fa-comments" style="color: #0068ff;"></i>
                     3.2. Phân Phối Thông Báo Điểm Danh Qua ZALO (BGH & Giáo Viên)
                 </h3>
                 <span id="zaloStatusBadge" class="status-pill" style="background: #e0f2fe; color: #0369a1;">
@@ -141,7 +152,8 @@
                 </span>
             </div>
             <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.25rem;">
-                Hệ thống tự động gửi tin nhắn tóm tắt sĩ số 30 lớp học và danh sách các lớp có học sinh vắng trực tiếp vào điện thoại Zalo của Ban Giám hiệu ngay sau khi quét lúc 06:48.
+                Hệ thống tự động gửi tin nhắn tóm tắt sĩ số 30 lớp học và danh sách các lớp có học sinh vắng trực tiếp
+                vào điện thoại Zalo của Ban Giám hiệu ngay sau khi quét lúc 06:48.
             </p>
 
             <div class="form-grid" style="margin-bottom: 1rem;">
@@ -154,23 +166,27 @@
                 </div>
                 <div class="form-group">
                     <label><i class="fa-solid fa-link"></i> Zalo Webhook URL / Endpoint:</label>
-                    <input type="text" id="zaloWebhookInput" class="form-control" placeholder="https://webhook.site/... hoặc URL bot Zalo">
+                    <input type="text" id="zaloWebhookInput" class="form-control"
+                        placeholder="https://webhook.site/... hoặc URL bot Zalo">
                 </div>
             </div>
 
             <div class="form-grid" id="zaloOaRow" style="margin-bottom: 1.25rem; display: none;">
                 <div class="form-group">
                     <label><i class="fa-solid fa-key"></i> Zalo OA Access Token:</label>
-                    <input type="password" id="zaloTokenInput" class="form-control" placeholder="Nhập OA Access Token từ Zalo Developers">
+                    <input type="password" id="zaloTokenInput" class="form-control"
+                        placeholder="Nhập OA Access Token từ Zalo Developers">
                 </div>
                 <div class="form-group">
                     <label><i class="fa-solid fa-user"></i> User ID Người Nhận (Hiệu Trưởng / Quản Lý):</label>
-                    <input type="text" id="zaloUserIdInput" class="form-control" placeholder="Ví dụ: 789123456789012345">
+                    <input type="text" id="zaloUserIdInput" class="form-control"
+                        placeholder="Ví dụ: 789123456789012345">
                 </div>
             </div>
 
             <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                <button id="btnSendTestZalo" class="btn btn-primary" style="background: #0068ff; border-color: #0068ff;">
+                <button id="btnSendTestZalo" class="btn btn-primary"
+                    style="background: #0068ff; border-color: #0068ff;">
                     <i class="fa-solid fa-paper-plane"></i> Gửi Thử Tin Nhắn Qua Zalo Ngay
                 </button>
                 <button id="btnSaveZaloConfig" class="btn btn-secondary">
@@ -183,17 +199,20 @@
         <!-- PHẦN 4: THIẾT LẬP KẾT NỐI CSDL -->
         <div class="report-section">
             <div class="section-title">
-                <h3><i class="fa-solid fa-server" style="color: #6366f1;"></i> 4. Cấu Hình Cơ Sở Dữ Liệu (PostgreSQL / MySQL / SQLite)</h3>
+                <h3><i class="fa-solid fa-server" style="color: #6366f1;"></i> 4. Cấu Hình Cơ Sở Dữ Liệu (PostgreSQL /
+                    MySQL / SQLite)</h3>
                 <span id="dbTypeBadge" class="status-pill" style="background: #e0e7ff; color: #4338ca;">
                     <i class="fa-solid fa-database"></i> SQLite (Local Active)
                 </span>
             </div>
             <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
-                Hệ thống hỗ trợ lưu trữ dữ liệu đa năm học trên <strong>PostgreSQL</strong> hoặc <strong>MySQL</strong> của trường học thông qua thư viện SQLAlchemy & psycopg2/pymysql.
+                Hệ thống hỗ trợ lưu trữ dữ liệu đa năm học trên <strong>PostgreSQL</strong> hoặc <strong>MySQL</strong>
+                của trường học thông qua thư viện SQLAlchemy & psycopg2/pymysql.
             </p>
             <div class="form-group" style="margin-bottom: 1rem;">
                 <label>Chuỗi Kết Nối Cơ Sở Dữ Liệu (Database Connection String):</label>
-                <input type="text" id="dbUriInput" class="form-control" value="sqlite:///database/attendance.db" placeholder="Ví dụ: postgresql+psycopg2://admin:pass@192.168.10.10:5432/diemdanh_dieucai">
+                <input type="text" id="dbUriInput" class="form-control" value="sqlite:///database/attendance.db"
+                    placeholder="Ví dụ: postgresql+psycopg2://admin:pass@192.168.10.10:5432/diemdanh_dieucai">
             </div>
             <div style="display: flex; gap: 10px;">
                 <button id="btnSaveDbConfig" class="btn btn-secondary">
@@ -224,4 +243,5 @@
 
     <script type="module" src="js/reports.js?v=2.5"></script>
 </body>
+
 </html>

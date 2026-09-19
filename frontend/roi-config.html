@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,13 +9,14 @@
     <link rel="stylesheet" href="css/main.css?v=2.5">
     <link rel="stylesheet" href="css/roi_config.css?v=2.5">
 </head>
+
 <body>
     <header class="navbar">
         <div class="nav-brand">
             <div class="logo-badge">ĐC</div>
             <div>
                 <h1>THPT ĐIỀU CẢI - THIẾT LẬP KHÔNG GIAN ROI</h1>
-                <span>Hệ Thống Phân Tích Điểm Danh AI Camera (30 Lớp Học)</span>
+
             </div>
         </div>
         <div class="nav-links">
@@ -29,7 +31,7 @@
         <div class="action-banner" style="padding: 0.75rem 1.25rem; margin-bottom: 0.85rem;">
             <div class="banner-info">
                 <h2 style="font-size: 1.15rem; margin-bottom: 2px;">Công Cụ Thiết Lập Tọa Độ Vùng Nhận Diện</h2>
-                <p style="font-size: 0.82rem; margin: 0;">Vẽ đa giác bao quanh bàn học (Red Zone) và bục giảng giáo viên (Green Zone).</p>
+
             </div>
             <div class="banner-actions">
                 <label for="classSelect"><i class="fa-solid fa-chalkboard-user"></i> Chọn Lớp Học:</label>
@@ -48,10 +50,12 @@
         <div class="roi-workspace-card">
             <div class="tool-controls">
                 <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                    <button type="button" id="btnModeRed" class="btn-mode-red active" title="Kích hoạt chế độ vẽ vùng bàn học sinh (AI sẽ đếm người bên trong vùng này)">
+                    <button type="button" id="btnModeRed" class="btn-mode-red active"
+                        title="Kích hoạt chế độ vẽ vùng bàn học sinh (AI sẽ đếm người bên trong vùng này)">
                         <i class="fa-solid fa-vector-square"></i> Vẽ Red Zone (Bàn Học Sinh)
                     </button>
-                    <button type="button" id="btnModeGreen" class="btn-mode-green" title="Kích hoạt chế độ vẽ vùng bục giảng (AI sẽ bỏ qua giáo viên bên trong vùng này)">
+                    <button type="button" id="btnModeGreen" class="btn-mode-green"
+                        title="Kích hoạt chế độ vẽ vùng bục giảng (AI sẽ bỏ qua giáo viên bên trong vùng này)">
                         <i class="fa-solid fa-shield-halved"></i> Vẽ Green Zone (Bục Giảng - Loại Trừ)
                     </button>
                     <button type="button" id="btnFourCorners" title="Tạo nhanh 4 điểm sát đúng 4 góc biên ảnh">
@@ -63,7 +67,8 @@
                     <button type="button" id="btnClearZone" title="Xóa toàn bộ các điểm của vùng đang chọn">
                         <i class="fa-solid fa-trash-can"></i> Xóa Vùng
                     </button>
-                    <button type="button" id="btnRefreshSnapshot" title="Chụp ngay 1 ảnh mới nhất từ luồng camera của lớp học này">
+                    <button type="button" id="btnRefreshSnapshot"
+                        title="Chụp ngay 1 ảnh mới nhất từ luồng camera của lớp học này">
                         <i class="fa-solid fa-camera-rotate"></i> Chụp Lại Camera
                     </button>
 
@@ -78,8 +83,10 @@
                     </div>
                 </div>
                 <div style="display: flex; gap: 10px; font-size: 0.82rem;">
-                    <span class="zone-badge zone-red"><i class="fa-solid fa-circle"></i> Red Zone: AI đếm bên trong</span>
-                    <span class="zone-badge zone-green"><i class="fa-solid fa-circle"></i> Green Zone: Bỏ qua giáo viên</span>
+                    <span class="zone-badge zone-red"><i class="fa-solid fa-circle"></i> Red Zone: AI đếm bên
+                        trong</span>
+                    <span class="zone-badge zone-green"><i class="fa-solid fa-circle"></i> Green Zone: Bỏ qua giáo
+                        viên</span>
                 </div>
             </div>
 
@@ -89,17 +96,24 @@
                     <canvas id="roiCanvas"></canvas>
                 </div>
             </div>
-            
+
             <!-- Thanh trạng thái -->
             <div class="save-status-bar" id="saveStatusBar">
-                <span><i class="fa-solid fa-draw-polygon" style="color: #dc2626;"></i> Red Zone: <strong>Đang nạp...</strong></span>
-                <span><i class="fa-solid fa-shield-halved" style="color: #059669;"></i> Green Zone: <strong>Đang nạp...</strong></span>
-                <span style="color: #475569;"><i class="fa-solid fa-database"></i> Sẵn sàng ghi CSDL & Phân tích AI</span>
+                <span><i class="fa-solid fa-draw-polygon" style="color: #dc2626;"></i> Red Zone: <strong>Đang
+                        nạp...</strong></span>
+                <span><i class="fa-solid fa-shield-halved" style="color: #059669;"></i> Green Zone: <strong>Đang
+                        nạp...</strong></span>
+                <span style="color: #475569;"><i class="fa-solid fa-database"></i> Sẵn sàng ghi CSDL & Phân tích
+                    AI</span>
             </div>
 
-            <div style="margin-top: 0.5rem; color: var(--text-muted); font-size: 0.8rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                <span>💡 <strong>Hướng dẫn:</strong> Nhấp chuột trái để tạo điểm. Kéo điểm chạm sát mép viền/góc (có nam châm tự hút viền). <strong>Chuột phải</strong> để xóa điểm lẻ. Nhấn <strong>Ctrl+Z</strong> để hoàn tác. Bấm <strong>"Bắt 4 Góc Ảnh"</strong> để bao trọn khung hình.</span>
-                <span id="canvasCoords" style="font-weight: 700; color: #1e293b; background: #f1f5f9; padding: 3px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.8rem;">
+            <div
+                style="margin-top: 0.5rem; color: var(--text-muted); font-size: 0.8rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <span>💡 <strong>Hướng dẫn:</strong> Nhấp chuột trái để tạo điểm. Kéo điểm chạm sát mép viền/góc (có nam
+                    châm tự hút viền). <strong>Chuột phải</strong> để xóa điểm lẻ. Nhấn <strong>Ctrl+Z</strong> để hoàn
+                    tác. Bấm <strong>"Bắt 4 Góc Ảnh"</strong> để bao trọn khung hình.</span>
+                <span id="canvasCoords"
+                    style="font-weight: 700; color: #1e293b; background: #f1f5f9; padding: 3px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.8rem;">
                     <i class="fa-solid fa-expand"></i> Độ phân giải: <strong>Tự động</strong>
                 </span>
             </div>
@@ -112,4 +126,5 @@
     <script src="js/roi_canvas.js?v=2.5"></script>
     <script type="module" src="js/roi_config.js?v=2.5"></script>
 </body>
+
 </html>
