@@ -1,0 +1,224 @@
+/* Card Components */
+/* Reusable card styles for THPT Điều Cải Attendance System */
+
+/* Base Card */
+.card {
+  background: var(--card-bg, #ffffff);
+  border-radius: var(--radius, 12px);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05));
+  border: 1px solid var(--border-color, #e2e8f0);
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md, 0 4px 6px -1px rgb(0 0 0 / 0.1));
+}
+
+/* Card Header */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
+}
+
+.card-header h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-main, #1e293b);
+}
+
+.card-header .badge {
+  font-size: 0.75rem;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+/* Card Body */
+.card-body {
+  color: var(--text-main, #1e293b);
+}
+
+/* Card Footer */
+.card-footer {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-color, #e2e8f0);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* KPI Card */
+.kpi-card {
+  background: var(--card-bg, #ffffff);
+  border-radius: var(--radius, 12px);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color, #e2e8f0);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg, 0 10px 15px -3px rgb(0 0 0 / 0.1));
+}
+
+.kpi-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.kpi-icon.primary {
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  color: #2563eb;
+}
+
+.kpi-icon.success {
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+  color: #10b981;
+}
+
+.kpi-icon.warning {
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+  color: #f59e0b;
+}
+
+.kpi-icon.danger {
+  background: linear-gradient(135deg, #fef2f2, #fee2e2);
+  color: #ef4444;
+}
+
+.kpi-label {
+  font-size: 0.8rem;
+  color: var(--text-muted, #64748b);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.kpi-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text-main, #1e293b);
+  margin-bottom: 0.5rem;
+  line-height: 1;
+}
+
+.kpi-change {
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.kpi-change.positive {
+  color: var(--success, #10b981);
+}
+
+.kpi-change.negative {
+  color: var(--danger, #ef4444);
+}
+
+/* Stats Card */
+.stats-card {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
+  border-radius: var(--radius, 12px);
+  padding: 2rem;
+  box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3);
+}
+
+.stats-card h3 {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.stats-card .value {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.stats-card .label {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+/* Image Card */
+.image-card {
+  border-radius: var(--radius, 12px);
+  overflow: hidden;
+  border: 1px solid var(--border-color, #e2e8f0);
+  transition: all 0.2s ease;
+}
+
+.image-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.image-card img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.image-card-body {
+  padding: 1rem;
+  background: var(--card-bg, #ffffff);
+}
+
+.image-card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-main, #1e293b);
+  margin-bottom: 0.5rem;
+}
+
+.image-card-text {
+  font-size: 0.85rem;
+  color: var(--text-muted, #64748b);
+}
+
+/* Empty State Card */
+.empty-card {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: var(--card-bg, #ffffff);
+  border: 2px dashed var(--border-color, #e2e8f0);
+  border-radius: var(--radius, 12px);
+}
+
+.empty-card-icon {
+  font-size: 3rem;
+  color: var(--text-muted, #64748b);
+  margin-bottom: 1rem;
+}
+
+.empty-card h3 {
+  font-size: 1.1rem;
+  color: var(--text-main, #1e293b);
+  margin-bottom: 0.5rem;
+}
+
+.empty-card p {
+  color: var(--text-muted, #64748b);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}

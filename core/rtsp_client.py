@@ -295,29 +295,29 @@ class RTSPCameraClient:
 
         # Cơ chế dự phòng khi chạy thử nghiệm hoặc camera chưa cắm dây
         if frame is None:
-            latest_capture = settings.CAPTURES_DIR / "latest" / f"Lop_{classroom_id}.jpg"
-            if latest_capture.exists():
-                frame = cv2.imread(str(latest_capture))
+            extracted_frames = list((settings.BASE_DIR / "dataset" / "extracted_frames").glob("*.jpg"))
+            if extracted_frames:
+                sample_path = extracted_frames[(classroom_id - 1) % len(extracted_frames)]
+                frame = cv2.imread(str(sample_path))
 
             if frame is None:
-                extracted_frames = list((settings.BASE_DIR / "dataset" / "extracted_frames").glob("*.jpg"))
-                if extracted_frames:
-                    sample_path = extracted_frames[(classroom_id - 1) % len(extracted_frames)]
-                    frame = cv2.imread(str(sample_path))
+                latest_capture = settings.CAPTURES_DIR / "latest" / f"Lop_{classroom_id}.jpg"
+                if latest_capture.exists():
+                    frame = cv2.imread(str(latest_capture))
 
             if frame is None:
                 # Tạo frame fallback 1920x1080
                 frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
                 frame[:] = (220, 220, 220)
 
-            # Đóng dấu thông tin lớp học thực tế
+            # Đóng dấu thông tin lớp học thực tế (tách rời ở dòng 2, không đè lên dòng tiêu đề mẫu)
             now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             cv2.putText(
                 frame,
                 f"CAM {classroom_name} | TIME: {now_str} | CAMERA STREAM",
-                (40, 60),
+                (40, 68),
                 cv2.FONT_HERSHEY_SIMPLEX,
-                1.0,
+                0.75,
                 (0, 0, 200),
                 2
             )

@@ -8,14 +8,14 @@ from config.logging_config import logger
 EXTRACTED_DIR = settings.BASE_DIR / "dataset" / "extracted_frames"
 EXTRACTED_DIR.mkdir(parents=True, exist_ok=True)
 
-def generate_mock_classroom_data():
+def generate_mock_classroom_data(force: bool = False):
     """
     Tạo dữ liệu giả lập 5 ảnh lớp học và 1 video 15s nếu trường học chưa kịp nạp file vào dataset/samples.
     Giúp hệ thống có thể chạy kiểm thử benchmark ngay lập tức.
     """
     logger.info("Đang kiểm tra thư mục dataset/samples...")
     sample_files = list(settings.SAMPLES_DIR.glob("*.*"))
-    if sample_files:
+    if sample_files and not force:
         logger.info(f"Tìm thấy {len(sample_files)} file mẫu do người dùng cung cấp trong {settings.SAMPLES_DIR}")
         return
 
@@ -58,7 +58,7 @@ def generate_mock_classroom_data():
                     student_count += 1
 
         cv2.putText(img, f"CAMERA LOP HOC DIEU CAI - SAMPLE #{i} (Students: {num_students})", 
-                    (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (20, 20, 20), 3)
+                    (40, 35), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (20, 20, 20), 2)
 
         out_path = settings.SAMPLES_DIR / f"classroom_sample_{i}.jpg"
         cv2.imwrite(str(out_path), img)
@@ -80,12 +80,12 @@ def generate_mock_classroom_data():
     out_vid.release()
     logger.info(f"Đã tạo video mẫu 15s: {video_path.name}")
 
-def extract_frames_from_samples(sample_interval: int = 30):
+def extract_frames_from_samples(sample_interval: int = 30, force: bool = False):
     """
     Cắt trích xuất các khung hình chất lượng cao từ 5 ảnh và 1 video trong dataset/samples/
     để làm dữ liệu kiểm thử và đánh giá độ chính xác của AI.
     """
-    generate_mock_classroom_data()
+    generate_mock_classroom_data(force=force)
     
     extracted_count = 0
     logger.info("Bắt đầu trích xuất khung hình từ dataset/samples...")
@@ -127,4 +127,6 @@ def extract_frames_from_samples(sample_interval: int = 30):
     return extracted_count
 
 if __name__ == "__main__":
-    extract_frames_from_samples()
+    import sys
+    force_run = "--force" in sys.argv
+    extract_frames_from_samples(force=force_run)

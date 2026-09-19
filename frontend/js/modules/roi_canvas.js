@@ -22,6 +22,27 @@ class ROICanvasEditor {
         this.canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
         this.canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
         this.canvas.addEventListener('mouseup', () => this.onMouseUp());
+
+        // Hỗ trợ cảm ứng trên điện thoại & máy tính bảng
+        this.canvas.addEventListener('touchstart', (e) => {
+            if (e.touches && e.touches.length === 1) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                this.onMouseDown({ clientX: touch.clientX, clientY: touch.clientY });
+            }
+        }, { passive: false });
+
+        this.canvas.addEventListener('touchmove', (e) => {
+            if (e.touches && e.touches.length === 1) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                this.onMouseMove({ clientX: touch.clientX, clientY: touch.clientY });
+            }
+        }, { passive: false });
+
+        this.canvas.addEventListener('touchend', () => {
+            this.onMouseUp();
+        });
     }
 
     showToast(title, message, isError = false) {
