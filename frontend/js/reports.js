@@ -132,6 +132,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const webhookUrl = document.getElementById('zaloWebhookInput')?.value.trim();
             const token = document.getElementById('zaloTokenInput')?.value.trim();
             const userId = document.getElementById('zaloUserIdInput')?.value.trim();
+            const botKey = document.getElementById('zaloBotKeyInput')?.value.trim();
+            const botId = document.getElementById('zaloBotIdInput')?.value.trim();
+            const botBaseUrl = document.getElementById('zaloBotBaseUrlInput')?.value.trim();
+            const phones = document.getElementById('zaloPhonesInput')?.value.trim();
+            const testPhone = document.getElementById('zaloTestPhoneInput')?.value.trim();
 
             btnZalo.disabled = true;
             btnZalo.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang gửi Zalo...';
@@ -142,15 +147,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     target_type: targetType,
                     webhook_url: webhookUrl || undefined,
                     access_token: token || undefined,
-                    user_id: userId || undefined
+                    user_id: userId || undefined,
+                    api_key: botKey || undefined,
+                    bot_id: botId || undefined,
+                    api_base_url: botBaseUrl || undefined,
+                    phone: testPhone || phones || undefined
                 });
 
                 if (result.success) {
                     if (feedback) feedback.innerHTML = `<span style="color: #16a34a;"><i class="fa-solid fa-check"></i> ${result.message}</span>`;
-                    showToast(result.message, 'success');
+                    if (typeof window.showSuccess === 'function') {
+                        window.showSuccess(result.message, 'Gửi Tin Nhắn Zalo Thành Công');
+                    } else {
+                        showToast(result.message, 'success');
+                    }
                 } else {
                     if (feedback) feedback.innerHTML = `<span style="color: #dc2626;"><i class="fa-solid fa-triangle-exclamation"></i> ${result.message}</span>`;
-                    showToast(result.message, 'error');
+                    if (typeof window.showError === 'function') {
+                        window.showError(result.message, 'Lỗi Gửi Zalo');
+                    } else {
+                        showToast(result.message, 'error');
+                    }
                 }
             } catch (err) {
                 if (feedback) feedback.innerHTML = `<span style="color: #dc2626;">Lỗi: ${err.message || err}</span>`;
@@ -169,6 +186,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const webhookUrl = document.getElementById('zaloWebhookInput')?.value.trim();
             const token = document.getElementById('zaloTokenInput')?.value.trim();
             const userId = document.getElementById('zaloUserIdInput')?.value.trim();
+            const botKey = document.getElementById('zaloBotKeyInput')?.value.trim();
+            const botId = document.getElementById('zaloBotIdInput')?.value.trim();
+            const botBaseUrl = document.getElementById('zaloBotBaseUrlInput')?.value.trim();
+            const phones = document.getElementById('zaloPhonesInput')?.value.trim();
 
             try {
                 const result = await ReportAPI.saveZaloConfig({
@@ -176,12 +197,36 @@ document.addEventListener('DOMContentLoaded', () => {
                     notification_type: targetType,
                     webhook_url: webhookUrl,
                     access_token: token,
-                    recipient_user_id: userId
+                    recipient_user_id: userId,
+                    bot_api_key: botKey,
+                    bot_id: botId,
+                    bot_api_base_url: botBaseUrl,
+                    recipient_phones: phones
                 });
-                alert(result.message);
+                if (typeof window.showSuccess === 'function') {
+                    window.showSuccess(result.message, 'Lưu Cấu Hình Zalo');
+                } else {
+                    showToast(result.message, 'success');
+                }
                 loadZaloStatus();
             } catch (err) {
-                alert('Lỗi lưu cấu hình Zalo: ' + (err.message || err));
+                if (typeof window.showError === 'function') {
+                    window.showError('Lỗi lưu cấu hình Zalo: ' + (err.message || err));
+                } else {
+                    alert('Lỗi lưu cấu hình Zalo: ' + (err.message || err));
+                }
+            }
+        });
+    }
+
+    // Nút mở thư mục báo cáo
+    const btnOpenFolder = document.getElementById('btnOpenFolder');
+    if (btnOpenFolder) {
+        btnOpenFolder.addEventListener('click', () => {
+            if (typeof window.showInfo === 'function') {
+                window.showInfo('Thư mục báo cáo nội bộ được lưu tại: storage/reports/ của dự án.', 'Vị Trí Thư Mục Báo Cáo');
+            } else {
+                alert('Thư mục báo cáo nội bộ được lưu tại: storage/reports/ của dự án.');
             }
         });
     }
@@ -193,6 +238,9 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('imgModal')?.classList.remove('active');
         });
     }
+
+    // Tab Switching Navigation
+    initTabsNavigation();
 });
 
 export async function loadAttendanceHistory() {
@@ -341,6 +389,24 @@ export async function loadZaloStatus() {
             badge.style.background = '#e0f2fe';
             badge.style.color = '#0369a1';
         }
+
+        // Cập nhật các trường Zalo Bot API nếu có
+        if (data.bot_id) {
+            const botIdInput = document.getElementById('zaloBotIdInput');
+            if (botIdInput) botIdInput.value = data.bot_id;
+        }
+        if (data.bot_api_base_url) {
+            const baseUrlInput = document.getElementById('zaloBotBaseUrlInput');
+            if (baseUrlInput) baseUrlInput.value = data.bot_api_base_url;
+        }
+        if (data.recipient_phones) {
+            const phonesInput = document.getElementById('zaloPhonesInput');
+            if (phonesInput) phonesInput.value = data.recipient_phones;
+        }
+        if (data.bot_api_key_masked) {
+            const botKeyInput = document.getElementById('zaloBotKeyInput');
+            if (botKeyInput) botKeyInput.placeholder = data.bot_api_key_masked;
+        }
     } catch (err) {
         console.error("Lỗi nạp trạng thái Zalo:", err);
     }
@@ -349,9 +415,31 @@ export async function loadZaloStatus() {
 export function toggleZaloInputs() {
     const type = document.getElementById('zaloTypeSelect')?.value;
     const oaRow = document.getElementById('zaloOaRow');
+    const botRow = document.getElementById('zaloBotRow');
     if (oaRow) {
         oaRow.style.display = (type === 'OA_API') ? 'grid' : 'none';
     }
+    if (botRow) {
+        botRow.style.display = (type === 'BOT_API') ? 'grid' : 'none';
+    }
+}
+
+export function initTabsNavigation() {
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetTab = button.getAttribute('data-tab');
+
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            button.classList.add('active');
+            const targetEl = document.getElementById(targetTab);
+            if (targetEl) targetEl.classList.add('active');
+        });
+    });
 }
 
 export function showImgModal(src, title) {
@@ -363,3 +451,5 @@ export function showImgModal(src, title) {
 }
 
 window.showImgModal = showImgModal;
+window.initTabsNavigation = initTabsNavigation;
+window.toggleZaloInputs = toggleZaloInputs;
