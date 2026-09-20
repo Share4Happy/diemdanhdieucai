@@ -3,16 +3,16 @@
 
 /* Base Card */
 .card {
-  background: var(--card-bg, #ffffff);
-  border-radius: var(--radius, 12px);
-  padding: 1.5rem;
-  box-shadow: var(--shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05));
-  border: 1px solid var(--border-color, #e2e8f0);
-  transition: all 0.2s ease;
+  background: var(--card-bg);
+  border-radius: var(--card-radius);
+  padding: var(--card-padding);
+  box-shadow: var(--shadow-xs);
+  border: 1px solid var(--border-color);
+  transition: var(--transition-fast);
 }
 
 .card:hover {
-  box-shadow: var(--shadow-md, 0 4px 6px -1px rgb(0 0 0 / 0.1));
+  box-shadow: var(--shadow-sm);
 }
 
 /* Card Header */
@@ -20,34 +20,35 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--border-color, #e2e8f0);
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .card-header h3 {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text-main, #1e293b);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-main);
 }
 
 .card-header .badge {
-  font-size: 0.75rem;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-weight: 600;
+  font-size: var(--font-size-xs);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-lg);
+  font-weight: var(--font-weight-semibold);
 }
 
 /* Card Body */
 .card-body {
-  color: var(--text-main, #1e293b);
+  color: var(--text-main);
+  font-size: var(--font-size-base);
 }
 
 /* Card Footer */
 .card-footer {
-  margin-top: 1rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--border-color, #e2e8f0);
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -55,82 +56,85 @@
 
 /* KPI Card */
 .kpi-card {
-  background: var(--card-bg, #ffffff);
-  border-radius: var(--radius, 12px);
-  padding: 1.5rem;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border-color, #e2e8f0);
-  transition: all 0.2s ease;
+  background: var(--card-bg);
+  border-radius: var(--card-radius);
+  padding: var(--kpi-padding-y) var(--kpi-padding-x);
+  box-shadow: var(--shadow-xs);
+  border: 1px solid var(--border-color);
+  transition: var(--transition-fast);
   cursor: pointer;
+  min-height: 84px;
 }
 
 .kpi-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg, 0 10px 15px -3px rgb(0 0 0 / 0.1));
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
 .kpi-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+  width: var(--kpi-icon-size);
+  height: var(--kpi-icon-size);
+  border-radius: var(--radius);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
+  font-size: var(--font-size-xl);
+  margin-bottom: var(--space-3);
+  flex-shrink: 0;
 }
 
 .kpi-icon.primary {
   background: linear-gradient(135deg, #eff6ff, #dbeafe);
-  color: #2563eb;
+  color: var(--primary);
 }
 
 .kpi-icon.success {
   background: linear-gradient(135deg, #ecfdf5, #d1fae5);
-  color: #10b981;
+  color: var(--success);
 }
 
 .kpi-icon.warning {
   background: linear-gradient(135deg, #fffbeb, #fef3c7);
-  color: #f59e0b;
+  color: var(--warning);
 }
 
 .kpi-icon.danger {
   background: linear-gradient(135deg, #fef2f2, #fee2e2);
-  color: #ef4444;
+  color: var(--danger);
 }
 
 .kpi-label {
-  font-size: 0.8rem;
-  color: var(--text-muted, #64748b);
-  font-weight: 600;
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  font-weight: var(--font-weight-semibold);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 0.5rem;
+  letter-spacing: 0.03em;
+  margin-bottom: var(--space-2);
+  line-height: 1.2;
 }
 
 .kpi-value {
-  font-size: 2rem;
-  font-weight: 800;
-  color: var(--text-main, #1e293b);
-  margin-bottom: 0.5rem;
-  line-height: 1;
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-main);
+  margin-bottom: var(--space-2);
+  line-height: var(--line-height-tight);
 }
 
 .kpi-change {
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .kpi-change.positive {
-  color: var(--success, #10b981);
+  color: var(--success);
 }
 
 .kpi-change.negative {
-  color: var(--danger, #ef4444);
+  color: var(--danger);
 }
 
 /* Stats Card */

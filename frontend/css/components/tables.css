@@ -2,32 +2,32 @@
 /* Reusable table styles for THPT Điều Cải Attendance System */
 
 .table-container {
-  background: var(--card-bg, #ffffff);
-  border-radius: var(--radius, 12px);
-  box-shadow: var(--shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05));
-  border: 1px solid var(--border-color, #e2e8f0);
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
   overflow: hidden;
 }
 
 .table-header {
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid var(--border-color, #e2e8f0);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: var(--space-3);
 }
 
 .table-header h3 {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text-main, #1e293b);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-main);
 }
 
 .table-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--space-2);
   align-items: center;
 }
 
@@ -36,34 +36,34 @@
 }
 
 .table-search input {
-  padding: 8px 12px 8px 36px;
-  border: 1px solid var(--border-color, #e2e8f0);
-  border-radius: 8px;
-  font-size: 0.9rem;
+  padding: var(--space-2) var(--space-3) var(--space-2) 36px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  font-size: var(--font-size-sm);
   outline: none;
   transition: all 0.2s ease;
-  width: 250px;
+  width: 240px;
 }
 
 .table-search input:focus {
-  border-color: var(--primary, #2563eb);
+  border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .table-search::before {
   content: "🔍";
   position: absolute;
-  left: 12px;
+  left: var(--space-3);
   top: 50%;
   transform: translateY(-50%);
-  font-size: 0.9rem;
+  font-size: var(--font-size-sm);
 }
 
-/* Base Table */
+/* Base Table - Optimized for Density */
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: var(--font-size-sm);
 }
 
 thead {
@@ -72,17 +72,17 @@ thead {
 
 thead th {
   text-align: left;
-  padding: 1rem 1.5rem;
-  font-weight: 700;
-  color: var(--text-main, #1e293b);
+  padding: var(--space-2) var(--space-3);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-main);
   text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 0.05em;
-  border-bottom: 2px solid var(--border-color, #e2e8f0);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.03em;
+  border-bottom: 2px solid var(--border-color);
 }
 
 tbody tr {
-  border-bottom: 1px solid var(--border-color, #e2e8f0);
+  border-bottom: 1px solid var(--border-color);
   transition: background 0.15s ease;
 }
 
@@ -95,8 +95,9 @@ tbody tr:last-child {
 }
 
 tbody td {
-  padding: 1rem 1.5rem;
-  color: var(--text-main, #1e293b);
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-main);
+  line-height: 1.4;
 }
 
 /* Sortable Column */
@@ -104,6 +105,7 @@ th.sortable {
   cursor: pointer;
   user-select: none;
   position: relative;
+  padding-right: var(--space-6);
 }
 
 th.sortable:hover {
@@ -113,9 +115,9 @@ th.sortable:hover {
 th.sortable::after {
   content: "⇅";
   position: absolute;
-  right: 8px;
+  right: var(--space-2);
   opacity: 0.3;
-  font-size: 0.8rem;
+  font-size: var(--font-size-xs);
 }
 
 th.sortable.asc::after {
@@ -128,36 +130,36 @@ th.sortable.desc::after {
   opacity: 1;
 }
 
-/* Table Status Badge */
+/* Table Status Badge - Compact */
 .status-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  line-height: 1.5;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.4;
 }
 
 .status-badge.success {
-  background: var(--success-bg, #ecfdf5);
-  color: var(--success, #10b981);
+  background: var(--success-bg);
+  color: var(--success);
 }
 
 .status-badge.warning {
-  background: var(--warning-bg, #fffbeb);
-  color: var(--warning, #f59e0b);
+  background: var(--warning-bg);
+  color: var(--warning);
 }
 
 .status-badge.danger {
-  background: var(--danger-bg, #fef2f2);
-  color: var(--danger, #ef4444);
+  background: var(--danger-bg);
+  color: var(--danger);
 }
 
 .status-badge.info {
-  background: var(--primary-light, #eff6ff);
-  color: var(--primary, #2563eb);
+  background: var(--primary-light);
+  color: var(--primary);
 }
 
 .status-badge.neutral {
@@ -168,70 +170,70 @@ th.sortable.desc::after {
 /* Table Actions Column */
 .table-actions-cell {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-1);
   align-items: center;
 }
 
 .action-btn {
-  padding: 6px 10px;
+  padding: 4px 8px;
   border: none;
   background: transparent;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: all 0.2s ease;
-  font-size: 0.85rem;
-  color: var(--text-muted, #64748b);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
 }
 
 .action-btn:hover {
   background: #f1f5f9;
-  color: var(--text-main, #1e293b);
+  color: var(--text-main);
 }
 
 .action-btn.danger:hover {
-  background: #fef2f2;
-  color: var(--danger, #ef4444);
+  background: var(--danger-bg);
+  color: var(--danger);
 }
 
-/* Pagination */
+/* Pagination - Compact */
 .table-pagination {
-  padding: 1rem 1.5rem;
+  padding: var(--space-3) var(--space-4);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: 1px solid var(--border-color, #e2e8f0);
+  border-top: 1px solid var(--border-color);
 }
 
 .pagination-info {
-  font-size: 0.85rem;
-  color: var(--text-muted, #64748b);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
 }
 
 .pagination-controls {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-1);
 }
 
 .page-btn {
-  padding: 6px 12px;
-  border: 1px solid var(--border-color, #e2e8f0);
+  padding: 4px 10px;
+  border: 1px solid var(--border-color);
   background: white;
   cursor: pointer;
-  border-radius: 6px;
-  font-size: 0.85rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
   transition: all 0.2s ease;
-  color: var(--text-main, #1e293b);
+  color: var(--text-main);
 }
 
 .page-btn:hover:not(:disabled) {
   background: #f8fafc;
-  border-color: var(--primary, #2563eb);
+  border-color: var(--primary);
 }
 
 .page-btn.active {
-  background: var(--primary, #2563eb);
+  background: var(--primary);
   color: white;
-  border-color: var(--primary, #2563eb);
+  border-color: var(--primary);
 }
 
 .page-btn:disabled {
@@ -251,5 +253,13 @@ th.sortable.desc::after {
 
   .table-search input {
     width: 180px;
+  }
+
+  thead th {
+    padding: var(--space-2);
+  }
+
+  tbody td {
+    padding: var(--space-2);
   }
 }
