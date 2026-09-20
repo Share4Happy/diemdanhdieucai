@@ -19,6 +19,7 @@ class Settings(BaseModel):
     ANNOTATED_DIR: Path = BASE_DIR / "storage" / "annotated"
     REPORTS_DIR: Path = BASE_DIR / "storage" / "reports"
     SAMPLES_DIR: Path = BASE_DIR / "dataset" / "samples"
+    CLASSROOMS_MEDIA_DIR: Path = BASE_DIR / "dataset" / "classrooms_media"
     MODELS_DIR: Path = BASE_DIR / "models"
 
     # Database
@@ -87,6 +88,7 @@ for folder in [
     settings.ANNOTATED_DIR,
     settings.REPORTS_DIR,
     settings.SAMPLES_DIR,
+    settings.CLASSROOMS_MEDIA_DIR,
     settings.MODELS_DIR,
     BASE_DIR / "database"
 ]:

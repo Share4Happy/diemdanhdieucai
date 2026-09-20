@@ -16,6 +16,15 @@ class ROIManager:
             return np.array([], dtype=np.int32)
         return np.array(points, dtype=np.int32).reshape((-1, 1, 2))
 
+    @staticmethod
+    def scale_polygon(points: List[List[int]], from_w: int, from_h: int, to_w: int, to_h: int) -> List[List[int]]:
+        """Tự động co dãn tỉ lệ tọa độ đa giác từ độ phân giải cũ sang độ phân giải mới."""
+        if not points or not from_w or not from_h or (from_w == to_w and from_h == to_h):
+            return points
+        sx = to_w / float(from_w)
+        sy = to_h / float(from_h)
+        return [[int(round(p[0] * sx)), int(round(p[1] * sy))] for p in points]
+
     @classmethod
     def create_spatial_mask(
         cls,
@@ -138,26 +147,18 @@ class ROIManager:
         overlay = image.copy()
         output = image.copy()
 
-        # 1. Vẽ Red Zone (Bàn học - Màu đỏ viền dày + phủ hồng nhạt)
+        # 1. Vẽ Red Zone (Bàn học - Đường viền đỏ tinh tế + phủ màu mờ nhẹ)
         if red_zone and len(red_zone) >= 3:
             red_poly = cls.points_to_np(red_zone)
-            cv2.fillPoly(overlay, [red_poly], (50, 50, 220))
-            cv2.polylines(output, [red_poly], True, (0, 0, 255), 3)
-            # Nhãn
-            rx, ry = red_zone[0]
-            cv2.putText(output, "RED ZONE: KHU VUC BAN HOC", (rx, max(30, ry - 10)),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+            cv2.fillPoly(overlay, [red_poly], (40, 40, 200))
+            cv2.polylines(output, [red_poly], True, (0, 0, 235), 2, cv2.LINE_AA)
 
-        # 2. Vẽ Green Zone (Bục giảng - Màu xanh lá viền dày + phủ xanh mờ)
+        # 2. Vẽ Green Zone (Bục giảng - Đường viền xanh lá tinh tế + phủ màu mờ nhẹ)
         if green_zone and len(green_zone) >= 3:
             green_poly = cls.points_to_np(green_zone)
-            cv2.fillPoly(overlay, [green_poly], (50, 200, 50))
-            cv2.polylines(output, [green_poly], True, (0, 255, 0), 3)
-            # Nhãn
-            gx, gy = green_zone[0]
-            cv2.putText(output, "GREEN ZONE: BUC GIANG (LOAI TRU)", (gx, max(30, gy - 10)),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 200, 0), 2)
+            cv2.fillPoly(overlay, [green_poly], (40, 180, 40))
+            cv2.polylines(output, [green_poly], True, (0, 215, 0), 2, cv2.LINE_AA)
 
-        # Trộn mờ
+        # Trộn mờ tinh tế
         cv2.addWeighted(overlay, alpha, output, 1 - alpha, 0, output)
         return output

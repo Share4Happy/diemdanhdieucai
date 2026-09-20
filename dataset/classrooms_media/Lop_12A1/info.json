@@ -1,0 +1,75 @@
+{
+  "class_code": "LOP_12A1",
+  "class_name": "Lớp 12A1",
+  "grade": 12,
+  "room_number": "Phòng 121",
+  "standard_count": 45,
+  "total_images": 5,
+  "total_videos": 1,
+  "video_duration_seconds": 15,
+  "images": [
+    {
+      "file_name": "image_1.jpg",
+      "relative_path": "Lop_12A1/image_1.jpg",
+      "resolution": "1920x1080",
+      "standard_count": 45,
+      "present_count": 45,
+      "absent_count": 0,
+      "timestamp": "06:45:01",
+      "description": "Ảnh 1 - Đầu giờ học sinh đủ 100% sĩ số"
+    },
+    {
+      "file_name": "image_2.jpg",
+      "relative_path": "Lop_12A1/image_2.jpg",
+      "resolution": "1920x1080",
+      "standard_count": 45,
+      "present_count": 44,
+      "absent_count": 1,
+      "timestamp": "06:45:04",
+      "description": "Ảnh 2 - Vắng 1 học sinh dãy bàn cuối"
+    },
+    {
+      "file_name": "image_3.jpg",
+      "relative_path": "Lop_12A1/image_3.jpg",
+      "resolution": "1920x1080",
+      "standard_count": 45,
+      "present_count": 44,
+      "absent_count": 1,
+      "timestamp": "06:45:08",
+      "description": "Ảnh 3 - Vắng 1 học sinh dãy giữa"
+    },
+    {
+      "file_name": "image_4.jpg",
+      "relative_path": "Lop_12A1/image_4.jpg",
+      "resolution": "1920x1080",
+      "standard_count": 45,
+      "present_count": 43,
+      "absent_count": 2,
+      "timestamp": "06:45:11",
+      "description": "Ảnh 4 - Vắng 2 học sinh có phép"
+    },
+    {
+      "file_name": "image_5.jpg",
+      "relative_path": "Lop_12A1/image_5.jpg",
+      "resolution": "1920x1080",
+      "standard_count": 45,
+      "present_count": 45,
+      "absent_count": 0,
+      "timestamp": "06:45:15",
+      "description": "Ảnh 5 - Kiểm tra sĩ số chốt giờ vào lớp"
+    }
+  ],
+  "video": {
+    "file_name": "video_15s.mp4",
+    "relative_path": "Lop_12A1/video_15s.mp4",
+    "duration_seconds": 15,
+    "fps": 15,
+    "total_frames": 225,
+    "resolution": "1920x1080",
+    "standard_count": 45,
+    "present_count": 45,
+    "absent_count": 0,
+    "time_range": "06:45:00 - 06:45:15",
+    "description": "Video giám sát 15s lớp Lớp 12A1 Full HD"
+  }
+}
