@@ -9,6 +9,10 @@ class ZaloTestRequest(BaseModel):
     webhook_url: Optional[str] = None
     access_token: Optional[str] = None
     user_id: Optional[str] = None
+    phone: Optional[str] = None
+    bot_id: Optional[str] = None
+    api_key: Optional[str] = None
+    api_base_url: Optional[str] = None
     session_id: Optional[int] = None
 
 class ZaloConfigSaveRequest(BaseModel):
@@ -17,3 +21,7 @@ class ZaloConfigSaveRequest(BaseModel):
     webhook_url: Optional[str] = ""
     access_token: Optional[str] = ""
     recipient_user_id: Optional[str] = ""
+    bot_api_base_url: Optional[str] = ""
+    bot_id: Optional[str] = ""
+    bot_api_key: Optional[str] = ""
+    recipient_phones: Optional[str] = ""

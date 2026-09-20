@@ -65,7 +65,11 @@ async def send_zalo_report(req: ZaloTestRequest):
             target_type=req.target_type or "WEBHOOK",
             webhook_url=req.webhook_url,
             access_token=req.access_token,
-            user_id=req.user_id
+            user_id=req.user_id,
+            phone=req.phone,
+            bot_id=req.bot_id,
+            api_key=req.api_key,
+            api_base_url=req.api_base_url
         )
     return res
 
@@ -85,6 +89,14 @@ async def save_zalo_config(req: ZaloConfigSaveRequest):
         settings.ZALO_OA_ACCESS_TOKEN = req.access_token.strip()
     if req.recipient_user_id is not None:
         settings.ZALO_RECIPIENT_USER_ID = req.recipient_user_id.strip()
+    if req.bot_api_base_url is not None:
+        settings.ZALO_BOT_API_BASE_URL = req.bot_api_base_url.strip()
+    if req.bot_id is not None:
+        settings.ZALO_BOT_ID = req.bot_id.strip()
+    if req.bot_api_key is not None:
+        settings.ZALO_BOT_API_KEY = req.bot_api_key.strip()
+    if req.recipient_phones is not None:
+        settings.ZALO_RECIPIENT_PHONES = req.recipient_phones.strip()
     return {"success": True, "message": "Đã cập nhật cấu hình Zalo thành công!"}
 
 @router.post("/clear-history")
