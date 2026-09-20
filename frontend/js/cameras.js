@@ -2,14 +2,41 @@
  * cameras.js - Camera Management Page Controller
  * THPT Điều Cải - Attendance System
  */
-import { CameraAPI, showToast, API_BASE } from './api.js?v=2.1';
+import { CameraAPI, showToast, API_BASE } from './api.js?v=4.0';
+
+// Đảm bảo các phương thức NVR luôn tồn tại kể cả khi trình duyệt nạp bản cache api.js cũ
+if (!CameraAPI.probeNVR) {
+    CameraAPI.probeNVR = (data) => fetch(`${API_BASE}/api/cameras/nvr/probe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }).then(r => r.json());
+}
+if (!CameraAPI.batchImportNVR) {
+    CameraAPI.batchImportNVR = (data) => fetch(`${API_BASE}/api/cameras/nvr/batch-import`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }).then(r => r.json());
+}
+if (!CameraAPI.getMatrixWall) {
+    CameraAPI.getMatrixWall = () => fetch(`${API_BASE}/api/cameras/matrix-wall`).then(r => r.json());
+}
+if (!CameraAPI.deleteNVR) {
+    CameraAPI.deleteNVR = (id, deleteCameras = false) => fetch(`${API_BASE}/api/cameras/nvr/${id}?delete_cameras=${deleteCameras}`, { method: 'DELETE' }).then(r => r.json());
+}
+if (typeof window !== 'undefined') {
+    window.CameraAPI = CameraAPI;
+}
 
 let allCameras = [];
 let availableWebcams = [];
 let selectedWebcamId = '0';
 let currentSourceType = 'WEBCAM';
+let currentViewMode = 'TABLE';
+let probedChannels = [];
 
-document.addEventListener('DOMContentLoaded', () => {
+function initApp() {
     loadCameras();
     loadAvailableWebcams();
 
@@ -88,7 +115,58 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const btnConfirmDel = document.getElementById('btnConfirmDeleteBatch');
     if (btnConfirmDel) btnConfirmDel.addEventListener('click', confirmBatchDelete);
-});
+
+    // ==================== VIEW MODE TOGGLES ====================
+    const btnModeTbl = document.getElementById('btnModeTable');
+    if (btnModeTbl) btnModeTbl.addEventListener('click', () => switchViewMode('TABLE'));
+
+    const btnModeMat = document.getElementById('btnModeMatrix');
+    if (btnModeMat) btnModeMat.addEventListener('click', () => switchViewMode('MATRIX'));
+
+    const btnRefMat = document.getElementById('btnRefreshMatrix');
+    if (btnRefMat) btnRefMat.addEventListener('click', loadCameras);
+
+    // ==================== NVR MODAL EVENTS ====================
+    const btnOpenNvr = document.getElementById('btnOpenNvrModal');
+    if (btnOpenNvr) btnOpenNvr.addEventListener('click', openNvrModal);
+
+    const btnCloseNvr = document.getElementById('nvrModalCloseBtn');
+    if (btnCloseNvr) btnCloseNvr.addEventListener('click', closeNvrModal);
+
+    const btnCancelNvr = document.getElementById('btnCancelNvrModal');
+    if (btnCancelNvr) btnCancelNvr.addEventListener('click', closeNvrModal);
+
+    const btnFillPreset = document.getElementById('btnFillSchoolPreset');
+    if (btnFillPreset) btnFillPreset.addEventListener('click', fillSchoolPreset);
+
+    const selectBrand = document.getElementById('nvrBrand');
+    if (selectBrand) {
+        selectBrand.addEventListener('change', () => {
+            const patternBox = document.getElementById('nvrCustomPatternBox');
+            if (patternBox) {
+                patternBox.style.display = (selectBrand.value === 'CUSTOM') ? 'block' : 'none';
+            }
+        });
+    }
+
+    const btnProbe = document.getElementById('btnProbeNVR');
+    if (btnProbe) btnProbe.addEventListener('click', probeNVRChannels);
+
+    const btnSelectAll = document.getElementById('btnSelectAllNvr');
+    if (btnSelectAll) btnSelectAll.addEventListener('click', () => toggleAllNvrChannels(true));
+
+    const btnUnselectAll = document.getElementById('btnUnselectAllNvr');
+    if (btnUnselectAll) btnUnselectAll.addEventListener('click', () => toggleAllNvrChannels(false));
+
+    const btnSaveNvr = document.getElementById('btnSaveNvrImport');
+    if (btnSaveNvr) btnSaveNvr.addEventListener('click', saveNvrImport);
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    initApp();
+}
 
 // Load available webcams
 export async function loadAvailableWebcams(forceRefresh = false) {
@@ -290,6 +368,7 @@ export async function loadCameras() {
         allCameras = data.cameras || [];
         renderKPIs();
         renderTable();
+        renderMatrixWall();
     } catch (err) {
         console.error('Lỗi tải danh sách camera:', err);
         showToast('Không thể tải danh sách camera', 'error');
@@ -332,28 +411,12 @@ function renderTable() {
     });
 
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 2rem; color: var(--text-muted);">Không tìm thấy camera nào phù hợp.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">Không tìm thấy camera nào phù hợp.</td></tr>`;
         return;
     }
 
     filtered.forEach((c, idx) => {
         const tr = document.createElement('tr');
-
-        let sourceBadge = `<span class="badge-source badge-unknown">${c.source_type}</span>`;
-        let displayUrl = (c.rtsp_url && c.rtsp_url.length > 35) ? c.rtsp_url.substring(0, 32) + '...' : c.rtsp_url;
-
-        if (c.source_type === 'WEBCAM') {
-            sourceBadge = `<span class="badge-source badge-webcam"><i class="fa-solid fa-camera"></i> WEBCAM ${c.rtsp_url}</span>`;
-            const matchedWebcam = availableWebcams.find(w => String(w.id) === String(c.rtsp_url));
-            const camName = matchedWebcam ? (matchedWebcam.short_name || matchedWebcam.name) : `Webcam Thiết Bị ${c.rtsp_url}`;
-            displayUrl = `📷 Webcam ${c.rtsp_url}: ${camName}`;
-        } else if (c.source_type === 'FILE') {
-            sourceBadge = `<span class="badge-source badge-file"><i class="fa-solid fa-film"></i> FILE</span>`;
-        } else if (c.source_type === 'RTSP') {
-            sourceBadge = `<span class="badge-source badge-rtsp"><i class="fa-solid fa-server"></i> RTSP</span>`;
-        } else if (c.source_type === 'HTTP') {
-            sourceBadge = `<span class="badge-source badge-http"><i class="fa-solid fa-globe"></i> HTTP</span>`;
-        }
 
         const statusBadge = c.is_active
             ? `<span style="color: #10b981; font-weight: 700;"><i class="fa-solid fa-circle" style="font-size: 0.6rem;"></i> Hoạt động</span>`
@@ -368,8 +431,6 @@ function renderTable() {
             <td><strong>${c.code}</strong></td>
             <td style="font-weight: 600;">${c.name}</td>
             <td>${c.room_number || '--'}</td>
-            <td>${sourceBadge}</td>
-            <td title="${c.rtsp_url || ''}"><code style="font-size: 0.8rem; background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">${displayUrl}</code></td>
             <td><strong>${c.standard_count}</strong> em</td>
             <td>${statusBadge}</td>
             <td>${roiBadge}</td>
@@ -795,6 +856,385 @@ if (inputRtsp) inputRtsp.addEventListener('input', (e) => syncManualUrl(e.target
 const inputFile = document.getElementById('inputFile');
 if (inputFile) inputFile.addEventListener('input', (e) => syncManualUrl(e.target.value));
 
+// ==================== VIEW MODE SWITCHER (TABLE VS MATRIX TV WALL) ====================
+export function switchViewMode(mode) {
+    currentViewMode = mode;
+    const tableContainer = document.getElementById('tableViewContainer');
+    const matrixContainer = document.getElementById('matrixViewContainer');
+    const btnTable = document.getElementById('btnModeTable');
+    const btnMatrix = document.getElementById('btnModeMatrix');
+
+    if (mode === 'MATRIX') {
+        if (tableContainer) tableContainer.style.display = 'none';
+        if (matrixContainer) matrixContainer.style.display = 'block';
+        if (btnTable) btnTable.classList.remove('active');
+        if (btnMatrix) btnMatrix.classList.add('active');
+        renderMatrixWall();
+    } else {
+        if (tableContainer) tableContainer.style.display = 'block';
+        if (matrixContainer) matrixContainer.style.display = 'none';
+        if (btnTable) btnTable.classList.add('active');
+        if (btnMatrix) btnMatrix.classList.remove('active');
+        renderTable();
+    }
+}
+
+// ==================== MATRIX TV WALL RENDERER ====================
+export function renderMatrixWall() {
+    const container = document.getElementById('matrixGrid');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (!allCameras || allCameras.length === 0) {
+        container.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #94a3b8;">
+                <i class="fa-solid fa-video-slash" style="font-size: 2.5rem; margin-bottom: 10px; display: block; color: #475569;"></i>
+                Chưa có camera nào trong hệ thống. Hãy bấm <strong>"Thêm Đầu Ghi (30 Camera)"</strong> để đồng bộ tự động!
+            </div>`;
+        return;
+    }
+
+    const badge = document.getElementById('matrixOnlineBadge');
+    if (badge) {
+        const activeCams = allCameras.filter(c => c.is_active).length;
+        badge.innerText = `${activeCams}/${allCameras.length} Camera Sẵn Sàng`;
+    }
+
+    allCameras.forEach((cam, idx) => {
+        const chNum = cam.channel_number || (idx + 1);
+        const card = document.createElement('div');
+        card.className = 'matrix-card';
+        card.id = `matrix_card_${cam.id}`;
+
+        const snapUrl = `/storage/captures/latest/Lop_${cam.id}.jpg?t=${Date.now()}`;
+        const isOnline = cam.is_active;
+
+        card.innerHTML = `
+            <div class="matrix-card-screen">
+                <img src="${snapUrl}" class="matrix-thumb-img" alt="${cam.name}" 
+                     onerror="this.onerror=null; this.src='dataset/samples/classroom_sample.jpg';">
+                <div class="matrix-osd-top">
+                    <span class="matrix-ch-badge">CH${String(chNum).padStart(2, '0')}</span>
+                    <span class="matrix-status-dot ${isOnline ? '' : 'offline'}" title="${isOnline ? 'Đang kích hoạt' : 'Tạm dừng'}"></span>
+                </div>
+                <div class="matrix-hover-actions">
+                    <button type="button" class="matrix-action-btn view" title="Xem ảnh phóng to" data-id="${cam.id}" data-name="${encodeURIComponent(cam.name)}">
+                        <i class="fa-solid fa-expand"></i>
+                    </button>
+                    <button type="button" class="matrix-action-btn edit" title="Sửa thông tin camera này" data-id="${cam.id}">
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
+                    <button type="button" class="matrix-action-btn roi" title="Vẽ vùng nhận diện ROI" data-id="${cam.id}">
+                        <i class="fa-solid fa-draw-polygon"></i>
+                    </button>
+                    <button type="button" class="matrix-action-btn delete" title="Xóa riêng camera này" data-id="${cam.id}" data-name="${encodeURIComponent(cam.name)}">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="matrix-card-footer">
+                <div class="matrix-footer-meta">
+                    <div class="matrix-class-title" title="${cam.name}">${cam.name}</div>
+                    <div class="matrix-class-room">${cam.room_number || `Phòng ${100 + chNum}`}</div>
+                </div>
+                <span class="matrix-std-pill">${cam.standard_count} HS</span>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+
+    // Attach quick actions inside Matrix cards
+    container.querySelectorAll('.matrix-action-btn.view').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = btn.getAttribute('data-id');
+            const name = decodeURIComponent(btn.getAttribute('data-name'));
+            openLiveModal(id, name);
+        });
+    });
+
+    container.querySelectorAll('.matrix-action-btn.edit').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = parseInt(btn.getAttribute('data-id'));
+            editCamera(id);
+        });
+    });
+
+    container.querySelectorAll('.matrix-action-btn.roi').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = btn.getAttribute('data-id');
+            window.location.href = `roi-config.html?class_id=${id}&refresh=true`;
+        });
+    });
+
+    container.querySelectorAll('.matrix-action-btn.delete').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = parseInt(btn.getAttribute('data-id'));
+            const name = decodeURIComponent(btn.getAttribute('data-name'));
+            deleteCamera(id, name);
+        });
+    });
+}
+
+export function openLiveModal(id, name) {
+    const titleEl = document.getElementById('liveViewTitle');
+    const subEl = document.getElementById('liveViewSubtitle');
+    const imgEl = document.getElementById('liveViewImg');
+
+    if (titleEl) titleEl.innerText = `Khung Hình Camera: ${name}`;
+    if (subEl) subEl.innerText = `Ảnh chụp mới nhất của lớp học ID #${id}`;
+    if (imgEl) {
+        imgEl.src = `/storage/captures/latest/Lop_${id}.jpg?t=${Date.now()}`;
+        imgEl.onerror = () => {
+            imgEl.onerror = null;
+            imgEl.src = 'dataset/samples/classroom_sample.jpg';
+        };
+    }
+    document.getElementById('liveViewModal')?.classList.add('active');
+}
+
+// ==================== SMART NVR IMPORT WIZARD ====================
+export function openNvrModal() {
+    const modal = document.getElementById('nvrModal');
+    if (!modal) {
+        console.error('Không tìm thấy element #nvrModal');
+        return;
+    }
+    const probeResults = document.getElementById('nvrProbeResults');
+    if (probeResults) probeResults.style.display = 'none';
+    const probeLoading = document.getElementById('nvrProbeLoading');
+    if (probeLoading) probeLoading.style.display = 'none';
+    const btnSave = document.getElementById('btnSaveNvrImport');
+    if (btnSave) btnSave.disabled = true;
+    modal.classList.add('active');
+}
+
+export function closeNvrModal() {
+    const modal = document.getElementById('nvrModal');
+    if (modal) modal.classList.remove('active');
+}
+
+export function fillSchoolPreset() {
+    document.getElementById('nvrIp').value = '192.168.10.200';
+    document.getElementById('nvrPort').value = '554';
+    document.getElementById('nvrUsername').value = 'admin';
+    document.getElementById('nvrPassword').value = 'Lhu@2025';
+    document.getElementById('nvrBrand').value = 'DAHUA';
+    document.getElementById('nvrChannelsCount').value = '30';
+    document.getElementById('nvrNamingMode').value = 'DEFAULT_30_CLASSES';
+    const patternBox = document.getElementById('nvrCustomPatternBox');
+    if (patternBox) patternBox.style.display = 'none';
+    showToast('Đã điền cấu hình mẫu THPT Điều Cải!', 'info');
+}
+
+export async function probeNVRChannels() {
+    const ip_address = document.getElementById('nvrIp')?.value.trim();
+    const rtsp_port = parseInt(document.getElementById('nvrPort')?.value) || 554;
+    const username = document.getElementById('nvrUsername')?.value.trim() || 'admin';
+    const password = document.getElementById('nvrPassword')?.value.trim() || '';
+    const brand = document.getElementById('nvrBrand')?.value || 'DAHUA';
+    const channels_count = parseInt(document.getElementById('nvrChannelsCount')?.value) || 30;
+    const naming_mode = document.getElementById('nvrNamingMode')?.value || 'DEFAULT_30_CLASSES';
+    const custom_pattern = document.getElementById('nvrCustomPattern')?.value.trim() || '';
+
+    if (!ip_address) {
+        alert('Vui lòng nhập địa chỉ IP đầu ghi NVR!');
+        return;
+    }
+
+    const loadingEl = document.getElementById('nvrProbeLoading');
+    const resultsEl = document.getElementById('nvrProbeResults');
+    const btnProbe = document.getElementById('btnProbeNVR');
+    const btnSave = document.getElementById('btnSaveNvrImport');
+
+    if (loadingEl) loadingEl.style.display = 'block';
+    if (resultsEl) resultsEl.style.display = 'none';
+    if (btnProbe) {
+        btnProbe.disabled = true;
+        btnProbe.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang quét...';
+    }
+
+    try {
+        const payload = {
+            ip_address,
+            rtsp_port,
+            username,
+            password,
+            brand,
+            channels_count,
+            naming_mode,
+            custom_pattern
+        };
+
+        const res = await CameraAPI.probeNVR(payload);
+        if (!res.success) {
+            throw new Error(res.message || 'Quét NVR không thành công');
+        }
+
+        probedChannels = res.channels || [];
+        renderNvrPreviewCards(probedChannels);
+
+        const summaryEl = document.getElementById('nvrProbeSummary');
+        if (summaryEl) {
+            summaryEl.innerText = `${res.online_channels}/${res.total_channels} Kênh Online (${res.elapsed_seconds}s)`;
+        }
+
+        if (resultsEl) resultsEl.style.display = 'block';
+        if (btnSave) btnSave.disabled = false;
+        showToast(`Quét thành công ${probedChannels.length} kênh camera!`, 'success');
+    } catch (err) {
+        console.error('Lỗi khi thăm dò đầu ghi:', err);
+        alert('Lỗi quét đầu ghi NVR: ' + (err.message || err));
+    } finally {
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (btnProbe) {
+            btnProbe.disabled = false;
+            btnProbe.innerHTML = '<i class="fa-solid fa-satellite-dish"></i> Quét Kênh Camera & Xem Trước Thumbnail';
+        }
+    }
+}
+
+function renderNvrPreviewCards(channels) {
+    const container = document.getElementById('nvrChannelList');
+    if (!container) return;
+    container.innerHTML = '';
+
+    channels.forEach((ch, idx) => {
+        const card = document.createElement('div');
+        card.className = `nvr-ch-card ${ch.is_selected ? 'selected' : ''}`;
+        card.id = `nvr_preview_card_${ch.channel}`;
+
+        const thumbHtml = ch.thumbnail 
+            ? `<img src="${ch.thumbnail}" alt="CH${ch.channel}">`
+            : `<div style="text-align: center; color: #64748b; line-height: 65px;"><i class="fa-solid fa-video"></i></div>`;
+
+        card.innerHTML = `
+            <div style="display: flex; align-items: center;">
+                <input type="checkbox" class="nvr-ch-select" data-ch="${ch.channel}" ${ch.is_selected ? 'checked' : ''} style="width: 17px; height: 17px; cursor: pointer;">
+            </div>
+            <div class="nvr-ch-thumb">
+                ${thumbHtml}
+                <span class="nvr-ch-badge">CH${String(ch.channel).padStart(2, '0')}</span>
+            </div>
+            <div class="nvr-ch-fields">
+                <input type="text" class="nvr-ch-name" data-ch="${ch.channel}" value="${ch.name}" placeholder="Tên lớp (VD: Lớp 10A1)" title="Tên lớp học">
+                <div style="display: flex; gap: 6px;">
+                    <input type="text" class="nvr-ch-room" data-ch="${ch.channel}" value="${ch.room_number || ''}" placeholder="Phòng" style="width: 55%;" title="Số phòng học">
+                    <input type="number" class="nvr-ch-std" data-ch="${ch.channel}" value="${ch.standard_count || 40}" min="1" max="60" style="width: 45%; font-weight: 700;" title="Sĩ số chuẩn">
+                </div>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+
+    // Checkbox toggle sync card border
+    container.querySelectorAll('.nvr-ch-select').forEach(cb => {
+        cb.addEventListener('change', () => {
+            const ch = cb.getAttribute('data-ch');
+            const card = document.getElementById(`nvr_preview_card_${ch}`);
+            if (card) {
+                if (cb.checked) card.classList.add('selected');
+                else card.classList.remove('selected');
+            }
+        });
+    });
+}
+
+export function toggleAllNvrChannels(isSelected) {
+    const container = document.getElementById('nvrChannelList');
+    if (!container) return;
+    container.querySelectorAll('.nvr-ch-select').forEach(cb => {
+        cb.checked = isSelected;
+        const ch = cb.getAttribute('data-ch');
+        const card = document.getElementById(`nvr_preview_card_${ch}`);
+        if (card) {
+            if (isSelected) card.classList.add('selected');
+            else card.classList.remove('selected');
+        }
+    });
+}
+
+export async function saveNvrImport() {
+    const container = document.getElementById('nvrChannelList');
+    if (!container || probedChannels.length === 0) return;
+
+    const selectedChannels = [];
+    probedChannels.forEach(ch => {
+        const chNum = ch.channel;
+        const cb = container.querySelector(`.nvr-ch-select[data-ch="${chNum}"]`);
+        if (cb && cb.checked) {
+            const nameInput = container.querySelector(`.nvr-ch-name[data-ch="${chNum}"]`);
+            const roomInput = container.querySelector(`.nvr-ch-room[data-ch="${chNum}"]`);
+            const stdInput = container.querySelector(`.nvr-ch-std[data-ch="${chNum}"]`);
+
+            selectedChannels.push({
+                channel: ch.channel,
+                code: ch.code,
+                name: nameInput ? nameInput.value.trim() : ch.name,
+                room_number: roomInput ? roomInput.value.trim() : ch.room_number,
+                standard_count: stdInput ? parseInt(stdInput.value) || 40 : ch.standard_count,
+                rtsp_url: ch.rtsp_url,
+                thumbnail: ch.thumbnail || '',
+                is_selected: true
+            });
+        }
+    });
+
+    if (selectedChannels.length === 0) {
+        alert('Vui lòng tích chọn ít nhất 1 kênh camera để lưu!');
+        return;
+    }
+
+    const replace_existing = document.getElementById('nvrReplaceExisting')?.checked ?? true;
+    const ip_address = document.getElementById('nvrIp')?.value.trim();
+    const rtsp_port = parseInt(document.getElementById('nvrPort')?.value) || 554;
+    const username = document.getElementById('nvrUsername')?.value.trim() || 'admin';
+    const password = document.getElementById('nvrPassword')?.value.trim() || '';
+    const brand = document.getElementById('nvrBrand')?.value || 'DAHUA';
+
+    const btnSave = document.getElementById('btnSaveNvrImport');
+    if (btnSave) {
+        btnSave.disabled = true;
+        btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu & khởi tạo ROI 30 camera...';
+    }
+
+    try {
+        const importPayload = {
+            nvr_name: `Đầu Ghi NVR Trường THPT Điều Cải (${ip_address})`,
+            ip_address,
+            rtsp_port,
+            username,
+            password,
+            brand,
+            channels_count: probedChannels.length,
+            replace_existing,
+            channels: selectedChannels
+        };
+
+        const res = await CameraAPI.batchImportNVR(importPayload);
+        if (res.success) {
+            closeNvrModal();
+            showToast(res.message || `Đã nhập thành công ${res.imported_count} camera!`, 'success');
+            await loadCameras();
+            // Chuyển sang màn hình Lưới Ma Trận TV Wall để chiêm ngưỡng kết quả
+            switchViewMode('MATRIX');
+        } else {
+            alert('Lỗi khi lưu camera: ' + (res.message || res.detail));
+        }
+    } catch (err) {
+        console.error('Lỗi lưu đồng bộ NVR:', err);
+        alert('Lỗi kết nối lưu NVR: ' + (err.message || err));
+    } finally {
+        if (btnSave) {
+            btnSave.disabled = false;
+            btnSave.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> Lưu & Đồng Bộ 30 Camera Vào Hệ Thống';
+        }
+    }
+}
+
 // Expose to window for inline attributes if needed
 window.selectWebcam = selectWebcam;
 window.applyPreset = applyPreset;
@@ -802,3 +1242,13 @@ window.switchSourceTab = switchSourceTab;
 window.closeLiveModal = closeLiveModal;
 window.openDeleteModal = openDeleteModal;
 window.closeDeleteModal = closeDeleteModal;
+window.switchViewMode = switchViewMode;
+window.openNvrModal = openNvrModal;
+window.closeNvrModal = closeNvrModal;
+window.fillSchoolPreset = fillSchoolPreset;
+window.probeNVRChannels = probeNVRChannels;
+window.toggleAllNvrChannels = toggleAllNvrChannels;
+window.saveNvrImport = saveNvrImport;
+window.renderMatrixWall = renderMatrixWall;
+
+

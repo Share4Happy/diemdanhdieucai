@@ -61,7 +61,12 @@ export const CameraAPI = {
     getWebcams: (refresh = false) => fetchAPI(`/api/cameras/available-webcams?refresh=${refresh}`),
     getAvailableWebcams: (refresh = false) => fetchAPI(`/api/cameras/available-webcams?refresh=${refresh}`),
     testConnection: (sourceUrl) => fetchAPI('/api/cameras/test-connection', { method: 'POST', body: { source_url: sourceUrl } }),
-    resetDefaults: () => fetchAPI('/api/cameras/reset-defaults', { method: 'POST' })
+    resetDefaults: () => fetchAPI('/api/cameras/reset-defaults', { method: 'POST' }),
+    probeNVR: (data) => fetchAPI('/api/cameras/nvr/probe', { method: 'POST', body: data }),
+    batchImportNVR: (data) => fetchAPI('/api/cameras/nvr/batch-import', { method: 'POST', body: data }),
+    getMatrixWall: () => fetchAPI('/api/cameras/matrix-wall'),
+    listNVRs: () => fetchAPI('/api/cameras/nvr/list'),
+    deleteNVR: (id, deleteCameras = false) => fetchAPI(`/api/cameras/nvr/${id}?delete_cameras=${deleteCameras}`, { method: 'DELETE' })
 };
 
 // === ROI APIs ===
