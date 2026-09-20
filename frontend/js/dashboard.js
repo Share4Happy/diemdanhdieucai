@@ -1,4 +1,4 @@
-import { AttendanceAPI, getMediaUrl, showToast, API_BASE } from './api.js';
+import { AttendanceAPI, getMediaUrl, showToast, API_BASE } from './api.js?v=4.0';
 
 let currentDetails = [];
 let currentFilter = 'all';
@@ -352,12 +352,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnTrigger) {
         btnTrigger.addEventListener('click', async () => {
             btnTrigger.disabled = true;
-            btnTrigger.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang quét 30 camera...';
+            btnTrigger.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang quét...';
 
             try {
                 const result = await AttendanceAPI.triggerScan();
                 if (result.success) {
-                    showToast('✓ Hoàn thành quét điểm danh cho 30 lớp học! Đã tự động xuất file Excel.', 'success');
+                    showToast('✓ Hoàn thành quét điểm danh! Đã tự động xuất file Excel.', 'success');
                     await loadLatestAttendance();
                 } else {
                     showToast('Có lỗi xảy ra: ' + (result.error || 'Lỗi quét'), 'danger');

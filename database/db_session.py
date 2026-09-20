@@ -1,9 +1,9 @@
 import json
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, scoped_session
 from config.settings import settings
 from config.logging_config import logger
-from database.models import Base, Classroom, ROIPolygon
+from database.models import Base, Classroom, ROIPolygon, NVRDevice
 
 engine = create_engine(
     settings.DATABASE_URL,
@@ -22,6 +22,20 @@ def get_db():
 def init_db():
     """Khởi tạo các bảng và tạo sẵn dữ liệu mẫu cho 30 lớp học nếu chưa có."""
     Base.metadata.create_all(bind=engine)
+    
+    # Safe migration for existing SQLite database
+    try:
+        with engine.connect() as conn:
+            columns_res = conn.execute(text("PRAGMA table_info(classrooms)")).fetchall()
+            existing_cols = [row[1] for row in columns_res]
+            if "nvr_id" not in existing_cols:
+                conn.execute(text("ALTER TABLE classrooms ADD COLUMN nvr_id INTEGER"))
+            if "channel_number" not in existing_cols:
+                conn.execute(text("ALTER TABLE classrooms ADD COLUMN channel_number INTEGER"))
+            conn.commit()
+    except Exception as e:
+        logger.debug(f"SQLite migration notice: {e}")
+
     db = SessionLocal()
     try:
         classes_info = [

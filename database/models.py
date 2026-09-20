@@ -5,6 +5,23 @@ from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
 
+class NVRDevice(Base):
+    __tablename__ = "nvr_devices"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), default="Đầu ghi NVR")              # e.g. "Đầu ghi NVR Điều Cải 30 Kênh"
+    ip_address = Column(String(100), nullable=False)                # e.g. "192.168.10.200"
+    rtsp_port = Column(Integer, default=554)
+    http_port = Column(Integer, default=80)
+    username = Column(String(100), default="admin")
+    password = Column(String(100), default="")
+    brand = Column(String(50), default="DAHUA")                    # "DAHUA", "HIKVISION", "UNIVIEW", "CUSTOM"
+    channels_count = Column(Integer, default=30)
+    custom_url_pattern = Column(String(255), default="")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    classrooms = relationship("Classroom", back_populates="nvr")
+
 class Classroom(Base):
     __tablename__ = "classrooms"
 
@@ -16,7 +33,10 @@ class Classroom(Base):
     rtsp_url = Column(String(255), default="")                         # Luồng RTSP
     relay_ip = Column(String(100), default="")                         # IP Relay đèn LED
     is_active = Column(Boolean, default=True)
+    nvr_id = Column(Integer, ForeignKey("nvr_devices.id", ondelete="SET NULL"), nullable=True)
+    channel_number = Column(Integer, nullable=True)
 
+    nvr = relationship("NVRDevice", back_populates="classrooms")
     roi = relationship("ROIPolygon", back_populates="classroom", uselist=False, cascade="all, delete-orphan")
     attendance_details = relationship("AttendanceDetail", back_populates="classroom")
 

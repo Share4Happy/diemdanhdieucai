@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản Lý Camera & Nguồn Test - THPT Điều Cải</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/main.css?v=3.2">
-    <link rel="stylesheet" href="css/cameras.css?v=3.2">
+    <link rel="stylesheet" href="css/main.css?v=4.0">
+    <link rel="stylesheet" href="css/cameras.css?v=4.0">
 </head>
 
 <body>
@@ -41,14 +41,15 @@
                 </div>
             </div>
             <div class="banner-actions">
+                <button id="btnOpenNvrModal" class="btn btn-nvr-magic"
+                    style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-weight: 700; border: none; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35); cursor: pointer;">
+                    <i class="fa-solid fa-server"></i> Thêm Đầu Ghi
+                </button>
                 <button id="btnWebcamBanner" class="btn btn-secondary" title="Xem và cấu hình camera máy tính cá nhân">
                     <i class="fa-solid fa-camera"></i> <span id="webcamBannerText">Webcam máy: Đang dò...</span>
                 </button>
                 <button id="btnOpenAddModal" class="btn btn-primary" style="font-weight: 700;">
                     <i class="fa-solid fa-plus"></i> Thêm Camera / Lớp Học Mới
-                </button>
-                <button id="btnResetDefaults" class="btn btn-secondary">
-                    <i class="fa-solid fa-rotate-left"></i> Khôi Phục 30 Lớp Chuẩn
                 </button>
             </div>
         </div>
@@ -85,14 +86,27 @@
             </div>
         </div>
 
-        <!-- Danh Sách Camera -->
+        <!-- Danh Sách Camera & Lưới Ma Trận TV Wall -->
         <div class="camera-section">
             <div class="section-header">
-                <h3><i class="fa-solid fa-list-check" style="color: var(--primary);"></i> Danh Sách Camera & Lớp Học
-                </h3>
+                <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                    <h3 style="margin: 0;"><i class="fa-solid fa-list-check" style="color: var(--primary);"></i> Quản
+                        Trị & Giám Sát Camera</h3>
+                    <!-- Bộ chuyển đổi chế độ xem -->
+                    <div class="view-mode-bar">
+                        <button type="button" class="view-toggle-btn active" id="btnModeTable"
+                            title="Xem dạng bảng chi tiết">
+                            <i class="fa-solid fa-table-list"></i> Dạng Bảng
+                        </button>
+                        <button type="button" class="view-toggle-btn" id="btnModeMatrix"
+                            title="Xem dạng lưới ma trận TV Wall 30 Camera">
+                            <i class="fa-solid fa-border-all"></i> Lưới Ma Trận TV Wall (30 Kênh)
+                        </button>
+                    </div>
+                </div>
                 <div class="filter-group">
                     <input type="text" id="filterCameraInput" placeholder="Tìm theo tên lớp, mã, phòng..."
-                        class="form-control" style="width: 250px; padding: 6px 12px;">
+                        class="form-control" style="width: 230px; padding: 6px 12px;">
                     <select id="filterSourceSelect" class="form-control" style="width: 140px; padding: 6px 10px;">
                         <option value="ALL">Tất cả nguồn</option>
                         <option value="RTSP">RTSP NVR</option>
@@ -108,7 +122,8 @@
                 </div>
             </div>
 
-            <div class="data-table-container">
+            <!-- CHẾ ĐỘ 1: BẢNG DANH SÁCH CHI TIẾT -->
+            <div class="data-table-container" id="tableViewContainer">
                 <table class="custom-table">
                     <thead>
                         <tr>
@@ -116,8 +131,6 @@
                             <th>Mã Lớp</th>
                             <th>Tên Lớp Học</th>
                             <th>Phòng</th>
-                            <th>Loại Nguồn</th>
-                            <th>Đường Dẫn Camera / Luồng RTSP</th>
                             <th>Sĩ Số</th>
                             <th>Trạng Thái</th>
                             <th>Vùng ROI</th>
@@ -128,6 +141,25 @@
                         <!-- Render qua Javascript -->
                     </tbody>
                 </table>
+            </div>
+
+            <!-- CHẾ ĐỘ 2: LƯỚI MA TRẬN 30 CAMERA (NVR TV WALL) -->
+            <div class="matrix-wall-container" id="matrixViewContainer" style="display: none;">
+                <div class="matrix-header-bar">
+                    <div class="matrix-stats">
+                        <span class="live-dot-pulse"></span>
+                        <span class="matrix-title-text">MÀN HÌNH TIVI GIÁM SÁT TRỰC TUYẾN (30 PHÒNG HỌC THỰC TẾ)</span>
+                        <span class="badge-matrix-count" id="matrixOnlineBadge">30 Camera Sẵn Sàng</span>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn btn-secondary btn-sm" id="btnRefreshMatrix">
+                            <i class="fa-solid fa-rotate-right"></i> Làm Mới Ảnh
+                        </button>
+                    </div>
+                </div>
+                <div class="matrix-grid-30" id="matrixGrid">
+                    <!-- Render 30 camera frames qua JS -->
+                </div>
             </div>
         </div>
     </main>
@@ -412,10 +444,171 @@
         </div>
     </div>
 
+    <!-- MODAL THÊM ĐẦU GHI (NVR) TỰ ĐỘNG 30 CAMERA -->
+    <div class="modal-backdrop" id="nvrModal">
+        <div class="modal-content" style="max-width: 950px; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #064e3b, #047857); color: #fff;">
+                <div>
+                    <h3
+                        style="font-size: 1.25rem; font-weight: 800; display: flex; align-items: center; gap: 8px; color: #fff;">
+                        <i class="fa-solid fa-network-wired"></i> Thêm Đầu Ghi (NVR) - Quét Tự Động 30 Camera
+                    </h3>
+                    <p style="font-size: 0.85rem; color: #d1fae5; margin-top: 2px;">
+                        Nhập IP đầu ghi một lần duy nhất, hệ thống tự động nhận diện và nạp toàn bộ 30 camera vào CSDL
+                    </p>
+                </div>
+                <button class="modal-close" id="nvrModalCloseBtn" style="color: #fff;">&times;</button>
+            </div>
+            <div class="modal-body" style="overflow-y: auto; padding: 1.25rem; flex: 1;">
+                <!-- Bước 1: Thông tin kết nối NVR -->
+                <div class="nvr-config-card">
+                    <div
+                        style="font-size: 0.92rem; font-weight: 700; color: #0f172a; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; justify-content: space-between; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="nvr-step-num">1</span> Thông Số Kết Nối Đầu Ghi (NVR / DVR)
+                        </div>
+                        <button type="button" class="btn btn-secondary btn-sm" id="btnFillSchoolPreset"
+                            title="Điền nhanh cấu hình chuẩn THPT Điều Cải"
+                            style="font-size: 0.8rem; background: #ecfdf5; color: #047857; border-color: #a7f3d0; font-weight: 600;">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Mẫu Chuẩn Điều Cải (192.168.10.200)
+                        </button>
+                    </div>
+
+                    <div class="form-grid" style="grid-template-columns: 2fr 1fr 1.5fr 1.5fr;">
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-server" style="color: var(--primary);"></i> Địa chỉ IP NVR
+                                (*):</label>
+                            <input type="text" id="nvrIp" class="form-control" value="192.168.10.200"
+                                placeholder="192.168.10.200">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-ethernet" style="color: var(--primary);"></i> Cổng
+                                RTSP:</label>
+                            <input type="number" id="nvrPort" class="form-control" value="554">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-user-lock" style="color: var(--primary);"></i> Tài khoản
+                                (*):</label>
+                            <input type="text" id="nvrUsername" class="form-control" value="admin">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-key" style="color: var(--primary);"></i> Mật khẩu (*):</label>
+                            <input type="password" id="nvrPassword" class="form-control" value="Lhu@2025">
+                        </div>
+                    </div>
+
+                    <div class="form-grid" style="grid-template-columns: 1.5fr 1fr 2fr; margin-top: 8px;">
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-microchip" style="color: var(--primary);"></i> Hãng Đầu
+                                Ghi:</label>
+                            <select id="nvrBrand" class="form-control">
+                                <option value="DAHUA" selected>Dahua / KBVision / IMOU</option>
+                                <option value="HIKVISION">Hikvision / Ezviz</option>
+                                <option value="UNIVIEW">Uniview (UNV)</option>
+                                <option value="CUSTOM">Tùy biến (Custom Pattern)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-list-ol" style="color: var(--primary);"></i> Số Kênh:</label>
+                            <input type="number" id="nvrChannelsCount" class="form-control" value="30" min="1" max="64">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-tags" style="color: var(--primary);"></i> Quy Tắc Gán Tên Lớp
+                                Học:</label>
+                            <select id="nvrNamingMode" class="form-control">
+                                <option value="DEFAULT_30_CLASSES" selected>Chuẩn 30 Lớp Điều Cải (10A1 -> 12A10 kèm Sĩ
+                                    Số)</option>
+                                <option value="CHANNEL_NUMBER">Theo Số Kênh (Camera Kênh 1 -> Kênh 30)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="nvrCustomPatternBox" style="display: none; margin-top: 8px;">
+                        <label><i class="fa-solid fa-link"></i> Mẫu URL RTSP Tùy Chỉnh:</label>
+                        <input type="text" id="nvrCustomPattern" class="form-control"
+                            placeholder="rtsp://{user}:{password}@{ip}:{port}/cam/realmonitor?channel={channel}&subtype={subtype}">
+                    </div>
+
+                    <div style="margin-top: 12px; display: flex; justify-content: flex-end;">
+                        <button type="button" id="btnProbeNVR" class="btn btn-primary"
+                            style="font-weight: 700; padding: 9px 24px; background: #059669; border-color: #047857; cursor: pointer;">
+                            <i class="fa-solid fa-satellite-dish"></i> Quét Kênh Camera & Xem Trước Thumbnail
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Trạng thái quét / Loading -->
+                <div id="nvrProbeLoading"
+                    style="display: none; text-align: center; padding: 28px; background: #f8fafc; border-radius: 8px; margin-top: 14px; border: 1.5px dashed #cbd5e1;">
+                    <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2.2rem; color: #059669;"></i>
+                    <p style="margin-top: 10px; font-weight: 700; color: #0f172a; font-size: 1rem;">Đang quét song song
+                        30 kênh từ đầu ghi và chụp ảnh xem trước...</p>
+                    <span style="font-size: 0.84rem; color: #64748b;">(Hệ thống dùng đa luồng quét siêu tốc trong 2-4
+                        giây)</span>
+                </div>
+
+                <!-- Bước 2: Danh sách xem trước 30 Camera -->
+                <div id="nvrProbeResults" style="display: none; margin-top: 16px;">
+                    <div class="nvr-preview-toolbar">
+                        <div
+                            style="font-size: 0.92rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                            <span class="nvr-step-num">2</span> Kết Quả Dò Kênh: <span id="nvrProbeSummary"
+                                style="color: #059669; font-weight: 800;">30/30 Kênh</span>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <button type="button" id="btnSelectAllNvr" class="btn btn-secondary btn-sm"
+                                style="font-size: 0.78rem;">Chọn Tất Cả</button>
+                            <button type="button" id="btnUnselectAllNvr" class="btn btn-secondary btn-sm"
+                                style="font-size: 0.78rem;">Bỏ Chọn Hết</button>
+                        </div>
+                    </div>
+                    <div
+                        style="font-size: 0.82rem; color: #475569; margin-bottom: 12px; background: #f1f5f9; padding: 8px 12px; border-radius: 6px;">
+                        <i class="fa-solid fa-circle-info" style="color: #0284c7;"></i> Bạn có thể chỉnh sửa trực tiếp
+                        <strong>Tên Lớp, Số Phòng</strong> hoặc <strong>Sĩ Số</strong> ngay trên từng ô bên dưới trước
+                        khi lưu:
+                    </div>
+
+                    <div id="nvrChannelList" class="nvr-channels-grid">
+                        <!-- Render 30 kênh xem trước qua JS -->
+                    </div>
+
+                    <div
+                        style="margin-top: 16px; padding: 12px 14px; background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 8px;">
+                        <label
+                            style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.88rem; font-weight: 600; color: #166534; margin: 0;">
+                            <input type="checkbox" id="nvrReplaceExisting" checked style="width: 18px; height: 18px;">
+                            <span>Khởi tạo mới: Thay thế toàn bộ danh sách camera cũ (Khuyến nghị để đồng bộ chuẩn 30
+                                lớp học)</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer"
+                style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; background: #f8fafc; border-top: 1px solid var(--border-color);">
+                <div style="font-size: 0.82rem; color: #64748b;">
+                    <i class="fa-solid fa-shield-halved" style="color: #10b981;"></i> Sau khi lưu, bạn hoàn toàn có thể
+                    <strong>Sửa, Đổi tên, Vẽ ROI hoặc Xóa riêng lẻ từng camera</strong> bất kỳ lúc nào.
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" id="btnCancelNvrModal" class="btn btn-secondary" style="padding: 8px 18px;">
+                        <i class="fa-solid fa-xmark"></i> Hủy
+                    </button>
+                    <button type="button" id="btnSaveNvrImport" class="btn btn-primary"
+                        style="background: #059669; border-color: #047857; font-weight: 700; padding: 8px 24px; cursor: pointer;"
+                        disabled>
+                        <i class="fa-solid fa-cloud-arrow-down"></i> Lưu & Đồng Bộ 30 Camera Vào Hệ Thống
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification Container -->
     <div id="toastContainer" class="toast-container"></div>
 
-    <script type="module" src="js/cameras.js?v=3.2"></script>
+    <script type="module" src="js/cameras.js?v=5.2"></script>
 </body>
 
 </html>
