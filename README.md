@@ -6,43 +6,51 @@
 ![YOLOv8](https://img.shields.io/badge/Ultralytics-YOLOv8-FF7F00?logo=yolo)
 ![PyTorch CUDA](https://img.shields.io/badge/PyTorch-CUDA%20Accelerated-EE4C2C?logo=pytorch)
 ![OpenCV](https://img.shields.io/badge/OpenCV-Computer%20Vision-5C3EE8?logo=opencv)
-![Tests](https://img.shields.io/badge/Tests-13%20Passed-brightgreen)
+![Tests](https://img.shields.io/badge/Tests-25%20Passed-brightgreen)
+![Auth](https://img.shields.io/badge/Auth-JWT%20%2B%20Bcrypt-orange)
 ![License](https://img.shields.io/badge/License-THPT%20Điều%20Cải-green)
 
-Hệ thống điểm danh tự động toàn diện cho **30 lớp học** (tổng quy mô **1.246 học sinh**) tại **Trường THPT Điều Cải** ứng dụng thị giác máy tính AI (**YOLOv8 Custom Fine-tuned**), thuật toán phân vùng không gian đa giác ROI (**Red Zone** - khu vực bàn học / **Green Zone** - khu vực bục giảng giáo viên), kiến trúc phân tầng độc lập (**Frontend Glassmorphism + FastAPI RESTful Backend + SQLite/PostgreSQL Database + AI Training Subsystem**), tích hợp điều khiển Relay đèn LED báo hiệu phần cứng, lập lịch quét tự động lúc **06:45 AM** hàng ngày, tự động xuất báo cáo Excel chuẩn mẫu GD&ĐT và thông báo Zalo tức thời.
+Hệ thống điểm danh tự động toàn diện cho **30 lớp học** (tổng quy mô **1.246 học sinh**) tại **Trường THPT Điều Cải** ứng dụng thị giác máy tính AI (**YOLOv8 Custom Fine-tuned**), thuật toán phân vùng không gian đa giác ROI (**Green Zone** - khu vực bàn học sinh tính sĩ số / **Red Zone** - khu vực bục giảng giáo viên loại trừ), kiến trúc phân tầng độc lập (**Frontend Glassmorphism + FastAPI RESTful Backend + SQLite/PostgreSQL Database + AI Training Subsystem**), **hệ thống xác thực bảo mật JWT + Bcrypt**, tích hợp điều khiển Relay đèn LED báo hiệu phần cứng, lập lịch quét tự động lúc **06:45 AM** hàng ngày, tự động xuất báo cáo Excel chuẩn mẫu GD&ĐT và thông báo Zalo tức thời.
 
 ---
 
 ## 🌟 TÍNH NĂNG NỔI BẬT
 
-1. **AI Đếm Sĩ Số Lớp Học Độ Chính Xác Cao (YOLOv8 Head & Upper Body Detection):**
+1. **🔐 Hệ Thống Xác Thực & Quản Lý Tài Khoản (JWT + Bcrypt):**
+   - Đăng nhập bắt buộc cho tất cả người dùng với JWT token trong HTTP-only cookie.
+   - Phân quyền: **Admin** (quản lý tài khoản) và **Staff** (sử dụng hệ thống).
+   - Tài khoản admin tự động seed từ biến môi trường khi khởi động lần đầu.
+   - Quên mật khẩu qua email SMTP với token có thời hạn 1 giờ.
+   - Chỉ admin có thể tạo tài khoản mới - không có đăng ký công khai.
+
+2. **AI Đếm Sĩ Số Lớp Học Độ Chính Xác Cao (YOLOv8 Head & Upper Body Detection):**
    - Huấn luyện chuyên sâu để nhận diện đỉnh đầu và nửa thân trên học sinh từ camera góc cao lớp học.
    - Nhận diện chính xác học sinh ngồi cúi đầu đọc sách, viết bài hoặc bị bạn ngồi trước che khuất (*Occlusion*).
    - Tích hợp thuật toán **SAHI** (cắt lát ảnh đa tỷ lệ) và cân bằng sáng thích ứng cục bộ **CLAHE** (loại bỏ hoàn toàn hiện tượng ngược sáng và chói lóa từ dãy cửa sổ lớp học).
 
-2. **Phân Vùng Không Gian Đa Giác Độc Lập (Spatial ROI Masking):**
-   - **Red Zone (Khu vực bàn học sinh):** AI chỉ đếm và đánh số thứ tự `#01, #02, #03...` cho học sinh ngồi trong khu vực bàn học.
-   - **Green Zone (Khu vực bục giảng):** Tự động loại trừ 100% người đứng hoặc ngồi tại bục giảng/bàn giáo viên, đảm bảo không bao giờ tính nhầm thầy/cô vào sĩ số học sinh.
+3. **Phân Vùng Không Gian Đa Giác Độc Lập (Spatial ROI Masking):**
+   - **Green Zone (Khu vực bàn học sinh - Phần LẤY):** AI chỉ đếm và đánh số thứ tự `#01, #02, #03...` cho học sinh ngồi trong khu vực bàn học (Binary Mask = 255).
+   - **Red Zone (Khu vực bục giảng - Phần BỎ ĐI):** Tự động loại trừ 100% người đứng hoặc ngồi tại bục giảng/bàn giáo viên, đảm bảo không bao giờ tính nhầm thầy/cô vào sĩ số học sinh (Binary Mask = 0).
    - Công cụ vẽ Canvas trực quan trên Web, hỗ trợ kéo thả đỉnh đa giác và lưu tọa độ riêng biệt cho từng phòng học.
 
-3. **Kiến Trúc Tách Biệt 4 Phân Hệ Độc Lập:**
+4. **Kiến Trúc Tách Biệt 4 Phân Hệ Độc Lập:**
    - Phân chia module rõ ràng: `frontend/`, `backend/`, `database/`, `training/`.
    - Mỗi phân hệ có tài liệu quy chuẩn riêng, cho phép phân chia lập trình viên làm việc song song mà không gây xung đột mã nguồn.
 
-4. **Trình Soi Chi Tiết AI Tracking (Interactive Lightbox Zoom & Pan):**
+5. **Trình Soi Chi Tiết AI Tracking (Interactive Lightbox Zoom & Pan):**
    - Bấm vào ảnh lớp học để mở trình xem ảnh toàn màn hình với hiệu ứng kính mờ (*Glassmorphism*).
    - Hỗ trợ cuộn chuột zoom từ 60% đến 500%, kéo chuột rê ảnh (*Pan*) để soi rõ từng vị trí học sinh.
    - Nút chuyển đổi nhanh đối chứng trực tiếp giữa **Ảnh AI phân tích** và **Ảnh gốc Camera**.
 
-5. **Quản Lý Camera Toàn Diện & Live Snapshot / Webcam:**
+6. **Quản Lý Camera Toàn Diện & Live Snapshot / Webcam:**
    - Hỗ trợ đa dạng nguồn cấp: Camera IP RTSP (Hikvision, Dahua, Uniview,...), Webcam máy tính (DirectShow), File video/ảnh mô phỏng.
    - Kiểm tra kết nối mạng TCP nhanh và xem trước ảnh trực tiếp (*Live Snapshot*) tức thì trước khi lưu cấu hình.
 
-6. **Tự Động Hóa Vận Hành & Báo Cáo Thông Minh:**
+7. **Tự Động Hóa Vận Hành & Báo Cáo Thông Minh:**
    - Lập lịch tự động quét lúc **06:45 AM** hàng ngày (Thứ 2 đến Thứ 7) qua **APScheduler**.
    - Tích hợp điều khiển mạch **Relay** đóng/ngắt đèn LED báo hiệu khi chu trình quét diễn ra.
    - Tự động xuất file báo cáo **Excel (.xlsx)** định dạng chuẩn của Sở GD&ĐT.
-   - Gửi thông báo kết quả tức thời qua **Zalo Webhook / Zalo Official Account**.
+   - Gửi thông báo kết quả tức thời qua **Zalo Bot Gateway** (khuyến nghị) hoặc Zalo Official Account.
 
 ---
 
@@ -55,17 +63,25 @@ hethongdiemdanh Dieu Cai/
 │
 ├── 🎨 frontend/                     # [PHÂN HỆ FRONTEND] Giao diện người dùng Web Dashboard
 │   ├── index.html                  # Dashboard giám sát điểm danh thời gian thực 30 lớp
+│   ├── login.html                  # Trang đăng nhập (JWT + HTTP-only cookie)
+│   ├── forgot-password.html        # Quên mật khẩu (gửi email SMTP)
+│   ├── reset-password.html         # Đặt lại mật khẩu mới
+│   ├── users.html                  # Quản lý tài khoản (chỉ admin)
 │   ├── cameras.html                # Quản lý danh sách & kiểm tra kết nối Camera/Webcam
 │   ├── roi-config.html             # Công cụ vẽ phân vùng đa giác ROI (HTML5 Canvas)
 │   ├── reports.html                # Bảng tra cứu lịch sử & xuất báo cáo Excel, gửi Zalo
+│   ├── notifications.html          # Cấu hình kênh thông báo Zalo Bot Gateway & SMTP Email
 │   ├── css/                        # Hệ thống CSS Glassmorphism & Responsive layout
 │   ├── js/                         # API Client trung tâm (api.js) và logic các màn hình
+│   │   └── shared/auth-guard.js    # Bảo vệ trang app, yêu cầu đăng nhập
+│   ├── README.md                   # Sổ tay chi tiết kiến trúc phân hệ Frontend
 │   └── README_FRONTEND.md          # Sổ tay quy chuẩn dành cho lập trình viên Frontend
 │
 ├── ⚙️ backend/                      # [PHÂN HỆ BACKEND] Máy chủ REST API & Xử lý nghiệp vụ
 │   ├── main.py                     # Khởi động FastAPI, cấu hình CORS, mount Static files
 │   ├── system_check.py             # Script kiểm tra sức khỏe và tiến độ toàn hệ thống
 │   ├── api/routers/                # Bộ định tuyến RESTful API:
+│   │   ├── auth.py                 # /api/auth: Đăng nhập, quên mật khẩu, quản lý user
 │   │   ├── attendance.py           # /api/attendance: Quét điểm danh & phiên làm việc
 │   │   ├── cameras.py              # /api/cameras: Quản lý Camera, snapshot live test
 │   │   ├── roi.py                  # /api/roi: Tọa độ ROI đa giác, test nhận diện tức thì
@@ -75,8 +91,8 @@ hethongdiemdanh Dieu Cai/
 │   └── README_BACKEND.md           # Hướng dẫn phát triển API & Swagger Interactive Docs
 │
 ├── 🗄️ database/                     # [PHÂN HỆ DATABASE] Cơ sở dữ liệu quan hệ
-│   ├── models.py                   # SQLAlchemy ORM Models (Classroom, ROIPolygon, Camera,...)
-│   ├── db_session.py               # Quản lý kết nối Session & Khởi tạo sẵn 30 lớp học
+│   ├── models.py                   # SQLAlchemy ORM Models (Classroom, User, PasswordResetToken,...)
+│   ├── db_session.py               # Quản lý kết nối Session & Seed admin khởi tạo
 │   ├── attendance.db               # Tệp tin CSDL SQLite chính thức
 │   └── README_DATABASE.md          # Sơ đồ thực thể quan hệ (ERD) & Quy chuẩn CSDL
 │
@@ -92,15 +108,16 @@ hethongdiemdanh Dieu Cai/
 │   ├── detector.py                 # AI YOLOv8 nhận diện đỉnh đầu + SAHI + CLAHE
 │   ├── attendance_engine.py        # Điều phối quét điểm danh đồng loạt 30 lớp học
 │   ├── rtsp_client.py              # Thu nhận luồng hình ảnh đa luồng (RTSP/Webcam/File)
-│   ├── roi_manager.py              # Thuật toán Point-in-Polygon lọc khu vực Red/Green Zone
+│   ├── roi_manager.py              # Thuật toán Point-in-Polygon lọc khu vực Green (Lấy) / Red (Bỏ đi)
 │   ├── relay_service.py            # Điều khiển phần cứng Relay đèn LED báo hiệu
 │   └── image_enhancer.py           # Bộ cân bằng sáng cục bộ CLAHE
 │
 ├── 🔌 services/                     # [DỊCH VỤ NGOẠI VI] Tự động hóa & Báo cáo
+│   ├── auth_service.py             # JWT, Bcrypt, seed admin tự động
 │   ├── scheduler.py                # Lập lịch điểm danh tự động 06:45 AM (APScheduler)
 │   ├── excel_exporter.py           # Xuất báo cáo Excel chuẩn hóa theo mẫu GD&ĐT
-│   ├── zalo_service.py             # Tích hợp gửi tin nhắn Zalo Webhook / OA
-│   └── notification.py             # Quản lý kênh thông báo Email
+│   ├── zalo_service.py             # Tích hợp gửi tin nhắn Zalo Bot Gateway / OA (khuyến nghị Bot Gateway)
+│   └── notification.py             # Quản lý kênh thông báo Email (gửi mail reset password)
 │
 ├── 📁 dataset/                      # Kho dữ liệu hình ảnh, video & cấu hình huấn luyện
 │   ├── classroom.yaml              # Cấu hình dataset cho YOLOv8
@@ -138,7 +155,7 @@ Dự án được thiết kế giúp các thành viên trong nhóm làm việc �
 | Vai Trò | Thư Mục Phụ Trách | Trách Nhiệm Chính | Lệnh Chạy Riêng |
 | :--- | :--- | :--- | :--- |
 | **Frontend Dev** | `frontend/` | Thiết kế giao diện Glassmorphism, đồ thị Chart.js, công cụ vẽ Canvas ROI, gọi REST API qua `api.js`. | `run_frontend.bat` (Cổng 3000) |
-| **Backend Dev** | `backend/`, `core/`, `services/` | Xây dựng REST API FastAPI, tích hợp AI YOLOv8, Relay, Excel, Zalo, APScheduler, viết Pytest. | `run_backend.bat` (Cổng 8000, Swagger `/docs`) |
+| **Backend Dev** | `backend/`, `core/`, `services/` | Xây dựng REST API FastAPI, tích hợp AI YOLOv8, Relay, Excel, Zalo Bot Gateway, APScheduler, viết Pytest. | `run_backend.bat` (Cổng 8000, Swagger `/docs`) |
 | **Database Dev** | `database/` | Thiết kế mô hình ORM `models.py`, quản lý session `db_session.py`, nạp sẵn 30 lớp học và sao lưu. | `python -c "from database.db_session import init_db; init_db()"` |
 | **AI Engineer** | `training/`, `dataset/` | Tiền xử lý dữ liệu, gán nhãn, fine-tuning YOLOv8 trên GPU RTX, đánh giá mAP và xuất mô hình. | `training\train_gpu.bat` |
 | **Project Manager** | Toàn bộ dự án | Kiểm tra tiến độ phân hệ, tính toàn vẹn CSDL, trạng thái GPU và các kịch bản kiểm thử. | `xem_tien_do.bat` |
@@ -210,6 +227,14 @@ xem_tien_do.bat
 ```
 Hiển thị tức thì: Trạng thái 4 phân hệ, CSDL 30 lớp, bộ dữ liệu hình ảnh/video, GPU và kết quả kiểm thử.
 
+### 4. Thông Tin Đăng Nhập Mặc Định:
+
+| Thuộc tính | Giá trị cấu hình | Mô tả |
+| :--- | :--- | :--- |
+| **Email Quản trị** | `admin@truongdieucai.edu.vn` | Tự động tạo khi khởi động lần đầu (hoặc từ `.env`) |
+| **Mật khẩu** | `Admin@2025` | Thiết lập trong biến môi trường `.env` (`ADMIN_PASSWORD`) |
+| **Quyền hạn** | `admin` | Toàn quyền cấu hình camera, vẽ ROI, tạo tài khoản và phân quyền |
+
 ---
 
 ## 🌐 DANH MỤC ĐỊA CHỈ TRUY CẬP
@@ -218,10 +243,13 @@ Sau khi khởi chạy hệ thống, mở trình duyệt tại:
 
 | Giao diện / Chức năng | Địa chỉ (URL) | Mô tả chi tiết |
 | :--- | :--- | :--- |
+| **🔐 Đăng Nhập Hệ Thống** | [http://localhost:8000/login](http://localhost:8000/login) | Màn hình đăng nhập xác thực JWT & quản lý phiên làm việc |
 | **📊 Dashboard Điểm Danh** | [http://localhost:8000](http://localhost:8000) | Giám sát sĩ số thời gian thực 30 lớp, xem ảnh AI đối chứng, kích hoạt quét thủ công |
 | **📷 Quản Lý Camera** | [http://localhost:8000/cameras](http://localhost:8000/cameras) | Thêm, sửa, kiểm tra kết nối RTSP/Webcam, xem trước Live Snapshot trực tiếp |
-| **📐 Cấu Hình Vùng ROI** | [http://localhost:8000/roi-config](http://localhost:8000/roi-config) | Công cụ vẽ Canvas Red Zone (Bàn học) và Green Zone (Bục giảng giáo viên) |
-| **📑 Báo Cáo & Dữ Liệu** | [http://localhost:8000/reports](http://localhost:8000/reports) | Tra cứu lịch sử theo ngày/lớp, tải file Excel chuẩn Sở GD&ĐT, bắn tin Zalo |
+| **📐 Cấu Hình Vùng ROI** | [http://localhost:8000/roi-config](http://localhost:8000/roi-config) | Công cụ vẽ Canvas Green Zone (Bàn học sinh - LẤY) và Red Zone (Bục giảng - BỎ ĐI) |
+| **📑 Báo Cáo & Dữ Liệu** | [http://localhost:8000/reports](http://localhost:8000/reports) | Tra cứu lịch sử theo ngày/lớp, xem Lightbox phóng to ảnh, tải file Excel, gửi tin Zalo |
+| **👥 Quản Lý Tài Khoản** | [http://localhost:8000/users](http://localhost:8000/users) | Danh sách tài khoản người dùng, phân quyền Admin/Staff (chỉ dành cho Quản trị viên) |
+| **🔔 Cấu Hình Thông Báo** | [http://localhost:8000/notifications](http://localhost:8000/notifications) | Cấu hình gửi cảnh báo tự động qua Zalo Bot Gateway và Email SMTP |
 | **📖 Swagger API Docs** | [http://localhost:8000/docs](http://localhost:8000/docs) | Tài liệu kỹ thuật OpenAPI/Swagger thử nghiệm trực tiếp các API RESTful |
 
 ---
@@ -258,7 +286,7 @@ Toàn bộ công cụ phục vụ huấn luyện mô hình YOLOv8 được bố 
 
 ## 🧪 KIỂM THỬ TỰ ĐỘNG (AUTOMATED TESTS)
 
-Hệ thống đi kèm bộ kiểm thử tự động toàn diện đạt tỷ lệ vượt qua **13/13 test cases**:
+Hệ thống đi kèm bộ kiểm thử tự động toàn diện đạt tỷ lệ vượt qua **25/25 test cases**:
 ```powershell
 python -m pytest tests/ -v
 ```
@@ -266,9 +294,11 @@ python -m pytest tests/ -v
 Danh mục các bộ kiểm thử:
 - `tests/test_attendance_engine.py`: Quy trình điều phối quét sĩ số học sinh và tính toán tỷ lệ vắng.
 - `tests/test_camera_management.py`: Kiểm tra CRUD camera, phân loại RTSP/Webcam/File.
-- `tests/test_roi_masking.py`: Kiểm tra thuật toán Point-in-Polygon lọc khu vực Red Zone và Green Zone.
+- `tests/test_camera_signal_workflow.py`: Kiểm tra tín hiệu mạng camera, cơ chế thử lại (retry) và thu nhận luồng an toàn.
+- `tests/test_roi_masking.py`: Kiểm tra thuật toán Point-in-Polygon lọc khu vực Green Zone (LẤY) và Red Zone (BỎ ĐI).
+- `tests/test_login_api.py`: Kiểm tra xác thực đăng nhập JWT, hash mật khẩu bcrypt, bảo mật cookie và phân quyền tài khoản.
 - `tests/test_excel_export.py`: Kiểm tra cấu trúc file Excel xuất ra theo quy chuẩn mẫu của Sở GD&ĐT.
-- `tests/test_zalo_service.py`: Kiểm tra định dạng webhook gửi cảnh báo qua Zalo.
+- `tests/test_zalo_service.py`: Kiểm tra định dạng thông báo gửi cảnh báo qua Zalo Bot Gateway / OA.
 - `tests/test_rtsp_mock.py`: Kiểm tra khả năng xử lý mất kết nối mạng và phục hồi luồng hình ảnh.
 
 ---

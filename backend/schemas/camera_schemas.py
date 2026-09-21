@@ -21,6 +21,12 @@ class CameraUpdateRequest(BaseModel):
 
 class TestCameraRequest(BaseModel):
     source_url: str
+    trigger_signal: Optional[bool] = False
+    relay_ip: Optional[str] = ""
+
+class TestCameraIRRequest(BaseModel):
+    mode: Optional[str] = "IR_ON"
+    duration_seconds: Optional[int] = 4
 
 class NVRProbeRequest(BaseModel):
     ip_address: str = "192.168.10.200"

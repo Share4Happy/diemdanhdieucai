@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="css/components/badges-redesign.css">
     <link rel="stylesheet" href="css/components/header-actions.css">
     <link rel="stylesheet" href="css/components/confirmation-dialog.css">
+    <link rel="stylesheet" href="css/components/skeleton-loader.css">
     <link rel="stylesheet" href="css/reports.css">
     <!-- Global Balance - MUST LOAD LAST -->
     <link rel="stylesheet" href="css/global-table-balance.css?v=2.5">
@@ -40,59 +41,57 @@
             </div>
 
             <nav class="sidebar-nav">
-                <div class="sidebar-nav-section">
-                    <div class="sidebar-nav-title">TỔNG QUAN</div>
-                    <ul class="sidebar-nav-list">
-                        <li class="sidebar-nav-item">
-                            <a href="index.html" class="sidebar-nav-link">
-                                <span class="sidebar-nav-icon"><i class="fa-solid fa-chart-line"></i></span>
-                                <span class="sidebar-nav-text">Dashboard</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="sidebar-nav-section">
-                    <div class="sidebar-nav-title">GIÁM SÁT</div>
-                    <ul class="sidebar-nav-list">
-                        <li class="sidebar-nav-item">
-                            <a href="cameras.html" class="sidebar-nav-link">
-                                <span class="sidebar-nav-icon"><i class="fa-solid fa-video"></i></span>
-                                <span class="sidebar-nav-text">Camera & Lớp Học</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="sidebar-nav-section">
-                    <div class="sidebar-nav-title">CẤU HÌNH</div>
-                    <ul class="sidebar-nav-list">
-                        <li class="sidebar-nav-item">
-                            <a href="roi-config.html" class="sidebar-nav-link">
-                                <span class="sidebar-nav-icon"><i class="fa-solid fa-draw-polygon"></i></span>
-                                <span class="sidebar-nav-text">Vùng ROI</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="sidebar-nav-section">
-                    <div class="sidebar-nav-title">DỮ LIỆU</div>
-                    <ul class="sidebar-nav-list">
-                        <li class="sidebar-nav-item">
-                            <a href="reports.html" class="sidebar-nav-link active">
-                                <span class="sidebar-nav-icon"><i class="fa-solid fa-file-excel"></i></span>
-                                <span class="sidebar-nav-text">Báo Cáo & Dữ Liệu</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+                <ul class="sidebar-nav-list">
+                    <li class="sidebar-nav-item">
+                        <a href="index.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-chart-line"></i></span>
+                            <span class="sidebar-nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="cameras.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-video"></i></span>
+                            <span class="sidebar-nav-text">Camera & Lớp Học</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="roi-config.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-draw-polygon"></i></span>
+                            <span class="sidebar-nav-text">Vùng</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="reports.html" class="sidebar-nav-link active">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-file-excel"></i></span>
+                            <span class="sidebar-nav-text">Báo Cáo & Dữ Liệu</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="notifications.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-paper-plane"></i></span>
+                            <span class="sidebar-nav-text">Thông Báo</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item nav-admin-only" hidden>
+                        <a href="users.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-user-gear"></i></span>
+                            <span class="sidebar-nav-text">Tài Khoản</span>
+                        </a>
+                    </li>
+                </ul>
             </nav>
 
             <div class="sidebar-footer">
-                <button class="sidebar-toggle-btn" type="button">
-                    <i class="fa-solid fa-angles-left"></i>
-                </button>
+                <div class="sidebar-user-profile" id="sidebarUserProfile" title="Thông tin tài khoản">
+                    <div class="sidebar-user-avatar" id="sidebarUserAvatar">A</div>
+                    <div class="sidebar-user-info">
+                        <span class="sidebar-user-name" id="sidebarUserName">Admin</span>
+                        <span class="sidebar-user-role" id="sidebarUserRole">Quản Trị Viên</span>
+                    </div>
+                    <button class="sidebar-logout-btn" type="button" id="sidebarLogoutBtn" title="Đăng Xuất">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
             </div>
         </aside>
 
@@ -104,22 +103,11 @@
             <!-- Header -->
             <header class="app-header">
                 <div class="header-left">
-                    <button class="header-action-btn mobile-menu-btn" type="button">
-                        <i class="fa-solid fa-bars"></i>
-                    </button>
                     <div class="header-breadcrumb">
                         <span class="breadcrumb-item">Dữ liệu</span>
                         <span class="breadcrumb-separator">/</span>
-                        <span class="breadcrumb-item breadcrumb-current">Báo Cáo</span>
+                        <span class="breadcrumb-item breadcrumb-current">Báo Cáo & Dữ Liệu</span>
                     </div>
-                </div>
-                <div class="header-right">
-                    <button class="header-action-btn" type="button" title="Thông báo">
-                        <i class="fa-solid fa-bell"></i>
-                    </button>
-                    <button class="header-action-btn" type="button" title="Cài đặt">
-                        <i class="fa-solid fa-gear"></i>
-                    </button>
                 </div>
             </header>
 
@@ -128,15 +116,11 @@
                 <!-- Banner Hành Động Nhanh -->
                 <div class="action-banner">
                     <div class="banner-info">
-                        <div class="banner-icon"
-                            style="background: linear-gradient(135deg, #fef3c7, #fde68a); color: #b45309; border: 1px solid #fcd34d;">
-                            <i class="fa-solid fa-file-excel"></i>
-                        </div>
                         <div>
                             <h2>Trung Tâm Dữ Liệu & Báo Cáo Điểm Danh</h2>
-                            <p style="color: var(--text-muted); margin: 0; font-size: 0.9rem;">Hệ thống tự động lưu trữ
-                                CSDL, xử
-                                lý báo cáo pandas/openpyxl và gửi email / Zalo thông báo tức thì.</p>
+                            <p style="color: var(--text-muted); margin: 0; font-size: 0.9rem;">
+                                Hệ thống tự động lưu trữ CSDL, xử lý báo cáo tổng hợp pandas / openpyxl và kết xuất dữ liệu thống kê chuyên cần.
+                            </p>
                         </div>
                     </div>
                     <div class="banner-actions">
@@ -156,9 +140,6 @@
                         <button class="tab-btn" data-tab="tab-excel">
                             <i class="fa-solid fa-file-excel"></i> Xuất Excel
                         </button>
-                        <button class="tab-btn" data-tab="tab-distribution">
-                            <i class="fa-solid fa-paper-plane"></i> Email & Zalo
-                        </button>
                         <button class="tab-btn" data-tab="tab-settings">
                             <i class="fa-solid fa-server"></i> Cấu Hình CSDL
                         </button>
@@ -169,9 +150,7 @@
                 <div id="tab-database" class="tab-content active">
                     <div class="report-section">
                         <div class="section-title">
-                            <h3><i class="fa-solid fa-database" style="color: var(--primary);"></i> 1. Lưu Trữ Kết Quả
-                                Điểm Danh
-                                (CSDL)</h3>
+                            <h3>1. Lưu Trữ Kết Quả Điểm Danh (CSDL)</h3>
                             <div style="display: flex; gap: 10px; align-items: center;">
                                 <input type="text" id="filterDbInput" placeholder="Lọc theo tên lớp hoặc phòng..."
                                     class="form-control" style="width: 240px; padding: 6px 12px;">
@@ -200,12 +179,60 @@
                                     </tr>
                                 </thead>
                                 <tbody id="dbTableBody">
-                                    <tr>
-                                        <td colspan="9" class="table-loading">
-                                            <div class="table-loading-spinner"></div>
-                                            <div style="margin-top: var(--space-3); color: var(--text-muted);">Đang tải
-                                                dữ liệu từ CSDL...</div>
-                                        </td>
+                                    <tr class="skeleton-table-row">
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 90px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 75px; height: 18px; border-radius: 4px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 100px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 60px; height: 26px; border-radius: var(--radius-sm);"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 60px; height: 26px; border-radius: var(--radius-sm);"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 75px; height: 22px; border-radius: var(--radius-full);"></div></td>
+                                    </tr>
+                                    <tr class="skeleton-table-row">
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 95px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 75px; height: 18px; border-radius: 4px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 110px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 60px; height: 26px; border-radius: var(--radius-sm);"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 60px; height: 26px; border-radius: var(--radius-sm);"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 75px; height: 22px; border-radius: var(--radius-full);"></div></td>
+                                    </tr>
+                                    <tr class="skeleton-table-row">
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 90px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 75px; height: 18px; border-radius: 4px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 95px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 60px; height: 26px; border-radius: var(--radius-sm);"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 60px; height: 26px; border-radius: var(--radius-sm);"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 75px; height: 22px; border-radius: var(--radius-full);"></div></td>
+                                    </tr>
+                                    <tr class="skeleton-table-row">
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 95px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 75px; height: 18px; border-radius: 4px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 105px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 60px; height: 26px; border-radius: var(--radius-sm);"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 60px; height: 26px; border-radius: var(--radius-sm);"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 75px; height: 22px; border-radius: var(--radius-full);"></div></td>
+                                    </tr>
+                                    <tr class="skeleton-table-row">
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 90px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 75px; height: 18px; border-radius: 4px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 100px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 60px; height: 26px; border-radius: var(--radius-sm);"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 60px; height: 26px; border-radius: var(--radius-sm);"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 75px; height: 22px; border-radius: var(--radius-full);"></div></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -217,9 +244,7 @@
                 <div id="tab-excel" class="tab-content">
                     <div class="report-section">
                         <div class="section-title">
-                            <h3><i class="fa-solid fa-file-excel" style="color: #10b981;"></i> 2. Kho Lưu Trữ File Excel
-                                Đã Xuất
-                                (pandas & openpyxl)</h3>
+                            <h3>2. Kho Lưu Trữ File Excel Đã Xuất (pandas & openpyxl)</h3>
                             <span style="font-size: 0.85rem; color: var(--text-muted);">Tự động sinh sau mỗi ca quét
                                 06:45
                                 sáng</span>
@@ -242,314 +267,55 @@
                                     </tr>
                                 </thead>
                                 <tbody id="excelFilesBody">
-                                    <!-- Render qua JS -->
+                                    <tr class="skeleton-table-row">
+                                        <td class="skeleton-table-cell">
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <div class="skeleton" style="width: 18px; height: 18px; border-radius: 3px; flex-shrink: 0;"></div>
+                                                <div class="skeleton" style="width: 220px; height: 16px;"></div>
+                                            </div>
+                                        </td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 130px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 60px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 130px; height: 22px; border-radius: var(--radius-full);"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 75px; height: 28px; border-radius: var(--radius-sm);"></div></td>
+                                    </tr>
+                                    <tr class="skeleton-table-row">
+                                        <td class="skeleton-table-cell">
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <div class="skeleton" style="width: 18px; height: 18px; border-radius: 3px; flex-shrink: 0;"></div>
+                                                <div class="skeleton" style="width: 190px; height: 16px;"></div>
+                                            </div>
+                                        </td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 130px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 60px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 130px; height: 22px; border-radius: var(--radius-full);"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 75px; height: 28px; border-radius: var(--radius-sm);"></div></td>
+                                    </tr>
+                                    <tr class="skeleton-table-row">
+                                        <td class="skeleton-table-cell">
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <div class="skeleton" style="width: 18px; height: 18px; border-radius: 3px; flex-shrink: 0;"></div>
+                                                <div class="skeleton" style="width: 240px; height: 16px;"></div>
+                                            </div>
+                                        </td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 130px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 60px; height: 16px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 130px; height: 22px; border-radius: var(--radius-full);"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 75px; height: 28px; border-radius: var(--radius-sm);"></div></td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
 
-                <!-- TAB 3: EMAIL & ZALO -->
-                <div id="tab-distribution" class="tab-content">
-                    <!-- PHẦN 3.1: GỬI EMAIL HIỆU TRƯỞNG -->
-                    <div class="report-section">
-                        <div class="section-title">
-                            <h3><i class="fa-solid fa-paper-plane" style="color: #f59e0b;"></i> 3.1. Phân Phối Báo Cáo &
-                                Gửi
-                                Email Cho Hiệu Trưởng</h3>
-                            <span id="emailStatusBadge" class="status-pill"
-                                style="background: #fef3c7; color: #b45309;">
-                                <i class="fa-solid fa-circle-info"></i> Sẵn sàng cấu hình
-                            </span>
-                        </div>
-
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label><i class="fa-solid fa-envelope"></i> Email Người Nhận (Hiệu Trưởng):</label>
-                                <input type="email" id="principalEmailInput" class="form-control"
-                                    value="hieutruong@truongdieucai.edu.vn">
-                            </div>
-                            <div class="form-group">
-                                <label><i class="fa-solid fa-folder"></i> Thư Mục Lưu Bản Sao Dùng Chung:</label>
-                                <input type="text" id="internalPathInput" class="form-control"
-                                    value="storage/reports/latest/" readonly style="background: #f8fafc;">
-                            </div>
-                        </div>
-
-                        <div
-                            style="margin-top: 1.25rem; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                            <button id="btnSendTestEmail" class="btn btn-primary">
-                                <i class="fa-solid fa-paper-plane"></i> Gửi Thử Email Báo Cáo Cho Hiệu Trưởng
-                            </button>
-                            <button id="btnOpenFolder" class="btn btn-secondary">
-                                <i class="fa-solid fa-folder"></i> Vị Trí Thư Mục Báo Cáo
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- PHẦN 3.2: PHÂN PHỐI THÔNG BÁO TỨC THÌ QUA ZALO -->
-                    <div class="report-section" style="border-left: 4px solid #0068ff;">
-                        <div class="section-title">
-                            <h3>
-                                <i class="fa-solid fa-comments" style="color: #0068ff;"></i>
-                                3.2. Phân Phối Thông Báo Điểm Danh Qua ZALO (BGH & Giáo Viên)
-                            </h3>
-                            <span id="zaloStatusBadge" class="status-pill" style="background: #e0f2fe; color: #0369a1;">
-                                <i class="fa-solid fa-circle-check"></i> Đang hoạt động
-                            </span>
-                        </div>
-                        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.25rem;">
-                            Hệ thống tự động gửi tin nhắn tóm tắt sĩ số 30 lớp học và danh sách các lớp có học sinh vắng
-                            trực
-                            tiếp
-                            vào điện thoại Zalo của Ban Giám hiệu ngay sau khi quét lúc 06:48.
-                        </p>
-
-                        <!-- Chọn Phương Thức Gửi Zalo -->
-                        <div
-                            style="background: linear-gradient(135deg, #e0f2fe, #dbeafe); border: 2px solid #0ea5e9; border-radius: 12px; padding: 16px 20px; margin-bottom: 1.5rem;">
-                            <label
-                                style="font-size: 0.92rem; font-weight: 700; color: #075985; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-                                <i class="fa-solid fa-gear"></i> Chọn Phương Thức Gửi Zalo
-                                <span
-                                    style="background: #10b981; color: white; font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; font-weight: 600; margin-left: 6px;">KHUYẾN
-                                    NGHỊ</span>
-                            </label>
-                            <select id="zaloTypeSelect" class="form-control"
-                                style="font-size: 0.95rem; font-weight: 600; padding: 10px 14px; border: 2px solid #0ea5e9; background: white;">
-                                <option value="BOT_API">✅ Zalo Bot Gateway (API Key + Bot ID) - Khuyến nghị doanh nghiệp
-                                </option>
-                                <option value="OA_API">📱 Zalo Official Account (OpenAPI CS/ZNS)</option>
-                                <option value="WEBHOOK">⚠️ Zalo Webhook (Cũ - không khuyến nghị)</option>
-                            </select>
-                            <div style="margin-top: 8px; font-size: 0.78rem; color: #0369a1; line-height: 1.5;">
-                                <i class="fa-solid fa-lightbulb"></i> <strong>Zalo Bot Gateway</strong> là phương thức
-                                mới nhất,
-                                cho phép gửi tin nhắn tới nhiều số điện thoại đồng thời, tự động phân tích SĐT thành
-                                Zalo UID.
-                            </div>
-                        </div>
-
-                        <!-- Cấu hình cho Bot Gateway (BOT_API) - Khuyến nghị -->
-                        <div id="zaloBotRow" style="margin-bottom: 1.5rem;">
-                            <div
-                                style="background: #f0fdf4; border: 2px solid #86efac; border-radius: 12px; padding: 16px 20px; margin-bottom: 1rem;">
-                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-                                    <i class="fa-solid fa-robot" style="color: #10b981; font-size: 1.3rem;"></i>
-                                    <h4 style="margin: 0; color: #166534; font-size: 1rem; font-weight: 700;">Cấu Hình
-                                        Zalo Bot
-                                        Gateway</h4>
-                                </div>
-
-                                <div class="form-grid" style="margin-bottom: 1rem; gap: 12px;">
-                                    <div class="form-group">
-                                        <label><i class="fa-solid fa-key"></i> API Key (x-api-key):</label>
-                                        <input type="password" id="zaloBotKeyInput" class="form-control"
-                                            placeholder="Nhập API Key của Zalo Bot Gateway"
-                                            style="font-family: 'Courier New', monospace;">
-                                    </div>
-                                    <div class="form-group">
-                                        <label><i class="fa-solid fa-robot"></i> Bot ID:</label>
-                                        <input type="text" id="zaloBotIdInput" class="form-control"
-                                            placeholder="Ví dụ: YOUR_BOT_ID">
-                                    </div>
-                                    <div class="form-group">
-                                        <label><i class="fa-solid fa-link"></i> API Base URL:</label>
-                                        <input type="text" id="zaloBotBaseUrlInput" class="form-control"
-                                            value="http://localhost:3000/api/gateway/v1.0">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Quản lý SĐT Người Nhận với UI cải tiến -->
-                            <div
-                                style="background: white; border: 2px solid #60a5fa; border-radius: 12px; padding: 18px 22px; margin-bottom: 1rem; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);">
-                                <label
-                                    style="font-size: 0.95rem; font-weight: 700; color: #1e40af; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                                    <i class="fa-solid fa-phone" style="color: #3b82f6;"></i> Danh Sách Số Điện Thoại
-                                    Người Nhận
-                                    <span
-                                        style="background: linear-gradient(135deg, #fef3c7, #fde68a); color: #b45309; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; border: 1px solid #fcd34d;">Tối
-                                        đa 10 SĐT</span>
-                                </label>
-
-                                <div id="phoneTagsContainer"
-                                    style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; min-height: 42px; align-items: center; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px dashed #cbd5e1;">
-                                </div>
-
-                                <div style="display: flex; gap: 10px; align-items: center;">
-                                    <input type="text" id="phoneAddInput" class="form-control"
-                                        style="flex: 1; max-width: 320px; font-size: 0.95rem; padding: 10px 14px; border: 2px solid #93c5fd; border-radius: 8px;"
-                                        placeholder="VD: 0334551531 hoặc +84334551531">
-                                    <button type="button" id="btnAddPhone" class="btn btn-primary"
-                                        style="white-space: nowrap; padding: 10px 18px; font-weight: 600; background: linear-gradient(135deg, #3b82f6, #2563eb); border: none;">
-                                        <i class="fa-solid fa-plus"></i> Thêm SĐT
-                                    </button>
-                                </div>
-                                <div style="margin-top: 8px; font-size: 0.75rem; color: #64748b; line-height: 1.4;">
-                                    <i class="fa-solid fa-circle-info"></i> Nhập từng số điện thoại rồi nhấn Enter hoặc
-                                    nút
-                                    "Thêm SĐT". Hỗ trợ định dạng: 0xxxxxxxxx hoặc +84xxxxxxxxx
-                                </div>
-                                <input type="hidden" id="zaloPhonesInput" value="">
-                            </div>
-
-                            <!-- SĐT Thử Nghiệm -->
-                            <div
-                                style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 14px 18px;">
-                                <label
-                                    style="font-size: 0.88rem; font-weight: 700; color: #b45309; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-                                    <i class="fa-solid fa-mobile-screen"></i> SĐT Nhận Tin Thử Nghiệm (Test nhanh)
-                                </label>
-                                <input type="text" id="zaloTestPhoneInput" class="form-control"
-                                    style="border: 1px solid #fbbf24;"
-                                    placeholder="Để trống để gửi tới tất cả SĐT trong danh sách trên">
-                                <div style="margin-top: 6px; font-size: 0.72rem; color: #92400e;">
-                                    💡 Dùng để test gửi tin cho 1 SĐT cụ thể trước khi gửi hàng loạt
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Cấu hình cho OA API -->
-                        <div id="zaloOaRow" style="margin-bottom: 1.25rem; display: none;">
-                            <div
-                                style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 10px; padding: 16px 20px;">
-                                <h4 style="color: #b45309; font-size: 0.95rem; font-weight: 700; margin-bottom: 12px;">
-                                    <i class="fa-solid fa-shield-halved"></i> Cấu Hình Zalo Official Account
-                                </h4>
-                                <div class="form-grid" style="gap: 12px;">
-                                    <div class="form-group">
-                                        <label><i class="fa-solid fa-key"></i> Zalo OA Access Token:</label>
-                                        <input type="password" id="zaloTokenInput" class="form-control"
-                                            placeholder="Nhập OA Access Token từ Zalo Developers"
-                                            style="font-family: 'Courier New', monospace;">
-                                    </div>
-                                    <div class="form-group">
-                                        <label><i class="fa-solid fa-user"></i> User ID Người Nhận:</label>
-                                        <input type="text" id="zaloUserIdInput" class="form-control"
-                                            placeholder="Ví dụ: 789123456789012345">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Cấu hình cho Webhook (Cũ) -->
-                        <div id="zaloWebhookGroup" style="margin-bottom: 1.25rem; display: none;">
-                            <div
-                                style="background: #fee2e2; border: 1px solid #fca5a5; border-radius: 10px; padding: 16px 20px;">
-                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                                    <i class="fa-solid fa-triangle-exclamation"
-                                        style="color: #dc2626; font-size: 1.2rem;"></i>
-                                    <h4 style="color: #991b1b; font-size: 0.95rem; font-weight: 700; margin: 0;">Webhook
-                                        (Không
-                                        khuyến nghị)</h4>
-                                </div>
-                                <div class="form-group">
-                                    <label><i class="fa-solid fa-link"></i> Zalo Webhook URL:</label>
-                                    <input type="text" id="zaloWebhookInput" class="form-control"
-                                        placeholder="https://webhook.site/... hoặc URL bot Zalo"
-                                        style="border-color: #f87171;">
-                                </div>
-                                <div style="margin-top: 8px; font-size: 0.75rem; color: #991b1b;">
-                                    ⚠️ Phương thức này đang lỗi thời. Chúng tôi khuyến nghị sử dụng Zalo Bot Gateway
-                                    thay thế.
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Soạn Thảo Tin Nhắn Zalo với Editor Cải Tiến -->
-                        <div
-                            style="background: linear-gradient(135deg, #f0fdf4, #dcfce7); border: 2px solid #4ade80; border-radius: 12px; padding: 18px 22px; margin-bottom: 1.5rem; box-shadow: 0 2px 10px rgba(74, 222, 128, 0.15);">
-                            <div
-                                style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <i class="fa-solid fa-pen-to-square" style="color: #16a34a; font-size: 1.4rem;"></i>
-                                    <div>
-                                        <h4 style="margin: 0; color: #166534; font-size: 1.05rem; font-weight: 700;">
-                                            Soạn Thảo
-                                            Mẫu Tin Nhắn Zalo</h4>
-                                        <p style="margin: 0; margin-top: 2px; font-size: 0.75rem; color: #15803d;">Tùy
-                                            chỉnh nội
-                                            dung tin nhắn tự động gửi sau mỗi lần điểm danh</p>
-                                    </div>
-                                </div>
-                                <button type="button" id="btnResetTemplate" class="btn btn-secondary btn-sm"
-                                    title="Khôi phục mẫu mặc định"
-                                    style="background: white; border: 2px solid #86efac; color: #166534; font-weight: 600;">
-                                    <i class="fa-solid fa-rotate-left"></i> Khôi Phục Mẫu
-                                </button>
-                            </div>
-
-                            <div style="position: relative;">
-                                <textarea id="zaloMessageTemplate" class="form-control"
-                                    style="width: 100%; min-height: 220px; font-size: 0.9rem; line-height: 1.65; resize: vertical; font-family: 'Segoe UI', system-ui, sans-serif; background: white; border: 2px solid #86efac; border-radius: 10px; padding: 16px 18px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);"
-                                    placeholder="Soạn nội dung tin nhắn Zalo tại đây...">🔔 [THPT ĐIỀU CẢI] BÁO CÁO ĐIỂM DANH SĨ SỐ ĐẦU GIỜ SÁNG
-📅 Ngày quét: Hôm nay | Giờ: 06:45:00
-🏫 Tổng số lớp: 30 lớp | 👥 Sĩ số: 1,230/1,245 (Tỷ lệ: 98.8%)
-✅ Có mặt: 1,230 | ❌ Vắng mặt: 15 em
-⚠️ CÁC LỚP CÓ HỌC SINH VẮNG:
-• Lớp 10A1 (P.101): Vắng 2 em (40/42)
-• Lớp 11A4 (P.114): Vắng 1 em (39/40)
-📁 Báo cáo chi tiết Excel và ảnh đối chứng AI đã lưu trên hệ thống.</textarea>
-                                <div
-                                    style="position: absolute; bottom: 12px; right: 14px; font-size: 0.72rem; color: #9ca3af; background: white; padding: 2px 8px; border-radius: 4px; border: 1px solid #e5e7eb;">
-                                    <i class="fa-solid fa-keyboard"></i> <span id="charCount">0</span> ký tự
-                                </div>
-                            </div>
-
-                            <div
-                                style="margin-top: 12px; background: white; border-radius: 8px; padding: 12px 14px; border: 1px solid #bbf7d0;">
-                                <div style="font-size: 0.82rem; color: #15803d; line-height: 1.6;">
-                                    <div style="display: flex; gap: 8px; margin-bottom: 6px;">
-                                        <i class="fa-solid fa-lightbulb"
-                                            style="color: #fbbf24; flex-shrink: 0; margin-top: 2px;"></i>
-                                        <div>
-                                            <strong style="color: #166534;">Hướng dẫn:</strong> Bạn có thể tự do chỉnh
-                                            sửa nội
-                                            dung. Khi điểm danh thực tế, hệ thống sẽ tự động thay thế dữ liệu như ngày
-                                            giờ, sĩ
-                                            số, danh sách lớp vắng...
-                                        </div>
-                                    </div>
-                                    <div style="display: flex; gap: 8px;">
-                                        <i class="fa-solid fa-magic-wand-sparkles"
-                                            style="color: #a855f7; flex-shrink: 0; margin-top: 2px;"></i>
-                                        <div>
-                                            <strong style="color: #166534;">Mẹo:</strong> Sử dụng emoji (🔔📅🏫👥✅❌⚠️)
-                                            để tin
-                                            nhắn sinh động hơn. Tin nhắn ngắn gọn, dễ đọc sẽ hiệu quả hơn.
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div
-                            style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-bottom: 1rem;">
-                            <button id="btnSendTestZalo" class="btn btn-primary"
-                                style="background: linear-gradient(135deg, #3b82f6, #2563eb); border: none; font-weight: 700; font-size: 0.95rem; padding: 12px 24px; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);">
-                                <i class="fa-solid fa-paper-plane"></i> Gửi Thử Tin Nhắn Qua Zalo
-                            </button>
-                            <button id="btnSaveZaloConfig" class="btn btn-secondary"
-                                style="padding: 12px 22px; font-weight: 600;">
-                                <i class="fa-solid fa-floppy-disk"></i> Lưu Cấu Hình
-                            </button>
-                        </div>
-                        <div id="zaloFeedbackMsg"
-                            style="padding: 12px 16px; border-radius: 8px; font-size: 0.88rem; font-weight: 600; display: none;">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- TAB 4: CẤU HÌNH CSDL -->
+                <!-- TAB 3: CẤU HÌNH CSDL -->
                 <div id="tab-settings" class="tab-content">
                     <div class="report-section">
                         <div class="section-title">
-                            <h3><i class="fa-solid fa-server" style="color: #6366f1;"></i> 4. Cấu Hình Cơ Sở Dữ Liệu
-                                (PostgreSQL
-                                / MySQL / SQLite)</h3>
+                            <h3>3. Cấu Hình Cơ Sở Dữ Liệu (PostgreSQL / MySQL / SQLite)</h3>
                             <span id="dbTypeBadge" class="status-pill" style="background: #e0e7ff; color: #4338ca;">
-                                <i class="fa-solid fa-database"></i> SQLite (Local Active)
+                                SQLite (Local Active)
                             </span>
                         </div>
                         <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
@@ -587,7 +353,7 @@
         <div class="modal-content" style="max-width: 900px;">
             <div class="modal-header">
                 <h3 id="imgModalTitle">Đối Chứng Ảnh Điểm Danh</h3>
-                <button class="modal-close" id="imgModalCloseBtn">&times;</button>
+                <button type="button" class="modal-close modal-close-btn" id="imgModalCloseBtn" onclick="closeImgModal()" aria-label="Đóng">&times;</button>
             </div>
             <div class="modal-body" style="text-align: center;">
                 <img id="imgModalSrc" src="" style="max-width: 100%; border-radius: 8px; box-shadow: var(--shadow-md);">
@@ -599,11 +365,12 @@
     <div id="toastContainer" class="toast-container"></div>
 
     <!-- App Shell Controller -->
+    <script type="module" src="js/shared/auth-guard.js"></script>
     <script src="js/shared/app-shell.js"></script>
     <script src="js/shared/header-actions.js?v=2.2"></script>
 
     <!-- Page Script -->
-    <script type="module" src="js/reports.js?v=3.2"></script>
+    <script type="module" src="js/reports.js?v=3.3"></script>
 </body>
 
 </html>

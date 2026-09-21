@@ -188,3 +188,177 @@
         font-size: 0.82rem;
     }
 }
+
+/* ===================== ZALO SECTION (đồng nhất design system) ===================== */
+.section-desc {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    margin-bottom: 1.25rem;
+    line-height: 1.55;
+}
+
+.zalo-panel {
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: var(--radius-md, 8px);
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 1.1rem;
+    box-shadow: var(--shadow-xs, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
+}
+
+.zalo-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 0.85rem;
+}
+
+.zalo-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-main, #0f172a);
+}
+
+.zalo-panel-title i {
+    color: var(--primary, #2563eb);
+    font-size: 1.05rem;
+}
+
+.zalo-panel--bot .zalo-panel-title i { color: var(--success, #16a34a); }
+.zalo-panel--phones .zalo-panel-title i { color: var(--info, #3b82f6); }
+.zalo-panel--test .zalo-panel-title i { color: var(--warning, #f59e0b); }
+.zalo-panel--template .zalo-panel-title i { color: var(--success, #16a34a); }
+
+.form-hint {
+    margin-top: 0.6rem;
+    font-size: 0.78rem;
+    color: var(--text-muted, #64748b);
+    line-height: 1.5;
+}
+
+.phone-tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 0.8rem;
+    min-height: 42px;
+    align-items: center;
+    background: var(--gray-50, #f8fafc);
+    padding: 0.7rem;
+    border-radius: 8px;
+    border: 1px dashed var(--border-color, #cbd5e1);
+}
+
+.phone-input-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.phone-input-row .form-control {
+    flex: 1;
+    max-width: 320px;
+}
+
+.recipient-form-grid .form-group:nth-child(1) { min-width: 300px; }
+.recipient-form-grid .form-group:nth-child(2) { min-width: 220px; }
+.recipient-form-grid .form-group:nth-child(3) { min-width: 240px; }
+
+.recipient-role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.66rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 12px;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+}
+
+.recipient-role-badge.school {
+    background: var(--info-bg, #dbeafe);
+    color: var(--primary-dark, #1e40af);
+}
+
+.recipient-role-badge.class {
+    background: var(--warning-bg, #fef3c7);
+    color: #b45309;
+}
+
+.phone-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--info-bg, #dbeafe);
+    color: var(--primary-dark, #1e40af);
+    padding: 6px 12px;
+    border-radius: 24px;
+    font-size: 0.86rem;
+    font-weight: 700;
+    border: 1px solid var(--info-light, #bfdbfe);
+    cursor: default;
+}
+
+.phone-tag .phone-tag-remove {
+    background: var(--danger, #dc2626);
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 0.7rem;
+    line-height: 1;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease;
+}
+
+.phone-tag .phone-tag-remove:hover {
+    background: #b91c1c;
+}
+
+.template-guide {
+    margin-top: 0.9rem;
+    background: var(--gray-50, #f8fafc);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary, #475569);
+    line-height: 1.6;
+}
+
+.template-guide code {
+    background: var(--gray-100, #f1f5f9);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 0.75rem;
+    color: var(--primary, #2563eb);
+}
+
+.zalo-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 0.25rem;
+}
+
+.zalo-feedback {
+    margin-top: 0.9rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    display: none;
+}

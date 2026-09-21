@@ -45,10 +45,11 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# Cấu hình CORS mở rộng cho phép Frontend độc lập gọi API
+# Cấu hình CORS cho cookie đăng nhập (không dùng allow_origins="*")
+cors_origins = [o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -80,6 +81,22 @@ frontend_dir = PROJECT_ROOT / "frontend"
 if frontend_dir.exists():
     from fastapi.responses import FileResponse
     
+    @app.get("/login", include_in_schema=False)
+    async def get_login_page():
+        return FileResponse(frontend_dir / "login.html")
+
+    @app.get("/forgot-password", include_in_schema=False)
+    async def get_forgot_password_page():
+        return FileResponse(frontend_dir / "forgot-password.html")
+
+    @app.get("/reset-password", include_in_schema=False)
+    async def get_reset_password_page():
+        return FileResponse(frontend_dir / "reset-password.html")
+
+    @app.get("/users", include_in_schema=False)
+    async def get_users_page():
+        return FileResponse(frontend_dir / "users.html")
+
     @app.get("/cameras", include_in_schema=False)
     async def get_cameras_page():
         return FileResponse(frontend_dir / "cameras.html")
@@ -91,6 +108,10 @@ if frontend_dir.exists():
     @app.get("/reports", include_in_schema=False)
     async def get_reports_page():
         return FileResponse(frontend_dir / "reports.html")
+
+    @app.get("/notifications", include_in_schema=False)
+    async def get_notifications_page():
+        return FileResponse(frontend_dir / "notifications.html")
 
     app.mount("/", CORSStaticFiles(directory=str(frontend_dir), html=True), name="frontend")
 

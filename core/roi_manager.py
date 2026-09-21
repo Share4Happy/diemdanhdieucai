@@ -34,24 +34,24 @@ class ROIManager:
     ) -> np.ndarray:
         """
         Tạo mặt nạ nhị phân (Binary Mask) kích thước (H, W):
-        - Giá trị 255 (Trắng): Khu vực bàn học sinh (Red Zone)
-        - Giá trị 0 (Đen): Khu vực ngoài bàn học hoặc khu vực bục giảng (Green Zone)
+        - Giá trị 255 (Trắng): Khu vực cần lấy / Bàn học sinh (Green Zone)
+        - Giá trị 0 (Đen): Khu vực loại trừ / bỏ đi (Red Zone) hoặc ngoài vùng
         """
         h, w = image_shape[:2]
         mask = np.zeros((h, w), dtype=np.uint8)
 
-        # 1. Bật vùng Red Zone (Bàn học sinh)
-        if red_zone and len(red_zone) >= 3:
-            red_poly = cls.points_to_np(red_zone)
-            cv2.fillPoly(mask, [red_poly], 255)
-        else:
-            # Nếu chưa vẽ Red Zone, mặc định quét toàn bộ ảnh
-            mask[:] = 255
-
-        # 2. Bôi đen hoàn toàn vùng Green Zone (Bục giảng) để loại trừ
+        # 1. Bật vùng Green Zone (Phần LẤY / Bàn học sinh)
         if green_zone and len(green_zone) >= 3:
             green_poly = cls.points_to_np(green_zone)
-            cv2.fillPoly(mask, [green_poly], 0)
+            cv2.fillPoly(mask, [green_poly], 255)
+        else:
+            # Nếu chưa vẽ Green Zone, mặc định quét toàn bộ ảnh
+            mask[:] = 255
+
+        # 2. Bôi đen hoàn toàn vùng Red Zone (Phần BỎ ĐI / Bục giảng / Ngoài vùng) để loại trừ
+        if red_zone and len(red_zone) >= 3:
+            red_poly = cls.points_to_np(red_zone)
+            cv2.fillPoly(mask, [red_poly], 0)
 
         return mask
 
@@ -82,24 +82,24 @@ class ROIManager:
     ) -> bool:
         """
         Kiểm tra tọa độ tâm điểm (x, y) của đầu người:
-        - Phải nằm TRONG Red Zone (pointPolygonTest >= 0)
-        - Và phải nằm NGOÀI Green Zone (pointPolygonTest < 0)
+        - Phải nằm TRONG Green Zone (Phần LẤY - pointPolygonTest >= 0)
+        - Và phải nằm NGOÀI Red Zone (Phần BỎ ĐI / Loại trừ - pointPolygonTest < 0)
         """
         px, py = float(point[0]), float(point[1])
 
-        # Kiểm tra Red Zone
-        if red_zone and len(red_zone) >= 3:
-            red_poly = cls.points_to_np(red_zone)
-            in_red = cv2.pointPolygonTest(red_poly, (px, py), False) >= 0
-            if not in_red:
-                return False
-
-        # Kiểm tra Green Zone (loại trừ)
+        # 1. Kiểm tra Green Zone (Phần LẤY / Bàn học sinh): Phải nằm bên trong
         if green_zone and len(green_zone) >= 3:
             green_poly = cls.points_to_np(green_zone)
             in_green = cv2.pointPolygonTest(green_poly, (px, py), False) >= 0
-            if in_green:
-                # Nằm trong vùng bục giảng -> Bỏ qua
+            if not in_green:
+                return False
+
+        # 2. Kiểm tra Red Zone (Phần BỎ ĐI / Bục giảng): Phải nằm bên ngoài
+        if red_zone and len(red_zone) >= 3:
+            red_poly = cls.points_to_np(red_zone)
+            in_red = cv2.pointPolygonTest(red_poly, (px, py), False) >= 0
+            if in_red:
+                # Nằm trong vùng đỏ loại trừ -> Bỏ qua
                 return False
 
         return True
@@ -147,17 +147,17 @@ class ROIManager:
         overlay = image.copy()
         output = image.copy()
 
-        # 1. Vẽ Red Zone (Bàn học - Đường viền đỏ tinh tế + phủ màu mờ nhẹ)
-        if red_zone and len(red_zone) >= 3:
-            red_poly = cls.points_to_np(red_zone)
-            cv2.fillPoly(overlay, [red_poly], (40, 40, 200))
-            cv2.polylines(output, [red_poly], True, (0, 0, 235), 2, cv2.LINE_AA)
-
-        # 2. Vẽ Green Zone (Bục giảng - Đường viền xanh lá tinh tế + phủ màu mờ nhẹ)
+        # 1. Vẽ Green Zone (Phần LẤY - Bàn học - Đường viền xanh lá tinh tế + phủ màu mờ nhẹ)
         if green_zone and len(green_zone) >= 3:
             green_poly = cls.points_to_np(green_zone)
             cv2.fillPoly(overlay, [green_poly], (40, 180, 40))
             cv2.polylines(output, [green_poly], True, (0, 215, 0), 2, cv2.LINE_AA)
+
+        # 2. Vẽ Red Zone (Phần BỎ ĐI - Bục giảng / Loại trừ - Đường viền đỏ tinh tế + phủ màu mờ nhẹ)
+        if red_zone and len(red_zone) >= 3:
+            red_poly = cls.points_to_np(red_zone)
+            cv2.fillPoly(overlay, [red_poly], (40, 40, 200))
+            cv2.polylines(output, [red_poly], True, (0, 0, 235), 2, cv2.LINE_AA)
 
         # Trộn mờ tinh tế
         cv2.addWeighted(overlay, alpha, output, 1 - alpha, 0, output)

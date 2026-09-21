@@ -1,43 +1,44 @@
-from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, Field
+
 
 class LoginRequest(BaseModel):
-    username: str
+    email: str
     password: str
 
-class UserResponse(BaseModel):
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    password: str = Field(min_length=8)
+
+
+class UserCreateRequest(BaseModel):
+    email: str
+    full_name: str = ""
+    password: str = Field(min_length=8)
+    role: str = "staff"
+
+
+class UserUpdateRequest(BaseModel):
+    email: str | None = None
+    full_name: str | None = None
+    password: str | None = None
+    role: str | None = None
+
+
+class UserStatusRequest(BaseModel):
+    is_active: bool
+
+
+class UserPublic(BaseModel):
     id: int
-    username: str
-    full_name: Optional[str] = ""
-    role: str = "admin"
-    email: Optional[str] = None
-    is_active: bool = True
-    created_at: Optional[datetime] = None
-    last_login: Optional[datetime] = None
+    email: str
+    full_name: str = ""
+    role: str
+    is_active: bool
 
-    model_config = ConfigDict(from_attributes=True)
-
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-    expires_in: int
-    user: UserResponse
-
-class UserCreate(BaseModel):
-    username: str
-    password: str
-    full_name: Optional[str] = ""
-    role: Optional[str] = "teacher"
-    email: Optional[str] = None
-
-class UserUpdate(BaseModel):
-    full_name: Optional[str] = None
-    role: Optional[str] = None
-    email: Optional[str] = None
-    is_active: Optional[bool] = None
-    password: Optional[str] = None
-
-class ChangePasswordRequest(BaseModel):
-    old_password: str
-    new_password: str
+    class Config:
+        from_attributes = True

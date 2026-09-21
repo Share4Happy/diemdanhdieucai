@@ -10,84 +10,65 @@ export const API_BASE = (window.location.protocol === 'file:' || (!window.locati
 /**
  * Hàm gửi request chuẩn hóa
  */
+function redirectToLogin() {
+    const path = window.location.pathname || '';
+    if (path.includes('login') || path.includes('forgot-password') || path.includes('reset-password')) {
+        return;
+    }
+    window.location.href = 'login.html';
+}
+
 async function fetchAPI(endpoint, options = {}) {
+    const { skipAuthRedirect, ...fetchOptions } = options;
     const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
     const defaultHeaders = {
         'Accept': 'application/json',
     };
 
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-        defaultHeaders['Authorization'] = `Bearer ${token}`;
-    }
-
-    if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
+    if (fetchOptions.body && typeof fetchOptions.body === 'object' && !(fetchOptions.body instanceof FormData)) {
         defaultHeaders['Content-Type'] = 'application/json';
-        options.body = JSON.stringify(options.body);
+        fetchOptions.body = JSON.stringify(fetchOptions.body);
     }
 
-    options.headers = {
+    fetchOptions.credentials = 'include';
+    fetchOptions.headers = {
         ...defaultHeaders,
-        ...(options.headers || {})
+        ...(fetchOptions.headers || {})
     };
 
     try {
-        const response = await fetch(url, options);
+        const response = await fetch(url, fetchOptions);
+        if (response.status === 401 && !skipAuthRedirect) {
+            redirectToLogin();
+        }
         if (!response.ok) {
             let errorMsg = `Lỗi máy chủ (${response.status})`;
             try {
                 const errData = await response.json();
-                if (errData.detail) errorMsg = errData.detail;
+                if (errData.detail) errorMsg = typeof errData.detail === 'string' ? errData.detail : JSON.stringify(errData.detail);
             } catch (e) {}
-            throw new Error(errorMsg);
+            const err = new Error(errorMsg);
+            err.status = response.status;
+            throw err;
         }
-        return await response.json();
+        const text = await response.text();
+        return text ? JSON.parse(text) : {};
     } catch (err) {
         console.error(`[API Error] ${endpoint}:`, err);
         throw err;
     }
 }
 
-// === AUTH & USER APIs ===
 export const AuthAPI = {
-    login: async (username, password) => {
-        const res = await fetchAPI('/api/auth/login', {
-            method: 'POST',
-            body: { username, password }
-        });
-        if (res && res.access_token) {
-            localStorage.setItem('auth_token', res.access_token);
-            localStorage.setItem('auth_user', JSON.stringify(res.user));
-        }
-        return res;
-    },
-    logout: async () => {
-        try {
-            await fetchAPI('/api/auth/logout', { method: 'POST' });
-        } catch (e) {}
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('auth_user');
-    },
-    getMe: () => fetchAPI('/api/auth/me'),
-    changePassword: (oldPassword, newPassword) => fetchAPI('/api/auth/change-password', {
-        method: 'POST',
-        body: { old_password: oldPassword, new_password: newPassword }
-    }),
-    getCurrentUser: () => {
-        try {
-            const raw = localStorage.getItem('auth_user');
-            return raw ? JSON.parse(raw) : null;
-        } catch (e) {
-            return null;
-        }
-    },
-    getToken: () => localStorage.getItem('auth_token'),
-    isAuthenticated: () => !!localStorage.getItem('auth_token'),
-    // User management (Admin only)
-    getUsers: () => fetchAPI('/api/auth/users'),
+    login: (data) => fetchAPI('/api/auth/login', { method: 'POST', body: data, skipAuthRedirect: true }),
+    logout: () => fetchAPI('/api/auth/logout', { method: 'POST', skipAuthRedirect: true }),
+    me: () => fetchAPI('/api/auth/me', { skipAuthRedirect: true }),
+    forgotPassword: (email) => fetchAPI('/api/auth/forgot-password', { method: 'POST', body: { email }, skipAuthRedirect: true }),
+    resetPassword: (data) => fetchAPI('/api/auth/reset-password', { method: 'POST', body: data, skipAuthRedirect: true }),
+    listUsers: () => fetchAPI('/api/auth/users'),
     createUser: (data) => fetchAPI('/api/auth/users', { method: 'POST', body: data }),
     updateUser: (id, data) => fetchAPI(`/api/auth/users/${id}`, { method: 'PUT', body: data }),
-    deleteUser: (id) => fetchAPI(`/api/auth/users/${id}`, { method: 'DELETE' })
+    setUserStatus: (id, is_active) => fetchAPI(`/api/auth/users/${id}/status`, { method: 'PATCH', body: { is_active } })
 };
 
 // === ATTENDANCE APIs ===
@@ -106,8 +87,18 @@ export const CameraAPI = {
     update: (id, data) => fetchAPI(`/api/cameras/${id}`, { method: 'PUT', body: data }),
     delete: (id) => fetchAPI(`/api/cameras/${id}`, { method: 'DELETE' }),
     getWebcams: (refresh = false) => fetchAPI(`/api/cameras/available-webcams?refresh=${refresh}`),
-    getAvailableWebcams: (refresh = false) => fetchAPI(`/api/cameras/available-webcams?refresh=${refresh}`),
-    testConnection: (sourceUrl) => fetchAPI('/api/cameras/test-connection', { method: 'POST', body: { source_url: sourceUrl } }),
+    testConnection: (sourceUrl, triggerSignal = false, relayIp = "") => fetchAPI('/api/cameras/test-connection', {
+        method: 'POST',
+        body: { source_url: sourceUrl, trigger_signal: triggerSignal, relay_ip: relayIp }
+    }),
+    testIRByUrl: (sourceUrl, relayIp = "") => fetchAPI('/api/cameras/test-ir-by-url', {
+        method: 'POST',
+        body: { source_url: sourceUrl, relay_ip: relayIp }
+    }),
+    testClassroomIR: (classroomId, durationSeconds = 4, mode = "IR_ON") => fetchAPI(`/api/cameras/${classroomId}/test-ir`, {
+        method: 'POST',
+        body: { duration_seconds: durationSeconds, mode: mode }
+    }),
     resetDefaults: () => fetchAPI('/api/cameras/reset-defaults', { method: 'POST' }),
     probeNVR: (data) => fetchAPI('/api/cameras/nvr/probe', { method: 'POST', body: data }),
     batchImportNVR: (data) => fetchAPI('/api/cameras/nvr/batch-import', { method: 'POST', body: data }),
@@ -133,7 +124,9 @@ export const ReportAPI = {
     getDistributionStatus: () => fetchAPI('/api/reports/distribution-status'),
     sendZalo: (data) => fetchAPI('/api/reports/send-zalo', { method: 'POST', body: data }),
     getZaloStatus: () => fetchAPI('/api/reports/zalo-status'),
-    saveZaloConfig: (data) => fetchAPI('/api/reports/save-zalo-config', { method: 'POST', body: data })
+    saveZaloConfig: (data) => fetchAPI('/api/reports/save-zalo-config', { method: 'POST', body: data }),
+    getNotificationSettings: () => fetchAPI('/api/reports/notification-settings'),
+    saveNotificationSettings: (data) => fetchAPI('/api/reports/notification-settings', { method: 'POST', body: data })
 };
 
 // === SYSTEM APIs ===
@@ -215,6 +208,7 @@ if (typeof window !== 'undefined') {
     window.CameraAPI = CameraAPI;
     window.AttendanceAPI = AttendanceAPI;
     window.ROIAPI = ROIAPI;
+    window.AuthAPI = AuthAPI;
     window.ReportAPI = ReportAPI;
     window.SystemAPI = SystemAPI;
     window.showToast = showToast;

@@ -10,6 +10,7 @@ venv/
 venv_cuda/
 ENV/
 env/
+.env
 
 # Weights & Dataset
 weights/
@@ -33,6 +34,7 @@ storage/annotated/
 storage/reports/
 storage/*.jpg
 storage/*.png
+storage/*.json
 
 # Logs
 logs/*.log

@@ -11,9 +11,17 @@ from core.attendance_engine import attendance_engine
 from services.excel_exporter import excel_exporter
 from services.notification import notification_service
 from services.zalo_service import zalo_service
-from backend.schemas.report_schemas import SendEmailRequest, ZaloTestRequest, ZaloConfigSaveRequest
+from config.zalo_runtime_store import save_runtime_zalo
+from config.notification_settings_store import save_notification_settings, DEFAULT_SETTINGS
+from backend.schemas.report_schemas import (
+    SendEmailRequest,
+    ZaloTestRequest,
+    ZaloConfigSaveRequest,
+    NotificationAdjustRequest
+)
+from backend.api.deps import get_current_user
 
-router = APIRouter(prefix="/reports", tags=["Reports"])
+router = APIRouter(prefix="/reports", tags=["Reports"], dependencies=[Depends(get_current_user)])
 
 @router.get("/list")
 async def list_reports():
@@ -65,7 +73,11 @@ async def send_zalo_report(req: ZaloTestRequest):
             target_type=req.target_type or "WEBHOOK",
             webhook_url=req.webhook_url,
             access_token=req.access_token,
-            user_id=req.user_id
+            user_id=req.user_id,
+            phone=req.phone,
+            bot_id=req.bot_id,
+            api_key=req.api_key,
+            api_base_url=req.api_base_url
         )
     return res
 
@@ -76,16 +88,66 @@ async def get_zalo_status():
 
 @router.post("/save-zalo-config")
 async def save_zalo_config(req: ZaloConfigSaveRequest):
-    """Lưu cấu hình Zalo vào bộ nhớ hệ thống."""
+    """Lưu cấu hình Zalo vào bộ nhớ hệ thống và ghi ra file để giữ qua các lần khởi động."""
     settings.ENABLE_ZALO_NOTIFICATION = req.enabled
     settings.ZALO_NOTIFICATION_TYPE = req.notification_type
-    if req.webhook_url is not None:
+    if req.webhook_url not in (None, ""):
         settings.ZALO_WEBHOOK_URL = req.webhook_url.strip()
-    if req.access_token is not None:
+    if req.access_token not in (None, ""):
         settings.ZALO_OA_ACCESS_TOKEN = req.access_token.strip()
-    if req.recipient_user_id is not None:
+    if req.recipient_user_id not in (None, ""):
         settings.ZALO_RECIPIENT_USER_ID = req.recipient_user_id.strip()
+    if req.bot_api_base_url not in (None, ""):
+        settings.ZALO_BOT_API_BASE_URL = req.bot_api_base_url.strip()
+    if req.bot_id not in (None, ""):
+        settings.ZALO_BOT_ID = req.bot_id.strip()
+    if req.bot_api_key not in (None, ""):
+        settings.ZALO_BOT_API_KEY = req.bot_api_key.strip()
+    if req.recipient_phones not in (None, ""):
+        settings.ZALO_RECIPIENT_PHONES = req.recipient_phones.strip()
+    if req.recipients_json not in (None, ""):
+        settings.ZALO_RECIPIENTS_JSON = req.recipients_json.strip()
+    save_runtime_zalo(settings)
     return {"success": True, "message": "Đã cập nhật cấu hình Zalo thành công!"}
+
+@router.get("/notification-settings")
+async def get_notification_settings():
+    """Lấy cấu hình điều chỉnh thông báo hiện tại (quy tắc, ngưỡng cảnh báo, lịch trình, mẫu tin nhắn)."""
+    return {
+        "enable_zalo": getattr(settings, "ENABLE_ZALO_NOTIFICATION", True),
+        "enable_email": getattr(settings, "ENABLE_EMAIL_NOTIFICATION", False),
+        "send_condition": getattr(settings, "NOTIFICATION_SEND_CONDITION", "always"),
+        "alert_threshold_percent": getattr(settings, "NOTIFICATION_ALERT_THRESHOLD_PERCENT", 10.0),
+        "alert_class_absent_count": getattr(settings, "NOTIFICATION_ALERT_CLASS_ABSENT", 3),
+        "scan_time_morning": getattr(settings, "SCAN_TIME_MORNING", "06:45"),
+        "scan_time_afternoon": getattr(settings, "SCAN_TIME_AFTERNOON", "12:45"),
+        "auto_scan_enabled": getattr(settings, "AUTO_SCAN_ENABLED", True),
+        "zalo_school_template": getattr(settings, "ZALO_SCHOOL_TEMPLATE", "") or DEFAULT_SETTINGS["ZALO_SCHOOL_TEMPLATE"],
+        "zalo_class_template": getattr(settings, "ZALO_CLASS_TEMPLATE", "") or DEFAULT_SETTINGS["ZALO_CLASS_TEMPLATE"],
+        "email_subject_template": getattr(settings, "EMAIL_SUBJECT_TEMPLATE", "") or DEFAULT_SETTINGS["EMAIL_SUBJECT_TEMPLATE"],
+        "email_body_template": getattr(settings, "EMAIL_BODY_TEMPLATE", "") or DEFAULT_SETTINGS["EMAIL_BODY_TEMPLATE"],
+        "defaults": DEFAULT_SETTINGS
+    }
+
+@router.post("/notification-settings")
+async def update_notification_settings(req: NotificationAdjustRequest):
+    """Cập nhật cấu hình điều chỉnh thông báo (quy tắc, ngưỡng cảnh báo, lịch trình, mẫu tin nhắn)."""
+    payload = {
+        "ENABLE_ZALO_NOTIFICATION": req.enable_zalo,
+        "ENABLE_EMAIL_NOTIFICATION": req.enable_email,
+        "NOTIFICATION_SEND_CONDITION": req.send_condition,
+        "NOTIFICATION_ALERT_THRESHOLD_PERCENT": req.alert_threshold_percent,
+        "NOTIFICATION_ALERT_CLASS_ABSENT": req.alert_class_absent_count,
+        "SCAN_TIME_MORNING": req.scan_time_morning,
+        "SCAN_TIME_AFTERNOON": req.scan_time_afternoon,
+        "AUTO_SCAN_ENABLED": req.auto_scan_enabled,
+        "ZALO_SCHOOL_TEMPLATE": req.zalo_school_template,
+        "ZALO_CLASS_TEMPLATE": req.zalo_class_template,
+        "EMAIL_SUBJECT_TEMPLATE": req.email_subject_template,
+        "EMAIL_BODY_TEMPLATE": req.email_body_template,
+    }
+    save_notification_settings(settings, payload)
+    return {"success": True, "message": "Đã lưu cài đặt điều chỉnh thông báo thành công!"}
 
 @router.post("/clear-history")
 @router.delete("/clear-history")

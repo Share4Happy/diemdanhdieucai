@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="css/components/cards-redesign.css">
     <link rel="stylesheet" href="css/components/header-actions.css">
     <link rel="stylesheet" href="css/components/confirmation-dialog.css">
+    <link rel="stylesheet" href="css/components/skeleton-loader.css">
     <link rel="stylesheet" href="css/cameras.css?v=2.2">
     <!-- Global Balance - MUST LOAD LAST -->
     <link rel="stylesheet" href="css/global-table-balance.css?v=3.2">
@@ -24,10 +25,11 @@
     <style>
         /* TV Wall Matrix Grid */
         .tv-wall-container {
-            background: var(--gray-900);
+            background: var(--surface, #ffffff);
             border-radius: var(--radius-md);
             padding: var(--space-6);
             margin-top: var(--space-6);
+            border: 1px solid var(--border-color, #e2e8f0);
         }
 
         .tv-wall-header {
@@ -36,14 +38,14 @@
             align-items: center;
             margin-bottom: var(--space-4);
             padding-bottom: var(--space-4);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid var(--border-color, #e2e8f0);
         }
 
         .tv-wall-title {
             display: flex;
             align-items: center;
             gap: var(--space-3);
-            color: white;
+            color: var(--text-primary, #1e293b);
         }
 
         .live-indicator {
@@ -51,17 +53,18 @@
             align-items: center;
             gap: var(--space-2);
             padding: var(--space-1) var(--space-3);
-            background: rgba(239, 68, 68, 0.2);
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--danger, #ef4444);
             border-radius: var(--radius);
             font-size: var(--text-xs);
             font-weight: var(--font-semibold);
-            color: white;
+            color: var(--danger, #ef4444);
         }
 
         .live-dot {
             width: 8px;
             height: 8px;
-            background: var(--danger);
+            background: var(--danger, #ef4444);
             border-radius: 50%;
             animation: pulse 2s ease-in-out infinite;
         }
@@ -73,18 +76,20 @@
         }
 
         .camera-tile {
-            background: var(--gray-800);
-            border: 1px solid var(--gray-700);
+            background: var(--surface, #ffffff);
+            border: 1px solid var(--border-color, #e2e8f0);
             border-radius: var(--radius-md);
             overflow: hidden;
             aspect-ratio: 16/9;
             position: relative;
             transition: all var(--transition-fast);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         .camera-tile:hover {
-            border-color: var(--primary);
+            border-color: var(--primary, #2563eb);
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
         }
 
         .camera-tile-image {
@@ -149,6 +154,7 @@
 
         /* Keep existing modal styles from cameras.css */
     </style>
+
 </head>
 
 <body>
@@ -165,59 +171,57 @@
             </div>
 
             <nav class="sidebar-nav">
-                <div class="sidebar-nav-section">
-                    <div class="sidebar-nav-title">TỔNG QUAN</div>
-                    <ul class="sidebar-nav-list">
-                        <li class="sidebar-nav-item">
-                            <a href="index.html" class="sidebar-nav-link">
-                                <span class="sidebar-nav-icon"><i class="fa-solid fa-chart-line"></i></span>
-                                <span class="sidebar-nav-text">Dashboard</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="sidebar-nav-section">
-                    <div class="sidebar-nav-title">GIÁM SÁT</div>
-                    <ul class="sidebar-nav-list">
-                        <li class="sidebar-nav-item">
-                            <a href="cameras.html" class="sidebar-nav-link active">
-                                <span class="sidebar-nav-icon"><i class="fa-solid fa-video"></i></span>
-                                <span class="sidebar-nav-text">Camera & Lớp Học</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="sidebar-nav-section">
-                    <div class="sidebar-nav-title">CẤU HÌNH</div>
-                    <ul class="sidebar-nav-list">
-                        <li class="sidebar-nav-item">
-                            <a href="roi-config.html" class="sidebar-nav-link">
-                                <span class="sidebar-nav-icon"><i class="fa-solid fa-draw-polygon"></i></span>
-                                <span class="sidebar-nav-text">Vùng ROI</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="sidebar-nav-section">
-                    <div class="sidebar-nav-title">DỮ LIỆU</div>
-                    <ul class="sidebar-nav-list">
-                        <li class="sidebar-nav-item">
-                            <a href="reports.html" class="sidebar-nav-link">
-                                <span class="sidebar-nav-icon"><i class="fa-solid fa-file-excel"></i></span>
-                                <span class="sidebar-nav-text">Báo Cáo & Dữ Liệu</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+                <ul class="sidebar-nav-list">
+                    <li class="sidebar-nav-item">
+                        <a href="index.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-chart-line"></i></span>
+                            <span class="sidebar-nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="cameras.html" class="sidebar-nav-link active">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-video"></i></span>
+                            <span class="sidebar-nav-text">Camera & Lớp Học</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="roi-config.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-draw-polygon"></i></span>
+                            <span class="sidebar-nav-text">Vùng</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="reports.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-file-excel"></i></span>
+                            <span class="sidebar-nav-text">Báo Cáo & Dữ Liệu</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="notifications.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-paper-plane"></i></span>
+                            <span class="sidebar-nav-text">Thông Báo</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item nav-admin-only" hidden>
+                        <a href="users.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-user-gear"></i></span>
+                            <span class="sidebar-nav-text">Tài Khoản</span>
+                        </a>
+                    </li>
+                </ul>
             </nav>
 
             <div class="sidebar-footer">
-                <button class="sidebar-toggle-btn" type="button">
-                    <i class="fa-solid fa-angles-left"></i>
-                </button>
+                <div class="sidebar-user-profile" id="sidebarUserProfile" title="Thông tin tài khoản">
+                    <div class="sidebar-user-avatar" id="sidebarUserAvatar">A</div>
+                    <div class="sidebar-user-info">
+                        <span class="sidebar-user-name" id="sidebarUserName">Admin</span>
+                        <span class="sidebar-user-role" id="sidebarUserRole">Quản Trị Viên</span>
+                    </div>
+                    <button class="sidebar-logout-btn" type="button" id="sidebarLogoutBtn" title="Đăng Xuất">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
             </div>
         </aside>
 
@@ -229,22 +233,11 @@
             <!-- Header -->
             <header class="app-header">
                 <div class="header-left">
-                    <button class="header-action-btn mobile-menu-btn" type="button">
-                        <i class="fa-solid fa-bars"></i>
-                    </button>
                     <div class="header-breadcrumb">
                         <span class="breadcrumb-item">Giám sát</span>
                         <span class="breadcrumb-separator">/</span>
                         <span class="breadcrumb-item breadcrumb-current">Camera & Lớp Học</span>
                     </div>
-                </div>
-                <div class="header-right">
-                    <button class="header-action-btn" type="button" title="Thông báo">
-                        <i class="fa-solid fa-bell"></i>
-                    </button>
-                    <button class="header-action-btn" type="button" title="Cài đặt">
-                        <i class="fa-solid fa-gear"></i>
-                    </button>
                 </div>
             </header>
 
@@ -270,53 +263,6 @@
                     </div>
                 </div>
 
-                <!-- KPI Cards -->
-                <div class="kpi-grid">
-                    <div class="kpi-card">
-                        <div class="kpi-header">
-                            <span class="kpi-label">Tổng Camera</span>
-                            <div class="kpi-icon primary">
-                                <i class="fa-solid fa-video"></i>
-                            </div>
-                        </div>
-                        <div class="kpi-value" id="statTotal">--</div>
-                        <div class="kpi-description">Đang hoạt động</div>
-                    </div>
-
-                    <div class="kpi-card">
-                        <div class="kpi-header">
-                            <span class="kpi-label">Online</span>
-                            <div class="kpi-icon success">
-                                <i class="fa-solid fa-circle-check"></i>
-                            </div>
-                        </div>
-                        <div class="kpi-value" id="statOnline" style="color: var(--success);">--</div>
-                        <div class="kpi-description">Camera kết nối tốt</div>
-                    </div>
-
-                    <div class="kpi-card">
-                        <div class="kpi-header">
-                            <span class="kpi-label">Đã Cấu Hình ROI</span>
-                            <div class="kpi-icon warning">
-                                <i class="fa-solid fa-draw-polygon"></i>
-                            </div>
-                        </div>
-                        <div class="kpi-value" id="statROI">--</div>
-                        <div class="kpi-description">Đã thiết lập vùng</div>
-                    </div>
-
-                    <div class="kpi-card">
-                        <div class="kpi-header">
-                            <span class="kpi-label">Tổng Sĩ Số</span>
-                            <div class="kpi-icon primary">
-                                <i class="fa-solid fa-users"></i>
-                            </div>
-                        </div>
-                        <div class="kpi-value" id="statStudents">--</div>
-                        <div class="kpi-description">Học sinh toàn trường</div>
-                    </div>
-                </div>
-
                 <!-- Toolbar -->
                 <div class="camera-toolbar">
                     <div class="camera-toolbar-right">
@@ -331,20 +277,10 @@
                     </div>
                 </div>
 
-                <!-- TV WALL VIEW -->
+                <!-- DANH SÁCH CAMERA -->
                 <div id="matrixView" class="tv-wall-container">
-                    <div class="tv-wall-header">
-                        <div class="tv-wall-title">
-                            <div class="live-indicator">
-                                <span class="live-dot"></span>
-                                LIVE
-                            </div>
-                            <h3 style="margin: 0; font-size: var(--text-lg);">Giám Sát TV Wall</h3>
-                        </div>
-                        <span class="badge badge-success" id="matrixStatus">30 Online</span>
-                    </div>
                     <div class="matrix-grid" id="matrixGrid">
-                        <!-- Render by JS -->
+                        <!-- Danh sách camera hoặc trạng thái chưa có camera được nạp tự động qua JavaScript -->
                     </div>
                 </div>
             </div>
@@ -427,8 +363,20 @@
                         </div>
 
                         <div id="webcamListContainer" class="webcam-card-grid">
-                            <div class="webcam-empty-box"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải danh sách
-                                camera trên máy...</div>
+                            <div class="webcam-card" style="pointer-events: none;">
+                                <div class="webcam-thumb-box skeleton" style="height: 110px; border-radius: 6px;"></div>
+                                <div class="webcam-card-info" style="margin-top: 6px;">
+                                    <div class="skeleton" style="width: 80%; height: 14px; margin-bottom: 4px;"></div>
+                                    <div class="skeleton" style="width: 50%; height: 12px;"></div>
+                                </div>
+                            </div>
+                            <div class="webcam-card" style="pointer-events: none;">
+                                <div class="webcam-thumb-box skeleton" style="height: 110px; border-radius: 6px;"></div>
+                                <div class="webcam-card-info" style="margin-top: 6px;">
+                                    <div class="skeleton" style="width: 70%; height: 14px; margin-bottom: 4px;"></div>
+                                    <div class="skeleton" style="width: 45%; height: 12px;"></div>
+                                </div>
+                            </div>
                         </div>
 
                         <div
@@ -500,28 +448,40 @@
                                 <span class="slider"></span>
                             </label>
                         </div>
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label><i class="fa-solid fa-network-wired" style="color: var(--primary);"></i> Địa Chỉ IP
-                                Module Relay (Tùy chọn):</label>
-                            <input type="text" id="formRelayIp" class="form-control"
-                                placeholder="Ví dụ: 192.168.10.200 (hoặc để trống nếu chưa dùng)">
+                        <div style="display: flex; gap: 10px; align-items: flex-end; margin-top: 10px; flex-wrap: wrap;">
+                            <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 200px;">
+                                <label><i class="fa-solid fa-network-wired" style="color: var(--primary);"></i> IP Relay / Camera Phụ (Tùy chọn):</label>
+                                <input type="text" id="formRelayIp" class="form-control"
+                                    placeholder="Mặc định theo IP camera (hoặc nhập IP riêng)">
+                            </div>
+                            <button type="button" id="btnTestCameraIR" class="btn btn-secondary" style="font-weight: 600; padding: 9px 15px; white-space: nowrap; height: 42px; border-color: #ef4444; color: #b91c1c;">
+                                <i class="fa-solid fa-bolt"></i> Thử Bật Đèn Hồng Ngoại (4s)
+                            </button>
+                        </div>
+                        <div id="irStatusMsg" style="font-size: 0.8rem; margin-top: 6px; color: #64748b;">
+                            <i class="fa-solid fa-circle-info" style="color: #0284c7;"></i> Đèn hồng ngoại của camera sẽ bật sáng đỏ trong 4 giây để học sinh nhận biết giờ điểm danh, sau đó tự động chuyển sang ảnh màu khi chụp.
                         </div>
                     </div>
 
-                    <!-- Khung Test Kết Nối Live -->
+                    <!-- Khung Test Kết Nối Live & Chụp Thử Nghiệm -->
                     <div class="test-box">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                             <span style="font-weight: 700; font-size: 0.88rem; color: var(--text-main);">
-                                <i class="fa-solid fa-satellite-dish" style="color: var(--primary);"></i> Kiểm Tra Thông
-                                Mạng & Bắt Khung Hình
+                                <i class="fa-solid fa-satellite-dish" style="color: var(--primary);"></i> Kiểm Tra Kết Nối & Bắt Khung Hình
                             </span>
-                            <button type="button" id="btnTestStream" class="btn btn-secondary btn-sm"
-                                style="font-weight: 600;">
-                                <i class="fa-solid fa-play"></i> Kiểm Tra Kết Nối Ngay
-                            </button>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button type="button" id="btnTestStream" class="btn btn-secondary btn-sm"
+                                    style="font-weight: 600;">
+                                    <i class="fa-solid fa-play"></i> Bắt Ảnh Xem Trước
+                                </button>
+                                <button type="button" id="btnTestSignalFlow" class="btn btn-primary btn-sm"
+                                    style="font-weight: 700; background: #0284c7; border-color: #0369a1;">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Thử Chu Trình: Bật Đèn Báo -> Bắt Ảnh Màu
+                                </button>
+                            </div>
                         </div>
                         <div id="testStatusMsg" style="font-size: 0.82rem; margin-top: 6px; color: var(--text-muted);">
-                            Bấm nút để thử kết nối và chụp 1 ảnh xem trước từ nguồn camera trên.
+                            Bấm "Bắt Ảnh Xem Trước" hoặc "Thử Chu Trình: Bật Đèn Báo -> Bắt Ảnh Màu" để kiểm chứng ảnh thu được có đầy đủ màu sắc.
                         </div>
                         <img id="testPreviewImg" class="test-preview-img" alt="Ảnh xem trước từ Camera">
                     </div>
@@ -823,6 +783,7 @@
     </div>
 
     <!-- Scripts -->
+    <script type="module" src="js/shared/auth-guard.js"></script>
     <script src="js/shared/app-shell.js?v=2.1"></script>
     <script src="js/shared/header-actions.js?v=2.2"></script>
     <script src="js/shared/confirmation-dialog.js?v=1.0"></script>

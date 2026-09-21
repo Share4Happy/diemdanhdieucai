@@ -2,6 +2,9 @@ import os
 from pathlib import Path
 from pydantic import BaseModel
 
+from dotenv import load_dotenv
+load_dotenv()
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 class Settings(BaseModel):
@@ -58,6 +61,18 @@ class Settings(BaseModel):
     USE_IMAGE_ENHANCEMENT: bool = True  # Áp dụng CLAHE chống ngược sáng cửa sổ
     USE_TILED_INFERENCE: bool = True    # Bật thuật toán phân mảnh quét chi tiết đa tầng (SAHI)
 
+    # Auth / Login
+    JWT_SECRET: str = os.getenv("JWT_SECRET", "change-me-diemdanh-dieucai")
+    JWT_EXPIRE_HOURS: int = int(os.getenv("JWT_EXPIRE_HOURS", "12"))
+    ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "admin@truongdieucai.edu.vn")
+    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "Admin@2025")
+    ADMIN_FULL_NAME: str = os.getenv("ADMIN_FULL_NAME", "Quản trị hệ thống")
+    APP_PUBLIC_URL: str = os.getenv("APP_PUBLIC_URL", "http://localhost:8000")
+    CORS_ORIGINS: str = os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:8000,http://127.0.0.1:8000,http://localhost:3000,http://127.0.0.1:3000",
+    )
+
     # Email Reporting (Ban Giám Hiệu)
     SMTP_SERVER: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
@@ -68,15 +83,30 @@ class Settings(BaseModel):
 
     # Zalo Notification Settings (Ban Giám Hiệu & Giáo Viên)
     ENABLE_ZALO_NOTIFICATION: bool = True
-    ZALO_NOTIFICATION_TYPE: str = os.getenv("ZALO_NOTIFICATION_TYPE", "WEBHOOK") # "WEBHOOK" hoặc "OA_API"
-    ZALO_WEBHOOK_URL: str = os.getenv("ZALO_WEBHOOK_URL", "")
+    ZALO_NOTIFICATION_TYPE: str = os.getenv("ZALO_NOTIFICATION_TYPE", "BOT_API") # "BOT_API" (Khuyến nghị), "OA_API" hoặc "WEBHOOK"
+    # Zalo Bot Gateway (Khuyến nghị - Gửi tin nhắn / kết bạn batch, resolve SĐT -> UID)
+    ZALO_BOT_API_BASE_URL: str = os.getenv("ZALO_BOT_API_BASE_URL", "http://localhost:3000/api/gateway/v1.0")
+    ZALO_BOT_ID: str = os.getenv("ZALO_BOT_ID", "")
+    ZALO_BOT_API_KEY: str = os.getenv("ZALO_BOT_API_KEY", "")
+    ZALO_RECIPIENT_PHONES: str = os.getenv("ZALO_RECIPIENT_PHONES", "") # Phân cách bằng dấu phẩy (Legacy - chỉ dành cho nhóm Ban Giám Hiệu)
+    ZALO_RECIPIENTS_JSON: str = os.getenv("ZALO_RECIPIENTS_JSON", "") # Danh sách người nhận theo vai trò: [{"phone":"...","role":"school|class","class_code":"LOP_10A1"}]
+    # Zalo Official Account (Phương thức thay thế)
     ZALO_OA_ACCESS_TOKEN: str = os.getenv("ZALO_OA_ACCESS_TOKEN", "")
     ZALO_RECIPIENT_USER_ID: str = os.getenv("ZALO_RECIPIENT_USER_ID", "")
+    # Zalo Webhook (Phương thức cũ - không khuyến nghị)
+    ZALO_WEBHOOK_URL: str = os.getenv("ZALO_WEBHOOK_URL", "")
 
-    # Authentication & Security
-    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "truong-thpt-dieu-cai-secret-key-2026-attendance-ai-secured")
-    JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 # 24 giờ
+    # Notification Adjust & Rules Settings
+    NOTIFICATION_SEND_CONDITION: str = "always" # "always" hoặc "has_absent"
+    NOTIFICATION_ALERT_THRESHOLD_PERCENT: float = 10.0
+    NOTIFICATION_ALERT_CLASS_ABSENT: int = 3
+    SCAN_TIME_MORNING: str = "06:45"
+    SCAN_TIME_AFTERNOON: str = "12:45"
+    AUTO_SCAN_ENABLED: bool = True
+    ZALO_SCHOOL_TEMPLATE: str = ""
+    ZALO_CLASS_TEMPLATE: str = ""
+    EMAIL_SUBJECT_TEMPLATE: str = ""
+    EMAIL_BODY_TEMPLATE: str = ""
 
 
 settings = Settings()
@@ -93,3 +123,11 @@ for folder in [
     BASE_DIR / "database"
 ]:
     folder.mkdir(parents=True, exist_ok=True)
+
+# Khôi phục cấu hình Zalo đã lưu runtime trước đó (giữ qua mỗi lần khởi động server)
+from config.zalo_runtime_store import load_runtime_zalo
+load_runtime_zalo(settings)
+
+# Khôi phục cấu hình điều chỉnh thông báo đã lưu
+from config.notification_settings_store import load_notification_settings
+load_notification_settings(settings)

@@ -9,8 +9,9 @@ from database.db_session import get_db
 from database.models import Classroom, ROIPolygon
 from core.rtsp_client import rtsp_client
 from backend.schemas.roi_schemas import ROISaveRequest
+from backend.api.deps import get_current_user
 
-router = APIRouter(prefix="/roi", tags=["ROI"])
+router = APIRouter(prefix="/roi", tags=["ROI"], dependencies=[Depends(get_current_user)])
 
 @router.get("/{classroom_id}")
 async def get_classroom_roi(classroom_id: int, refresh: bool = False, db: Session = Depends(get_db)):

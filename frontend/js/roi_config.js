@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             ? targetClassId 
             : (classSelect ? classSelect.value : classrooms[0].id);
         
-        if (btnModeRed) btnModeRed.click();
+        if (btnModeGreen) btnModeGreen.click();
         editor.loadClassroomROI(initialId, forceRefresh);
     }
 

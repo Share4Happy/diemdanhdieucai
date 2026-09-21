@@ -44,19 +44,21 @@ class AttendanceEngine:
         session_code = f"SESSION_{now.strftime('%Y%m%d_%H%M%S')}"
         logger.info(f"=== BẮT ĐẦU PHIÊN ĐIỂM DANH: {session_code} ===")
 
-        # 1. Bật đèn LED hồng ngoại báo hiệu nếu được cấu hình
-        if trigger_led:
-            relay_service.activate_timed_signal(settings.RELAY_DURATION_SECONDS)
-            # Chờ 3 giây để ổn định ánh sáng
-            time.sleep(3)
-
         db: Session = SessionLocal()
         try:
-            # Lấy danh sách 30 lớp học và cấu hình ROI
+            # Lấy danh sách lớp học đang kích hoạt và cấu hình ROI
             classrooms = db.query(Classroom).filter(Classroom.is_active == True).order_by(Classroom.id).all()
             if not classrooms:
-                logger.warning("Không tìm thấy lớp học nào trong CSDL!")
+                logger.warning("Không tìm thấy lớp học nào đang kích hoạt trong CSDL!")
                 return {"success": False, "message": "Không có lớp học"}
+
+            # 1. Bật đèn hồng ngoại camera báo hiệu giờ điểm danh (trước khi chụp)
+            if trigger_led:
+                relay_service.signal_classrooms_before_capture(
+                    classrooms=classrooms,
+                    signal_seconds=3,
+                    capture_color=True
+                )
 
             # Tạo bản ghi Session mới
             new_session = AttendanceSession(
@@ -70,7 +72,7 @@ class AttendanceEngine:
             db.commit()
             db.refresh(new_session)
 
-            # 2. Chụp ảnh đồng loạt từ 30 camera
+            # 2. Chụp ảnh đồng loạt từ các camera (ẢNH MÀU 100%)
             cls_data_list = [
                 {
                     "id": c.id,
@@ -79,6 +81,10 @@ class AttendanceEngine:
                 } for c in classrooms
             ]
             capture_results = rtsp_client.capture_all_classrooms(cls_data_list, date_str=date_str)
+
+            # 3. Tự động trả các camera về chế độ Tự Động (Auto) sau khi đã chụp xong
+            if trigger_led:
+                relay_service.restore_classrooms_auto(classrooms)
 
             # Thư mục lưu ảnh đối chứng
             annotated_folder = settings.ANNOTATED_DIR / date_str

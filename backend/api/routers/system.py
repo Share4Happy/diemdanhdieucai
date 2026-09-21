@@ -1,10 +1,11 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from config.settings import settings
+from backend.api.deps import get_current_user
 
 router = APIRouter(tags=["System"])
 
 @router.get("/database/info")
-async def get_database_info():
+async def get_database_info(_user=Depends(get_current_user)):
     """Lấy thông tin cấu hình Cơ Sở Dữ Liệu hiện tại (PostgreSQL / MySQL / SQLite)."""
     db_type = "SQLite"
     if "postgres" in settings.DATABASE_URL:
@@ -29,7 +30,7 @@ async def health_check():
     }
 
 @router.get("/system/classrooms-media")
-async def get_classrooms_media():
+async def get_classrooms_media(_user=Depends(get_current_user)):
     """Lấy danh mục dữ liệu 5 ảnh và 1 video 15s của 30 lớp học kèm thông tin sĩ số."""
     import json
     json_path = settings.CLASSROOMS_MEDIA_DIR / "danh_sach_si_so_toan_truong.json"
@@ -41,7 +42,7 @@ async def get_classrooms_media():
     return {"success": True, "data": data}
 
 @router.post("/system/bind-sample-media")
-async def bind_sample_media(media_type: str = "video"):
+async def bind_sample_media(media_type: str = "video", _user=Depends(get_current_user)):
     """
     Tùy chọn tự động gán nguồn rtsp_url của 30 lớp trong CSDL trỏ tới file video 15s hoặc ảnh mẫu
     để người dùng có thể chạy thử nghiệm tính năng điểm danh toàn diện ngay mà không cần camera vật lý.
