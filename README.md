@@ -42,7 +42,7 @@ Hệ thống điểm danh tự động toàn diện cho **30 lớp học** (tổ
    - Lập lịch tự động quét lúc **06:45 AM** hàng ngày (Thứ 2 đến Thứ 7) qua **APScheduler**.
    - Tích hợp điều khiển mạch **Relay** đóng/ngắt đèn LED báo hiệu khi chu trình quét diễn ra.
    - Tự động xuất file báo cáo **Excel (.xlsx)** định dạng chuẩn của Sở GD&ĐT.
-   - Gửi thông báo kết quả tức thời qua **Zalo Webhook / Zalo Official Account**.
+   - Gửi thông báo kết quả tức thời qua **Zalo Bot Gateway** (khuyến nghị) hoặc Zalo Official Account.
 
 ---
 
@@ -99,7 +99,7 @@ hethongdiemdanh Dieu Cai/
 ├── 🔌 services/                     # [DỊCH VỤ NGOẠI VI] Tự động hóa & Báo cáo
 │   ├── scheduler.py                # Lập lịch điểm danh tự động 06:45 AM (APScheduler)
 │   ├── excel_exporter.py           # Xuất báo cáo Excel chuẩn hóa theo mẫu GD&ĐT
-│   ├── zalo_service.py             # Tích hợp gửi tin nhắn Zalo Webhook / OA
+│   ├── zalo_service.py             # Tích hợp gửi tin nhắn Zalo Bot Gateway / OA (khuyến nghị Bot Gateway)
 │   └── notification.py             # Quản lý kênh thông báo Email
 │
 ├── 📁 dataset/                      # Kho dữ liệu hình ảnh, video & cấu hình huấn luyện
@@ -138,7 +138,7 @@ Dự án được thiết kế giúp các thành viên trong nhóm làm việc �
 | Vai Trò | Thư Mục Phụ Trách | Trách Nhiệm Chính | Lệnh Chạy Riêng |
 | :--- | :--- | :--- | :--- |
 | **Frontend Dev** | `frontend/` | Thiết kế giao diện Glassmorphism, đồ thị Chart.js, công cụ vẽ Canvas ROI, gọi REST API qua `api.js`. | `run_frontend.bat` (Cổng 3000) |
-| **Backend Dev** | `backend/`, `core/`, `services/` | Xây dựng REST API FastAPI, tích hợp AI YOLOv8, Relay, Excel, Zalo, APScheduler, viết Pytest. | `run_backend.bat` (Cổng 8000, Swagger `/docs`) |
+| **Backend Dev** | `backend/`, `core/`, `services/` | Xây dựng REST API FastAPI, tích hợp AI YOLOv8, Relay, Excel, Zalo Bot Gateway, APScheduler, viết Pytest. | `run_backend.bat` (Cổng 8000, Swagger `/docs`) |
 | **Database Dev** | `database/` | Thiết kế mô hình ORM `models.py`, quản lý session `db_session.py`, nạp sẵn 30 lớp học và sao lưu. | `python -c "from database.db_session import init_db; init_db()"` |
 | **AI Engineer** | `training/`, `dataset/` | Tiền xử lý dữ liệu, gán nhãn, fine-tuning YOLOv8 trên GPU RTX, đánh giá mAP và xuất mô hình. | `training\train_gpu.bat` |
 | **Project Manager** | Toàn bộ dự án | Kiểm tra tiến độ phân hệ, tính toàn vẹn CSDL, trạng thái GPU và các kịch bản kiểm thử. | `xem_tien_do.bat` |
@@ -221,7 +221,7 @@ Sau khi khởi chạy hệ thống, mở trình duyệt tại:
 | **📊 Dashboard Điểm Danh** | [http://localhost:8000](http://localhost:8000) | Giám sát sĩ số thời gian thực 30 lớp, xem ảnh AI đối chứng, kích hoạt quét thủ công |
 | **📷 Quản Lý Camera** | [http://localhost:8000/cameras](http://localhost:8000/cameras) | Thêm, sửa, kiểm tra kết nối RTSP/Webcam, xem trước Live Snapshot trực tiếp |
 | **📐 Cấu Hình Vùng ROI** | [http://localhost:8000/roi-config](http://localhost:8000/roi-config) | Công cụ vẽ Canvas Red Zone (Bàn học) và Green Zone (Bục giảng giáo viên) |
-| **📑 Báo Cáo & Dữ Liệu** | [http://localhost:8000/reports](http://localhost:8000/reports) | Tra cứu lịch sử theo ngày/lớp, tải file Excel chuẩn Sở GD&ĐT, bắn tin Zalo |
+| **📑 Báo Cáo & Dữ Liệu** | [http://localhost:8000/reports](http://localhost:8000/reports) | Tra cứu lịch sử theo ngày/lớp, tải file Excel chuẩn Sở GD&ĐT, gửi tin Zalo qua Bot Gateway |
 | **📖 Swagger API Docs** | [http://localhost:8000/docs](http://localhost:8000/docs) | Tài liệu kỹ thuật OpenAPI/Swagger thử nghiệm trực tiếp các API RESTful |
 
 ---

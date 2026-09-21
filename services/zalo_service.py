@@ -11,9 +11,9 @@ from database.models import AttendanceSession, AttendanceDetail, Classroom
 class ZaloNotificationService:
     """
     Module phân phối thông báo điểm danh qua ứng dụng ZALO:
-    1. Hỗ trợ gửi tin nhắn tóm tắt qua Zalo Webhook (Zalo Bot / Nhóm Zalo BGH)
+    1. [KHUYẾN NGHỊ] Hỗ trợ gửi tin nhắn batch tới nhiều người lạ qua Zalo Bot Gateway (API Key + Bot ID, resolve SĐT -> UID)
     2. Hỗ trợ gửi tin nhắn qua Zalo Official Account (OA) OpenAPI (CS/ZNS) tới số điện thoại / User ID
-    3. Hỗ trợ gửi tin nhắn batch tới nhiều người lạ qua Zalo Bot Gateway (API Key + Bot ID, resolve SĐT -> UID)
+    3. [CŨ - KHÔNG KHUYẾN NGHỊ] Hỗ trợ gửi tin nhắn tóm tắt qua Zalo Webhook (Zalo Bot / Nhóm Zalo BGH)
     """
 
     def __init__(self):

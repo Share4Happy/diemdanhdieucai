@@ -68,15 +68,17 @@ class Settings(BaseModel):
 
     # Zalo Notification Settings (Ban Giám Hiệu & Giáo Viên)
     ENABLE_ZALO_NOTIFICATION: bool = True
-    ZALO_NOTIFICATION_TYPE: str = os.getenv("ZALO_NOTIFICATION_TYPE", "WEBHOOK") # "WEBHOOK", "OA_API" hoặc "BOT_API"
-    ZALO_WEBHOOK_URL: str = os.getenv("ZALO_WEBHOOK_URL", "")
-    ZALO_OA_ACCESS_TOKEN: str = os.getenv("ZALO_OA_ACCESS_TOKEN", "")
-    ZALO_RECIPIENT_USER_ID: str = os.getenv("ZALO_RECIPIENT_USER_ID", "")
-    # Zalo Bot Gateway (Gửi tin nhắn / kết bạn batch, resolve SĐT -> UID)
+    ZALO_NOTIFICATION_TYPE: str = os.getenv("ZALO_NOTIFICATION_TYPE", "BOT_API") # "BOT_API" (Khuyến nghị), "OA_API" hoặc "WEBHOOK"
+    # Zalo Bot Gateway (Khuyến nghị - Gửi tin nhắn / kết bạn batch, resolve SĐT -> UID)
     ZALO_BOT_API_BASE_URL: str = os.getenv("ZALO_BOT_API_BASE_URL", "http://localhost:3000/api/gateway/v1.0")
     ZALO_BOT_ID: str = os.getenv("ZALO_BOT_ID", "")
     ZALO_BOT_API_KEY: str = os.getenv("ZALO_BOT_API_KEY", "")
     ZALO_RECIPIENT_PHONES: str = os.getenv("ZALO_RECIPIENT_PHONES", "") # Phân cách bằng dấu phẩy
+    # Zalo Official Account (Phương thức thay thế)
+    ZALO_OA_ACCESS_TOKEN: str = os.getenv("ZALO_OA_ACCESS_TOKEN", "")
+    ZALO_RECIPIENT_USER_ID: str = os.getenv("ZALO_RECIPIENT_USER_ID", "")
+    # Zalo Webhook (Phương thức cũ - không khuyến nghị)
+    ZALO_WEBHOOK_URL: str = os.getenv("ZALO_WEBHOOK_URL", "")
 
 
 settings = Settings()
