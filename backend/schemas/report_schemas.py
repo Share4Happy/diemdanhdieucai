@@ -26,3 +26,18 @@ class ZaloConfigSaveRequest(BaseModel):
     bot_api_key: Optional[str] = ""
     recipient_phones: Optional[str] = ""       # Legacy: chỉ dành cho nhóm Ban Giám Hiệu
     recipients_json: Optional[str] = ""        # [{"phone","role","class_code"}]: người nhận theo vai trò
+
+class NotificationAdjustRequest(BaseModel):
+    enable_zalo: Optional[bool] = True
+    enable_email: Optional[bool] = False
+    send_condition: Optional[str] = "always"  # "always" | "has_absent"
+    alert_threshold_percent: Optional[float] = 10.0
+    alert_class_absent_count: Optional[int] = 3
+    scan_time_morning: Optional[str] = "06:45"
+    scan_time_afternoon: Optional[str] = "12:45"
+    auto_scan_enabled: Optional[bool] = True
+    zalo_school_template: Optional[str] = ""
+    zalo_class_template: Optional[str] = ""
+    email_subject_template: Optional[str] = ""
+    email_body_template: Optional[str] = ""
+

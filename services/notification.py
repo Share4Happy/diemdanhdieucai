@@ -61,10 +61,21 @@ class NotificationService:
             logger.info(f"Đang gửi email báo cáo điểm danh tới Hiệu trưởng ({settings.PRINCIPAL_EMAIL})...")
             msg = MIMEMultipart()
             msg["From"] = settings.SMTP_USER
-            msg["To"] = settings.PRINCIPAL_EMAIL
-            msg["Subject"] = f"[ĐIỂM DANH SĨ SỐ] Báo cáo ngày {session.scan_date} - THPT Điều Cải"
+            rate_str = f"{(session.total_present / session.total_standard * 100):.1f}%" if session.total_standard else "0.0%"
 
-            body = f"""
+            subj_tpl = (getattr(settings, "EMAIL_SUBJECT_TEMPLATE", "") or "").strip()
+            if not subj_tpl:
+                msg["Subject"] = f"[ĐIỂM DANH SĨ SỐ] Báo cáo ngày {session.scan_date} - THPT Điều Cải"
+            else:
+                msg["Subject"] = (
+                    subj_tpl
+                    .replace("{ngay}", str(session.scan_date))
+                    .replace("{gio}", str(session.scan_time))
+                )
+
+            body_tpl = (getattr(settings, "EMAIL_BODY_TEMPLATE", "") or "").strip()
+            if not body_tpl:
+                body = f"""
 Kính gửi Ban Giám hiệu Trường THPT Điều Cải,
 
 Hệ thống Camera AI đã hoàn tất quy trình quét điểm danh tự động lúc {session.scan_time} ngày {session.scan_date}.
@@ -74,13 +85,24 @@ THỐNG KÊ TỔNG QUAN:
 - Tổng sĩ số toàn trường: {session.total_standard} học sinh
 - Số học sinh hiện diện: {session.total_present} học sinh
 - Số học sinh vắng mặt: {session.total_absent} học sinh
-- Tỷ lệ chuyên cần: {(session.total_present / session.total_standard * 100):.1f}%
+- Tỷ lệ chuyên cần: {rate_str}
 
 Chi tiết sĩ số của từng lớp và ảnh chụp đối chứng được đính kèm trong file Excel bên dưới.
 
 Trân trọng,
 Hệ Thống Điểm Danh Tự Động AI
-            """
+                """
+            else:
+                body = (
+                    body_tpl
+                    .replace("{ngay}", str(session.scan_date))
+                    .replace("{gio}", str(session.scan_time))
+                    .replace("{tong_lop}", str(session.total_classes))
+                    .replace("{si_so}", str(session.total_standard))
+                    .replace("{co_mat}", str(session.total_present))
+                    .replace("{vang_mat}", str(session.total_absent))
+                    .replace("{ty_le}", rate_str)
+                )
             msg.attach(MIMEText(body, "plain", "utf-8"))
 
             # Đính kèm file Excel
@@ -106,6 +128,30 @@ Hệ Thống Điểm Danh Tự Động AI
 
         except Exception as e:
             logger.error(f"Lỗi khi gửi email báo cáo: {e}")
+            return False
+
+    def send_plain_email(self, to_email: str, subject: str, body: str) -> bool:
+        """Gửi email văn bản thuần (đặt lại mật khẩu, thông báo ngắn)."""
+        if not to_email:
+            return False
+        if not settings.SMTP_PASSWORD:
+            logger.info(f"[NOTIFICATION-LOG] Bỏ qua gửi email tới {to_email} vì chưa cấu hình SMTP_PASSWORD.")
+            return False
+        try:
+            msg = MIMEMultipart()
+            msg["From"] = settings.SMTP_USER
+            msg["To"] = to_email
+            msg["Subject"] = subject
+            msg.attach(MIMEText(body, "plain", "utf-8"))
+            server = smtplib.SMTP(settings.SMTP_SERVER, settings.SMTP_PORT)
+            server.starttls()
+            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+            server.send_message(msg)
+            server.quit()
+            logger.info(f"Đã gửi email tới {to_email}: {subject}")
+            return True
+        except Exception as e:
+            logger.error(f"Lỗi khi gửi email tới {to_email}: {e}")
             return False
 
     def send_test_email(self, to_email: str = None) -> dict:

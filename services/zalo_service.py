@@ -73,6 +73,10 @@ class ZaloNotificationService:
 
             data = self._collect_message_data(session, details)
 
+            custom_tpl = (getattr(settings, "ZALO_SCHOOL_TEMPLATE", "") or "").strip()
+            if custom_tpl:
+                return self._render_template(custom_tpl, data)
+
             lines = [
                 "🔔 [THPT ĐIỀU CẢI] BÁO CÁO ĐIỂM DANH SĨ SỐ ĐẦU GIỜ SÁNG",
                 f"📅 Ngày quét: {data['ngay']} | Giờ: {data['gio']}",
@@ -112,6 +116,20 @@ class ZaloNotificationService:
             cls_name = detail.classroom.name if detail.classroom else f"Lớp {class_code}"
             room = detail.classroom.room_number if detail.classroom and detail.classroom.room_number else ""
             rate = (detail.present_count / detail.standard_count * 100) if detail.standard_count > 0 else 0.0
+
+            custom_tpl = (getattr(settings, "ZALO_CLASS_TEMPLATE", "") or "").strip()
+            if custom_tpl:
+                c_data = {
+                    "lop": cls_name,
+                    "phong": f"({room})" if room else "",
+                    "ngay": session.scan_date,
+                    "gio": session.scan_time,
+                    "si_so": detail.standard_count,
+                    "co_mat": detail.present_count,
+                    "vang_mat": detail.absent_count,
+                    "ty_le": f"{rate:.1f}%",
+                }
+                return self._render_template(custom_tpl, c_data)
 
             build = [
                 f"🔔 [THPT ĐIỀU CẢI] BÁO CÁO ĐIỂM DANH LỚP {cls_name}",
