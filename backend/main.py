@@ -24,7 +24,8 @@ from backend.api.routers import (
     cameras_router,
     roi_router,
     reports_router,
-    system_router
+    system_router,
+    auth_router
 )
 
 @asynccontextmanager
@@ -54,6 +55,7 @@ app.add_middleware(
 )
 
 # Đăng ký các APIRouters chuẩn hóa
+app.include_router(auth_router, prefix="/api")
 app.include_router(attendance_router, prefix="/api")
 app.include_router(cameras_router, prefix="/api")
 app.include_router(roi_router, prefix="/api")

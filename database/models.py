@@ -110,3 +110,16 @@ class AttendanceDetail(Base):
 
     session = relationship("AttendanceSession", back_populates="details")
     classroom = relationship("Classroom", back_populates="attendance_details")
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(50), unique=True, index=True, nullable=False)
+    hashed_password = Column(String(255), nullable=False)
+    full_name = Column(String(100), default="")
+    role = Column(String(20), default="admin")  # "admin", "teacher", "supervisor"
+    email = Column(String(100), nullable=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    last_login = Column(DateTime, nullable=True)

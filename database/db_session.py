@@ -3,7 +3,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, scoped_session
 from config.settings import settings
 from config.logging_config import logger
-from database.models import Base, Classroom, ROIPolygon, NVRDevice
+from database.models import Base, Classroom, ROIPolygon, NVRDevice, User
 
 engine = create_engine(
     settings.DATABASE_URL,
@@ -83,6 +83,31 @@ def init_db():
         if created_count > 0:
             db.commit()
             logger.info(f"Đã bổ sung thành công {created_count} lớp học chuẩn THPT Điều Cải!")
+
+        # Khởi tạo tài khoản quản trị và giáo viên mặc định nếu chưa có
+        user_count = db.query(User).count()
+        if user_count == 0:
+            from core.security import get_password_hash
+            default_admin = User(
+                username="admin",
+                hashed_password=get_password_hash("admin123"),
+                full_name="Quản Trị Viên Hệ Thống",
+                role="admin",
+                email="admin@truongdieucai.edu.vn",
+                is_active=True
+            )
+            default_teacher = User(
+                username="giaovien",
+                hashed_password=get_password_hash("giaovien123"),
+                full_name="Giáo Viên / Giám Thị",
+                role="teacher",
+                email="giaovien@truongdieucai.edu.vn",
+                is_active=True
+            )
+            db.add(default_admin)
+            db.add(default_teacher)
+            db.commit()
+            logger.info("Đã tạo thành công tài khoản mặc định: admin (admin123) và giaovien (giaovien123)")
     except Exception as e:
         db.rollback()
         logger.error(f"Lỗi khởi tạo DB: {e}")

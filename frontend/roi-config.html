@@ -4,126 +4,225 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cấu Hình Không Gian ROI - THPT Điều Cải</title>
+    <title>Cấu Hình ROI - THPT Điều Cải AI Camera</title>
+
+    <!-- Design System & Components -->
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/layout/app-shell.css?v=2.4">
+    <link rel="stylesheet" href="css/components/buttons-redesign.css">
+    <link rel="stylesheet" href="css/components/badges-redesign.css">
+    <link rel="stylesheet" href="css/components/header-actions.css">
+    <link rel="stylesheet" href="css/global-table-balance.css?v=2.5">
+
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/main.css?v=3.1">
+
+    <!-- Page Specific (ROI Canvas styles) -->
     <link rel="stylesheet" href="css/roi_config.css?v=3.1">
 </head>
 
 <body>
-    <header class="navbar">
-        <div class="nav-brand">
-            <div class="logo-badge">ĐC</div>
-            <div>
-                <h1>THPT ĐIỀU CẢI - THIẾT LẬP KHÔNG GIAN ROI</h1>
-
-            </div>
-        </div>
-        <div class="nav-links">
-            <a href="index.html" class="nav-link"><i class="fa-solid fa-chart-line"></i> Dashboard Điểm Danh</a>
-            <a href="cameras.html" class="nav-link"><i class="fa-solid fa-video"></i> Quản Lý Camera</a>
-            <a href="roi-config.html" class="nav-link active"><i class="fa-solid fa-draw-polygon"></i> Cấu Hình ROI</a>
-            <a href="reports.html" class="nav-link"><i class="fa-solid fa-file-excel"></i> Quản Lý Dữ Liệu & Báo Cáo</a>
-        </div>
-    </header>
-
-    <main class="container roi-page-container">
-        <!-- Banner Thiết Lập Tọa Độ Vùng ROI -->
-        <div class="action-banner roi-banner">
-            <div class="banner-info">
-                <div class="banner-title-group">
-                    <div class="banner-icon-badge">
-                        <i class="fa-solid fa-draw-polygon"></i>
-                    </div>
-                    <div>
-                        <h2>Thiết Lập Tọa Độ Vùng Nhận Diện (ROI)</h2>
-
-                    </div>
+    <!-- App Shell -->
+    <div class="app-shell">
+        <!-- Sidebar -->
+        <aside class="app-sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">ĐC</div>
+                <div class="sidebar-brand-text">
+                    <span class="brand-title">THPT ĐIỀU CẢI</span>
+                    <span class="brand-subtitle">AI CAMERA</span>
                 </div>
             </div>
-            <div class="banner-actions">
-                <div class="class-select-box">
-                    <label for="classSelect"><i class="fa-solid fa-chalkboard-user"></i> Lớp Học:</label>
-                    <select id="classSelect">
-                        <!-- Render qua JS -->
-                    </select>
+
+            <nav class="sidebar-nav">
+                <div class="sidebar-nav-section">
+                    <div class="sidebar-nav-title">TỔNG QUAN</div>
+                    <ul class="sidebar-nav-list">
+                        <li class="sidebar-nav-item">
+                            <a href="index.html" class="sidebar-nav-link">
+                                <span class="sidebar-nav-icon"><i class="fa-solid fa-chart-line"></i></span>
+                                <span class="sidebar-nav-text">Dashboard</span>
+                            </a>
+                        </li>
+                    </ul>
                 </div>
-                <div class="banner-sep"></div>
-                <button type="button" id="btnHeaderSnapshot" class="btn btn-snapshot"
-                    title="Chụp ảnh mới nhất từ luồng camera của lớp học này">
-                    <i class="fa-solid fa-camera-rotate"></i> Chụp Lại Ảnh
+
+                <div class="sidebar-nav-section">
+                    <div class="sidebar-nav-title">GIÁM SÁT</div>
+                    <ul class="sidebar-nav-list">
+                        <li class="sidebar-nav-item">
+                            <a href="cameras.html" class="sidebar-nav-link">
+                                <span class="sidebar-nav-icon"><i class="fa-solid fa-video"></i></span>
+                                <span class="sidebar-nav-text">Camera & Lớp Học</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="sidebar-nav-section">
+                    <div class="sidebar-nav-title">CẤU HÌNH</div>
+                    <ul class="sidebar-nav-list">
+                        <li class="sidebar-nav-item">
+                            <a href="roi-config.html" class="sidebar-nav-link active">
+                                <span class="sidebar-nav-icon"><i class="fa-solid fa-draw-polygon"></i></span>
+                                <span class="sidebar-nav-text">Vùng ROI</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="sidebar-nav-section">
+                    <div class="sidebar-nav-title">DỮ LIỆU</div>
+                    <ul class="sidebar-nav-list">
+                        <li class="sidebar-nav-item">
+                            <a href="reports.html" class="sidebar-nav-link">
+                                <span class="sidebar-nav-icon"><i class="fa-solid fa-file-excel"></i></span>
+                                <span class="sidebar-nav-text">Báo Cáo & Dữ Liệu</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="sidebar-toggle-btn" type="button">
+                    <i class="fa-solid fa-angles-left"></i>
                 </button>
-                <button type="button" id="btnSaveROI" class="btn btn-save"
-                    title="Lưu tọa độ vùng và tự động đồng bộ AI">
-                    <i class="fa-solid fa-floppy-disk"></i> Lưu Tọa Độ Vùng
-                </button>
             </div>
-        </div>
+        </aside>
 
-        <!-- Khung Làm Việc Vẽ ROI -->
-        <div class="roi-workspace-card">
-            <!-- Thanh Công Cụ Vẽ -->
-            <div class="tool-controls">
-                <div class="tool-actions-left">
-                    <button type="button" id="btnModeRed" class="btn-mode-red active"
-                        title="Kích hoạt chế độ vẽ vùng bàn học sinh (AI sẽ đếm người bên trong vùng này)">
-                        <i class="fa-solid fa-vector-square"></i> Vẽ Red Zone (Bàn Học Sinh)
+        <!-- Sidebar Overlay (Mobile) -->
+        <div class="sidebar-overlay"></div>
+
+        <!-- Main Content Area -->
+        <main class="app-main">
+            <!-- Header -->
+            <header class="app-header">
+                <div class="header-left">
+                    <button class="header-action-btn mobile-menu-btn" type="button">
+                        <i class="fa-solid fa-bars"></i>
                     </button>
-                    <button type="button" id="btnModeGreen" class="btn-mode-green"
-                        title="Kích hoạt chế độ vẽ vùng bục giảng (AI sẽ bỏ qua giáo viên bên trong vùng này)">
-                        <i class="fa-solid fa-shield-halved"></i> Vẽ Green Zone (Bục Giảng - Loại Trừ)
+                    <div class="header-breadcrumb">
+                        <span class="breadcrumb-item">Cấu hình</span>
+                        <span class="breadcrumb-separator">/</span>
+                        <span class="breadcrumb-item breadcrumb-current">Vùng ROI</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <button class="header-action-btn" type="button" title="Thông báo">
+                        <i class="fa-solid fa-bell"></i>
                     </button>
-                    <span class="tool-sep"></span>
-                    <button type="button" id="btnFourCorners" title="Tạo nhanh 4 điểm sát đúng 4 góc biên ảnh">
-                        <i class="fa-solid fa-arrows-to-dot"></i> Bắt 4 Góc Ảnh
-                    </button>
-                    <button type="button" id="btnUndoPoint" title="Hoàn tác điểm vừa vẽ (Ctrl+Z)">
-                        <i class="fa-solid fa-rotate-left"></i> Hoàn Tác
-                    </button>
-                    <button type="button" id="btnClearZone" title="Xóa toàn bộ các điểm của vùng đang chọn">
-                        <i class="fa-solid fa-trash-can"></i> Xóa Vùng
+                    <button class="header-action-btn" type="button" title="Cài đặt">
+                        <i class="fa-solid fa-gear"></i>
                     </button>
                 </div>
+            </header>
 
-                <div class="zone-badges-right">
-                    <span class="zone-badge zone-red"><i class="fa-solid fa-circle"></i> Red Zone: AI đếm bên
-                        trong</span>
-                    <span class="zone-badge zone-green"><i class="fa-solid fa-circle"></i> Green Zone: Bỏ qua giáo
-                        viên</span>
+            <!-- Page Content -->
+            <div class="page-container roi-page-container">
+                <!-- Banner Thiết Lập Tọa Độ Vùng ROI -->
+                <div class="action-banner roi-banner">
+                    <div class="banner-info">
+                        <div class="banner-title-group">
+                            <div class="banner-icon-badge">
+                                <i class="fa-solid fa-draw-polygon"></i>
+                            </div>
+                            <div>
+                                <h2>Thiết Lập Tọa Độ Vùng Nhận Diện (ROI)</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="banner-actions">
+                        <div class="class-select-box">
+                            <label for="classSelect"><i class="fa-solid fa-chalkboard-user"></i> Lớp Học:</label>
+                            <select id="classSelect">
+                                <!-- Render qua JS -->
+                            </select>
+                        </div>
+                        <div class="banner-sep"></div>
+                        <button type="button" id="btnHeaderSnapshot" class="btn btn-snapshot"
+                            title="Chụp ảnh mới nhất từ luồng camera của lớp học này">
+                            <i class="fa-solid fa-camera-rotate"></i> Chụp Lại Ảnh
+                        </button>
+                        <button type="button" id="btnSaveROI" class="btn btn-save"
+                            title="Lưu tọa độ vùng và tự động đồng bộ AI">
+                            <i class="fa-solid fa-floppy-disk"></i> Lưu Tọa Độ Vùng
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Khung Làm Việc Vẽ ROI -->
+                <div class="roi-workspace-card">
+                    <!-- Thanh Công Cụ Vẽ -->
+                    <div class="tool-controls">
+                        <div class="tool-actions-left">
+                            <button type="button" id="btnModeRed" class="btn-mode-red active"
+                                title="Kích hoạt chế độ vẽ vùng bàn học sinh (AI sẽ đếm người bên trong vùng này)">
+                                <i class="fa-solid fa-vector-square"></i> Vẽ Red Zone (Bàn Học Sinh)
+                            </button>
+                            <button type="button" id="btnModeGreen" class="btn-mode-green"
+                                title="Kích hoạt chế độ vẽ vùng bục giảng (AI sẽ bỏ qua giáo viên bên trong vùng này)">
+                                <i class="fa-solid fa-shield-halved"></i> Vẽ Green Zone (Bục Giảng - Loại Trừ)
+                            </button>
+                            <span class="tool-sep"></span>
+                            <button type="button" id="btnFourCorners" title="Tạo nhanh 4 điểm sát đúng 4 góc biên ảnh">
+                                <i class="fa-solid fa-arrows-to-dot"></i> Bắt 4 Góc Ảnh
+                            </button>
+                            <button type="button" id="btnUndoPoint" title="Hoàn tác điểm vừa vẽ (Ctrl+Z)">
+                                <i class="fa-solid fa-rotate-left"></i> Hoàn Tác
+                            </button>
+                            <button type="button" id="btnClearZone" title="Xóa toàn bộ các điểm của vùng đang chọn">
+                                <i class="fa-solid fa-trash-can"></i> Xóa Vùng
+                            </button>
+                        </div>
+
+                        <div class="zone-badges-right">
+                            <span class="zone-badge zone-red"><i class="fa-solid fa-circle"></i> Red Zone: AI đếm bên
+                                trong</span>
+                            <span class="zone-badge zone-green"><i class="fa-solid fa-circle"></i> Green Zone: Bỏ qua
+                                giáo
+                                viên</span>
+                        </div>
+                    </div>
+
+                    <!-- Canvas Vẽ ROI (Khung cố định, tự động co vừa màn hình không cần lăn chuột) -->
+                    <div class="canvas-outer-wrapper">
+                        <div class="canvas-container">
+                            <canvas id="roiCanvas"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Thanh trạng thái nạp vùng -->
+                    <div class="save-status-bar" id="saveStatusBar">
+                        <span><i class="fa-solid fa-draw-polygon" style="color: #dc2626;"></i> Red Zone: <strong>Đang
+                                nạp...</strong></span>
+                        <span><i class="fa-solid fa-shield-halved" style="color: #059669;"></i> Green Zone: <strong>Đang
+                                nạp...</strong></span>
+                        <span style="color: #475569;"><i class="fa-solid fa-database"></i> Sẵn sàng ghi CSDL & Phân tích
+                            AI</span>
+                    </div>
+
+                    <!-- Hướng dẫn và hiển thị độ phân giải -->
+                    <div class="roi-footer-hints">
+                        <span>💡 <strong>Hướng dẫn:</strong> Nhấp chuột trái để tạo điểm. Kéo điểm neo sát mép viền/góc
+                            (tự động
+                            hút viền). <strong>Chuột phải</strong> xóa điểm lẻ. Nhấn <strong>Ctrl+Z</strong> hoàn
+                            tác.</span>
+                        <span id="canvasCoords" class="coords-badge">
+                            <i class="fa-solid fa-expand"></i> Độ phân giải: <strong>Tự động</strong>
+                        </span>
+                    </div>
                 </div>
             </div>
-
-            <!-- Canvas Vẽ ROI (Khung cố định, tự động co vừa màn hình không cần lăn chuột) -->
-            <div class="canvas-outer-wrapper">
-                <div class="canvas-container">
-                    <canvas id="roiCanvas"></canvas>
-                </div>
-            </div>
-
-            <!-- Thanh trạng thái nạp vùng -->
-            <div class="save-status-bar" id="saveStatusBar">
-                <span><i class="fa-solid fa-draw-polygon" style="color: #dc2626;"></i> Red Zone: <strong>Đang
-                        nạp...</strong></span>
-                <span><i class="fa-solid fa-shield-halved" style="color: #059669;"></i> Green Zone: <strong>Đang
-                        nạp...</strong></span>
-                <span style="color: #475569;"><i class="fa-solid fa-database"></i> Sẵn sàng ghi CSDL & Phân tích
-                    AI</span>
-            </div>
-
-            <!-- Hướng dẫn và hiển thị độ phân giải -->
-            <div class="roi-footer-hints">
-                <span>💡 <strong>Hướng dẫn:</strong> Nhấp chuột trái để tạo điểm. Kéo điểm neo sát mép viền/góc (tự động
-                    hút viền). <strong>Chuột phải</strong> xóa điểm lẻ. Nhấn <strong>Ctrl+Z</strong> hoàn tác.</span>
-                <span id="canvasCoords" class="coords-badge">
-                    <i class="fa-solid fa-expand"></i> Độ phân giải: <strong>Tự động</strong>
-                </span>
-            </div>
-        </div>
-    </main>
+        </main>
+    </div>
 
     <!-- Toast Notifications -->
     <div id="toastContainer" class="toast-container"></div>
 
+    <!-- Scripts -->
+    <script src="js/shared/app-shell.js"></script>
+    <script src="js/shared/header-actions.js?v=2.2"></script>
     <script src="js/roi_canvas.js?v=3.2"></script>
     <script type="module" src="js/roi_config.js?v=3.2"></script>
 </body>

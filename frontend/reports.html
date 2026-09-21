@@ -4,237 +4,583 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Lý Dữ Liệu & Báo Cáo Điểm Danh - THPT Điều Cải</title>
+    <title>Báo Cáo & Dữ Liệu - THPT Điều Cải AI Camera</title>
+
+    <!-- Design System & Components -->
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/layout/app-shell.css?v=2.4">
+    <link rel="stylesheet" href="css/components/buttons-redesign.css">
+    <link rel="stylesheet" href="css/components/badges-redesign.css">
+    <link rel="stylesheet" href="css/components/header-actions.css">
+    <link rel="stylesheet" href="css/components/confirmation-dialog.css">
+    <link rel="stylesheet" href="css/reports.css">
+    <!-- Global Balance - MUST LOAD LAST -->
+    <link rel="stylesheet" href="css/global-table-balance.css?v=2.5">
+
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/main.css?v=3.2">
-    <link rel="stylesheet" href="css/reports.css?v=3.2">
+
+    <!-- Page Specific -->
+    <link rel="stylesheet" href="css/reports.css?v=3.3">
+    <link rel="stylesheet" href="css/components/modal-system.css?v=2.0">
+    <script src="js/components/modal-notifications.js?v=2.0"></script>
 </head>
 
 <body>
-    <header class="navbar">
-        <div class="nav-brand">
-            <div class="logo-badge">ĐC</div>
-            <div>
-                <h1>THPT ĐIỀU CẢI - QUẢN LÝ DỮ LIỆU & BÁO CÁO</h1>
-
-            </div>
-        </div>
-        <div class="nav-links">
-            <a href="index.html" class="nav-link"><i class="fa-solid fa-chart-line"></i> Dashboard Điểm Danh</a>
-            <a href="cameras.html" class="nav-link"><i class="fa-solid fa-video"></i> Quản Lý Camera</a>
-            <a href="roi-config.html" class="nav-link"><i class="fa-solid fa-draw-polygon"></i> Cấu Hình ROI</a>
-            <a href="reports.html" class="nav-link active"><i class="fa-solid fa-file-excel"></i> Quản Lý Dữ Liệu & Báo
-                Cáo</a>
-        </div>
-    </header>
-
-    <main class="container">
-        <!-- Banner Hành Động Nhanh -->
-        <div class="action-banner">
-            <div class="banner-info">
-                <div class="banner-icon"
-                    style="background: linear-gradient(135deg, #fef3c7, #fde68a); color: #b45309; border: 1px solid #fcd34d;">
-                    <i class="fa-solid fa-file-excel"></i>
-                </div>
-                <div>
-                    <h2>Trung Tâm Dữ Liệu & Báo Cáo Điểm Danh</h2>
-
+    <!-- App Shell -->
+    <div class="app-shell">
+        <!-- Sidebar -->
+        <aside class="app-sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">ĐC</div>
+                <div class="sidebar-brand-text">
+                    <span class="brand-title">THPT ĐIỀU CẢI</span>
+                    <span class="brand-subtitle">AI CAMERA</span>
                 </div>
             </div>
-            <div class="banner-actions">
-                <button id="btnExportExcelNow" class="btn btn-primary"
-                    style="background: linear-gradient(135deg, #10b981, #059669); border: none; font-weight: 700;">
-                    <i class="fa-solid fa-file-arrow-down"></i> Xuất Báo Cáo Excel Ngay
+
+            <nav class="sidebar-nav">
+                <div class="sidebar-nav-section">
+                    <div class="sidebar-nav-title">TỔNG QUAN</div>
+                    <ul class="sidebar-nav-list">
+                        <li class="sidebar-nav-item">
+                            <a href="index.html" class="sidebar-nav-link">
+                                <span class="sidebar-nav-icon"><i class="fa-solid fa-chart-line"></i></span>
+                                <span class="sidebar-nav-text">Dashboard</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="sidebar-nav-section">
+                    <div class="sidebar-nav-title">GIÁM SÁT</div>
+                    <ul class="sidebar-nav-list">
+                        <li class="sidebar-nav-item">
+                            <a href="cameras.html" class="sidebar-nav-link">
+                                <span class="sidebar-nav-icon"><i class="fa-solid fa-video"></i></span>
+                                <span class="sidebar-nav-text">Camera & Lớp Học</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="sidebar-nav-section">
+                    <div class="sidebar-nav-title">CẤU HÌNH</div>
+                    <ul class="sidebar-nav-list">
+                        <li class="sidebar-nav-item">
+                            <a href="roi-config.html" class="sidebar-nav-link">
+                                <span class="sidebar-nav-icon"><i class="fa-solid fa-draw-polygon"></i></span>
+                                <span class="sidebar-nav-text">Vùng ROI</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="sidebar-nav-section">
+                    <div class="sidebar-nav-title">DỮ LIỆU</div>
+                    <ul class="sidebar-nav-list">
+                        <li class="sidebar-nav-item">
+                            <a href="reports.html" class="sidebar-nav-link active">
+                                <span class="sidebar-nav-icon"><i class="fa-solid fa-file-excel"></i></span>
+                                <span class="sidebar-nav-text">Báo Cáo & Dữ Liệu</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="sidebar-toggle-btn" type="button">
+                    <i class="fa-solid fa-angles-left"></i>
                 </button>
             </div>
-        </div>
+        </aside>
 
-        <!-- PHẦN 1: BẢNG DỮ LIỆU ĐIỂM DANH TRONG CƠ SỞ DỮ LIỆU -->
-        <div class="report-section">
-            <div class="section-title">
-                <h3><i class="fa-solid fa-database" style="color: var(--primary);"></i> 1. Lưu Trữ Kết Quả Điểm Danh
-                    (CSDL)</h3>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <input type="text" id="filterDbInput" placeholder="Lọc theo tên lớp hoặc phòng..."
-                        class="form-control" style="width: 240px; padding: 6px 12px;">
-                    <button id="btnReloadDb" class="btn btn-secondary btn-sm"><i class="fa-solid fa-rotate-right"></i>
-                        Làm Mới</button>
-                    <button id="btnClearAttendanceHistory" class="btn btn-danger btn-sm" style="white-space: nowrap;">
-                        <i class="fa-solid fa-trash-can"></i> Xóa Lịch Sử
+        <!-- Sidebar Overlay (Mobile) -->
+        <div class="sidebar-overlay"></div>
+
+        <!-- Main Content Area -->
+        <main class="app-main">
+            <!-- Header -->
+            <header class="app-header">
+                <div class="header-left">
+                    <button class="header-action-btn mobile-menu-btn" type="button">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <div class="header-breadcrumb">
+                        <span class="breadcrumb-item">Dữ liệu</span>
+                        <span class="breadcrumb-separator">/</span>
+                        <span class="breadcrumb-item breadcrumb-current">Báo Cáo</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <button class="header-action-btn" type="button" title="Thông báo">
+                        <i class="fa-solid fa-bell"></i>
+                    </button>
+                    <button class="header-action-btn" type="button" title="Cài đặt">
+                        <i class="fa-solid fa-gear"></i>
                     </button>
                 </div>
-            </div>
+            </header>
 
-            <div class="data-table-container">
-                <table class="custom-table">
-                    <thead>
-                        <tr>
-                            <th>Ngày Giờ</th>
-                            <th>Mã Phiên</th>
-                            <th>Tên Lớp</th>
-                            <th>Sĩ Số Chuẩn</th>
-                            <th>Hiện Diện</th>
-                            <th>Vắng Mặt</th>
-                            <th>Ảnh Gốc Đối Chứng</th>
-                            <th>Ảnh AI Phân Tích</th>
-                            <th>Trạng Thái</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dbTableBody">
-                        <tr>
-                            <td colspan="9" style="text-align: center; padding: 2rem; color: var(--text-muted);">
-                                <i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu từ CSDL...
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- PHẦN 2: TỰ ĐỘNG HÓA XUẤT EXCEL (pandas & openpyxl) -->
-        <div class="report-section">
-            <div class="section-title">
-                <h3><i class="fa-solid fa-file-excel" style="color: #10b981;"></i> 2. Kho Lưu Trữ File Excel Đã Xuất
-                    (pandas & openpyxl)</h3>
-                <span style="font-size: 0.85rem; color: var(--text-muted);">Tự động sinh sau mỗi ca quét 06:45
-                    sáng</span>
-            </div>
-            <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
-                Mỗi file Excel bao gồm đầy đủ tiêu đề Trường THPT Điều Cải, tỷ lệ chuyên cần, công thức tự động tính
-                tổng (SUM), highlight màu sắc cảnh báo theo 3 cấp độ (Xanh lá - Vàng cam - Đỏ nhạt) và chữ ký duyệt.
-            </p>
-            <div class="data-table-container">
-                <table class="custom-table">
-                    <thead>
-                        <tr>
-                            <th>Tên File Báo Cáo</th>
-                            <th>Thời Điểm Xuất</th>
-                            <th>Dung Lượng</th>
-                            <th>Định Dạng</th>
-                            <th>Hành Động</th>
-                        </tr>
-                    </thead>
-                    <tbody id="excelFilesBody">
-                        <!-- Render qua JS -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- PHẦN 3: PHÂN PHỐI BÁO CÁO & GỬI EMAIL HIỆU TRƯỞNG -->
-        <div class="report-section">
-            <div class="section-title">
-                <h3><i class="fa-solid fa-paper-plane" style="color: #f59e0b;"></i> 3. Phân Phối Báo Cáo & Gửi Email Cho
-                    Hiệu Trưởng</h3>
-                <span id="emailStatusBadge" class="status-pill" style="background: #fef3c7; color: #b45309;">
-                    <i class="fa-solid fa-circle-info"></i> Sẵn sàng cấu hình
-                </span>
-            </div>
-
-            <div class="form-grid">
-                <div class="form-group">
-                    <label><i class="fa-solid fa-envelope"></i> Email Người Nhận (Hiệu Trưởng):</label>
-                    <input type="email" id="principalEmailInput" class="form-control"
-                        value="hieutruong@truongdieucai.edu.vn">
+            <!-- Page Content -->
+            <div class="page-container">
+                <!-- Banner Hành Động Nhanh -->
+                <div class="action-banner">
+                    <div class="banner-info">
+                        <div class="banner-icon"
+                            style="background: linear-gradient(135deg, #fef3c7, #fde68a); color: #b45309; border: 1px solid #fcd34d;">
+                            <i class="fa-solid fa-file-excel"></i>
+                        </div>
+                        <div>
+                            <h2>Trung Tâm Dữ Liệu & Báo Cáo Điểm Danh</h2>
+                            <p style="color: var(--text-muted); margin: 0; font-size: 0.9rem;">Hệ thống tự động lưu trữ
+                                CSDL, xử
+                                lý báo cáo pandas/openpyxl và gửi email / Zalo thông báo tức thì.</p>
+                        </div>
+                    </div>
+                    <div class="banner-actions">
+                        <button id="btnExportExcelNow" class="btn btn-primary"
+                            style="background: linear-gradient(135deg, #10b981, #059669); border: none; font-weight: 700;">
+                            <i class="fa-solid fa-file-arrow-down"></i> Xuất Báo Cáo Excel Ngay
+                        </button>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label><i class="fa-solid fa-folder"></i> Thư Mục Lưu Bản Sao Dùng Chung:</label>
-                    <input type="text" id="internalPathInput" class="form-control" value="storage/reports/latest/"
-                        readonly style="background: #f8fafc;">
+
+                <!-- Thanh Tabs Điều Hướng -->
+                <div class="tabs-container">
+                    <div class="tabs-nav">
+                        <button class="tab-btn active" data-tab="tab-database">
+                            <i class="fa-solid fa-database"></i> Dữ Liệu CSDL
+                        </button>
+                        <button class="tab-btn" data-tab="tab-excel">
+                            <i class="fa-solid fa-file-excel"></i> Xuất Excel
+                        </button>
+                        <button class="tab-btn" data-tab="tab-distribution">
+                            <i class="fa-solid fa-paper-plane"></i> Email & Zalo
+                        </button>
+                        <button class="tab-btn" data-tab="tab-settings">
+                            <i class="fa-solid fa-server"></i> Cấu Hình CSDL
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TAB 1: DỮ LIỆU CSDL -->
+                <div id="tab-database" class="tab-content active">
+                    <div class="report-section">
+                        <div class="section-title">
+                            <h3><i class="fa-solid fa-database" style="color: var(--primary);"></i> 1. Lưu Trữ Kết Quả
+                                Điểm Danh
+                                (CSDL)</h3>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <input type="text" id="filterDbInput" placeholder="Lọc theo tên lớp hoặc phòng..."
+                                    class="form-control" style="width: 240px; padding: 6px 12px;">
+                                <button id="btnReloadDb" class="btn btn-secondary btn-sm"><i
+                                        class="fa-solid fa-rotate-right"></i> Làm Mới</button>
+                                <button id="btnClearAttendanceHistory" class="btn btn-danger btn-sm"
+                                    style="white-space: nowrap;">
+                                    <i class="fa-solid fa-trash-can"></i> Xóa Lịch Sử
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-wrapper">
+                            <table class="data-table reports-db-table">
+                                <thead>
+                                    <tr>
+                                        <th class="cell-datetime">NGÀY GIỜ</th>
+                                        <th class="cell-session">MÃ PHIÊN</th>
+                                        <th class="cell-class">TÊN LỚP</th>
+                                        <th class="cell-standard">SĨ SỐ CHUẨN</th>
+                                        <th class="cell-present">HIỆN DIỆN</th>
+                                        <th class="cell-absent">VẮNG MẶT</th>
+                                        <th class="cell-image">ẢNH GỐC</th>
+                                        <th class="cell-image">ẢNH AI</th>
+                                        <th class="cell-status">TRẠNG THÁI</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dbTableBody">
+                                    <tr>
+                                        <td colspan="9" class="table-loading">
+                                            <div class="table-loading-spinner"></div>
+                                            <div style="margin-top: var(--space-3); color: var(--text-muted);">Đang tải
+                                                dữ liệu từ CSDL...</div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: XUẤT EXCEL -->
+                <div id="tab-excel" class="tab-content">
+                    <div class="report-section">
+                        <div class="section-title">
+                            <h3><i class="fa-solid fa-file-excel" style="color: #10b981;"></i> 2. Kho Lưu Trữ File Excel
+                                Đã Xuất
+                                (pandas & openpyxl)</h3>
+                            <span style="font-size: 0.85rem; color: var(--text-muted);">Tự động sinh sau mỗi ca quét
+                                06:45
+                                sáng</span>
+                        </div>
+                        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
+                            Mỗi file Excel bao gồm đầy đủ tiêu đề Trường THPT Điều Cải, tỷ lệ chuyên cần, công thức tự
+                            động tính
+                            tổng (SUM), highlight màu sắc cảnh báo theo 3 cấp độ (Xanh lá - Vàng cam - Đỏ nhạt) và chữ
+                            ký duyệt.
+                        </p>
+                        <div class="table-wrapper">
+                            <table class="data-table reports-files-table">
+                                <thead>
+                                    <tr>
+                                        <th class="cell-filename">TÊN FILE BÁO CÁO</th>
+                                        <th class="cell-datetime">THỜI ĐIỂM XUẤT</th>
+                                        <th class="cell-filesize">DUNG LƯỢNG</th>
+                                        <th class="cell-format">ĐỊNH DẠNG</th>
+                                        <th class="cell-actions">HÀNH ĐỘNG</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="excelFilesBody">
+                                    <!-- Render qua JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: EMAIL & ZALO -->
+                <div id="tab-distribution" class="tab-content">
+                    <!-- PHẦN 3.1: GỬI EMAIL HIỆU TRƯỞNG -->
+                    <div class="report-section">
+                        <div class="section-title">
+                            <h3><i class="fa-solid fa-paper-plane" style="color: #f59e0b;"></i> 3.1. Phân Phối Báo Cáo &
+                                Gửi
+                                Email Cho Hiệu Trưởng</h3>
+                            <span id="emailStatusBadge" class="status-pill"
+                                style="background: #fef3c7; color: #b45309;">
+                                <i class="fa-solid fa-circle-info"></i> Sẵn sàng cấu hình
+                            </span>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label><i class="fa-solid fa-envelope"></i> Email Người Nhận (Hiệu Trưởng):</label>
+                                <input type="email" id="principalEmailInput" class="form-control"
+                                    value="hieutruong@truongdieucai.edu.vn">
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fa-solid fa-folder"></i> Thư Mục Lưu Bản Sao Dùng Chung:</label>
+                                <input type="text" id="internalPathInput" class="form-control"
+                                    value="storage/reports/latest/" readonly style="background: #f8fafc;">
+                            </div>
+                        </div>
+
+                        <div
+                            style="margin-top: 1.25rem; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                            <button id="btnSendTestEmail" class="btn btn-primary">
+                                <i class="fa-solid fa-paper-plane"></i> Gửi Thử Email Báo Cáo Cho Hiệu Trưởng
+                            </button>
+                            <button id="btnOpenFolder" class="btn btn-secondary">
+                                <i class="fa-solid fa-folder"></i> Vị Trí Thư Mục Báo Cáo
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- PHẦN 3.2: PHÂN PHỐI THÔNG BÁO TỨC THÌ QUA ZALO -->
+                    <div class="report-section" style="border-left: 4px solid #0068ff;">
+                        <div class="section-title">
+                            <h3>
+                                <i class="fa-solid fa-comments" style="color: #0068ff;"></i>
+                                3.2. Phân Phối Thông Báo Điểm Danh Qua ZALO (BGH & Giáo Viên)
+                            </h3>
+                            <span id="zaloStatusBadge" class="status-pill" style="background: #e0f2fe; color: #0369a1;">
+                                <i class="fa-solid fa-circle-check"></i> Đang hoạt động
+                            </span>
+                        </div>
+                        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+                            Hệ thống tự động gửi tin nhắn tóm tắt sĩ số 30 lớp học và danh sách các lớp có học sinh vắng
+                            trực
+                            tiếp
+                            vào điện thoại Zalo của Ban Giám hiệu ngay sau khi quét lúc 06:48.
+                        </p>
+
+                        <!-- Chọn Phương Thức Gửi Zalo -->
+                        <div
+                            style="background: linear-gradient(135deg, #e0f2fe, #dbeafe); border: 2px solid #0ea5e9; border-radius: 12px; padding: 16px 20px; margin-bottom: 1.5rem;">
+                            <label
+                                style="font-size: 0.92rem; font-weight: 700; color: #075985; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-gear"></i> Chọn Phương Thức Gửi Zalo
+                                <span
+                                    style="background: #10b981; color: white; font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; font-weight: 600; margin-left: 6px;">KHUYẾN
+                                    NGHỊ</span>
+                            </label>
+                            <select id="zaloTypeSelect" class="form-control"
+                                style="font-size: 0.95rem; font-weight: 600; padding: 10px 14px; border: 2px solid #0ea5e9; background: white;">
+                                <option value="BOT_API">✅ Zalo Bot Gateway (API Key + Bot ID) - Khuyến nghị doanh nghiệp
+                                </option>
+                                <option value="OA_API">📱 Zalo Official Account (OpenAPI CS/ZNS)</option>
+                                <option value="WEBHOOK">⚠️ Zalo Webhook (Cũ - không khuyến nghị)</option>
+                            </select>
+                            <div style="margin-top: 8px; font-size: 0.78rem; color: #0369a1; line-height: 1.5;">
+                                <i class="fa-solid fa-lightbulb"></i> <strong>Zalo Bot Gateway</strong> là phương thức
+                                mới nhất,
+                                cho phép gửi tin nhắn tới nhiều số điện thoại đồng thời, tự động phân tích SĐT thành
+                                Zalo UID.
+                            </div>
+                        </div>
+
+                        <!-- Cấu hình cho Bot Gateway (BOT_API) - Khuyến nghị -->
+                        <div id="zaloBotRow" style="margin-bottom: 1.5rem;">
+                            <div
+                                style="background: #f0fdf4; border: 2px solid #86efac; border-radius: 12px; padding: 16px 20px; margin-bottom: 1rem;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                                    <i class="fa-solid fa-robot" style="color: #10b981; font-size: 1.3rem;"></i>
+                                    <h4 style="margin: 0; color: #166534; font-size: 1rem; font-weight: 700;">Cấu Hình
+                                        Zalo Bot
+                                        Gateway</h4>
+                                </div>
+
+                                <div class="form-grid" style="margin-bottom: 1rem; gap: 12px;">
+                                    <div class="form-group">
+                                        <label><i class="fa-solid fa-key"></i> API Key (x-api-key):</label>
+                                        <input type="password" id="zaloBotKeyInput" class="form-control"
+                                            placeholder="Nhập API Key của Zalo Bot Gateway"
+                                            style="font-family: 'Courier New', monospace;">
+                                    </div>
+                                    <div class="form-group">
+                                        <label><i class="fa-solid fa-robot"></i> Bot ID:</label>
+                                        <input type="text" id="zaloBotIdInput" class="form-control"
+                                            placeholder="Ví dụ: YOUR_BOT_ID">
+                                    </div>
+                                    <div class="form-group">
+                                        <label><i class="fa-solid fa-link"></i> API Base URL:</label>
+                                        <input type="text" id="zaloBotBaseUrlInput" class="form-control"
+                                            value="http://localhost:3000/api/gateway/v1.0">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Quản lý SĐT Người Nhận với UI cải tiến -->
+                            <div
+                                style="background: white; border: 2px solid #60a5fa; border-radius: 12px; padding: 18px 22px; margin-bottom: 1rem; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);">
+                                <label
+                                    style="font-size: 0.95rem; font-weight: 700; color: #1e40af; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fa-solid fa-phone" style="color: #3b82f6;"></i> Danh Sách Số Điện Thoại
+                                    Người Nhận
+                                    <span
+                                        style="background: linear-gradient(135deg, #fef3c7, #fde68a); color: #b45309; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; border: 1px solid #fcd34d;">Tối
+                                        đa 10 SĐT</span>
+                                </label>
+
+                                <div id="phoneTagsContainer"
+                                    style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; min-height: 42px; align-items: center; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px dashed #cbd5e1;">
+                                </div>
+
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <input type="text" id="phoneAddInput" class="form-control"
+                                        style="flex: 1; max-width: 320px; font-size: 0.95rem; padding: 10px 14px; border: 2px solid #93c5fd; border-radius: 8px;"
+                                        placeholder="VD: 0334551531 hoặc +84334551531">
+                                    <button type="button" id="btnAddPhone" class="btn btn-primary"
+                                        style="white-space: nowrap; padding: 10px 18px; font-weight: 600; background: linear-gradient(135deg, #3b82f6, #2563eb); border: none;">
+                                        <i class="fa-solid fa-plus"></i> Thêm SĐT
+                                    </button>
+                                </div>
+                                <div style="margin-top: 8px; font-size: 0.75rem; color: #64748b; line-height: 1.4;">
+                                    <i class="fa-solid fa-circle-info"></i> Nhập từng số điện thoại rồi nhấn Enter hoặc
+                                    nút
+                                    "Thêm SĐT". Hỗ trợ định dạng: 0xxxxxxxxx hoặc +84xxxxxxxxx
+                                </div>
+                                <input type="hidden" id="zaloPhonesInput" value="">
+                            </div>
+
+                            <!-- SĐT Thử Nghiệm -->
+                            <div
+                                style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 14px 18px;">
+                                <label
+                                    style="font-size: 0.88rem; font-weight: 700; color: #b45309; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-mobile-screen"></i> SĐT Nhận Tin Thử Nghiệm (Test nhanh)
+                                </label>
+                                <input type="text" id="zaloTestPhoneInput" class="form-control"
+                                    style="border: 1px solid #fbbf24;"
+                                    placeholder="Để trống để gửi tới tất cả SĐT trong danh sách trên">
+                                <div style="margin-top: 6px; font-size: 0.72rem; color: #92400e;">
+                                    💡 Dùng để test gửi tin cho 1 SĐT cụ thể trước khi gửi hàng loạt
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cấu hình cho OA API -->
+                        <div id="zaloOaRow" style="margin-bottom: 1.25rem; display: none;">
+                            <div
+                                style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 10px; padding: 16px 20px;">
+                                <h4 style="color: #b45309; font-size: 0.95rem; font-weight: 700; margin-bottom: 12px;">
+                                    <i class="fa-solid fa-shield-halved"></i> Cấu Hình Zalo Official Account
+                                </h4>
+                                <div class="form-grid" style="gap: 12px;">
+                                    <div class="form-group">
+                                        <label><i class="fa-solid fa-key"></i> Zalo OA Access Token:</label>
+                                        <input type="password" id="zaloTokenInput" class="form-control"
+                                            placeholder="Nhập OA Access Token từ Zalo Developers"
+                                            style="font-family: 'Courier New', monospace;">
+                                    </div>
+                                    <div class="form-group">
+                                        <label><i class="fa-solid fa-user"></i> User ID Người Nhận:</label>
+                                        <input type="text" id="zaloUserIdInput" class="form-control"
+                                            placeholder="Ví dụ: 789123456789012345">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cấu hình cho Webhook (Cũ) -->
+                        <div id="zaloWebhookGroup" style="margin-bottom: 1.25rem; display: none;">
+                            <div
+                                style="background: #fee2e2; border: 1px solid #fca5a5; border-radius: 10px; padding: 16px 20px;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                                    <i class="fa-solid fa-triangle-exclamation"
+                                        style="color: #dc2626; font-size: 1.2rem;"></i>
+                                    <h4 style="color: #991b1b; font-size: 0.95rem; font-weight: 700; margin: 0;">Webhook
+                                        (Không
+                                        khuyến nghị)</h4>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fa-solid fa-link"></i> Zalo Webhook URL:</label>
+                                    <input type="text" id="zaloWebhookInput" class="form-control"
+                                        placeholder="https://webhook.site/... hoặc URL bot Zalo"
+                                        style="border-color: #f87171;">
+                                </div>
+                                <div style="margin-top: 8px; font-size: 0.75rem; color: #991b1b;">
+                                    ⚠️ Phương thức này đang lỗi thời. Chúng tôi khuyến nghị sử dụng Zalo Bot Gateway
+                                    thay thế.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Soạn Thảo Tin Nhắn Zalo với Editor Cải Tiến -->
+                        <div
+                            style="background: linear-gradient(135deg, #f0fdf4, #dcfce7); border: 2px solid #4ade80; border-radius: 12px; padding: 18px 22px; margin-bottom: 1.5rem; box-shadow: 0 2px 10px rgba(74, 222, 128, 0.15);">
+                            <div
+                                style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <i class="fa-solid fa-pen-to-square" style="color: #16a34a; font-size: 1.4rem;"></i>
+                                    <div>
+                                        <h4 style="margin: 0; color: #166534; font-size: 1.05rem; font-weight: 700;">
+                                            Soạn Thảo
+                                            Mẫu Tin Nhắn Zalo</h4>
+                                        <p style="margin: 0; margin-top: 2px; font-size: 0.75rem; color: #15803d;">Tùy
+                                            chỉnh nội
+                                            dung tin nhắn tự động gửi sau mỗi lần điểm danh</p>
+                                    </div>
+                                </div>
+                                <button type="button" id="btnResetTemplate" class="btn btn-secondary btn-sm"
+                                    title="Khôi phục mẫu mặc định"
+                                    style="background: white; border: 2px solid #86efac; color: #166534; font-weight: 600;">
+                                    <i class="fa-solid fa-rotate-left"></i> Khôi Phục Mẫu
+                                </button>
+                            </div>
+
+                            <div style="position: relative;">
+                                <textarea id="zaloMessageTemplate" class="form-control"
+                                    style="width: 100%; min-height: 220px; font-size: 0.9rem; line-height: 1.65; resize: vertical; font-family: 'Segoe UI', system-ui, sans-serif; background: white; border: 2px solid #86efac; border-radius: 10px; padding: 16px 18px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);"
+                                    placeholder="Soạn nội dung tin nhắn Zalo tại đây...">🔔 [THPT ĐIỀU CẢI] BÁO CÁO ĐIỂM DANH SĨ SỐ ĐẦU GIỜ SÁNG
+📅 Ngày quét: Hôm nay | Giờ: 06:45:00
+🏫 Tổng số lớp: 30 lớp | 👥 Sĩ số: 1,230/1,245 (Tỷ lệ: 98.8%)
+✅ Có mặt: 1,230 | ❌ Vắng mặt: 15 em
+⚠️ CÁC LỚP CÓ HỌC SINH VẮNG:
+• Lớp 10A1 (P.101): Vắng 2 em (40/42)
+• Lớp 11A4 (P.114): Vắng 1 em (39/40)
+📁 Báo cáo chi tiết Excel và ảnh đối chứng AI đã lưu trên hệ thống.</textarea>
+                                <div
+                                    style="position: absolute; bottom: 12px; right: 14px; font-size: 0.72rem; color: #9ca3af; background: white; padding: 2px 8px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                                    <i class="fa-solid fa-keyboard"></i> <span id="charCount">0</span> ký tự
+                                </div>
+                            </div>
+
+                            <div
+                                style="margin-top: 12px; background: white; border-radius: 8px; padding: 12px 14px; border: 1px solid #bbf7d0;">
+                                <div style="font-size: 0.82rem; color: #15803d; line-height: 1.6;">
+                                    <div style="display: flex; gap: 8px; margin-bottom: 6px;">
+                                        <i class="fa-solid fa-lightbulb"
+                                            style="color: #fbbf24; flex-shrink: 0; margin-top: 2px;"></i>
+                                        <div>
+                                            <strong style="color: #166534;">Hướng dẫn:</strong> Bạn có thể tự do chỉnh
+                                            sửa nội
+                                            dung. Khi điểm danh thực tế, hệ thống sẽ tự động thay thế dữ liệu như ngày
+                                            giờ, sĩ
+                                            số, danh sách lớp vắng...
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; gap: 8px;">
+                                        <i class="fa-solid fa-magic-wand-sparkles"
+                                            style="color: #a855f7; flex-shrink: 0; margin-top: 2px;"></i>
+                                        <div>
+                                            <strong style="color: #166534;">Mẹo:</strong> Sử dụng emoji (🔔📅🏫👥✅❌⚠️)
+                                            để tin
+                                            nhắn sinh động hơn. Tin nhắn ngắn gọn, dễ đọc sẽ hiệu quả hơn.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div
+                            style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-bottom: 1rem;">
+                            <button id="btnSendTestZalo" class="btn btn-primary"
+                                style="background: linear-gradient(135deg, #3b82f6, #2563eb); border: none; font-weight: 700; font-size: 0.95rem; padding: 12px 24px; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);">
+                                <i class="fa-solid fa-paper-plane"></i> Gửi Thử Tin Nhắn Qua Zalo
+                            </button>
+                            <button id="btnSaveZaloConfig" class="btn btn-secondary"
+                                style="padding: 12px 22px; font-weight: 600;">
+                                <i class="fa-solid fa-floppy-disk"></i> Lưu Cấu Hình
+                            </button>
+                        </div>
+                        <div id="zaloFeedbackMsg"
+                            style="padding: 12px 16px; border-radius: 8px; font-size: 0.88rem; font-weight: 600; display: none;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 4: CẤU HÌNH CSDL -->
+                <div id="tab-settings" class="tab-content">
+                    <div class="report-section">
+                        <div class="section-title">
+                            <h3><i class="fa-solid fa-server" style="color: #6366f1;"></i> 4. Cấu Hình Cơ Sở Dữ Liệu
+                                (PostgreSQL
+                                / MySQL / SQLite)</h3>
+                            <span id="dbTypeBadge" class="status-pill" style="background: #e0e7ff; color: #4338ca;">
+                                <i class="fa-solid fa-database"></i> SQLite (Local Active)
+                            </span>
+                        </div>
+                        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
+                            Hệ thống hỗ trợ lưu trữ dữ liệu đa năm học trên <strong>PostgreSQL</strong> hoặc
+                            <strong>MySQL</strong>
+                            của trường học thông qua thư viện SQLAlchemy & psycopg2/pymysql.
+                        </p>
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label>Chuỗi Kết Nối Cơ Sở Dữ Liệu (Database Connection String):</label>
+                            <input type="text" id="dbUriInput" class="form-control"
+                                value="sqlite:///database/attendance.db"
+                                placeholder="Ví dụ: postgresql+psycopg2://admin:pass@192.168.10.10:5432/diemdanh_dieucai">
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button id="btnSaveDbConfig" class="btn btn-secondary">
+                                <i class="fa-solid fa-floppy-disk"></i> Lưu Cấu Hình CSDL
+                            </button>
+                            <button id="btnTestDbConnection" class="btn btn-secondary">
+                                <i class="fa-solid fa-plug-circle-check"></i> Kiểm Tra Kết Nối CSDL
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
+            <!-- End Page Container -->
 
-            <div style="margin-top: 1.25rem; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                <button id="btnSendTestEmail" class="btn btn-primary">
-                    <i class="fa-solid fa-paper-plane"></i> Gửi Thử Email Báo Cáo Cho Hiệu Trưởng
-                </button>
-            </div>
-        </div>
+        </main>
+        <!-- End App Main -->
 
-        <!-- PHẦN 3.2: PHÂN PHỐI THÔNG BÁO TỨC THÌ QUA ZALO -->
-        <div class="report-section" style="border-left: 4px solid #0068ff;">
-            <div class="section-title">
-                <h3>
-                    <i class="fa-solid fa-comments" style="color: #0068ff;"></i>
-                    3.2. Phân Phối Thông Báo Điểm Danh Qua ZALO (BGH & Giáo Viên)
-                </h3>
-                <span id="zaloStatusBadge" class="status-pill" style="background: #e0f2fe; color: #0369a1;">
-                    <i class="fa-solid fa-circle-check"></i> Đang hoạt động
-                </span>
-            </div>
-            <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.25rem;">
-                Hệ thống tự động gửi tin nhắn tóm tắt sĩ số 30 lớp học và danh sách các lớp có học sinh vắng trực tiếp
-                vào điện thoại Zalo của Ban Giám hiệu ngay sau khi quét lúc 06:48.
-            </p>
-
-            <div class="form-grid" style="margin-bottom: 1rem;">
-                <div class="form-group">
-                    <label><i class="fa-solid fa-gear"></i> Phương thức gửi Zalo:</label>
-                    <select id="zaloTypeSelect" class="form-control">
-                        <option value="WEBHOOK">Zalo Bot Webhook (Nhóm Zalo BGH / Chatbot - Khuyến nghị)</option>
-                        <option value="OA_API">Zalo Official Account (OpenAPI CS / ZNS cá nhân)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label><i class="fa-solid fa-link"></i> Zalo Webhook URL / Endpoint:</label>
-                    <input type="text" id="zaloWebhookInput" class="form-control"
-                        placeholder="https://webhook.site/... hoặc URL bot Zalo">
-                </div>
-            </div>
-
-            <div class="form-grid" id="zaloOaRow" style="margin-bottom: 1.25rem; display: none;">
-                <div class="form-group">
-                    <label><i class="fa-solid fa-key"></i> Zalo OA Access Token:</label>
-                    <input type="password" id="zaloTokenInput" class="form-control"
-                        placeholder="Nhập OA Access Token từ Zalo Developers">
-                </div>
-                <div class="form-group">
-                    <label><i class="fa-solid fa-user"></i> User ID Người Nhận (Hiệu Trưởng / Quản Lý):</label>
-                    <input type="text" id="zaloUserIdInput" class="form-control"
-                        placeholder="Ví dụ: 789123456789012345">
-                </div>
-            </div>
-
-            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                <button id="btnSendTestZalo" class="btn btn-primary"
-                    style="background: #0068ff; border-color: #0068ff;">
-                    <i class="fa-solid fa-paper-plane"></i> Gửi Thử Tin Nhắn Qua Zalo Ngay
-                </button>
-                <button id="btnSaveZaloConfig" class="btn btn-secondary">
-                    <i class="fa-solid fa-floppy-disk"></i> Lưu Cấu Hình Zalo
-                </button>
-                <span id="zaloFeedbackMsg" style="font-size: 0.85rem; font-weight: 600;"></span>
-            </div>
-        </div>
-
-        <!-- PHẦN 4: THIẾT LẬP KẾT NỐI CSDL -->
-        <div class="report-section">
-            <div class="section-title">
-                <h3><i class="fa-solid fa-server" style="color: #6366f1;"></i> 4. Cấu Hình Cơ Sở Dữ Liệu (PostgreSQL /
-                    MySQL / SQLite)</h3>
-                <span id="dbTypeBadge" class="status-pill" style="background: #e0e7ff; color: #4338ca;">
-                    <i class="fa-solid fa-database"></i> SQLite (Local Active)
-                </span>
-            </div>
-            <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
-                Hệ thống hỗ trợ lưu trữ dữ liệu đa năm học trên <strong>PostgreSQL</strong> hoặc <strong>MySQL</strong>
-                của trường học thông qua thư viện SQLAlchemy & psycopg2/pymysql.
-            </p>
-            <div class="form-group" style="margin-bottom: 1rem;">
-                <label>Chuỗi Kết Nối Cơ Sở Dữ Liệu (Database Connection String):</label>
-                <input type="text" id="dbUriInput" class="form-control" value="sqlite:///database/attendance.db"
-                    placeholder="Ví dụ: postgresql+psycopg2://admin:pass@192.168.10.10:5432/diemdanh_dieucai">
-            </div>
-            <div style="display: flex; gap: 10px;">
-                <button id="btnSaveDbConfig" class="btn btn-secondary">
-                    <i class="fa-solid fa-floppy-disk"></i> Lưu Cấu Hình CSDL
-                </button>
-                <button id="btnTestDbConnection" class="btn btn-secondary">
-                    <i class="fa-solid fa-plug-circle-check"></i> Kiểm Tra Kết Nối CSDL
-                </button>
-            </div>
-        </div>
-    </main>
+    </div>
+    <!-- End App Shell -->
 
     <!-- Modal Xem Ảnh Đối Chứng -->
     <div class="modal-backdrop" id="imgModal">
@@ -252,6 +598,11 @@
     <!-- Toast Container -->
     <div id="toastContainer" class="toast-container"></div>
 
+    <!-- App Shell Controller -->
+    <script src="js/shared/app-shell.js"></script>
+    <script src="js/shared/header-actions.js?v=2.2"></script>
+
+    <!-- Page Script -->
     <script type="module" src="js/reports.js?v=3.2"></script>
 </body>
 

@@ -16,6 +16,11 @@ async function fetchAPI(endpoint, options = {}) {
         'Accept': 'application/json',
     };
 
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+        defaultHeaders['Authorization'] = `Bearer ${token}`;
+    }
+
     if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
         defaultHeaders['Content-Type'] = 'application/json';
         options.body = JSON.stringify(options.body);
@@ -42,6 +47,48 @@ async function fetchAPI(endpoint, options = {}) {
         throw err;
     }
 }
+
+// === AUTH & USER APIs ===
+export const AuthAPI = {
+    login: async (username, password) => {
+        const res = await fetchAPI('/api/auth/login', {
+            method: 'POST',
+            body: { username, password }
+        });
+        if (res && res.access_token) {
+            localStorage.setItem('auth_token', res.access_token);
+            localStorage.setItem('auth_user', JSON.stringify(res.user));
+        }
+        return res;
+    },
+    logout: async () => {
+        try {
+            await fetchAPI('/api/auth/logout', { method: 'POST' });
+        } catch (e) {}
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_user');
+    },
+    getMe: () => fetchAPI('/api/auth/me'),
+    changePassword: (oldPassword, newPassword) => fetchAPI('/api/auth/change-password', {
+        method: 'POST',
+        body: { old_password: oldPassword, new_password: newPassword }
+    }),
+    getCurrentUser: () => {
+        try {
+            const raw = localStorage.getItem('auth_user');
+            return raw ? JSON.parse(raw) : null;
+        } catch (e) {
+            return null;
+        }
+    },
+    getToken: () => localStorage.getItem('auth_token'),
+    isAuthenticated: () => !!localStorage.getItem('auth_token'),
+    // User management (Admin only)
+    getUsers: () => fetchAPI('/api/auth/users'),
+    createUser: (data) => fetchAPI('/api/auth/users', { method: 'POST', body: data }),
+    updateUser: (id, data) => fetchAPI(`/api/auth/users/${id}`, { method: 'PUT', body: data }),
+    deleteUser: (id) => fetchAPI(`/api/auth/users/${id}`, { method: 'DELETE' })
+};
 
 // === ATTENDANCE APIs ===
 export const AttendanceAPI = {
