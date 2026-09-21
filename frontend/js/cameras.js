@@ -33,7 +33,7 @@ let allCameras = [];
 let availableWebcams = [];
 let selectedWebcamId = '0';
 let currentSourceType = 'WEBCAM';
-let currentViewMode = 'TABLE';
+let currentViewMode = 'MATRIX';
 let probedChannels = [];
 
 function initApp() {
@@ -45,10 +45,10 @@ function initApp() {
     if (btnRefresh) btnRefresh.addEventListener('click', loadCameras);
 
     const filterInput = document.getElementById('filterCameraInput');
-    if (filterInput) filterInput.addEventListener('input', renderTable);
+    if (filterInput) filterInput.addEventListener('input', renderMatrixWall);
 
     const filterSource = document.getElementById('filterSourceSelect');
-    if (filterSource) filterSource.addEventListener('change', renderTable);
+    if (filterSource) filterSource.addEventListener('change', renderMatrixWall);
 
     const btnAdd = document.getElementById('btnOpenAddModal');
     if (btnAdd) btnAdd.addEventListener('click', () => openModal());
@@ -205,7 +205,7 @@ export async function loadAvailableWebcams(forceRefresh = false) {
                     selectedWebcamId = String(availableWebcams[0].id);
                 }
             }
-            renderTable();
+            renderMatrixWall();
         }
     } catch (err) {
         console.error('Lỗi khi tải danh sách webcam máy tính:', err);
@@ -367,7 +367,6 @@ export async function loadCameras() {
         const data = await CameraAPI.getAll();
         allCameras = data.cameras || [];
         renderKPIs();
-        renderTable();
         renderMatrixWall();
     } catch (err) {
         console.error('Lỗi tải danh sách camera:', err);
@@ -857,26 +856,11 @@ const inputFile = document.getElementById('inputFile');
 if (inputFile) inputFile.addEventListener('input', (e) => syncManualUrl(e.target.value));
 
 // ==================== VIEW MODE SWITCHER (TABLE VS MATRIX TV WALL) ====================
-export function switchViewMode(mode) {
-    currentViewMode = mode;
-    const tableContainer = document.getElementById('tableViewContainer');
+export function switchViewMode(mode = 'MATRIX') {
+    currentViewMode = 'MATRIX';
     const matrixContainer = document.getElementById('matrixViewContainer');
-    const btnTable = document.getElementById('btnModeTable');
-    const btnMatrix = document.getElementById('btnModeMatrix');
-
-    if (mode === 'MATRIX') {
-        if (tableContainer) tableContainer.style.display = 'none';
-        if (matrixContainer) matrixContainer.style.display = 'block';
-        if (btnTable) btnTable.classList.remove('active');
-        if (btnMatrix) btnMatrix.classList.add('active');
-        renderMatrixWall();
-    } else {
-        if (tableContainer) tableContainer.style.display = 'block';
-        if (matrixContainer) matrixContainer.style.display = 'none';
-        if (btnTable) btnTable.classList.add('active');
-        if (btnMatrix) btnMatrix.classList.remove('active');
-        renderTable();
-    }
+    if (matrixContainer) matrixContainer.style.display = 'block';
+    renderMatrixWall();
 }
 
 // ==================== MATRIX TV WALL RENDERER ====================
@@ -885,22 +869,47 @@ export function renderMatrixWall() {
     if (!container) return;
     container.innerHTML = '';
 
-    if (!allCameras || allCameras.length === 0) {
-        container.innerHTML = `
-            <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #94a3b8;">
-                <i class="fa-solid fa-video-slash" style="font-size: 2.5rem; margin-bottom: 10px; display: block; color: #475569;"></i>
-                Chưa có camera nào trong hệ thống. Hãy bấm <strong>"Thêm Đầu Ghi (30 Camera)"</strong> để đồng bộ tự động!
-            </div>`;
-        return;
-    }
+    const filterInput = document.getElementById('filterCameraInput');
+    const filterText = filterInput ? filterInput.value.toLowerCase().trim() : '';
+    const filterSource = document.getElementById('filterSourceSelect')?.value || 'ALL';
+
+    const filtered = allCameras.filter(c => {
+        const matchText = (c.name || '').toLowerCase().includes(filterText) ||
+                          (c.code || '').toLowerCase().includes(filterText) ||
+                          (c.room_number || '').toLowerCase().includes(filterText) ||
+                          (c.rtsp_url || '').toLowerCase().includes(filterText);
+        const matchSource = filterSource === 'ALL' || c.source_type === filterSource;
+        return matchText && matchSource;
+    });
 
     const badge = document.getElementById('matrixOnlineBadge');
     if (badge) {
-        const activeCams = allCameras.filter(c => c.is_active).length;
-        badge.innerText = `${activeCams}/${allCameras.length} Camera Sẵn Sàng`;
+        const activeCams = filtered.filter(c => c.is_active).length;
+        if (filterText || filterSource !== 'ALL') {
+            badge.innerText = `${activeCams}/${filtered.length} Hiển Thị (Tổng ${allCameras.length})`;
+        } else {
+            badge.innerText = `${activeCams}/${allCameras.length} Camera Sẵn Sàng`;
+        }
     }
 
-    allCameras.forEach((cam, idx) => {
+    if (!filtered || filtered.length === 0) {
+        if (!allCameras || allCameras.length === 0) {
+            container.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #94a3b8;">
+                    <i class="fa-solid fa-video-slash" style="font-size: 2.5rem; margin-bottom: 10px; display: block; color: #475569;"></i>
+                    Chưa có camera nào trong hệ thống. Hãy bấm <strong>"Thêm Đầu Ghi (30 Camera)"</strong> để đồng bộ tự động!
+                </div>`;
+        } else {
+            container.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #94a3b8;">
+                    <i class="fa-solid fa-filter-circle-xmark" style="font-size: 2.5rem; margin-bottom: 10px; display: block; color: #475569;"></i>
+                    Không tìm thấy camera nào phù hợp với bộ lọc tìm kiếm.
+                </div>`;
+        }
+        return;
+    }
+
+    filtered.forEach((cam, idx) => {
         const chNum = cam.channel_number || (idx + 1);
         const card = document.createElement('div');
         card.className = 'matrix-card';
@@ -1230,7 +1239,7 @@ export async function saveNvrImport() {
     } finally {
         if (btnSave) {
             btnSave.disabled = false;
-            btnSave.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> Lưu & Đồng Bộ 30 Camera Vào Hệ Thống';
+            btnSave.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> Lưu';
         }
     }
 }
