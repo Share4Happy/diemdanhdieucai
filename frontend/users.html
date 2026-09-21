@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tài Khoản - THPT Điều Cải AI Camera</title>
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/layout/app-shell.css?v=2.4">
+    <link rel="stylesheet" href="css/components/buttons-redesign.css">
+    <link rel="stylesheet" href="css/components/badges-redesign.css">
+    <link rel="stylesheet" href="css/components/header-actions.css">
+    <link rel="stylesheet" href="css/components/cards-redesign.css">
+    <link rel="stylesheet" href="css/components/confirmation-dialog.css">
+    <link rel="stylesheet" href="css/components/modal-system.css?v=2.0">
+    <link rel="stylesheet" href="css/reports.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="css/components/skeleton-loader.css">
+    <link rel="stylesheet" href="css/global-table-balance.css?v=3.2">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        .users-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--space-4);
+            margin-bottom: var(--space-6);
+        }
+
+        .stat-card {
+            background: var(--surface, #ffffff);
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: var(--radius-md);
+            padding: var(--space-4);
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            transition: all var(--transition-fast);
+        }
+
+        .stat-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .stat-icon.primary {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary);
+        }
+
+        .stat-icon.success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .stat-icon.warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        .stat-content h4 {
+            font-size: var(--text-2xl);
+            font-weight: var(--font-bold);
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .stat-content p {
+            font-size: var(--text-sm);
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .user-row-inactive {
+            opacity: 0.6;
+        }
+
+        .action-btn-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            background: var(--surface);
+            color: var(--text-primary);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .action-btn-icon:hover:not(:disabled) {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        .action-btn-icon.warning {
+            color: var(--warning);
+        }
+
+        .action-btn-icon.warning:hover:not(:disabled) {
+            background: var(--warning);
+            color: white;
+            border-color: var(--warning);
+        }
+
+        .action-btn-icon:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: var(--space-2);
+            justify-content: center;
+        }
+
+        .users-form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--space-4);
+            margin-bottom: var(--space-4);
+        }
+
+        .create-user-card {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 1px solid #bae6fd;
+            border-radius: var(--radius-lg);
+            padding: var(--space-5);
+            margin-bottom: var(--space-6);
+        }
+
+        .create-user-card h3 {
+            font-size: var(--text-lg);
+            font-weight: var(--font-bold);
+            color: var(--text-primary);
+            margin-bottom: var(--space-4);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .create-user-card h3 i {
+            color: var(--primary);
+        }
+
+        .auth-field label {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            font-weight: var(--font-semibold);
+            color: var(--text-primary);
+            margin-bottom: var(--space-2);
+        }
+
+        .auth-field label i {
+            color: var(--primary);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-shell">
+        <aside class="app-sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">ĐC</div>
+                <div class="sidebar-brand-text">
+                    <span class="brand-title">THPT ĐIỀU CẢI</span>
+                    <span class="brand-subtitle">AI CAMERA</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <ul class="sidebar-nav-list">
+                    <li class="sidebar-nav-item">
+                        <a href="index.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-chart-line"></i></span>
+                            <span class="sidebar-nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="cameras.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-video"></i></span>
+                            <span class="sidebar-nav-text">Camera & Lớp Học</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="roi-config.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-draw-polygon"></i></span>
+                            <span class="sidebar-nav-text">Vùng</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="reports.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-file-excel"></i></span>
+                            <span class="sidebar-nav-text">Báo Cáo & Dữ Liệu</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="notifications.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-paper-plane"></i></span>
+                            <span class="sidebar-nav-text">Thông Báo</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item nav-admin-only" hidden>
+                        <a href="users.html" class="sidebar-nav-link active">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-user-gear"></i></span>
+                            <span class="sidebar-nav-text">Tài Khoản</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="sidebar-user-profile" id="sidebarUserProfile" title="Thông tin tài khoản">
+                    <div class="sidebar-user-avatar" id="sidebarUserAvatar">A</div>
+                    <div class="sidebar-user-info">
+                        <span class="sidebar-user-name" id="sidebarUserName">Admin</span>
+                        <span class="sidebar-user-role" id="sidebarUserRole">Quản Trị Viên</span>
+                    </div>
+                    <button class="sidebar-logout-btn" type="button" id="sidebarLogoutBtn" title="Đăng Xuất">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+        <div class="sidebar-overlay"></div>
+        <main class="app-main">
+            <header class="app-header">
+                <div class="header-left">
+                    <div class="header-breadcrumb">
+                        <span class="breadcrumb-item">Hệ Thống</span>
+                        <span class="breadcrumb-separator">/</span>
+                        <span class="breadcrumb-item breadcrumb-current">Tài Khoản</span>
+                    </div>
+                </div>
+            </header>
+            <div class="page-container">
+                <div class="page-header">
+                    <div class="page-title-row">
+                        <div>
+                            <h1 class="page-title">Quản Lý Tài Khoản</h1>
+                            <p class="page-description">Quản trị viên tạo, chỉnh sửa và chuyển trạng thái hoạt động của tài khoản đăng nhập.</p>
+                        </div>
+                        <div class="page-actions">
+                            <button id="btnOpenCreateUserModal" class="btn btn-primary" type="button">
+                                <i class="fa-solid fa-user-plus"></i> Thêm Tài Khoản
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Danh Sách Tài Khoản -->
+                <section class="report-section">
+                    <div class="section-title">
+                        <h3>Danh Sách Tài Khoản</h3>
+                    </div>
+                    <div class="data-table-container">
+                        <table class="custom-table">
+                            <thead>
+                                <tr>
+                                    <th>Họ Tên</th>
+                                    <th>Email</th>
+                                    <th>Vai Trò</th>
+                                    <th>Trạng Thái</th>
+                                    <th class="cell-actions">Thao Tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <tr class="skeleton-table-row">
+                                    <td class="skeleton-table-cell"><div class="skeleton skeleton-text" style="width: 140px;"></div></td>
+                                    <td class="skeleton-table-cell"><div class="skeleton skeleton-text" style="width: 190px;"></div></td>
+                                    <td class="skeleton-table-cell"><div class="skeleton skeleton-badge" style="width: 75px;"></div></td>
+                                    <td class="skeleton-table-cell"><div class="skeleton skeleton-badge" style="width: 80px;"></div></td>
+                                    <td class="skeleton-table-cell cell-actions">
+                                        <div style="display: flex; gap: var(--space-2); justify-content: center;">
+                                            <div class="skeleton skeleton-button" style="width: 32px; height: 32px;"></div>
+                                            <div class="skeleton skeleton-button" style="width: 32px; height: 32px;"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="skeleton-table-row">
+                                    <td class="skeleton-table-cell"><div class="skeleton skeleton-text" style="width: 160px;"></div></td>
+                                    <td class="skeleton-table-cell"><div class="skeleton skeleton-text" style="width: 210px;"></div></td>
+                                    <td class="skeleton-table-cell"><div class="skeleton skeleton-badge" style="width: 75px;"></div></td>
+                                    <td class="skeleton-table-cell"><div class="skeleton skeleton-badge" style="width: 80px;"></div></td>
+                                    <td class="skeleton-table-cell cell-actions">
+                                        <div style="display: flex; gap: var(--space-2); justify-content: center;">
+                                            <div class="skeleton skeleton-button" style="width: 32px; height: 32px;"></div>
+                                            <div class="skeleton skeleton-button" style="width: 32px; height: 32px;"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="skeleton-table-row">
+                                    <td class="skeleton-table-cell"><div class="skeleton skeleton-text" style="width: 130px;"></div></td>
+                                    <td class="skeleton-table-cell"><div class="skeleton skeleton-text" style="width: 180px;"></div></td>
+                                    <td class="skeleton-table-cell"><div class="skeleton skeleton-badge" style="width: 75px;"></div></td>
+                                    <td class="skeleton-table-cell"><div class="skeleton skeleton-badge" style="width: 80px;"></div></td>
+                                    <td class="skeleton-table-cell cell-actions">
+                                        <div style="display: flex; gap: var(--space-2); justify-content: center;">
+                                            <div class="skeleton skeleton-button" style="width: 32px; height: 32px;"></div>
+                                            <div class="skeleton skeleton-button" style="width: 32px; height: 32px;"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Thêm Tài Khoản Mới -->
+    <div class="modal-backdrop" id="createUserModal">
+        <div class="modal-container modal-sm">
+            <div class="modal-header">
+                <div class="modal-header-content">
+                    <h3 class="modal-title">
+                        <i class="fa-solid fa-user-plus modal-title-icon"></i>
+                        Thêm Tài Khoản Mới
+                    </h3>
+                    <p class="modal-subtitle">Tạo tài khoản đăng nhập cho cán bộ, giáo viên hoặc nhân viên.</p>
+                </div>
+                <button class="modal-close-btn" type="button" data-close-create-modal aria-label="Đóng">&times;</button>
+            </div>
+            <form id="createUserForm">
+                <div class="modal-body">
+                    <div class="auth-field">
+                        <label for="userFullName"><i class="fa-solid fa-user"></i> Họ Tên (*)</label>
+                        <input class="form-control" id="userFullName" placeholder="Ví dụ: Nguyễn Văn A" required>
+                    </div>
+                    <div class="auth-field">
+                        <label for="userEmail"><i class="fa-solid fa-envelope"></i> Email Đăng Nhập (*)</label>
+                        <input class="form-control" type="email" id="userEmail"
+                            placeholder="nhanvien@truongdieucai.edu.vn" required>
+                    </div>
+                    <div class="auth-field">
+                        <label for="userRole"><i class="fa-solid fa-user-tag"></i> Vai Trò (*)</label>
+                        <select class="form-control" id="userRole">
+                            <option value="staff">Nhân Viên</option>
+                            <option value="admin">Quản Trị Viên</option>
+                        </select>
+                    </div>
+                    <div class="auth-field" style="margin-bottom: 0;">
+                        <label for="userPassword"><i class="fa-solid fa-lock"></i> Mật Khẩu Khởi Tạo (*)</label>
+                        <input class="form-control" type="password" id="userPassword"
+                            placeholder="Tối thiểu 8 ký tự" required minlength="8">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-btn modal-btn-secondary" type="button" data-close-create-modal>
+                        <i class="fa-solid fa-xmark"></i> Hủy
+                    </button>
+                    <button class="modal-btn modal-btn-primary" type="submit">
+                        <i class="fa-solid fa-plus"></i> Tạo Tài Khoản
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Chỉnh Sửa Thông Tin -->
+    <div class="modal-backdrop" id="editUserModal">
+        <div class="modal-container modal-sm">
+            <div class="modal-header">
+                <div class="modal-header-content">
+                    <h3 class="modal-title">
+                        <i class="fa-solid fa-pen-to-square modal-title-icon"></i>
+                        Chỉnh Sửa Thông Tin
+                    </h3>
+                    <p class="modal-subtitle">Cập nhật họ tên, email, vai trò hoặc mật khẩu tài khoản.</p>
+                </div>
+                <button class="modal-close-btn" type="button" data-close-modal aria-label="Đóng">&times;</button>
+            </div>
+            <form id="editUserForm">
+                <div class="modal-body">
+                    <input type="hidden" id="editUserId">
+                    <div class="auth-field">
+                        <label for="editUserFullName"><i class="fa-solid fa-user"></i> Họ Tên (*)</label>
+                        <input class="form-control" id="editUserFullName" required>
+                    </div>
+                    <div class="auth-field">
+                        <label for="editUserEmail"><i class="fa-solid fa-envelope"></i> Email (*)</label>
+                        <input class="form-control" type="email" id="editUserEmail" required>
+                    </div>
+                    <div class="auth-field">
+                        <label for="editUserRole"><i class="fa-solid fa-user-tag"></i> Vai Trò (*)</label>
+                        <select class="form-control" id="editUserRole">
+                            <option value="staff">Nhân Viên</option>
+                            <option value="admin">Quản Trị Viên</option>
+                        </select>
+                    </div>
+                    <div class="auth-field" style="margin-bottom: 0;">
+                        <label for="editUserPassword"><i class="fa-solid fa-lock"></i> Mật Khẩu Mới</label>
+                        <input class="form-control" type="password" id="editUserPassword" minlength="8"
+                            placeholder="Để trống nếu không đổi mật khẩu">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-btn modal-btn-secondary" type="button" data-close-modal>
+                        <i class="fa-solid fa-xmark"></i> Hủy
+                    </button>
+                    <button class="modal-btn modal-btn-primary" type="submit">
+                        <i class="fa-solid fa-floppy-disk"></i> Lưu Thay Đổi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="js/shared/auth-guard.js"></script>
+    <script src="js/shared/app-shell.js"></script>
+    <script src="js/shared/confirmation-dialog.js"></script>
+    <script type="module" src="js/users.js"></script>
+</body>
+
+</html>

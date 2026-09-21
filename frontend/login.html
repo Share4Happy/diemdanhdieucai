@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - THPT Điều Cải AI Camera</title>
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/components/buttons-redesign.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="auth-page">
+        <div class="auth-card">
+            <div class="auth-brand">
+                <div class="auth-logo">ĐC</div>
+                <div>
+                    <h1>THPT ĐIỀU CẢI</h1>
+                    <p>Hệ thống điểm danh AI Camera</p>
+                </div>
+            </div>
+            <h2>Đăng nhập</h2>
+            <p class="auth-lead">Tài khoản do quản trị viên tạo. Không có đăng ký công khai.</p>
+            <div id="authAlert" class="auth-alert"></div>
+            <form id="loginForm">
+                <div class="auth-field">
+                    <label for="email">Email</label>
+                    <input class="form-control" type="email" id="email" name="email" required autocomplete="username">
+                </div>
+                <div class="auth-field">
+                    <label for="password">Mật khẩu</label>
+                    <input class="form-control" type="password" id="password" name="password" required autocomplete="current-password">
+                </div>
+                <div class="auth-actions">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fa-solid fa-right-to-bracket"></i> Đăng nhập
+                    </button>
+                </div>
+            </form>
+            <div class="auth-links">
+                <a href="forgot-password.html">Quên mật khẩu?</a>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="js/login.js"></script>
+</body>
+</html>

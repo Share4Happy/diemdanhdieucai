@@ -3,7 +3,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, scoped_session
 from config.settings import settings
 from config.logging_config import logger
-from database.models import Base, Classroom, ROIPolygon, NVRDevice
+from database.models import Base, Classroom, ROIPolygon, NVRDevice, User
 
 engine = create_engine(
     settings.DATABASE_URL,
@@ -83,6 +83,9 @@ def init_db():
         if created_count > 0:
             db.commit()
             logger.info(f"Đã bổ sung thành công {created_count} lớp học chuẩn THPT Điều Cải!")
+
+        from services.auth_service import seed_admin_if_empty
+        seed_admin_if_empty(db)
     except Exception as e:
         db.rollback()
         logger.error(f"Lỗi khởi tạo DB: {e}")
