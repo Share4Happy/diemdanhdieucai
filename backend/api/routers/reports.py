@@ -11,6 +11,7 @@ from core.attendance_engine import attendance_engine
 from services.excel_exporter import excel_exporter
 from services.notification import notification_service
 from services.zalo_service import zalo_service
+from config.zalo_runtime_store import save_runtime_zalo
 from backend.schemas.report_schemas import SendEmailRequest, ZaloTestRequest, ZaloConfigSaveRequest
 
 router = APIRouter(prefix="/reports", tags=["Reports"])
@@ -80,23 +81,26 @@ async def get_zalo_status():
 
 @router.post("/save-zalo-config")
 async def save_zalo_config(req: ZaloConfigSaveRequest):
-    """Lưu cấu hình Zalo vào bộ nhớ hệ thống."""
+    """Lưu cấu hình Zalo vào bộ nhớ hệ thống và ghi ra file để giữ qua các lần khởi động."""
     settings.ENABLE_ZALO_NOTIFICATION = req.enabled
     settings.ZALO_NOTIFICATION_TYPE = req.notification_type
-    if req.webhook_url is not None:
+    if req.webhook_url not in (None, ""):
         settings.ZALO_WEBHOOK_URL = req.webhook_url.strip()
-    if req.access_token is not None:
+    if req.access_token not in (None, ""):
         settings.ZALO_OA_ACCESS_TOKEN = req.access_token.strip()
-    if req.recipient_user_id is not None:
+    if req.recipient_user_id not in (None, ""):
         settings.ZALO_RECIPIENT_USER_ID = req.recipient_user_id.strip()
-    if req.bot_api_base_url is not None:
+    if req.bot_api_base_url not in (None, ""):
         settings.ZALO_BOT_API_BASE_URL = req.bot_api_base_url.strip()
-    if req.bot_id is not None:
+    if req.bot_id not in (None, ""):
         settings.ZALO_BOT_ID = req.bot_id.strip()
-    if req.bot_api_key is not None:
+    if req.bot_api_key not in (None, ""):
         settings.ZALO_BOT_API_KEY = req.bot_api_key.strip()
-    if req.recipient_phones is not None:
+    if req.recipient_phones not in (None, ""):
         settings.ZALO_RECIPIENT_PHONES = req.recipient_phones.strip()
+    if req.recipients_json not in (None, ""):
+        settings.ZALO_RECIPIENTS_JSON = req.recipients_json.strip()
+    save_runtime_zalo(settings)
     return {"success": True, "message": "Đã cập nhật cấu hình Zalo thành công!"}
 
 @router.post("/clear-history")

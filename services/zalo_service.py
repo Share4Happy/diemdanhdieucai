@@ -19,6 +19,43 @@ class ZaloNotificationService:
     def __init__(self):
         self.timeout = 8
 
+    def _collect_message_data(self, session, details) -> Dict[str, Any]:
+        """Tổng hợp dữ liệu điểm danh thực tế để render mẫu tin nhắn tùy chỉnh."""
+        total_std = session.total_standard or sum(d.standard_count for d in details)
+        total_pre = session.total_present or sum(d.present_count for d in details)
+        total_abs = session.total_absent or sum(d.absent_count for d in details)
+        rate = (total_pre / total_std * 100) if total_std > 0 else 0.0
+
+        absent_classes = [d for d in details if d.absent_count > 0]
+        if absent_classes:
+            warn_lines = []
+            for d in absent_classes:
+                cname = d.classroom.name if d.classroom else f"Lớp {d.classroom_id}"
+                room = f" ({d.classroom.room_number})" if d.classroom and d.classroom.room_number else ""
+                warn_lines.append(f"• {cname}{room}: Vắng {d.absent_count} em (Hiện diện: {d.present_count}/{d.standard_count})")
+            danh_sach_vang = "⚠️ DANH SÁCH LỚP CÓ HỌC SINH VẮNG:\n" + "\n".join(warn_lines)
+        else:
+            danh_sach_vang = "🎉 XUẤT SẮC: 100% tất cả các lớp đi học đầy đủ!"
+
+        return {
+            "ngay": session.scan_date,
+            "gio": session.scan_time,
+            "tong_lop": session.total_classes,
+            "si_so": f"{total_pre}/{total_std}",
+            "co_mat": total_pre,
+            "vang_mat": total_abs,
+            "ty_le": f"{rate:.1f}%",
+            "danh_sach_vang": danh_sach_vang,
+        }
+
+    @staticmethod
+    def _render_template(template: str, data: Dict[str, Any]) -> str:
+        """Thay thế biến {ngay}, {si_so}, ... trong mẫu tin nhắn bằng dữ liệu thực tế."""
+        msg = template
+        for key, val in data.items():
+            msg = msg.replace("{" + key + "}", str(val))
+        return msg
+
     def format_attendance_message(self, session_id: int) -> str:
         """Định dạng bản tin tóm tắt kết quả điểm danh cho tin nhắn Zalo."""
         db = SessionLocal()
@@ -34,36 +71,141 @@ class ZaloNotificationService:
                 .all()
             )
 
-            total_std = session.total_standard or sum(d.standard_count for d in details)
-            total_pre = session.total_present or sum(d.present_count for d in details)
-            total_abs = session.total_absent or sum(d.absent_count for d in details)
-            rate = (total_pre / total_std * 100) if total_std > 0 else 0.0
+            data = self._collect_message_data(session, details)
 
             lines = [
                 "🔔 [THPT ĐIỀU CẢI] BÁO CÁO ĐIỂM DANH SĨ SỐ ĐẦU GIỜ SÁNG",
-                f"📅 Ngày quét: {session.scan_date} | Giờ: {session.scan_time}",
-                f"🏫 Tổng số lớp: {session.total_classes} lớp",
-                f"👥 Sĩ số toàn trường: {total_pre}/{total_std} học sinh",
-                f"✅ Có mặt: {total_pre} | ❌ Vắng mặt: {total_abs}",
-                f"📊 Tỷ lệ chuyên cần: {rate:.1f}%",
-                ""
+                f"📅 Ngày quét: {data['ngay']} | Giờ: {data['gio']}",
+                f"🏫 Tổng số lớp: {data['tong_lop']} lớp",
+                f"👥 Sĩ số toàn trường: {data['si_so']} học sinh",
+                f"✅ Có mặt: {data['co_mat']} | ❌ Vắng mặt: {data['vang_mat']}",
+                f"📊 Tỷ lệ chuyên cần: {data['ty_le']}",
+                "",
+                data['danh_sach_vang'],
+                "",
+                "📂 File báo cáo Excel & ảnh đối chứng AI đã lưu trên hệ thống máy chủ.",
             ]
-
-            absent_classes = [d for d in details if d.absent_count > 0]
-            if absent_classes:
-                lines.append("⚠️ DANH SÁCH LỚP CÓ HỌC SINH VẮNG:")
-                for d in absent_classes:
-                    cname = d.classroom.name if d.classroom else f"Lớp {d.classroom_id}"
-                    room = f" ({d.classroom.room_number})" if d.classroom and d.classroom.room_number else ""
-                    lines.append(f"• {cname}{room}: Vắng {d.absent_count} em (Hiện diện: {d.present_count}/{d.standard_count})")
-            else:
-                lines.append("🎉 XUẤT SẮC: 100% tất cả các lớp đi học đầy đủ!")
-
-            lines.append("")
-            lines.append("📂 File báo cáo Excel & ảnh đối chứng AI đã lưu trên hệ thống máy chủ.")
             return "\n".join(lines)
         finally:
             db.close()
+
+    def format_class_message(self, session_id: int, class_code: str) -> str:
+        """Định dạng bản tin báo cáo riêng cho 1 lớp (GVCN) trong phiên điểm danh."""
+        db = SessionLocal()
+        try:
+            session = db.query(AttendanceSession).filter(AttendanceSession.id == session_id).first()
+            if not session:
+                return "Không tìm thấy thông tin phiên điểm danh."
+
+            detail = (
+                db.query(AttendanceDetail)
+                .join(Classroom, Classroom.id == AttendanceDetail.classroom_id)
+                .filter(
+                    AttendanceDetail.session_id == session.id,
+                    Classroom.code == class_code
+                )
+                .first()
+            )
+            if not detail:
+                return f"Không có dữ liệu điểm danh cho lớp {class_code} trong phiên này."
+
+            cls_name = detail.classroom.name if detail.classroom else f"Lớp {class_code}"
+            room = detail.classroom.room_number if detail.classroom and detail.classroom.room_number else ""
+            rate = (detail.present_count / detail.standard_count * 100) if detail.standard_count > 0 else 0.0
+
+            build = [
+                f"🔔 [THPT ĐIỀU CẢI] BÁO CÁO ĐIỂM DANH LỚP {cls_name}",
+                f"📅 Ngày quét: {session.scan_date} | Giờ: {session.scan_time}",
+                f"🏫 {cls_name}{f' ({room})' if room else ''}",
+                f"👥 Sĩ số: {detail.present_count}/{detail.standard_count} học sinh",
+                f"✅ Có mặt: {detail.present_count} | ❌ Vắng: {detail.absent_count} em",
+                f"📊 Tỷ lệ chuyên cần: {rate:.1f}%",
+            ]
+            if detail.absent_count > 0:
+                build.append("\n⚠️ Lớp có học sinh vắng mặt, cần kiểm tra lại.")
+            return "\n".join(build)
+        finally:
+            db.close()
+
+    def _get_recipient_groups(self) -> Dict[tuple, list]:
+        """Nhóm người nhận theo vai trò: ('school', None) -> BGH, ('class', class_code) -> GVCN lớp.
+
+        Ưu tiên danh sách cấu trúc ZALO_RECIPIENTS_JSON. Legacy ZALO_RECIPIENT_PHONES
+        (chuỗi SĐT phân cách phẩy) được quy về nhóm Ban Giám Hiệu.
+        """
+        groups: Dict[tuple, set] = {}
+        raw = (settings.ZALO_RECIPIENTS_JSON or "").strip()
+        if raw:
+            try:
+                items = json.loads(raw)
+            except json.JSONDecodeError:
+                items = []
+            if isinstance(items, list):
+                for it in items:
+                    if not isinstance(it, dict):
+                        continue
+                    phone = str(it.get("phone", "")).strip()
+                    role = str(it.get("role", "school")).strip().lower() or "school"
+                    class_code = str(it.get("class_code", "")).strip()
+                    if not phone:
+                        continue
+                    key = (role, class_code if role == "class" else None)
+                    groups.setdefault(key, set()).add(phone)
+
+        if not groups and settings.ZALO_RECIPIENT_PHONES:
+            for p in (settings.ZALO_RECIPIENT_PHONES or "").split(","):
+                p = p.strip()
+                if p:
+                    groups.setdefault(("school", None), set()).add(p)
+
+        return {k: sorted(v) for k, v in groups.items()}
+
+    def _send_bot_batch_messages(self, session_id: int, groups: Dict[tuple, list]) -> Dict[str, Any]:
+        """Gửi tin nhắn Zalo Bot theo từng nhóm vai trò (mỗi nhóm một nội dung riêng)."""
+        total_sent = 0
+        campaign_ids = []
+        errors = []
+        group_messages = []
+
+        for (role, class_code), phones in groups.items():
+            if role == "class" and class_code:
+                message = self.format_class_message(session_id, class_code)
+            else:
+                message = self.format_attendance_message(session_id)
+
+            recipients = [{"phone": p} for p in phones]
+            res = self.send_via_bot_api(message, recipients=recipients)
+            if res.get("success"):
+                total_sent += res.get("accepted", 0)
+                cids = res.get("campaign_ids") or []
+                campaign_ids.extend(cids)
+                group_messages.append(
+                    f"{'GVCN ' + class_code if role == 'class' else 'BGH'}: "
+                    f"{res.get('message', 'Đã gửi')}{' [nền]' if cids else ''}"
+                )
+            else:
+                errors.append(f"{'GVCN ' + class_code if role == 'class' else 'BGH'}: {res.get('message', 'Lỗi gửi')}")
+
+        if not total_sent and not campaign_ids and not errors:
+            return {"success": False, "message": "Chưa có người nhận nào được cấu hình."}
+
+        if not total_sent and not campaign_ids and errors:
+            return {"success": False, "message": "Không gửi được Zalo: " + "; ".join(errors)}
+
+        msg_parts = []
+        if group_messages:
+            msg_parts.append("Đã gửi theo vai trò: " + " | ".join(group_messages))
+        if errors:
+            msg_parts.append("Lỗi: " + "; ".join(errors))
+
+        return {
+            "success": True,
+            "message": ". ".join(msg_parts) + ".",
+            "accepted": total_sent,
+            "campaign_ids": campaign_ids,
+            "errors": errors,
+            "groups": len(groups)
+        }
 
     def send_via_webhook(self, message: str, webhook_url: Optional[str] = None) -> Dict[str, Any]:
         """Gửi tin nhắn qua Webhook URL của Zalo Bot hoặc dịch vụ webhook trung gian."""
@@ -269,17 +411,34 @@ class ZaloNotificationService:
         }
 
     def send_attendance_summary(self, session_id: int) -> Dict[str, Any]:
-        """Tự động tổng hợp và gửi tin nhắn điểm danh sau khi quét hoàn tất."""
+        """Tự động tổng hợp và gửi tin nhắn điểm danh sau khi quét hoàn tất.
+
+        Với Zalo Bot Gateway: mỗi vai trò nhận nội dung phù hợp.
+        - Ban Giám Hiệu: báo cáo tổng hợp toàn trường.
+        - Giáo Viên Chủ Nhiệm: báo cáo chi tiết lớp chủ nhiệm.
+        """
         if not settings.ENABLE_ZALO_NOTIFICATION:
             logger.info("[ZALO-LOG] Tính năng gửi Zalo đang tắt trong cấu hình.")
             return {"success": False, "message": "Tính năng gửi Zalo đang tắt."}
 
+        mode = settings.ZALO_NOTIFICATION_TYPE.upper()
+        if mode == "BOT_API":
+            groups = self._get_recipient_groups()
+            if not groups:
+                message = self.format_attendance_message(session_id)
+                logger.info(
+                    f"[ZALO-LOG-SIMULATION]: Chưa cấu hình người nhận. Tin nhắn Zalo:\n{message}"
+                )
+                return {
+                    "success": True,
+                    "message": "Đã tạo nội dung tin nhắn Zalo (Chưa có người nhận / Chế độ mô phỏng).",
+                    "preview_text": message
+                }
+            return self._send_bot_batch_messages(session_id, groups)
+
         message = self.format_attendance_message(session_id)
-        
-        # Kiểm tra chế độ gửi
-        if settings.ZALO_NOTIFICATION_TYPE.upper() == "BOT_API":
-            return self.send_via_bot_api(message)
-        elif settings.ZALO_NOTIFICATION_TYPE.upper() == "OA_API" and settings.ZALO_OA_ACCESS_TOKEN:
+
+        if mode == "OA_API" and settings.ZALO_OA_ACCESS_TOKEN:
             return self.send_via_oa_api(message)
         elif settings.ZALO_WEBHOOK_URL:
             return self.send_via_webhook(message)
@@ -309,18 +468,73 @@ class ZaloNotificationService:
         test_msg = (
             "🔔 [TEST] THỬ NGHIỆM KẾT NỐI HỆ THỐNG ĐIỂM DANH AI - THPT ĐIỀU CẢI\n"
             "Tin nhắn này xác nhận tính năng gửi thông báo tự động qua Zalo đang hoạt động tốt!\n"
-            "Hệ thống sẽ tự động gửi báo cáo sĩ số 30 lớp học vào 06:48 mỗi sáng."
+            "Hệ thống sẽ tự động gửi báo cáo sĩ số theo từng vai trò vào 06:48 mỗi sáng."
         )
 
         if target_type.upper() == "BOT_API":
-            recipients = [{"phone": phone}] if phone else None
+            if phone:
+                recipients = [{"phone": phone}]
+            else:
+                groups = self._get_recipient_groups()
+                recipients = [{"phone": p} for phones in groups.values() for p in phones] or None
             return self.send_via_bot_api(test_msg, recipients=recipients, api_base_url=api_base_url, bot_id=bot_id, api_key=api_key)
         elif target_type.upper() == "OA_API":
             return self.send_via_oa_api(test_msg, access_token=access_token, recipient_user_id=user_id)
         else:
             return self.send_via_webhook(test_msg, webhook_url=webhook_url)
 
+    def _test_template_data(self) -> Dict[str, Any]:
+        """Dữ liệu mẫu để render mẫu tin nhắn khi gửi thử nghiệm (ưu tiên phiên điểm danh mới nhất)."""
+        db = SessionLocal()
+        try:
+            session = db.query(AttendanceSession).order_by(AttendanceSession.id.desc()).first()
+            if session:
+                details = (
+                    db.query(AttendanceDetail)
+                    .filter(AttendanceDetail.session_id == session.id)
+                    .order_by(AttendanceDetail.absent_count.desc())
+                    .all()
+                )
+                return self._collect_message_data(session, details)
+        except Exception:
+            pass
+        finally:
+            db.close()
+        return {
+            "ngay": "hôm nay",
+            "gio": "06:45",
+            "tong_lop": "30",
+            "si_so": "1,230/1,245",
+            "co_mat": "1,230",
+            "vang_mat": "15",
+            "ty_le": "98.8%",
+            "danh_sach_vang": "• Lớp 10A1 (P.101): Vắng 2 em (40/42)\n• Lớp 11A4 (P.114): Vắng 1 em (39/40)",
+        }
+
     def get_status(self) -> Dict[str, Any]:
+        recipients = []
+        raw = (settings.ZALO_RECIPIENTS_JSON or "").strip()
+        if raw:
+            try:
+                items = json.loads(raw)
+            except json.JSONDecodeError:
+                items = []
+            if isinstance(items, list):
+                recipients = [
+                    {
+                        "phone": str(it.get("phone", "")).strip(),
+                        "role": str(it.get("role", "school")).strip().lower() or "school",
+                        "class_code": str(it.get("class_code", "")).strip()
+                    }
+                    for it in items if isinstance(it, dict) and str(it.get("phone", "")).strip()
+                ]
+        if not recipients and settings.ZALO_RECIPIENT_PHONES:
+            recipients = [
+                {"phone": p.strip(), "role": "school", "class_code": ""}
+                for p in (settings.ZALO_RECIPIENT_PHONES or "").split(",")
+                if p.strip()
+            ]
+
         return {
             "enabled": settings.ENABLE_ZALO_NOTIFICATION,
             "notification_type": settings.ZALO_NOTIFICATION_TYPE,
@@ -338,6 +552,12 @@ class ZaloNotificationService:
                 settings.ZALO_BOT_API_KEY[:4] + "..." + settings.ZALO_BOT_API_KEY[-4:]
                 if len(settings.ZALO_BOT_API_KEY) > 8 else settings.ZALO_BOT_API_KEY
             ),
+            "oa_token_masked": (
+                settings.ZALO_OA_ACCESS_TOKEN[:4] + "..." + settings.ZALO_OA_ACCESS_TOKEN[-4:]
+                if len(settings.ZALO_OA_ACCESS_TOKEN) > 8 else settings.ZALO_OA_ACCESS_TOKEN
+            ),
+            "recipients": recipients,
+            "recipient_count": len(recipients),
             "recipient_phones": settings.ZALO_RECIPIENT_PHONES
         }
 

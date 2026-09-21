@@ -24,4 +24,5 @@ class ZaloConfigSaveRequest(BaseModel):
     bot_api_base_url: Optional[str] = ""
     bot_id: Optional[str] = ""
     bot_api_key: Optional[str] = ""
-    recipient_phones: Optional[str] = ""
+    recipient_phones: Optional[str] = ""       # Legacy: chỉ dành cho nhóm Ban Giám Hiệu
+    recipients_json: Optional[str] = ""        # [{"phone","role","class_code"}]: người nhận theo vai trò

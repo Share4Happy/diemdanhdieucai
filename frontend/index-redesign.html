@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - THPT Điều Cải AI Camera</title>
+    
+    <!-- Design System & Components -->
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/layout/app-shell.css">
+    <link rel="stylesheet" href="css/components/buttons-redesign.css">
+    <link rel="stylesheet" href="css/components/badges-redesign.css">
+    <link rel="stylesheet" href="css/components/cards-redesign.css">
+    <link rel="stylesheet" href="css/components/tables-redesign.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Page-specific styles */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--space-4);
+            margin-bottom: var(--space-6);
+        }
+
+        .session-info-bar {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: var(--space-4) var(--space-5);
+            margin-bottom: var(--space-6);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: var(--space-4);
+        }
+
+        .session-info {
+            display: flex;
+            align-items: center;
+            gap: var(--space-4);
+        }
+
+        .session-badge {
+            padding: var(--space-1) var(--space-3);
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            border-radius: var(--radius);
+            font-size: var(--text-xs);
+            font-weight: var(--font-semibold);
+        }
+
+        .session-meta {
+            font-size: var(--text-sm);
+            color: var(--text-muted);
+        }
+
+        .attendance-progress {
+            margin-bottom: var(--space-6);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--gray-200);
+            border-radius: var(--radius-full);
+            overflow: hidden;
+            margin-top: var(--space-2);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success), #22c55e);
+            transition: width 0.3s ease;
+        }
+
+        .class-thumbnail {
+            width: 60px;
+            height: 48px;
+            object-fit: cover;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: transform var(--transition-fast);
+        }
+
+        .class-thumbnail:hover {
+            transform: scale(1.05);
+        }
+
+        /* Modal styles (keeping existing modal functionality) */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: var(--z-modal-backdrop);
+            padding: var(--space-6);
+        }
+
+        .modal-backdrop.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--surface);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-xl);
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: var(--space-5);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            background: var(--gray-100);
+            color: var(--text-muted);
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: var(--text-xl);
+            line-height: 1;
+            transition: all var(--transition-fast);
+        }
+
+        .modal-close:hover {
+            background: var(--danger-bg);
+            color: var(--danger);
+        }
+
+        .modal-body {
+            padding: var(--space-5);
+            overflow-y: auto;
+        }
+
+        .comparison-view {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-4);
+        }
+
+        .view-box {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .view-box:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
+        }
+
+        .view-box-header {
+            padding: var(--space-3);
+            background: var(--gray-50);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .view-box-header h4 {
+            font-size: var(--text-sm);
+            font-weight: var(--font-semibold);
+        }
+
+        .view-box-img-wrap {
+            background: var(--gray-900);
+            aspect-ratio: 16/9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .view-box-img-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- App Shell -->
+    <div class="app-shell">
+        <!-- Sidebar -->
+        <aside class="app-sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">ĐC</div>
+                <div class="sidebar-brand-text">
+                    <span class="brand-title">THPT ĐIỀU CẢI</span>
+                    <span class="brand-subtitle">AI CAMERA</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <!-- Tổng Quan -->
+                <div class="sidebar-nav-section">
+                    <div class="sidebar-nav-title">TỔNG QUAN</div>
+                    <ul class="sidebar-nav-list">
+                        <li class="sidebar-nav-item">
+                            <a href="index.html" class="sidebar-nav-link active">
+                                <span class="sidebar-nav-icon"><i class="fa-solid fa-chart-line"></i></span>
+                                <span class="sidebar-nav-text">Dashboard</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Giám Sát -->
+                <div class="sidebar-nav-section">
+                    <div class="sidebar-nav-title">GIÁM SÁT</div>
+                    <ul class="sidebar-nav-list">
+                        <li class="sidebar-nav-item">
+                            <a href="cameras.html" class="sidebar-nav-link">
+                                <span class="sidebar-nav-icon"><i class="fa-solid fa-video"></i></span>
+                                <span class="sidebar-nav-text">Camera & Lớp Học</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Cấu Hình -->
+                <div class="sidebar-nav-section">
+                    <div class="sidebar-nav-title">CẤU HÌNH</div>
+                    <ul class="sidebar-nav-list">
+                        <li class="sidebar-nav-item">
+                            <a href="roi-config.html" class="sidebar-nav-link">
+                                <span class="sidebar-nav-icon"><i class="fa-solid fa-draw-polygon"></i></span>
+                                <span class="sidebar-nav-text">Vùng ROI</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Báo Cáo -->
+                <div class="sidebar-nav-section">
+                    <div class="sidebar-nav-title">DỮ LIỆU</div>
+                    <ul class="sidebar-nav-list">
+                        <li class="sidebar-nav-item">
+                            <a href="reports.html" class="sidebar-nav-link">
+                                <span class="sidebar-nav-icon"><i class="fa-solid fa-file-excel"></i></span>
+                                <span class="sidebar-nav-text">Báo Cáo & Dữ Liệu</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="sidebar-toggle-btn" type="button">
+                    <i class="fa-solid fa-angles-left"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Sidebar Overlay (Mobile) -->
+        <div class="sidebar-overlay"></div>
+
+        <!-- Main Content Area -->
+        <main class="app-main">
+            <!-- Header -->
+            <header class="app-header">
+                <div class="header-left">
+                    <button class="header-action-btn mobile-menu-btn" type="button">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <div class="header-breadcrumb">
+                        <span class="breadcrumb-item">Tổng quan</span>
+                        <span class="breadcrumb-separator">/</span>
+                        <span class="breadcrumb-item breadcrumb-current">Dashboard Điểm Danh</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <button class="header-action-btn" type="button" title="Thông báo">
+                        <i class="fa-solid fa-bell"></i>
+                        <span class="badge-dot"></span>
+                    </button>
+                    <button class="header-action-btn" type="button" title="Cài đặt">
+                        <i class="fa-solid fa-gear"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="page-container">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <div class="page-title-row">
+                        <div>
+                            <h1 class="page-title">Dashboard Điểm Danh</h1>
+                            <p class="page-description">Theo dõi tình trạng điểm danh và camera trong phiên hiện tại</p>
+                        </div>
+                        <div class="page-actions">
+                            <a href="/api/attendance/download-excel" class="btn btn-secondary" target="_blank">
+                                <i class="fa-solid fa-file-excel"></i>
+                                Xuất Excel
+                            </a>
+                            <button id="btnTriggerScan" class="btn btn-primary" type="button">
+                                <i class="fa-solid fa-bolt"></i>
+                                Quét Điểm Danh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Session Info Bar -->
+                <div class="session-info-bar">
+                    <div class="session-info">
+                        <span class="session-badge" id="sessionBadge">Đang tải...</span>
+                        <span class="session-meta" id="sessionMeta">Chưa có dữ liệu</span>
+                    </div>
+                </div>
+
+                <!-- KPI Cards Grid -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Tổng Lớp Học</span>
+                            <div class="kpi-icon primary">
+                                <i class="fa-solid fa-school"></i>
+                            </div>
+                        </div>
+                        <div class="kpi-value" id="kpiClasses">--</div>
+                        <div class="kpi-description">Đang hoạt động</div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Tổng Sĩ Số</span>
+                            <div class="kpi-icon primary">
+                                <i class="fa-solid fa-users"></i>
+                            </div>
+                        </div>
+                        <div class="kpi-value" id="kpiStandard">--</div>
+                        <div class="kpi-description">Học sinh đã đăng ký</div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Có Mặt</span>
+                            <div class="kpi-icon success">
+                                <i class="fa-solid fa-user-check"></i>
+                            </div>
+                        </div>
+                        <div class="kpi-value" id="kpiPresent" style="color: var(--success);">--</div>
+                        <div class="kpi-description">Hiện diện thực tế</div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Vắng Mặt</span>
+                            <div class="kpi-icon danger">
+                                <i class="fa-solid fa-user-xmark"></i>
+                            </div>
+                        </div>
+                        <div class="kpi-value" id="kpiAbsent" style="color: var(--danger);">--</div>
+                        <div class="kpi-description">Học sinh vắng</div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Tỷ Lệ Chuyên Cần</span>
+                            <div class="kpi-icon warning">
+                                <i class="fa-solid fa-percent"></i>
+                            </div>
+                        </div>
+                        <div class="kpi-value" id="kpiRate">--%</div>
+                        <div class="kpi-description">Tỷ lệ hiện diện</div>
+                    </div>
+                </div>
+
+                <!-- Attendance Progress -->
+                <div class="attendance-progress">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-2);">
+                        <span style="font-size: var(--text-sm); font-weight: var(--font-semibold); color: var(--text-secondary);">Tiến độ điểm danh</span>
+                        <span style="font-size: var(--text-sm); color: var(--text-muted);" id="progressText">0/0 lớp</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Classrooms Data Table -->
+                <div class="table-wrapper">
+                    <div class="table-toolbar">
+                        <div class="table-toolbar-left">
+                            <h3 style="font-size: var(--text-base); font-weight: var(--font-semibold); margin: 0;">Danh Sách Lớp Học</h3>
+                        </div>
+                        <div class="table-toolbar-right">
+                            <input type="text" id="searchInput" class="table-search" placeholder="Tìm kiếm lớp học...">
+                            <select id="filterSelect" class="table-filter-select">
+                                <option value="all">Tất cả</option>
+                                <option value="full">Đủ sĩ số (100%)</option>
+                                <option value="absent">Có học sinh vắng</option>
+                            </select>
+                            <button class="btn btn-secondary btn-sm" id="btnRefresh" type="button">
+                                <i class="fa-solid fa-rotate-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">STT</th>
+                                <th>Lớp Học</th>
+                                <th>Phòng</th>
+                                <th style="text-align: center;">Sĩ Số</th>
+                                <th style="text-align: center;">Có Mặt</th>
+                                <th style="text-align: center;">Vắng</th>
+                                <th style="text-align: center;">Tỷ Lệ</th>
+                                <th style="text-align: center;">Camera</th>
+                                <th style="text-align: center;">ROI</th>
+                                <th style="text-align: center; width: 100px;">Ảnh</th>
+                                <th style="text-align: center; width: 80px;">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="classroomsTableBody">
+                            <tr>
+                                <td colspan="11" class="table-loading">
+                                    <div class="table-loading-spinner"></div>
+                                    <div style="margin-top: var(--space-3); color: var(--text-muted);">Đang tải dữ liệu...</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Xem Chi Tiết (giữ nguyên chức năng cũ) -->
+    <div class="modal-backdrop" id="imageModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h3 id="modalClassTitle">Chi Tiết Điểm Danh</h3>
+                    <p id="modalClassSub" style="margin: var(--space-1) 0 0 0; font-size: var(--text-sm); color: var(--text-muted);"></p>
+                </div>
+                <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="comparison-view">
+                    <div class="view-box" id="btnOpenLightboxRaw">
+                        <div class="view-box-header">
+                            <h4><i class="fa-solid fa-camera"></i> Ảnh Gốc Camera</h4>
+                            <span class="badge badge-primary"><i class="fa-solid fa-magnifying-glass-plus"></i></span>
+                        </div>
+                        <div class="view-box-img-wrap">
+                            <img id="modalRawImg" src="" alt="Ảnh gốc">
+                        </div>
+                    </div>
+                    <div class="view-box" id="btnOpenLightboxAnnotated">
+                        <div class="view-box-header">
+                            <h4><i class="fa-solid fa-brain"></i> Ảnh AI Phân Tích</h4>
+                            <span class="badge badge-success"><i class="fa-solid fa-magnifying-glass-plus"></i></span>
+                        </div>
+                        <div class="view-box-img-wrap">
+                            <img id="modalAnnotatedImg" src="" alt="Ảnh AI">
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: var(--space-4); display: flex; gap: var(--space-2); justify-content: flex-end;">
+                    <a id="modalBtnEditRoi" href="roi-config.html" class="btn btn-secondary">
+                        <i class="fa-solid fa-draw-polygon"></i> Cấu Hình ROI
+                    </a>
+                    <button id="modalBtnRescan" class="btn btn-primary" type="button">
+                        <i class="fa-solid fa-rotate"></i> Quét Lại
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="js/shared/app-shell.js"></script>
+    <script type="module" src="js/dashboard-redesign.js"></script>
+</body>
+
+</html>

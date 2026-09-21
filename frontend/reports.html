@@ -288,246 +288,169 @@
                     </div>
 
                     <!-- PHẦN 3.2: PHÂN PHỐI THÔNG BÁO TỨC THÌ QUA ZALO -->
-                    <div class="report-section" style="border-left: 4px solid #0068ff;">
+                    <div class="report-section">
                         <div class="section-title">
                             <h3>
-                                <i class="fa-solid fa-comments" style="color: #0068ff;"></i>
+                                <i class="fa-solid fa-comments" style="color: var(--primary);"></i>
                                 3.2. Phân Phối Thông Báo Điểm Danh Qua ZALO (BGH & Giáo Viên)
                             </h3>
                             <span id="zaloStatusBadge" class="status-pill" style="background: #e0f2fe; color: #0369a1;">
                                 <i class="fa-solid fa-circle-check"></i> Đang hoạt động
                             </span>
                         </div>
-                        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+                        <p class="section-desc">
                             Hệ thống tự động gửi tin nhắn tóm tắt sĩ số 30 lớp học và danh sách các lớp có học sinh vắng
-                            trực
-                            tiếp
-                            vào điện thoại Zalo của Ban Giám hiệu ngay sau khi quét lúc 06:48.
+                            trực tiếp vào điện thoại Zalo của Ban Giám hiệu ngay sau khi quét lúc 06:48.
                         </p>
 
-                        <!-- Chọn Phương Thức Gửi Zalo -->
-                        <div
-                            style="background: linear-gradient(135deg, #e0f2fe, #dbeafe); border: 2px solid #0ea5e9; border-radius: 12px; padding: 16px 20px; margin-bottom: 1.5rem;">
-                            <label
-                                style="font-size: 0.92rem; font-weight: 700; color: #075985; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-                                <i class="fa-solid fa-gear"></i> Chọn Phương Thức Gửi Zalo
-                                <span
-                                    style="background: #10b981; color: white; font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; font-weight: 600; margin-left: 6px;">KHUYẾN
-                                    NGHỊ</span>
-                            </label>
-                            <select id="zaloTypeSelect" class="form-control"
-                                style="font-size: 0.95rem; font-weight: 600; padding: 10px 14px; border: 2px solid #0ea5e9; background: white;">
-                                <option value="BOT_API">✅ Zalo Bot Gateway (API Key + Bot ID) - Khuyến nghị doanh nghiệp
-                                </option>
+                        <!-- Chọn Phương Thức Gửi -->
+                        <div class="zalo-panel">
+                            <div class="zalo-panel-header">
+                                <span class="zalo-panel-title">
+                                    <i class="fa-solid fa-gear"></i> Chọn Phương Thức Gửi Zalo
+                                </span>
+                                <span class="badge badge-success">KHUYẾN NGHỊ</span>
+                            </div>
+                            <select id="zaloTypeSelect" class="form-control">
+                                <option value="BOT_API">✅ Zalo Bot Gateway (API Key + Bot ID) - Khuyến nghị</option>
                                 <option value="OA_API">📱 Zalo Official Account (OpenAPI CS/ZNS)</option>
                                 <option value="WEBHOOK">⚠️ Zalo Webhook (Cũ - không khuyến nghị)</option>
                             </select>
-                            <div style="margin-top: 8px; font-size: 0.78rem; color: #0369a1; line-height: 1.5;">
+                            <p class="form-hint">
                                 <i class="fa-solid fa-lightbulb"></i> <strong>Zalo Bot Gateway</strong> là phương thức
-                                mới nhất,
-                                cho phép gửi tin nhắn tới nhiều số điện thoại đồng thời, tự động phân tích SĐT thành
-                                Zalo UID.
-                            </div>
+                                mới nhất, cho phép gửi tin nhắn tới nhiều số điện thoại đồng thời, tự động phân tích SĐT
+                                thành Zalo UID.
+                            </p>
                         </div>
 
                         <!-- Cấu hình cho Bot Gateway (BOT_API) - Khuyến nghị -->
-                        <div id="zaloBotRow" style="margin-bottom: 1.5rem;">
-                            <div
-                                style="background: #f0fdf4; border: 2px solid #86efac; border-radius: 12px; padding: 16px 20px; margin-bottom: 1rem;">
-                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-                                    <i class="fa-solid fa-robot" style="color: #10b981; font-size: 1.3rem;"></i>
-                                    <h4 style="margin: 0; color: #166534; font-size: 1rem; font-weight: 700;">Cấu Hình
-                                        Zalo Bot
-                                        Gateway</h4>
+                        <div id="zaloBotRow" class="zalo-panel zalo-panel--bot">
+                            <div class="zalo-panel-header">
+                                <span class="zalo-panel-title">
+                                    <i class="fa-solid fa-robot"></i> Cấu Hình Zalo Bot Gateway
+                                </span>
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label><i class="fa-solid fa-key"></i> API Key (x-api-key):</label>
+                                    <input type="password" id="zaloBotKeyInput" class="form-control"
+                                        placeholder="Nhập API Key của Zalo Bot Gateway">
                                 </div>
-
-                                <div class="form-grid" style="margin-bottom: 1rem; gap: 12px;">
-                                    <div class="form-group">
-                                        <label><i class="fa-solid fa-key"></i> API Key (x-api-key):</label>
-                                        <input type="password" id="zaloBotKeyInput" class="form-control"
-                                            placeholder="Nhập API Key của Zalo Bot Gateway"
-                                            style="font-family: 'Courier New', monospace;">
-                                    </div>
-                                    <div class="form-group">
-                                        <label><i class="fa-solid fa-robot"></i> Bot ID:</label>
-                                        <input type="text" id="zaloBotIdInput" class="form-control"
-                                            placeholder="Ví dụ: YOUR_BOT_ID">
-                                    </div>
-                                    <div class="form-group">
-                                        <label><i class="fa-solid fa-link"></i> API Base URL:</label>
-                                        <input type="text" id="zaloBotBaseUrlInput" class="form-control"
-                                            value="http://localhost:3000/api/gateway/v1.0">
-                                    </div>
+                                <div class="form-group">
+                                    <label><i class="fa-solid fa-robot"></i> Bot ID:</label>
+                                    <input type="text" id="zaloBotIdInput" class="form-control"
+                                        placeholder="Ví dụ: YOUR_BOT_ID">
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fa-solid fa-link"></i> API Base URL:</label>
+                                    <input type="text" id="zaloBotBaseUrlInput" class="form-control"
+                                        value="http://localhost:3000/api/gateway/v1.0">
                                 </div>
                             </div>
 
-                            <!-- Quản lý SĐT Người Nhận với UI cải tiến -->
-                            <div
-                                style="background: white; border: 2px solid #60a5fa; border-radius: 12px; padding: 18px 22px; margin-bottom: 1rem; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);">
-                                <label
-                                    style="font-size: 0.95rem; font-weight: 700; color: #1e40af; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                                    <i class="fa-solid fa-phone" style="color: #3b82f6;"></i> Danh Sách Số Điện Thoại
-                                    Người Nhận
-                                    <span
-                                        style="background: linear-gradient(135deg, #fef3c7, #fde68a); color: #b45309; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; border: 1px solid #fcd34d;">Tối
-                                        đa 10 SĐT</span>
-                                </label>
-
-                                <div id="phoneTagsContainer"
-                                    style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; min-height: 42px; align-items: center; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px dashed #cbd5e1;">
+                            <!-- Danh Sách Người Nhận Theo Vai Trò -->
+                            <div class="zalo-panel zalo-panel--phones">
+                                <div class="zalo-panel-header">
+                                    <span class="zalo-panel-title">
+                                        <i class="fa-solid fa-users"></i> Danh Sách Người Nhận Theo Vai Trò
+                                    </span>
+                                    <span class="badge badge-warning">Tối đa 30 SĐT</span>
                                 </div>
-
-                                <div style="display: flex; gap: 10px; align-items: center;">
-                                    <input type="text" id="phoneAddInput" class="form-control"
-                                        style="flex: 1; max-width: 320px; font-size: 0.95rem; padding: 10px 14px; border: 2px solid #93c5fd; border-radius: 8px;"
-                                        placeholder="VD: 0334551531 hoặc +84334551531">
+                                <div class="form-grid recipient-form-grid">
+                                    <div class="form-group">
+                                        <label><i class="fa-solid fa-user-tag"></i> Vai Trò:</label>
+                                        <select id="recipientRoleSelect" class="form-control">
+                                            <option value="school">🏫 Ban Giám Hiệu - Nhận báo cáo toàn trường</option>
+                                            <option value="class">🧑‍🏫 Giáo Viên Chủ Nhiệm - Nhận báo cáo lớp</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" id="recipientClassGroup" style="display: none;">
+                                        <label><i class="fa-solid fa-building-columns"></i> Lớp Chủ Nhiệm:</label>
+                                        <select id="recipientClassSelect" class="form-control">
+                                            <option value="">-- Chọn lớp --</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label><i class="fa-solid fa-phone"></i> Số Điện Thoại:</label>
+                                        <input type="text" id="phoneAddInput" class="form-control"
+                                            placeholder="VD: 0334551531 hoặc +84334551531">
+                                    </div>
+                                </div>
+                                <div class="phone-input-row" style="margin: 0.75rem 0 0;">
                                     <button type="button" id="btnAddPhone" class="btn btn-primary"
-                                        style="white-space: nowrap; padding: 10px 18px; font-weight: 600; background: linear-gradient(135deg, #3b82f6, #2563eb); border: none;">
-                                        <i class="fa-solid fa-plus"></i> Thêm SĐT
+                                        style="white-space: nowrap;">
+                                        <i class="fa-solid fa-plus"></i> Thêm Người Nhận
                                     </button>
                                 </div>
-                                <div style="margin-top: 8px; font-size: 0.75rem; color: #64748b; line-height: 1.4;">
-                                    <i class="fa-solid fa-circle-info"></i> Nhập từng số điện thoại rồi nhấn Enter hoặc
-                                    nút
-                                    "Thêm SĐT". Hỗ trợ định dạng: 0xxxxxxxxx hoặc +84xxxxxxxxx
-                                </div>
-                                <input type="hidden" id="zaloPhonesInput" value="">
+                                <div id="recipientsContainer" class="phone-tags-container"></div>
+                                <p class="form-hint">
+                                    <i class="fa-solid fa-circle-info"></i> Mỗi vai trò nhận đúng nội dung phù hợp:
+                                    <strong>Ban Giám Hiệu</strong> nhận báo cáo tổng hợp toàn trường,
+                                    <strong>Giáo Viên Chủ Nhiệm</strong> nhận báo cáo chi tiết lớp chủ nhiệm.
+                                    Nhập số điện thoại rồi nhấn Enter hoặc nút "Thêm Người Nhận".
+                                </p>
+                                <input type="hidden" id="zaloRecipientsInput" value="">
                             </div>
 
                             <!-- SĐT Thử Nghiệm -->
-                            <div
-                                style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 14px 18px;">
-                                <label
-                                    style="font-size: 0.88rem; font-weight: 700; color: #b45309; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-                                    <i class="fa-solid fa-mobile-screen"></i> SĐT Nhận Tin Thử Nghiệm (Test nhanh)
-                                </label>
-                                <input type="text" id="zaloTestPhoneInput" class="form-control"
-                                    style="border: 1px solid #fbbf24;"
-                                    placeholder="Để trống để gửi tới tất cả SĐT trong danh sách trên">
-                                <div style="margin-top: 6px; font-size: 0.72rem; color: #92400e;">
-                                    💡 Dùng để test gửi tin cho 1 SĐT cụ thể trước khi gửi hàng loạt
+                            <div class="zalo-panel zalo-panel--test" style="margin-bottom: 0;">
+                                <div class="zalo-panel-header">
+                                    <span class="zalo-panel-title">
+                                        <i class="fa-solid fa-mobile-screen"></i> SĐT Nhận Tin Thử Nghiệm (Test nhanh)
+                                    </span>
                                 </div>
+                                <input type="text" id="zaloTestPhoneInput" class="form-control"
+                                    placeholder="Để trống để gửi tin thử tới danh sách Ban Giám Hiệu">
+                                <p class="form-hint">
+                                    💡 Nhập 1 SĐT để gửi tin thử nghiệm riêng (không theo vai trò). Để trống sẽ gửi tới
+                                    toàn bộ SĐT Ban Giám Hiệu để kiểm tra kết nối.
+                                </p>
                             </div>
                         </div>
 
                         <!-- Cấu hình cho OA API -->
-                        <div id="zaloOaRow" style="margin-bottom: 1.25rem; display: none;">
-                            <div
-                                style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 10px; padding: 16px 20px;">
-                                <h4 style="color: #b45309; font-size: 0.95rem; font-weight: 700; margin-bottom: 12px;">
+                        <div id="zaloOaRow" class="zalo-panel" style="display: none;">
+                            <div class="zalo-panel-header">
+                                <span class="zalo-panel-title">
                                     <i class="fa-solid fa-shield-halved"></i> Cấu Hình Zalo Official Account
-                                </h4>
-                                <div class="form-grid" style="gap: 12px;">
-                                    <div class="form-group">
-                                        <label><i class="fa-solid fa-key"></i> Zalo OA Access Token:</label>
-                                        <input type="password" id="zaloTokenInput" class="form-control"
-                                            placeholder="Nhập OA Access Token từ Zalo Developers"
-                                            style="font-family: 'Courier New', monospace;">
-                                    </div>
-                                    <div class="form-group">
-                                        <label><i class="fa-solid fa-user"></i> User ID Người Nhận:</label>
-                                        <input type="text" id="zaloUserIdInput" class="form-control"
-                                            placeholder="Ví dụ: 789123456789012345">
-                                    </div>
+                                </span>
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label><i class="fa-solid fa-key"></i> Zalo OA Access Token:</label>
+                                    <input type="password" id="zaloTokenInput" class="form-control"
+                                        placeholder="Nhập OA Access Token từ Zalo Developers">
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fa-solid fa-user"></i> User ID Người Nhận:</label>
+                                    <input type="text" id="zaloUserIdInput" class="form-control"
+                                        placeholder="Ví dụ: 789123456789012345">
                                 </div>
                             </div>
                         </div>
 
                         <!-- Cấu hình cho Webhook (Cũ) -->
-                        <div id="zaloWebhookGroup" style="margin-bottom: 1.25rem; display: none;">
-                            <div
-                                style="background: #fee2e2; border: 1px solid #fca5a5; border-radius: 10px; padding: 16px 20px;">
-                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                                    <i class="fa-solid fa-triangle-exclamation"
-                                        style="color: #dc2626; font-size: 1.2rem;"></i>
-                                    <h4 style="color: #991b1b; font-size: 0.95rem; font-weight: 700; margin: 0;">Webhook
-                                        (Không
-                                        khuyến nghị)</h4>
-                                </div>
-                                <div class="form-group">
-                                    <label><i class="fa-solid fa-link"></i> Zalo Webhook URL:</label>
-                                    <input type="text" id="zaloWebhookInput" class="form-control"
-                                        placeholder="https://webhook.site/... hoặc URL bot Zalo"
-                                        style="border-color: #f87171;">
-                                </div>
-                                <div style="margin-top: 8px; font-size: 0.75rem; color: #991b1b;">
-                                    ⚠️ Phương thức này đang lỗi thời. Chúng tôi khuyến nghị sử dụng Zalo Bot Gateway
-                                    thay thế.
-                                </div>
+                        <div id="zaloWebhookGroup" class="zalo-panel" style="display: none;">
+                            <div class="zalo-panel-header">
+                                <span class="zalo-panel-title" style="color: var(--danger);">
+                                    <i class="fa-solid fa-triangle-exclamation" style="color: var(--danger);"></i>
+                                    Webhook (Không khuyến nghị)
+                                </span>
                             </div>
+                            <div class="form-group">
+                                <label><i class="fa-solid fa-link"></i> Zalo Webhook URL:</label>
+                                <input type="text" id="zaloWebhookInput" class="form-control"
+                                    placeholder="https://webhook.site/... hoặc URL bot Zalo">
+                            </div>
+                            <p class="form-hint" style="color: var(--danger);">
+                                ⚠️ Phương thức này đang lỗi thời. Chúng tôi khuyến nghị sử dụng Zalo Bot Gateway thay
+                                thế.
+                            </p>
                         </div>
 
-                        <!-- Soạn Thảo Tin Nhắn Zalo với Editor Cải Tiến -->
-                        <div
-                            style="background: linear-gradient(135deg, #f0fdf4, #dcfce7); border: 2px solid #4ade80; border-radius: 12px; padding: 18px 22px; margin-bottom: 1.5rem; box-shadow: 0 2px 10px rgba(74, 222, 128, 0.15);">
-                            <div
-                                style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <i class="fa-solid fa-pen-to-square" style="color: #16a34a; font-size: 1.4rem;"></i>
-                                    <div>
-                                        <h4 style="margin: 0; color: #166534; font-size: 1.05rem; font-weight: 700;">
-                                            Soạn Thảo
-                                            Mẫu Tin Nhắn Zalo</h4>
-                                        <p style="margin: 0; margin-top: 2px; font-size: 0.75rem; color: #15803d;">Tùy
-                                            chỉnh nội
-                                            dung tin nhắn tự động gửi sau mỗi lần điểm danh</p>
-                                    </div>
-                                </div>
-                                <button type="button" id="btnResetTemplate" class="btn btn-secondary btn-sm"
-                                    title="Khôi phục mẫu mặc định"
-                                    style="background: white; border: 2px solid #86efac; color: #166534; font-weight: 600;">
-                                    <i class="fa-solid fa-rotate-left"></i> Khôi Phục Mẫu
-                                </button>
-                            </div>
-
-                            <div style="position: relative;">
-                                <textarea id="zaloMessageTemplate" class="form-control"
-                                    style="width: 100%; min-height: 220px; font-size: 0.9rem; line-height: 1.65; resize: vertical; font-family: 'Segoe UI', system-ui, sans-serif; background: white; border: 2px solid #86efac; border-radius: 10px; padding: 16px 18px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);"
-                                    placeholder="Soạn nội dung tin nhắn Zalo tại đây...">🔔 [THPT ĐIỀU CẢI] BÁO CÁO ĐIỂM DANH SĨ SỐ ĐẦU GIỜ SÁNG
-📅 Ngày quét: Hôm nay | Giờ: 06:45:00
-🏫 Tổng số lớp: 30 lớp | 👥 Sĩ số: 1,230/1,245 (Tỷ lệ: 98.8%)
-✅ Có mặt: 1,230 | ❌ Vắng mặt: 15 em
-⚠️ CÁC LỚP CÓ HỌC SINH VẮNG:
-• Lớp 10A1 (P.101): Vắng 2 em (40/42)
-• Lớp 11A4 (P.114): Vắng 1 em (39/40)
-📁 Báo cáo chi tiết Excel và ảnh đối chứng AI đã lưu trên hệ thống.</textarea>
-                                <div
-                                    style="position: absolute; bottom: 12px; right: 14px; font-size: 0.72rem; color: #9ca3af; background: white; padding: 2px 8px; border-radius: 4px; border: 1px solid #e5e7eb;">
-                                    <i class="fa-solid fa-keyboard"></i> <span id="charCount">0</span> ký tự
-                                </div>
-                            </div>
-
-                            <div
-                                style="margin-top: 12px; background: white; border-radius: 8px; padding: 12px 14px; border: 1px solid #bbf7d0;">
-                                <div style="font-size: 0.82rem; color: #15803d; line-height: 1.6;">
-                                    <div style="display: flex; gap: 8px; margin-bottom: 6px;">
-                                        <i class="fa-solid fa-lightbulb"
-                                            style="color: #fbbf24; flex-shrink: 0; margin-top: 2px;"></i>
-                                        <div>
-                                            <strong style="color: #166534;">Hướng dẫn:</strong> Bạn có thể tự do chỉnh
-                                            sửa nội
-                                            dung. Khi điểm danh thực tế, hệ thống sẽ tự động thay thế dữ liệu như ngày
-                                            giờ, sĩ
-                                            số, danh sách lớp vắng...
-                                        </div>
-                                    </div>
-                                    <div style="display: flex; gap: 8px;">
-                                        <i class="fa-solid fa-magic-wand-sparkles"
-                                            style="color: #a855f7; flex-shrink: 0; margin-top: 2px;"></i>
-                                        <div>
-                                            <strong style="color: #166534;">Mẹo:</strong> Sử dụng emoji (🔔📅🏫👥✅❌⚠️)
-                                            để tin
-                                            nhắn sinh động hơn. Tin nhắn ngắn gọn, dễ đọc sẽ hiệu quả hơn.
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div
-                            style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-bottom: 1rem;">
+                        <div class="zalo-actions">
                             <button id="btnSendTestZalo" class="btn btn-primary"
-                                style="background: linear-gradient(135deg, #3b82f6, #2563eb); border: none; font-weight: 700; font-size: 0.95rem; padding: 12px 24px; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);">
+                                style="font-weight: 700; font-size: 0.95rem; padding: 12px 24px;">
                                 <i class="fa-solid fa-paper-plane"></i> Gửi Thử Tin Nhắn Qua Zalo
                             </button>
                             <button id="btnSaveZaloConfig" class="btn btn-secondary"
@@ -535,9 +458,7 @@
                                 <i class="fa-solid fa-floppy-disk"></i> Lưu Cấu Hình
                             </button>
                         </div>
-                        <div id="zaloFeedbackMsg"
-                            style="padding: 12px 16px; border-radius: 8px; font-size: 0.88rem; font-weight: 600; display: none;">
-                        </div>
+                        <div id="zaloFeedbackMsg" class="zalo-feedback"></div>
                     </div>
                 </div>
 

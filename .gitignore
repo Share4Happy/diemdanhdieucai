@@ -33,6 +33,8 @@ storage/annotated/
 storage/reports/
 storage/*.jpg
 storage/*.png
+storage/*.json
+storage/*.log
 
 # Logs
 logs/*.log

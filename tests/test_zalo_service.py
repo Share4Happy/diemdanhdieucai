@@ -6,13 +6,21 @@ from database.models import AttendanceSession, AttendanceDetail, Classroom
 from fastapi.testclient import TestClient
 from app import app
 from config.settings import settings
+from config.zalo_runtime_store import RUNTIME_FILE
 
 client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def setup_db():
     init_db()
+    # Backup runtime JSON để tránh endpoint save-zalo-config ghi đè config thật
+    runtime_path = settings.BASE_DIR / "storage" / RUNTIME_FILE
+    backup = runtime_path.read_bytes() if runtime_path.exists() else None
     yield
+    if backup is None:
+        runtime_path.unlink(missing_ok=True)
+    else:
+        runtime_path.write_bytes(backup)
 
 def test_zalo_format_message():
     db = SessionLocal()

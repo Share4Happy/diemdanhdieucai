@@ -2,7 +2,7 @@
  * reports.js - Reports & Data Management Controller
  * THPT Điều Cải - Attendance System
  */
-import { ReportAPI, AttendanceAPI, SystemAPI, showToast, API_BASE } from './api.js';
+import { ReportAPI, AttendanceAPI, CameraAPI, SystemAPI, showToast, API_BASE } from './api.js';
 
 let allHistoryRows = [];
 
@@ -119,32 +119,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Zalo Type Selector
+    // Zalo Type Selector (tự động lưu khi đổi phương thức gửi)
     const zaloSelect = document.getElementById('zaloTypeSelect');
-    if (zaloSelect) zaloSelect.addEventListener('change', toggleZaloInputs);
+    if (zaloSelect) zaloSelect.addEventListener('change', () => {
+        toggleZaloInputs();
+        scheduleZaloAutoSave();
+    });
+
+    // Tự động lưu cấu hình Zalo ngay khi sửa bất kỳ trường nhập nào (không cần bấm "Lưu Cấu Hình")
+    ['zaloWebhookInput', 'zaloTokenInput', 'zaloUserIdInput', 'zaloBotKeyInput', 'zaloBotIdInput', 'zaloBotBaseUrlInput'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', scheduleZaloAutoSave);
+    });
 
     // Phone Tags Management
-    initPhoneTags();
-
-    // Reset Message Template
-    const btnResetTemplate = document.getElementById('btnResetTemplate');
-    if (btnResetTemplate) {
-        btnResetTemplate.addEventListener('click', () => {
-            const tpl = document.getElementById('zaloMessageTemplate');
-            if (tpl) {
-                tpl.value = DEFAULT_ZALO_TEMPLATE;
-                showToast('Đã khôi phục mẫu tin nhắn mặc định', 'success');
-                updateCharCount();
-            }
-        });
-    }
-
-    // Character counter for message template
-    const messageTemplate = document.getElementById('zaloMessageTemplate');
-    if (messageTemplate) {
-        messageTemplate.addEventListener('input', updateCharCount);
-        updateCharCount(); // Initial count
-    }
+    initRecipientControls();
 
     // Send Test Zalo
     const btnZalo = document.getElementById('btnSendTestZalo');
@@ -158,7 +147,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const botKey = document.getElementById('zaloBotKeyInput')?.value.trim();
             const botId = document.getElementById('zaloBotIdInput')?.value.trim();
             const botBaseUrl = document.getElementById('zaloBotBaseUrlInput')?.value.trim();
-            const phones = document.getElementById('zaloPhonesInput')?.value.trim();
             const testPhone = document.getElementById('zaloTestPhoneInput')?.value.trim();
 
             btnZalo.disabled = true;
@@ -181,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     api_key: botKey || undefined,
                     bot_id: botId || undefined,
                     api_base_url: botBaseUrl || undefined,
-                    phone: testPhone || phones || undefined
+                    phone: testPhone || undefined
                 });
 
                 if (result.success) {
@@ -226,44 +214,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Save Zalo Config
+    // Save Zalo Config (nút "Lưu Cấu Hình" - lưu ngay, không chờ auto-save)
     const btnSaveZalo = document.getElementById('btnSaveZaloConfig');
     if (btnSaveZalo) {
-        btnSaveZalo.addEventListener('click', async () => {
-            const targetType = document.getElementById('zaloTypeSelect')?.value;
-            const webhookUrl = document.getElementById('zaloWebhookInput')?.value.trim();
-            const token = document.getElementById('zaloTokenInput')?.value.trim();
-            const userId = document.getElementById('zaloUserIdInput')?.value.trim();
-            const botKey = document.getElementById('zaloBotKeyInput')?.value.trim();
-            const botId = document.getElementById('zaloBotIdInput')?.value.trim();
-            const botBaseUrl = document.getElementById('zaloBotBaseUrlInput')?.value.trim();
-            const phones = document.getElementById('zaloPhonesInput')?.value.trim();
-
-            try {
-                const result = await ReportAPI.saveZaloConfig({
-                    enabled: true,
-                    notification_type: targetType,
-                    webhook_url: webhookUrl,
-                    access_token: token,
-                    recipient_user_id: userId,
-                    bot_api_key: botKey,
-                    bot_id: botId,
-                    bot_api_base_url: botBaseUrl,
-                    recipient_phones: phones
-                });
-                if (typeof window.showSuccess === 'function') {
-                    window.showSuccess(result.message, 'Lưu Cấu Hình Zalo');
-                } else {
-                    showToast(result.message, 'success');
-                }
-                loadZaloStatus();
-            } catch (err) {
-                if (typeof window.showError === 'function') {
-                    window.showError('Lỗi lưu cấu hình Zalo: ' + (err.message || err));
-                } else {
-                    alert('Lỗi lưu cấu hình Zalo: ' + (err.message || err));
-                }
-            }
+        btnSaveZalo.addEventListener('click', () => {
+            clearTimeout(zaloSaveTimer);
+            persistZaloConfig(true);
         });
     }
 
@@ -290,6 +246,61 @@ document.addEventListener('DOMContentLoaded', () => {
     // Tab Switching Navigation
     initTabsNavigation();
 });
+
+// ===================== ZALO AUTO-SAVE =====================
+let zaloSaveTimer = null;
+
+export function getZaloConfigPayload() {
+    const targetType = document.getElementById('zaloTypeSelect')?.value || 'BOT_API';
+    const webhookUrl = document.getElementById('zaloWebhookInput')?.value.trim() || '';
+    const token = document.getElementById('zaloTokenInput')?.value.trim() || '';
+    const userId = document.getElementById('zaloUserIdInput')?.value.trim() || '';
+    const botKey = document.getElementById('zaloBotKeyInput')?.value.trim() || '';
+    const botId = document.getElementById('zaloBotIdInput')?.value.trim() || '';
+    const botBaseUrl = document.getElementById('zaloBotBaseUrlInput')?.value.trim() || '';
+    const schoolPhones = zaloRecipients
+        .filter(r => r.role !== 'class')
+        .map(r => r.phone)
+        .join(', ');
+    return {
+        enabled: true,
+        notification_type: targetType,
+        webhook_url: webhookUrl,
+        access_token: token,
+        recipient_user_id: userId,
+        bot_api_key: botKey,
+        bot_id: botId,
+        bot_api_base_url: botBaseUrl,
+        recipient_phones: schoolPhones,
+        recipients_json: JSON.stringify(zaloRecipients)
+    };
+}
+
+export async function persistZaloConfig(showFeedback = false) {
+    try {
+        const result = await ReportAPI.saveZaloConfig(getZaloConfigPayload());
+        if (showFeedback) {
+            if (typeof window.showSuccess === 'function') {
+                window.showSuccess(result.message, 'Lưu Cấu Hình Zalo');
+            } else {
+                showToast(result.message, 'success');
+            }
+        }
+    } catch (err) {
+        if (showFeedback) {
+            if (typeof window.showError === 'function') {
+                window.showError('Lỗi lưu cấu hình Zalo: ' + (err.message || err));
+            } else {
+                alert('Lỗi lưu cấu hình Zalo: ' + (err.message || err));
+            }
+        }
+    }
+}
+
+export function scheduleZaloAutoSave() {
+    clearTimeout(zaloSaveTimer);
+    zaloSaveTimer = setTimeout(() => persistZaloConfig(false), 800);
+}
 
 export async function loadAttendanceHistory() {
     const tbody = document.getElementById('dbTableBody');
@@ -437,10 +448,21 @@ export async function loadZaloStatus() {
         }
 
         const badge = document.getElementById('zaloStatusBadge');
-        if (badge && data.enabled) {
-            badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Đang hoạt động';
-            badge.style.background = '#e0f2fe';
-            badge.style.color = '#0369a1';
+        if (badge) {
+            const configured = data.bot_configured || data.oa_configured || data.webhook_configured;
+            if (!data.enabled) {
+                badge.innerHTML = '<i class="fa-solid fa-circle-pause"></i> Đang tắt';
+                badge.style.background = '#f1f5f9';
+                badge.style.color = '#64748b';
+            } else if (configured) {
+                badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Đang hoạt động';
+                badge.style.background = '#e0f2fe';
+                badge.style.color = '#0369a1';
+            } else {
+                badge.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Chưa cấu hình kênh gửi';
+                badge.style.background = '#fef3c7';
+                badge.style.color = '#b45309';
+            }
         }
 
         // Cập nhật các trường Zalo Bot API nếu có
@@ -452,15 +474,38 @@ export async function loadZaloStatus() {
             const baseUrlInput = document.getElementById('zaloBotBaseUrlInput');
             if (baseUrlInput) baseUrlInput.value = data.bot_api_base_url;
         }
-        if (data.recipient_phones) {
-            loadPhonesFromString(data.recipient_phones);
-        }
         if (data.bot_api_key_masked) {
             const botKeyInput = document.getElementById('zaloBotKeyInput');
             if (botKeyInput) botKeyInput.placeholder = data.bot_api_key_masked;
         }
+        if (data.oa_token_masked) {
+            const tokenInput = document.getElementById('zaloTokenInput');
+            if (tokenInput) tokenInput.placeholder = data.oa_token_masked;
+        }
+
+        // Tải danh sách người nhận theo vai trò
+        if (Array.isArray(data.recipients) && data.recipients.length > 0) {
+            zaloRecipients = data.recipients
+                .map(r => ({
+                    phone: String(r.phone || '').trim(),
+                    role: String(r.role || 'school').trim().toLowerCase() || 'school',
+                    class_code: String(r.class_code || '').trim(),
+                    class_name: ''
+                }))
+                .filter(r => r.phone.length >= 9);
+            renderRecipients();
+        } else if (data.recipient_phones) {
+            zaloRecipients = data.recipient_phones
+                .split(',')
+                .map(s => ({ phone: s.trim(), role: 'school', class_code: '', class_name: '' }))
+                .filter(r => r.phone.length >= 9);
+            renderRecipients();
+        }
     } catch (err) {
         console.error("Lỗi nạp trạng thái Zalo:", err);
+        if (typeof window.showToast === 'function') {
+            showToast('Không tải được cấu hình Zalo từ máy chủ', 'error');
+        }
     }
 }
 
@@ -477,25 +522,6 @@ export function toggleZaloInputs() {
     }
     if (webhookGroup) {
         webhookGroup.style.display = (type === 'WEBHOOK') ? 'block' : 'none';
-    }
-}
-
-function updateCharCount() {
-    const textarea = document.getElementById('zaloMessageTemplate');
-    const counter = document.getElementById('charCount');
-    if (textarea && counter) {
-        const count = textarea.value.length;
-        counter.textContent = count;
-        if (count > 1000) {
-            counter.style.color = '#dc2626';
-            counter.style.fontWeight = '700';
-        } else if (count > 800) {
-            counter.style.color = '#f59e0b';
-            counter.style.fontWeight = '600';
-        } else {
-            counter.style.color = '#9ca3af';
-            counter.style.fontWeight = '400';
-        }
     }
 }
 
@@ -525,96 +551,137 @@ export function showImgModal(src, title) {
     document.getElementById('imgModal')?.classList.add('active');
 }
 
-// ===================== PHONE TAGS MANAGEMENT =====================
-let phoneTags = [];
+// ===================== RECIPIENTS THEO VAI TRÒ =====================
+// Mỗi người nhận: { phone, role: 'school'|'class', class_code (chỉ dành cho GVCN), class_name }
+let zaloRecipients = [];
 
-const DEFAULT_ZALO_TEMPLATE = `🔔 [THPT ĐIỀU CẢI] BÁO CÁO ĐIỂM DANH SĨ SỐ ĐẦU GIỜ SÁNG
-📅 Ngày quét: Hôm nay | Giờ: 06:45:00
-🏫 Tổng số lớp: 30 lớp | 👥 Sĩ số: 1,230/1,245 (Tỷ lệ: 98.8%)
-✅ Có mặt: 1,230 | ❌ Vắng mặt: 15 em
-⚠️ CÁC LỚP CÓ HỌC SINH VẮNG:
-• Lớp 10A1 (P.101): Vắng 2 em (40/42)
-• Lớp 11A4 (P.114): Vắng 1 em (39/40)
-📁 Báo cáo chi tiết Excel và ảnh đối chứng AI đã lưu trên hệ thống.`;
-
-function initPhoneTags() {
+function initRecipientControls() {
+    const roleSelect = document.getElementById('recipientRoleSelect');
+    const classGroup = document.getElementById('recipientClassGroup');
+    const classSelect = document.getElementById('recipientClassSelect');
     const addInput = document.getElementById('phoneAddInput');
     const btnAdd = document.getElementById('btnAddPhone');
+
+    if (roleSelect && classGroup) {
+        const syncRole = () => {
+            classGroup.style.display = roleSelect.value === 'class' ? 'block' : 'none';
+        };
+        roleSelect.addEventListener('change', syncRole);
+        syncRole();
+    }
+
+    if (classSelect) {
+        loadClassOptions(classSelect);
+    }
 
     if (addInput) {
         addInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                addPhoneTag(addInput.value.trim());
+                addRecipient();
                 addInput.value = '';
             }
         });
     }
     if (btnAdd) {
         btnAdd.addEventListener('click', () => {
-            addPhoneTag(addInput?.value.trim());
+            addRecipient();
             if (addInput) addInput.value = '';
             addInput?.focus();
         });
     }
 }
 
-function addPhoneTag(phone) {
-    if (!phone) return;
-    // Normalize: remove spaces, keep digits and + only
-    phone = phone.replace(/[^\d+]/g, '');
+async function loadClassOptions(select) {
+    try {
+        const data = await CameraAPI.getAll();
+        const cams = (data.cameras || [])
+            .filter(c => c.is_active !== false && c.code)
+            .sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+        select.innerHTML = '<option value="">-- Chọn lớp --</option>' + cams
+            .map(c => `<option value="${c.code}">${c.name} (${c.room_number || 'Phòng'})</option>`)
+            .join('');
+    } catch (err) {
+        select.innerHTML = '<option value="">-- Không tải được danh sách lớp --</option>';
+    }
+}
+
+function addRecipient() {
+    const role = document.getElementById('recipientRoleSelect')?.value || 'school';
+    const classSelect = document.getElementById('recipientClassSelect');
+    const classCode = (classSelect?.value || '').trim();
+    const input = document.getElementById('phoneAddInput');
+    const phone = (input?.value || '').replace(/[^\d+]/g, '');
+
+    if (role === 'class' && !classCode) {
+        showToast('Vui lòng chọn lớp chủ nhiệm cho Giáo Viên Chủ Nhiệm', 'error');
+        return;
+    }
     if (phone.length < 9 || phone.length > 15) {
         showToast('SĐT không hợp lệ (9-15 ký tự số)', 'error');
         return;
     }
-    if (phoneTags.includes(phone)) {
-        showToast('SĐT này đã có trong danh sách', 'error');
+    if (zaloRecipients.length >= 30) {
+        showToast('Đã đạt tối đa 30 người nhận', 'error');
         return;
     }
-    if (phoneTags.length >= 10) {
-        showToast('Đã đạt tối đa 10 SĐT', 'error');
+
+    const classKey = role === 'class' ? classCode : '';
+    const dup = zaloRecipients.some(r =>
+        r.phone === phone && r.role === role && (r.class_code || '') === classKey
+    );
+    if (dup) {
+        showToast('Người nhận này đã có trong danh sách', 'error');
         return;
     }
-    phoneTags.push(phone);
-    renderPhoneTags();
+
+    const classLabel = classSelect?.selectedOptions?.[0]?.textContent.trim() || classCode;
+    zaloRecipients.push({
+        phone,
+        role,
+        class_code: classKey,
+        class_name: role === 'class' ? classLabel : ''
+    });
+    renderRecipients();
+    scheduleZaloAutoSave();
 }
 
-function removePhoneTag(phone) {
-    phoneTags = phoneTags.filter(p => p !== phone);
-    renderPhoneTags();
+function removeRecipient(index) {
+    zaloRecipients.splice(index, 1);
+    renderRecipients();
+    scheduleZaloAutoSave();
 }
 
-function renderPhoneTags() {
-    const container = document.getElementById('phoneTagsContainer');
-    const hiddenInput = document.getElementById('zaloPhonesInput');
+function renderRecipients() {
+    const container = document.getElementById('recipientsContainer');
+    const hiddenInput = document.getElementById('zaloRecipientsInput');
     if (!container) return;
 
-    if (phoneTags.length === 0) {
-        container.innerHTML = '<span style="font-size: 0.85rem; color: #94a3b8; font-style: italic; display: flex; align-items: center; gap: 6px;"><i class="fa-solid fa-info-circle"></i> Chưa có SĐT nào. Thêm SĐT bên dưới để gửi tin nhắn.</span>';
+    if (zaloRecipients.length === 0) {
+        container.innerHTML = '<span style="font-size: 0.85rem; color: #94a3b8; font-style: italic; display: flex; align-items: center; gap: 6px;"><i class="fa-solid fa-info-circle"></i> Chưa có người nhận nào. Chọn vai trò và thêm SĐT bên dưới.</span>';
     } else {
-        container.innerHTML = phoneTags.map(p => `
-            <span class="phone-tag" style="display: inline-flex; align-items: center; gap: 7px; background: linear-gradient(135deg, #dbeafe, #bfdbfe); color: #1e40af; padding: 7px 14px; border-radius: 24px; font-size: 0.88rem; font-weight: 700; border: 2px solid #60a5fa; transition: all 0.2s; box-shadow: 0 1px 3px rgba(59, 130, 246, 0.2); cursor: default;">
-                <i class="fa-solid fa-phone" style="font-size: 0.75rem;"></i> ${p}
-                <button type="button" data-phone="${p}" style="background: #dc2626; border: none; color: white; cursor: pointer; font-size: 0.7rem; padding: 2px 6px; line-height: 1; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; transition: all 0.15s;" title="Xóa SĐT" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">&times;</button>
-            </span>
-        `).join('');
+        container.innerHTML = zaloRecipients.map((r, i) => {
+            const isSchool = r.role !== 'class';
+            const label = isSchool
+                ? 'BGH'
+                : `GVCN ${r.class_name || r.class_code || ''}`;
+            return `
+                <span class="phone-tag">
+                    <i class="fa-solid fa-phone" style="font-size: 0.75rem;"></i> ${r.phone}
+                    <span class="recipient-role-badge ${isSchool ? 'school' : 'class'}">${label}</span>
+                    <button type="button" class="phone-tag-remove" data-idx="${i}" title="Xóa người nhận">&times;</button>
+                </span>
+            `;
+        }).join('');
 
-        container.querySelectorAll('button[data-phone]').forEach(btn => {
-            btn.addEventListener('click', () => removePhoneTag(btn.dataset.phone));
+        container.querySelectorAll('button[data-idx]').forEach(btn => {
+            btn.addEventListener('click', () => removeRecipient(Number(btn.dataset.idx)));
         });
     }
 
-    if (hiddenInput) hiddenInput.value = phoneTags.join(', ');
-}
-
-function loadPhonesFromString(str) {
-    if (!str) return;
-    const phones = str.split(',').map(s => s.trim()).filter(s => s.length >= 9);
-    phoneTags = [...new Set(phones)];
-    renderPhoneTags();
+    if (hiddenInput) hiddenInput.value = JSON.stringify(zaloRecipients);
 }
 
 window.showImgModal = showImgModal;
 window.initTabsNavigation = initTabsNavigation;
 window.toggleZaloInputs = toggleZaloInputs;
-window.updateCharCount = updateCharCount;

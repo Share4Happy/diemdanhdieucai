@@ -73,7 +73,8 @@ class Settings(BaseModel):
     ZALO_BOT_API_BASE_URL: str = os.getenv("ZALO_BOT_API_BASE_URL", "http://localhost:3000/api/gateway/v1.0")
     ZALO_BOT_ID: str = os.getenv("ZALO_BOT_ID", "")
     ZALO_BOT_API_KEY: str = os.getenv("ZALO_BOT_API_KEY", "")
-    ZALO_RECIPIENT_PHONES: str = os.getenv("ZALO_RECIPIENT_PHONES", "") # Phân cách bằng dấu phẩy
+    ZALO_RECIPIENT_PHONES: str = os.getenv("ZALO_RECIPIENT_PHONES", "") # Phân cách bằng dấu phẩy (Legacy - chỉ dành cho nhóm Ban Giám Hiệu)
+    ZALO_RECIPIENTS_JSON: str = os.getenv("ZALO_RECIPIENTS_JSON", "") # Danh sách người nhận theo vai trò: [{"phone":"...","role":"school|class","class_code":"LOP_10A1"}]
     # Zalo Official Account (Phương thức thay thế)
     ZALO_OA_ACCESS_TOKEN: str = os.getenv("ZALO_OA_ACCESS_TOKEN", "")
     ZALO_RECIPIENT_USER_ID: str = os.getenv("ZALO_RECIPIENT_USER_ID", "")
@@ -95,3 +96,7 @@ for folder in [
     BASE_DIR / "database"
 ]:
     folder.mkdir(parents=True, exist_ok=True)
+
+# Khôi phục cấu hình Zalo đã lưu runtime trước đó (giữ qua mỗi lần khởi động server)
+from config.zalo_runtime_store import load_runtime_zalo
+load_runtime_zalo(settings)

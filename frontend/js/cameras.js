@@ -44,6 +44,10 @@ function initApp() {
     const btnRefresh = document.getElementById('btnRefresh');
     if (btnRefresh) btnRefresh.addEventListener('click', loadCameras);
 
+    // Quick refresh button in banner
+    const btnRefreshQuick = document.getElementById('btnRefreshQuick');
+    if (btnRefreshQuick) btnRefreshQuick.addEventListener('click', loadCameras);
+
     const btnAdd = document.getElementById('btnAddCamera');
     if (btnAdd) btnAdd.addEventListener('click', () => openModal());
 
@@ -373,9 +377,7 @@ function renderKPIs() {
     const roiEl = document.getElementById('statROI');
     if (roiEl) roiEl.innerText = roiCount;
 
-    const totalStd = allCameras.reduce((sum, c) => sum + (c.standard_count || 0), 0);
-    const stdEl = document.getElementById('statStudents');
-    if (stdEl) stdEl.innerText = totalStd;
+    // Removed statStudents - not needed in compact banner
 }
 
 export function applyPreset(type) {
