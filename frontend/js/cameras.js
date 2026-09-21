@@ -33,24 +33,18 @@ let allCameras = [];
 let availableWebcams = [];
 let selectedWebcamId = '0';
 let currentSourceType = 'WEBCAM';
-let currentViewMode = 'TABLE';
 let probedChannels = [];
 
 function initApp() {
     loadCameras();
     loadAvailableWebcams();
+    initImageControls(); // Initialize image viewer controls
 
     // Event listeners
-    const btnRefresh = document.getElementById('btnRefreshList');
+    const btnRefresh = document.getElementById('btnRefresh');
     if (btnRefresh) btnRefresh.addEventListener('click', loadCameras);
 
-    const filterInput = document.getElementById('filterCameraInput');
-    if (filterInput) filterInput.addEventListener('input', renderTable);
-
-    const filterSource = document.getElementById('filterSourceSelect');
-    if (filterSource) filterSource.addEventListener('change', renderTable);
-
-    const btnAdd = document.getElementById('btnOpenAddModal');
+    const btnAdd = document.getElementById('btnAddCamera');
     if (btnAdd) btnAdd.addEventListener('click', () => openModal());
 
     const btnClose = document.getElementById('modalCloseBtn');
@@ -116,18 +110,12 @@ function initApp() {
     const btnConfirmDel = document.getElementById('btnConfirmDeleteBatch');
     if (btnConfirmDel) btnConfirmDel.addEventListener('click', confirmBatchDelete);
 
-    // ==================== VIEW MODE TOGGLES ====================
-    const btnModeTbl = document.getElementById('btnModeTable');
-    if (btnModeTbl) btnModeTbl.addEventListener('click', () => switchViewMode('TABLE'));
-
-    const btnModeMat = document.getElementById('btnModeMatrix');
-    if (btnModeMat) btnModeMat.addEventListener('click', () => switchViewMode('MATRIX'));
-
+    // ==================== MATRIX REFRESH ====================
     const btnRefMat = document.getElementById('btnRefreshMatrix');
     if (btnRefMat) btnRefMat.addEventListener('click', loadCameras);
 
     // ==================== NVR MODAL EVENTS ====================
-    const btnOpenNvr = document.getElementById('btnOpenNvrModal');
+    const btnOpenNvr = document.getElementById('btnAddNVR');
     if (btnOpenNvr) btnOpenNvr.addEventListener('click', openNvrModal);
 
     const btnCloseNvr = document.getElementById('nvrModalCloseBtn');
@@ -205,7 +193,6 @@ export async function loadAvailableWebcams(forceRefresh = false) {
                     selectedWebcamId = String(availableWebcams[0].id);
                 }
             }
-            renderTable();
         }
     } catch (err) {
         console.error('Lỗi khi tải danh sách webcam máy tính:', err);
@@ -266,7 +253,7 @@ function renderWebcamCards() {
         card.id = `webcam_card_${cam.id}`;
         card.onclick = () => selectWebcam(cam.id);
 
-        const thumbHtml = cam.thumbnail 
+        const thumbHtml = cam.thumbnail
             ? `<img src="${cam.thumbnail}" class="webcam-thumb-img" alt="${cam.name}">`
             : `<div style="text-align: center; color: #64748b;"><i class="fa-solid fa-camera" style="font-size: 1.8rem;"></i></div>`;
 
@@ -367,7 +354,6 @@ export async function loadCameras() {
         const data = await CameraAPI.getAll();
         allCameras = data.cameras || [];
         renderKPIs();
-        renderTable();
         renderMatrixWall();
     } catch (err) {
         console.error('Lỗi tải danh sách camera:', err);
@@ -376,107 +362,20 @@ export async function loadCameras() {
 }
 
 function renderKPIs() {
-    const totalEl = document.getElementById('statTotalCameras');
+    const totalEl = document.getElementById('statTotal');
     if (totalEl) totalEl.innerText = allCameras.length;
 
     const activeCount = allCameras.filter(c => c.is_active).length;
-    const activeEl = document.getElementById('statActiveCameras');
+    const activeEl = document.getElementById('statOnline');
     if (activeEl) activeEl.innerText = activeCount;
 
     const roiCount = allCameras.filter(c => c.has_roi).length;
-    const roiEl = document.getElementById('statRoiConfigured');
+    const roiEl = document.getElementById('statROI');
     if (roiEl) roiEl.innerText = roiCount;
 
     const totalStd = allCameras.reduce((sum, c) => sum + (c.standard_count || 0), 0);
-    const stdEl = document.getElementById('statTotalStudents');
+    const stdEl = document.getElementById('statStudents');
     if (stdEl) stdEl.innerText = totalStd;
-}
-
-function renderTable() {
-    const filterInput = document.getElementById('filterCameraInput');
-    const filterText = filterInput ? filterInput.value.toLowerCase().trim() : '';
-    const filterSource = document.getElementById('filterSourceSelect')?.value || 'ALL';
-
-    const tbody = document.getElementById('cameraTableBody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-
-    const filtered = allCameras.filter(c => {
-        const matchText = (c.name || '').toLowerCase().includes(filterText) ||
-                          (c.code || '').toLowerCase().includes(filterText) ||
-                          (c.room_number || '').toLowerCase().includes(filterText) ||
-                          (c.rtsp_url || '').toLowerCase().includes(filterText);
-        const matchSource = filterSource === 'ALL' || c.source_type === filterSource;
-        return matchText && matchSource;
-    });
-
-    if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">Không tìm thấy camera nào phù hợp.</td></tr>`;
-        return;
-    }
-
-    filtered.forEach((c, idx) => {
-        const tr = document.createElement('tr');
-
-        const statusBadge = c.is_active
-            ? `<span style="color: #10b981; font-weight: 700;"><i class="fa-solid fa-circle" style="font-size: 0.6rem;"></i> Hoạt động</span>`
-            : `<span style="color: #94a3b8; font-weight: 600;"><i class="fa-regular fa-circle" style="font-size: 0.6rem;"></i> Tạm dừng</span>`;
-
-        const roiBadge = c.has_roi
-            ? `<span style="color: #2563eb; font-weight: 600;"><i class="fa-solid fa-check-double"></i> Đã cấu hình</span>`
-            : `<span style="color: #f59e0b; font-weight: 600;"><i class="fa-solid fa-triangle-exclamation"></i> Mặc định</span>`;
-
-        tr.innerHTML = `
-            <td>${idx + 1}</td>
-            <td><strong>${c.code}</strong></td>
-            <td style="font-weight: 600;">${c.name}</td>
-            <td>${c.room_number || '--'}</td>
-            <td><strong>${c.standard_count}</strong> em</td>
-            <td>${statusBadge}</td>
-            <td>${roiBadge}</td>
-            <td>
-                <div class="action-btns">
-                    <button class="btn btn-secondary btn-sm" title="Xem thử kết nối" data-action="test" data-url="${encodeURIComponent(c.rtsp_url)}" data-name="${encodeURIComponent(c.name)}">
-                        <i class="fa-solid fa-eye"></i> Test
-                    </button>
-                    <a href="roi-config.html?class_id=${c.id}&refresh=true" class="btn btn-secondary btn-sm" title="Vẽ vùng ROI">
-                        <i class="fa-solid fa-draw-polygon"></i> ROI
-                    </a>
-                    <button class="btn btn-secondary btn-sm" title="Chỉnh sửa" data-action="edit" data-id="${c.id}">
-                        <i class="fa-solid fa-pen"></i>
-                    </button>
-                    <button class="btn btn-danger btn-sm" title="Xóa" data-action="delete" data-id="${c.id}" data-name="${encodeURIComponent(c.name)}">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </div>
-            </td>
-        `;
-
-        tbody.appendChild(tr);
-    });
-
-    // Attach row button events
-    tbody.querySelectorAll('button[data-action="test"]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const url = decodeURIComponent(btn.dataset.url);
-            const name = decodeURIComponent(btn.dataset.name);
-            testCameraDirectly(url, name);
-        });
-    });
-
-    tbody.querySelectorAll('button[data-action="edit"]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            editCamera(parseInt(btn.dataset.id));
-        });
-    });
-
-    tbody.querySelectorAll('button[data-action="delete"]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const id = parseInt(btn.dataset.id);
-            const name = decodeURIComponent(btn.dataset.name);
-            deleteCamera(id, name);
-        });
-    });
 }
 
 export function applyPreset(type) {
@@ -526,7 +425,7 @@ export function openModalWithWebcam() {
 export function openModal(camera = null) {
     document.getElementById('formCamId').value = camera ? camera.id : '';
     document.getElementById('modalTitle').innerText = camera ? `Chỉnh Sửa Camera: ${camera.name}` : 'Thêm Camera / Lớp Học Mới';
-    
+
     const codeInput = document.getElementById('formCode');
     codeInput.value = camera ? camera.code : '';
     codeInput.disabled = !!camera;
@@ -643,16 +542,12 @@ export async function testCameraDirectly(url, name) {
             showToast(`Đã lấy khung hình ${name}`, 'success');
         } else {
             alert(`Không thể kết nối camera: ${data.message}`);
-            closeLiveModal();
+            if (typeof closeLiveModal === 'function') closeLiveModal();
         }
     } catch (err) {
         alert('Lỗi kết nối kiểm tra camera: ' + (err.message || err));
-        closeLiveModal();
+        if (typeof closeLiveModal === 'function') closeLiveModal();
     }
-}
-
-export function closeLiveModal() {
-    document.getElementById('liveViewModal')?.classList.remove('active');
 }
 
 export async function saveCamera() {
@@ -699,16 +594,15 @@ export async function saveCamera() {
 }
 
 export async function deleteCamera(id, name) {
-    if (!confirm(`Bạn có chắc chắn muốn xóa Camera/Lớp "${name}" khỏi hệ thống? Dữ liệu ROI của camera này cũng sẽ bị xóa.`)) {
-        return;
-    }
+    const confirmed = await ConfirmationDialog.delete(name);
+    if (!confirmed) return;
 
     try {
         const result = await CameraAPI.delete(id);
         await loadCameras();
-        showToast(result.message || 'Đã xóa camera', 'info');
+        showToast(result.message || 'Đã xóa camera thành công', 'success');
     } catch (err) {
-        alert('Lỗi kết nối máy chủ: ' + (err.message || err));
+        showToast('Lỗi khi xóa camera: ' + (err.message || err), 'danger');
     }
 }
 
@@ -721,7 +615,7 @@ export function openDeleteModal() {
 
     // Cập nhật danh sách chọn nhanh 1 camera
     if (selectQuick) {
-        selectQuick.innerHTML = '<option value="">-- Bấm vào đây để chọn camera --</option>' + 
+        selectQuick.innerHTML = '<option value="">-- Bấm vào đây để chọn camera --</option>' +
             allCameras.map(c => `
                 <option value="${c.id}">${c.name} (${c.room_number || 'Phòng ' + c.id}) - Mã: ${c.code}</option>
             `).join('');
@@ -856,29 +750,6 @@ if (inputRtsp) inputRtsp.addEventListener('input', (e) => syncManualUrl(e.target
 const inputFile = document.getElementById('inputFile');
 if (inputFile) inputFile.addEventListener('input', (e) => syncManualUrl(e.target.value));
 
-// ==================== VIEW MODE SWITCHER (TABLE VS MATRIX TV WALL) ====================
-export function switchViewMode(mode) {
-    currentViewMode = mode;
-    const tableContainer = document.getElementById('tableViewContainer');
-    const matrixContainer = document.getElementById('matrixViewContainer');
-    const btnTable = document.getElementById('btnModeTable');
-    const btnMatrix = document.getElementById('btnModeMatrix');
-
-    if (mode === 'MATRIX') {
-        if (tableContainer) tableContainer.style.display = 'none';
-        if (matrixContainer) matrixContainer.style.display = 'block';
-        if (btnTable) btnTable.classList.remove('active');
-        if (btnMatrix) btnMatrix.classList.add('active');
-        renderMatrixWall();
-    } else {
-        if (tableContainer) tableContainer.style.display = 'block';
-        if (matrixContainer) matrixContainer.style.display = 'none';
-        if (btnTable) btnTable.classList.add('active');
-        if (btnMatrix) btnMatrix.classList.remove('active');
-        renderTable();
-    }
-}
-
 // ==================== MATRIX TV WALL RENDERER ====================
 export function renderMatrixWall() {
     const container = document.getElementById('matrixGrid');
@@ -977,23 +848,167 @@ export function renderMatrixWall() {
             deleteCamera(id, name);
         });
     });
+
+    // Click on any card to open modal (except action buttons)
+    container.querySelectorAll('.matrix-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            // Don't open if clicking on action buttons
+            if (!e.target.closest('.matrix-action-btn')) {
+                const viewBtn = card.querySelector('.matrix-action-btn.view');
+                if (viewBtn) {
+                    const id = viewBtn.getAttribute('data-id');
+                    const name = decodeURIComponent(viewBtn.getAttribute('data-name'));
+                    openLiveModal(id, name);
+                }
+            }
+        });
+    });
 }
 
 export function openLiveModal(id, name) {
+    const cam = allCameras.find(c => c.id === parseInt(id));
     const titleEl = document.getElementById('liveViewTitle');
     const subEl = document.getElementById('liveViewSubtitle');
     const imgEl = document.getElementById('liveViewImg');
 
-    if (titleEl) titleEl.innerText = `Khung Hình Camera: ${name}`;
-    if (subEl) subEl.innerText = `Ảnh chụp mới nhất của lớp học ID #${id}`;
+    if (titleEl) titleEl.innerText = `Camera: ${name}`;
+    if (subEl) {
+        const info = cam ? `${cam.room_number || 'Phòng N/A'} • Sĩ số: ${cam.standard_count} • ${cam.is_active ? 'Online' : 'Offline'}` : `ID: ${id}`;
+        subEl.innerText = info;
+    }
+
     if (imgEl) {
         imgEl.src = `/storage/captures/latest/Lop_${id}.jpg?t=${Date.now()}`;
         imgEl.onerror = () => {
             imgEl.onerror = null;
             imgEl.src = 'dataset/samples/classroom_sample.jpg';
         };
+        imgEl.style.transform = 'scale(1)';
+        imgEl.classList.remove('zoomed');
+
+        // Store current camera ID for refresh
+        imgEl.dataset.cameraId = id;
+        imgEl.dataset.cameraName = name;
     }
+
     document.getElementById('liveViewModal')?.classList.add('active');
+
+    // Update resolution info when image loads
+    if (imgEl) {
+        imgEl.onload = function () {
+            const resEl = document.getElementById('imageResolution');
+            if (resEl) {
+                resEl.innerText = `${this.naturalWidth} × ${this.naturalHeight}`;
+            }
+        };
+    }
+}
+
+export function closeLiveModal() {
+    const modal = document.getElementById('liveViewModal');
+    if (modal) modal.classList.remove('active');
+
+    // Reset zoom
+    const imgEl = document.getElementById('liveViewImg');
+    if (imgEl) {
+        imgEl.style.transform = 'scale(1)';
+        imgEl.classList.remove('zoomed');
+    }
+}
+
+// Image zoom controls
+let currentZoom = 1;
+
+function initImageControls() {
+    const btnClose = document.getElementById('liveViewCloseBtn');
+    if (btnClose) btnClose.addEventListener('click', closeLiveModal);
+
+    const btnZoomIn = document.getElementById('btnZoomIn');
+    if (btnZoomIn) {
+        btnZoomIn.addEventListener('click', () => {
+            currentZoom = Math.min(currentZoom + 0.25, 3);
+            applyZoom();
+        });
+    }
+
+    const btnZoomOut = document.getElementById('btnZoomOut');
+    if (btnZoomOut) {
+        btnZoomOut.addEventListener('click', () => {
+            currentZoom = Math.max(currentZoom - 0.25, 0.5);
+            applyZoom();
+        });
+    }
+
+    const btnZoomReset = document.getElementById('btnZoomReset');
+    if (btnZoomReset) {
+        btnZoomReset.addEventListener('click', () => {
+            currentZoom = 1;
+            applyZoom();
+        });
+    }
+
+    const btnRefresh = document.getElementById('btnRefreshImage');
+    if (btnRefresh) {
+        btnRefresh.addEventListener('click', () => {
+            const imgEl = document.getElementById('liveViewImg');
+            if (imgEl && imgEl.dataset.cameraId) {
+                const id = imgEl.dataset.cameraId;
+                imgEl.src = `/storage/captures/latest/Lop_${id}.jpg?t=${Date.now()}`;
+                showToast('Đã làm mới ảnh', 'success');
+            }
+        });
+    }
+
+    // Click on image to toggle zoom
+    const imgEl = document.getElementById('liveViewImg');
+    if (imgEl) {
+        imgEl.addEventListener('click', () => {
+            if (currentZoom === 1) {
+                currentZoom = 2;
+            } else {
+                currentZoom = 1;
+            }
+            applyZoom();
+        });
+    }
+
+    // ESC key to close
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('liveViewModal');
+            if (modal && modal.classList.contains('active')) {
+                closeLiveModal();
+            }
+        }
+    });
+
+    // Click backdrop to close
+    const modal = document.getElementById('liveViewModal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target.id === 'liveViewModal') {
+                closeLiveModal();
+            }
+        });
+    }
+}
+
+function applyZoom() {
+    const imgEl = document.getElementById('liveViewImg');
+    if (imgEl) {
+        imgEl.style.transform = `scale(${currentZoom})`;
+        if (currentZoom > 1) {
+            imgEl.classList.add('zoomed');
+        } else {
+            imgEl.classList.remove('zoomed');
+        }
+    }
+}
+
+// Export for window scope
+if (typeof window !== 'undefined') {
+    window.openLiveModal = openLiveModal;
+    window.closeLiveModal = closeLiveModal;
 }
 
 // ==================== SMART NVR IMPORT WIZARD ====================
@@ -1107,7 +1122,7 @@ function renderNvrPreviewCards(channels) {
         card.className = `nvr-ch-card ${ch.is_selected ? 'selected' : ''}`;
         card.id = `nvr_preview_card_${ch.channel}`;
 
-        const thumbHtml = ch.thumbnail 
+        const thumbHtml = ch.thumbnail
             ? `<img src="${ch.thumbnail}" alt="CH${ch.channel}">`
             : `<div style="text-align: center; color: #64748b; line-height: 65px;"><i class="fa-solid fa-video"></i></div>`;
 
@@ -1219,8 +1234,6 @@ export async function saveNvrImport() {
             closeNvrModal();
             showToast(res.message || `Đã nhập thành công ${res.imported_count} camera!`, 'success');
             await loadCameras();
-            // Chuyển sang màn hình Lưới Ma Trận TV Wall để chiêm ngưỡng kết quả
-            switchViewMode('MATRIX');
         } else {
             alert('Lỗi khi lưu camera: ' + (res.message || res.detail));
         }
@@ -1239,10 +1252,8 @@ export async function saveNvrImport() {
 window.selectWebcam = selectWebcam;
 window.applyPreset = applyPreset;
 window.switchSourceTab = switchSourceTab;
-window.closeLiveModal = closeLiveModal;
 window.openDeleteModal = openDeleteModal;
 window.closeDeleteModal = closeDeleteModal;
-window.switchViewMode = switchViewMode;
 window.openNvrModal = openNvrModal;
 window.closeNvrModal = closeNvrModal;
 window.fillSchoolPreset = fillSchoolPreset;
