@@ -1,0 +1,339 @@
+/**
+ * =====================================================
+ * SKELETON LOADER - Loading placeholders with shimmer
+ * =====================================================
+ */
+
+/* Base skeleton element */
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        var(--gray-200) 0%,
+        var(--gray-100) 50%,
+        var(--gray-200) 100%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s ease-in-out infinite;
+    border-radius: var(--radius);
+}
+
+@keyframes skeleton-shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Skeleton variations */
+.skeleton-text {
+    height: 1em;
+    margin-bottom: 0.5em;
+    border-radius: var(--radius-sm);
+}
+
+.skeleton-text:last-child {
+    margin-bottom: 0;
+    width: 80%;
+}
+
+.skeleton-title {
+    height: 1.5em;
+    width: 40%;
+    margin-bottom: 0.75em;
+    border-radius: var(--radius);
+}
+
+.skeleton-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-full);
+}
+
+.skeleton-avatar-sm {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+}
+
+.skeleton-button {
+    height: 40px;
+    width: 120px;
+    border-radius: var(--radius);
+}
+
+.skeleton-card {
+    height: 200px;
+    border-radius: var(--radius-lg);
+}
+
+.skeleton-badge {
+    height: 24px;
+    width: 80px;
+    border-radius: var(--radius-full);
+}
+
+/* Table skeleton */
+.skeleton-table-row {
+    display: table-row;
+}
+
+.skeleton-table-cell {
+    display: table-cell;
+    padding: var(--space-3);
+    vertical-align: middle;
+}
+
+/* Card skeleton */
+.skeleton-stat-card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+}
+
+.skeleton-stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius);
+    flex-shrink: 0;
+}
+
+.skeleton-stat-content {
+    flex: 1;
+}
+
+.skeleton-stat-number {
+    height: 2rem;
+    width: 60px;
+    margin-bottom: 0.5em;
+    border-radius: var(--radius);
+}
+
+.skeleton-stat-label {
+    height: 1rem;
+    width: 120px;
+    border-radius: var(--radius-sm);
+}
+
+/* Camera tile skeleton */
+.skeleton-camera-tile {
+    aspect-ratio: 16/9;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+}
+
+/* List skeleton */
+.skeleton-list-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    margin-bottom: var(--space-2);
+}
+
+.skeleton-list-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+}
+
+.skeleton-list-content {
+    flex: 1;
+}
+
+.skeleton-list-title {
+    height: 1.2em;
+    width: 60%;
+    margin-bottom: 0.5em;
+    border-radius: var(--radius-sm);
+}
+
+.skeleton-list-subtitle {
+    height: 1em;
+    width: 40%;
+    border-radius: var(--radius-sm);
+}
+
+/* Form skeleton */
+.skeleton-form-field {
+    margin-bottom: var(--space-4);
+}
+
+.skeleton-form-label {
+    height: 1em;
+    width: 100px;
+    margin-bottom: 0.5em;
+    border-radius: var(--radius-sm);
+}
+
+.skeleton-form-input {
+    height: 40px;
+    width: 100%;
+    border-radius: var(--radius);
+}
+
+/* Dashboard chart skeleton */
+.skeleton-chart {
+    height: 300px;
+    border-radius: var(--radius-lg);
+}
+
+/* Pulse animation (alternative to shimmer) */
+.skeleton-pulse {
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .skeleton {
+        background: linear-gradient(
+            90deg,
+            var(--gray-700) 0%,
+            var(--gray-600) 50%,
+            var(--gray-700) 100%
+        );
+    }
+}
+
+/* Utility classes */
+.skeleton-w-full {
+    width: 100%;
+}
+
+.skeleton-w-3-4 {
+    width: 75%;
+}
+
+.skeleton-w-1-2 {
+    width: 50%;
+}
+
+.skeleton-w-1-4 {
+    width: 25%;
+}
+
+.skeleton-h-4 {
+    height: 1rem;
+}
+
+.skeleton-h-8 {
+    height: 2rem;
+}
+
+.skeleton-h-12 {
+    height: 3rem;
+}
+
+.skeleton-h-16 {
+    height: 4rem;
+}
+
+.skeleton-rounded {
+    border-radius: var(--radius);
+}
+
+.skeleton-rounded-full {
+    border-radius: var(--radius-full);
+}
+
+/* Tailored KPI Value Skeletons */
+.skeleton-kpi-value {
+    width: 90px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 4px;
+}
+
+.skeleton-kpi-sub {
+    width: 48px;
+    height: 16px;
+    border-radius: var(--radius-sm);
+    display: inline-block;
+}
+
+/* Tailored Camera Matrix Card Skeleton */
+.matrix-card.skeleton-matrix-card {
+    pointer-events: none;
+    cursor: default;
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: var(--radius-md, 8px);
+    overflow: hidden;
+}
+
+.matrix-card.skeleton-matrix-card .matrix-card-screen {
+    position: relative;
+    aspect-ratio: 16/9;
+    background: var(--gray-200, #e2e8f0);
+    overflow: hidden;
+}
+
+.matrix-card.skeleton-matrix-card .matrix-osd-top {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 2;
+}
+
+.matrix-card.skeleton-matrix-card .matrix-card-footer {
+    padding: 10px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--surface, #ffffff);
+    border-top: 1px solid var(--border-color, #e2e8f0);
+}
+
+/* Canvas loading overlay */
+.canvas-skeleton-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(248, 250, 252, 0.85);
+    backdrop-filter: blur(4px);
+    transition: opacity var(--transition-normal);
+}
+
+.canvas-skeleton-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+/* Alert list item skeleton */
+.skeleton-alert-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius);
+    background: var(--gray-50, #f8fafc);
+    border: 1px solid var(--border-color, #e2e8f0);
+    margin-bottom: var(--space-2);
+}

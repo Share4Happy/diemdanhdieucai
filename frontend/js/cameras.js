@@ -3,6 +3,7 @@
  * THPT Điều Cải - Attendance System
  */
 import { CameraAPI, showToast, API_BASE } from './api.js?v=4.0';
+import SkeletonTemplates from './components/skeleton-templates.js';
 
 // Đảm bảo các phương thức NVR luôn tồn tại kể cả khi trình duyệt nạp bản cache api.js cũ
 if (!CameraAPI.probeNVR) {
@@ -169,7 +170,22 @@ export async function loadAvailableWebcams(forceRefresh = false) {
 
     const container = document.getElementById('webcamListContainer');
     if (container && forceRefresh) {
-        container.innerHTML = `<div class="webcam-empty-box"><i class="fa-solid fa-spinner fa-spin"></i> Đang quét lại các cổng camera trên máy...</div>`;
+        container.innerHTML = `
+            <div class="webcam-card" style="pointer-events: none;">
+                <div class="webcam-thumb-box skeleton" style="height: 110px; border-radius: 6px;"></div>
+                <div class="webcam-card-info" style="margin-top: 6px;">
+                    <div class="skeleton" style="width: 80%; height: 14px; margin-bottom: 4px;"></div>
+                    <div class="skeleton" style="width: 50%; height: 12px;"></div>
+                </div>
+            </div>
+            <div class="webcam-card" style="pointer-events: none;">
+                <div class="webcam-thumb-box skeleton" style="height: 110px; border-radius: 6px;"></div>
+                <div class="webcam-card-info" style="margin-top: 6px;">
+                    <div class="skeleton" style="width: 70%; height: 14px; margin-bottom: 4px;"></div>
+                    <div class="skeleton" style="width: 45%; height: 12px;"></div>
+                </div>
+            </div>
+        `;
     }
 
     try {
@@ -354,10 +370,14 @@ export function toggleAdvancedInput() {
 }
 
 export async function loadCameras() {
+    const container = document.getElementById('matrixGrid');
+    if (container && allCameras.length === 0) {
+        container.innerHTML = SkeletonTemplates.cameraMatrixGrid(8);
+    }
     try {
         const data = await CameraAPI.getAll();
         allCameras = data.cameras || [];
-        renderKPIs();
+        // Stats removed - Dashboard handles metrics
         renderMatrixWall();
     } catch (err) {
         console.error('Lỗi tải danh sách camera:', err);
@@ -365,20 +385,7 @@ export async function loadCameras() {
     }
 }
 
-function renderKPIs() {
-    const totalEl = document.getElementById('statTotal');
-    if (totalEl) totalEl.innerText = allCameras.length;
-
-    const activeCount = allCameras.filter(c => c.is_active).length;
-    const activeEl = document.getElementById('statOnline');
-    if (activeEl) activeEl.innerText = activeCount;
-
-    const roiCount = allCameras.filter(c => c.has_roi).length;
-    const roiEl = document.getElementById('statROI');
-    if (roiEl) roiEl.innerText = roiCount;
-
-    // Removed statStudents - not needed in compact banner
-}
+// Removed renderKPIs() - Stats handled by Dashboard page only
 
 export function applyPreset(type) {
     if (type === 'WEBCAM') {
@@ -687,7 +694,7 @@ export async function confirmBatchDelete() {
     const count = checkedBoxes.length;
     const names = checkedBoxes.slice(0, 3).map(cb => decodeURIComponent(cb.dataset.name)).join(', ') + (count > 3 ? ` và ${count - 3} camera khác` : '');
 
-    if (!confirm(`Bạn có chắc chắn muốn xóa ${count} camera (${names}) khỏi hệ thống? Dữ liệu ROI của các lớp này cũng sẽ bị xóa.`)) {
+    if (!confirm(`Bạn có chắc chắn muốn xóa ${count} camera (${names}) khỏi hệ thống? Dữ liệu vùng của các lớp này cũng sẽ bị xóa.`)) {
         return;
     }
 
@@ -797,7 +804,7 @@ export function renderMatrixWall() {
                     <button type="button" class="matrix-action-btn edit" title="Sửa thông tin camera này" data-id="${cam.id}">
                         <i class="fa-solid fa-pen"></i>
                     </button>
-                    <button type="button" class="matrix-action-btn roi" title="Vẽ vùng nhận diện ROI" data-id="${cam.id}">
+                    <button type="button" class="matrix-action-btn roi" title="Vẽ vùng nhận diện" data-id="${cam.id}">
                         <i class="fa-solid fa-draw-polygon"></i>
                     </button>
                     <button type="button" class="matrix-action-btn delete" title="Xóa riêng camera này" data-id="${cam.id}" data-name="${encodeURIComponent(cam.name)}">
@@ -1215,7 +1222,7 @@ export async function saveNvrImport() {
     const btnSave = document.getElementById('btnSaveNvrImport');
     if (btnSave) {
         btnSave.disabled = true;
-        btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu & khởi tạo ROI 30 camera...';
+        btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu & khởi tạo vùng 30 camera...';
     }
 
     try {

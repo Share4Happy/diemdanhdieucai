@@ -10,8 +10,9 @@ from config.logging_config import logger
 from database.db_session import get_db
 from database.models import Classroom, AttendanceSession, AttendanceDetail
 from core.attendance_engine import attendance_engine
+from backend.api.deps import get_current_user
 
-router = APIRouter(prefix="/attendance", tags=["Attendance"])
+router = APIRouter(prefix="/attendance", tags=["Attendance"], dependencies=[Depends(get_current_user)])
 
 @router.post("/trigger")
 async def trigger_attendance_scan():

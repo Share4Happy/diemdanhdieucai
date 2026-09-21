@@ -2,6 +2,10 @@ import os
 from pathlib import Path
 from pydantic import BaseModel
 
+# Load .env file
+from dotenv import load_dotenv
+load_dotenv()
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 class Settings(BaseModel):
@@ -58,6 +62,18 @@ class Settings(BaseModel):
     USE_IMAGE_ENHANCEMENT: bool = True  # Áp dụng CLAHE chống ngược sáng cửa sổ
     USE_TILED_INFERENCE: bool = True    # Bật thuật toán phân mảnh quét chi tiết đa tầng (SAHI)
 
+    # Auth / Login
+    JWT_SECRET: str = os.getenv("JWT_SECRET", "change-me-diemdanh-dieucai")
+    JWT_EXPIRE_HOURS: int = int(os.getenv("JWT_EXPIRE_HOURS", "12"))
+    ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "admin@truongdieucai.edu.vn")
+    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "")
+    ADMIN_FULL_NAME: str = os.getenv("ADMIN_FULL_NAME", "Quản trị hệ thống")
+    APP_PUBLIC_URL: str = os.getenv("APP_PUBLIC_URL", "http://localhost:8000")
+    CORS_ORIGINS: str = os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:8000,http://127.0.0.1:8000,http://localhost:3000,http://127.0.0.1:3000",
+    )
+
     # Email Reporting (Ban Giám Hiệu)
     SMTP_SERVER: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
@@ -81,6 +97,18 @@ class Settings(BaseModel):
     # Zalo Webhook (Phương thức cũ - không khuyến nghị)
     ZALO_WEBHOOK_URL: str = os.getenv("ZALO_WEBHOOK_URL", "")
 
+    # Notification Adjust & Rules Settings
+    NOTIFICATION_SEND_CONDITION: str = "always" # "always" hoặc "has_absent"
+    NOTIFICATION_ALERT_THRESHOLD_PERCENT: float = 10.0
+    NOTIFICATION_ALERT_CLASS_ABSENT: int = 3
+    SCAN_TIME_MORNING: str = "06:45"
+    SCAN_TIME_AFTERNOON: str = "12:45"
+    AUTO_SCAN_ENABLED: bool = True
+    ZALO_SCHOOL_TEMPLATE: str = ""
+    ZALO_CLASS_TEMPLATE: str = ""
+    EMAIL_SUBJECT_TEMPLATE: str = ""
+    EMAIL_BODY_TEMPLATE: str = ""
+
 
 settings = Settings()
 
@@ -100,3 +128,7 @@ for folder in [
 # Khôi phục cấu hình Zalo đã lưu runtime trước đó (giữ qua mỗi lần khởi động server)
 from config.zalo_runtime_store import load_runtime_zalo
 load_runtime_zalo(settings)
+
+# Khôi phục cấu hình điều chỉnh thông báo đã lưu
+from config.notification_settings_store import load_notification_settings
+load_notification_settings(settings)

@@ -6,6 +6,7 @@
  */
 
 import { AttendanceAPI, showToast } from './api.js';
+import SkeletonTemplates from './components/skeleton-templates.js';
 
 // Global state
 let currentSession = null;
@@ -37,6 +38,7 @@ function setupEventListeners() {
 
     // Refresh button
     document.getElementById('btnRefreshDashboard')?.addEventListener('click', () => {
+        renderDashboardSkeleton();
         loadDashboardData();
         showToast('Đã làm mới dữ liệu', 'success');
     });
@@ -52,11 +54,42 @@ function setupEventListeners() {
     });
 }
 
+function renderDashboardSkeleton() {
+    const kpiCam = document.getElementById('kpiCameraOnline');
+    const kpiStatus = document.getElementById('kpiCameraStatus');
+    const kpiRec = document.getElementById('kpiRecognized');
+    const kpiRecPercent = document.getElementById('kpiRecognizedPercent');
+    const kpiPres = document.getElementById('kpiPresent');
+    const kpiPresPercent = document.getElementById('kpiPresentPercent');
+    const kpiRate = document.getElementById('kpiAttendanceRate');
+
+    if (kpiCam) kpiCam.innerHTML = '<div class="skeleton skeleton-kpi-value" style="width: 85px;"></div>';
+    if (kpiStatus) kpiStatus.innerHTML = '<div class="skeleton skeleton-kpi-sub" style="width: 90px; height: 14px;"></div>';
+    if (kpiRec) kpiRec.innerHTML = '<div class="skeleton skeleton-kpi-value" style="width: 85px;"></div>';
+    if (kpiRecPercent) kpiRecPercent.innerHTML = '<span class="skeleton skeleton-kpi-sub" style="width: 38px; height: 14px;"></span>';
+    if (kpiPres) kpiPres.innerHTML = '<div class="skeleton skeleton-kpi-value" style="width: 65px;"></div>';
+    if (kpiPresPercent) kpiPresPercent.innerHTML = '<span class="skeleton skeleton-kpi-sub" style="width: 38px; height: 14px;"></span>';
+    if (kpiRate) kpiRate.innerHTML = '<div class="skeleton skeleton-kpi-value" style="width: 75px;"></div>';
+
+    const statOnline = document.getElementById('statusOnlineCount');
+    const statWarn = document.getElementById('statusWarningCount');
+    const statOff = document.getElementById('statusOfflineCount');
+    if (statOnline) statOnline.innerHTML = '<span class="skeleton skeleton-kpi-sub" style="width: 28px; height: 20px;"></span>';
+    if (statWarn) statWarn.innerHTML = '<span class="skeleton skeleton-kpi-sub" style="width: 28px; height: 20px;"></span>';
+    if (statOff) statOff.innerHTML = '<span class="skeleton skeleton-kpi-sub" style="width: 28px; height: 20px;"></span>';
+
+    const alertsBox = document.getElementById('alertsContainer');
+    if (alertsBox) alertsBox.innerHTML = SkeletonTemplates.dashboardAlertList(2);
+}
+
 // =====================================================
 // DATA LOADING
 // =====================================================
 
 async function loadDashboardData() {
+    if (!currentSession) {
+        renderDashboardSkeleton();
+    }
     try {
         const data = await AttendanceAPI.getLatest();
 

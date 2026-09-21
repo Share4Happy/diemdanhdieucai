@@ -263,9 +263,12 @@
 }
 
 @keyframes pulse-dot {
-    0%, 100% {
+
+    0%,
+    100% {
         opacity: 1;
     }
+
     50% {
         opacity: 0.5;
     }
@@ -332,10 +335,11 @@
 
 /* === TV WALL VIEW === */
 .tv-wall-container {
-    background: var(--gray-900);
+    background: var(--surface);
     border-radius: var(--radius-md);
     padding: var(--space-5);
     margin-top: var(--space-4);
+    border: 1px solid var(--border);
 }
 
 .tv-wall-header {
@@ -344,14 +348,14 @@
     align-items: center;
     margin-bottom: var(--space-4);
     padding-bottom: var(--space-3);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--border);
 }
 
 .tv-wall-title {
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    color: white;
+    color: var(--text-primary);
 }
 
 .live-indicator {
@@ -359,11 +363,12 @@
     align-items: center;
     gap: 6px;
     padding: 4px 10px;
-    background: rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.1);
     border-radius: var(--radius);
     font-size: 0.75rem;
     font-weight: var(--font-bold);
-    color: white;
+    color: var(--danger);
+    border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .live-dot {
@@ -375,10 +380,13 @@
 }
 
 @keyframes pulse-live {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: scale(1);
         opacity: 1;
     }
+
     50% {
         transform: scale(1.2);
         opacity: 0.7;
@@ -410,7 +418,7 @@
 .camera-tile-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.8) 100%);
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.8) 100%);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -462,26 +470,26 @@
     .page-title-row {
         flex-direction: column;
     }
-    
+
     .kpi-grid {
         grid-template-columns: 1fr;
         gap: var(--space-2);
     }
-    
+
     .camera-toolbar {
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .camera-search-input {
         width: 100%;
     }
-    
+
     .camera-data-table {
         display: block;
         overflow-x: auto;
     }
-    
+
     .matrix-grid {
         grid-template-columns: 1fr;
     }

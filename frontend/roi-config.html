@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cấu Hình ROI - THPT Điều Cải AI Camera</title>
+    <title>Cấu Hình Vùng - THPT Điều Cải AI Camera</title>
 
     <!-- Design System & Components -->
     <link rel="stylesheet" href="css/design-system.css">
@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="css/components/buttons-redesign.css">
     <link rel="stylesheet" href="css/components/badges-redesign.css">
     <link rel="stylesheet" href="css/components/header-actions.css">
+    <link rel="stylesheet" href="css/components/skeleton-loader.css">
     <link rel="stylesheet" href="css/global-table-balance.css?v=2.5">
 
     <!-- Font Awesome -->
@@ -35,59 +36,57 @@
             </div>
 
             <nav class="sidebar-nav">
-                <div class="sidebar-nav-section">
-                    <div class="sidebar-nav-title">TỔNG QUAN</div>
-                    <ul class="sidebar-nav-list">
-                        <li class="sidebar-nav-item">
-                            <a href="index.html" class="sidebar-nav-link">
-                                <span class="sidebar-nav-icon"><i class="fa-solid fa-chart-line"></i></span>
-                                <span class="sidebar-nav-text">Dashboard</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="sidebar-nav-section">
-                    <div class="sidebar-nav-title">GIÁM SÁT</div>
-                    <ul class="sidebar-nav-list">
-                        <li class="sidebar-nav-item">
-                            <a href="cameras.html" class="sidebar-nav-link">
-                                <span class="sidebar-nav-icon"><i class="fa-solid fa-video"></i></span>
-                                <span class="sidebar-nav-text">Camera & Lớp Học</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="sidebar-nav-section">
-                    <div class="sidebar-nav-title">CẤU HÌNH</div>
-                    <ul class="sidebar-nav-list">
-                        <li class="sidebar-nav-item">
-                            <a href="roi-config.html" class="sidebar-nav-link active">
-                                <span class="sidebar-nav-icon"><i class="fa-solid fa-draw-polygon"></i></span>
-                                <span class="sidebar-nav-text">Vùng ROI</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="sidebar-nav-section">
-                    <div class="sidebar-nav-title">DỮ LIỆU</div>
-                    <ul class="sidebar-nav-list">
-                        <li class="sidebar-nav-item">
-                            <a href="reports.html" class="sidebar-nav-link">
-                                <span class="sidebar-nav-icon"><i class="fa-solid fa-file-excel"></i></span>
-                                <span class="sidebar-nav-text">Báo Cáo & Dữ Liệu</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+                <ul class="sidebar-nav-list">
+                    <li class="sidebar-nav-item">
+                        <a href="index.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-chart-line"></i></span>
+                            <span class="sidebar-nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="cameras.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-video"></i></span>
+                            <span class="sidebar-nav-text">Camera & Lớp Học</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="roi-config.html" class="sidebar-nav-link active">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-draw-polygon"></i></span>
+                            <span class="sidebar-nav-text">Vùng</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="reports.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-file-excel"></i></span>
+                            <span class="sidebar-nav-text">Báo Cáo & Dữ Liệu</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="notifications.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-paper-plane"></i></span>
+                            <span class="sidebar-nav-text">Thông Báo</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item nav-admin-only" hidden>
+                        <a href="users.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-user-gear"></i></span>
+                            <span class="sidebar-nav-text">Tài Khoản</span>
+                        </a>
+                    </li>
+                </ul>
             </nav>
 
             <div class="sidebar-footer">
-                <button class="sidebar-toggle-btn" type="button">
-                    <i class="fa-solid fa-angles-left"></i>
-                </button>
+                <div class="sidebar-user-profile" id="sidebarUserProfile" title="Thông tin tài khoản">
+                    <div class="sidebar-user-avatar" id="sidebarUserAvatar">A</div>
+                    <div class="sidebar-user-info">
+                        <span class="sidebar-user-name" id="sidebarUserName">Admin</span>
+                        <span class="sidebar-user-role" id="sidebarUserRole">Quản Trị Viên</span>
+                    </div>
+                    <button class="sidebar-logout-btn" type="button" id="sidebarLogoutBtn" title="Đăng Xuất">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
             </div>
         </aside>
 
@@ -99,44 +98,30 @@
             <!-- Header -->
             <header class="app-header">
                 <div class="header-left">
-                    <button class="header-action-btn mobile-menu-btn" type="button">
-                        <i class="fa-solid fa-bars"></i>
-                    </button>
                     <div class="header-breadcrumb">
                         <span class="breadcrumb-item">Cấu hình</span>
                         <span class="breadcrumb-separator">/</span>
-                        <span class="breadcrumb-item breadcrumb-current">Vùng ROI</span>
+                        <span class="breadcrumb-item breadcrumb-current">Vùng</span>
                     </div>
-                </div>
-                <div class="header-right">
-                    <button class="header-action-btn" type="button" title="Thông báo">
-                        <i class="fa-solid fa-bell"></i>
-                    </button>
-                    <button class="header-action-btn" type="button" title="Cài đặt">
-                        <i class="fa-solid fa-gear"></i>
-                    </button>
                 </div>
             </header>
 
             <!-- Page Content -->
             <div class="page-container roi-page-container">
-                <!-- Banner Thiết Lập Tọa Độ Vùng ROI -->
+                <!-- Banner Thiết Lập Tọa Độ Vùng -->
                 <div class="action-banner roi-banner">
                     <div class="banner-info">
                         <div class="banner-title-group">
-                            <div class="banner-icon-badge">
-                                <i class="fa-solid fa-draw-polygon"></i>
-                            </div>
                             <div>
-                                <h2>Thiết Lập Tọa Độ Vùng Nhận Diện (ROI)</h2>
+                                <h2>Thiết Lập Tọa Độ Vùng Nhận Diện</h2>
                             </div>
                         </div>
                     </div>
                     <div class="banner-actions">
                         <div class="class-select-box">
-                            <label for="classSelect"><i class="fa-solid fa-chalkboard-user"></i> Lớp Học:</label>
+                            <label for="classSelect">Lớp Học:</label>
                             <select id="classSelect">
-                                <!-- Render qua JS -->
+                                <option value="">Đang tải danh sách camera...</option>
                             </select>
                         </div>
                         <div class="banner-sep"></div>
@@ -187,7 +172,10 @@
 
                     <!-- Canvas Vẽ ROI (Khung cố định, tự động co vừa màn hình không cần lăn chuột) -->
                     <div class="canvas-outer-wrapper">
-                        <div class="canvas-container">
+                        <div class="canvas-container" style="position: relative;">
+                            <div id="canvasSkeletonOverlay" class="canvas-skeleton-overlay">
+                                <div class="skeleton" style="width: 100%; height: 100%; border-radius: var(--radius-md);"></div>
+                            </div>
                             <canvas id="roiCanvas"></canvas>
                         </div>
                     </div>
@@ -221,6 +209,7 @@
     <div id="toastContainer" class="toast-container"></div>
 
     <!-- Scripts -->
+    <script type="module" src="js/shared/auth-guard.js"></script>
     <script src="js/shared/app-shell.js"></script>
     <script src="js/shared/header-actions.js?v=2.2"></script>
     <script src="js/roi_canvas.js?v=3.2"></script>

@@ -9,6 +9,7 @@ from database.db_session import get_db, init_db
 from database.models import Classroom, ROIPolygon, AttendanceDetail, NVRDevice
 from core.rtsp_client import rtsp_client
 from services.nvr_service import nvr_service
+from backend.api.deps import get_current_user
 from backend.schemas.camera_schemas import (
     CameraCreateRequest,
     CameraUpdateRequest,
@@ -17,7 +18,7 @@ from backend.schemas.camera_schemas import (
     NVRBatchImportRequest
 )
 
-router = APIRouter(prefix="/cameras", tags=["Cameras"])
+router = APIRouter(prefix="/cameras", tags=["Cameras"], dependencies=[Depends(get_current_user)])
 
 @router.get("")
 @router.get("/")

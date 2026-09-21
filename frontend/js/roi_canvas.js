@@ -229,6 +229,11 @@ class ROICanvasEditor {
 
     loadImage(src, retryCount = 0) {
         this.imageLoaded = false;
+        const skeletonOverlay = document.getElementById('canvasSkeletonOverlay');
+        if (skeletonOverlay && retryCount === 0) {
+            skeletonOverlay.classList.remove('hidden');
+        }
+
         this.image = new Image();
         if (retryCount === 0) {
             this.image.crossOrigin = "anonymous";
@@ -237,6 +242,9 @@ class ROICanvasEditor {
         this.image.onload = () => {
             this.imageLoaded = true;
             this.fallbackMode = false;
+            if (skeletonOverlay) {
+                skeletonOverlay.classList.add('hidden');
+            }
             let targetW, targetH;
 
             if (this.resMode === 'auto') {
@@ -286,6 +294,9 @@ class ROICanvasEditor {
             // 3. Fallback sang lưới Blueprint Grid giả lập
             this.imageLoaded = true;
             this.fallbackMode = true;
+            if (skeletonOverlay) {
+                skeletonOverlay.classList.add('hidden');
+            }
             this.canvas.width = this.targetWidth || 1280;
             this.canvas.height = this.targetHeight || 720;
             this.render();
