@@ -212,10 +212,16 @@ async def modal_demo_page(request: Request):
 
 ### Quick Health Check
 
-Chạy script này để kiểm tra:
+Chạy script này để kiểm tra sức khỏe toàn hệ thống:
 
 ```bash
-python test_server.py
+xem_tien_do.bat
+```
+
+Hoặc chạy bộ test tự động:
+
+```bash
+python -m pytest tests/ -q
 ```
 
 Hoặc manual check:
