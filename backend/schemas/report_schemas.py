@@ -50,3 +50,12 @@ class NotificationAdjustRequest(BaseModel):
     email_subject_template: Optional[str] = ""
     email_body_template: Optional[str] = ""
 
+class RetentionSettingsRequest(BaseModel):
+    retention_days: int = 90
+    auto_cleanup_enabled: Optional[bool] = True
+    cleanup_excel_enabled: Optional[bool] = True
+
+class CleanupExpiredRequest(BaseModel):
+    days: Optional[int] = None
+
+

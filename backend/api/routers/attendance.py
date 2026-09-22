@@ -163,7 +163,7 @@ async def download_excel(db: Session = Depends(get_db)):
     raise HTTPException(status_code=404, detail="Chưa có file báo cáo Excel nào được xuất.")
 
 @router.get("/history")
-async def get_attendance_history(limit: int = 150, db: Session = Depends(get_db)):
+async def get_attendance_history(limit: int = 1000, db: Session = Depends(get_db)):
     """Lấy toàn bộ lịch sử điểm danh từ CSDL kèm đường dẫn ảnh đối chứng."""
     details = (
         db.query(AttendanceDetail)

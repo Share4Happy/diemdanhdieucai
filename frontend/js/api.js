@@ -10,12 +10,28 @@ export const API_BASE = (window.location.protocol === 'file:' || (!window.locati
 /**
  * Hàm gửi request chuẩn hóa
  */
+/**
+ * Hàm gửi request chuẩn hóa
+ */
 function redirectToLogin() {
     const path = window.location.pathname || '';
     if (path.includes('login') || path.includes('forgot-password') || path.includes('reset-password')) {
         return;
     }
-    window.location.href = 'login.html';
+    if (window._isRedirectingToLogin) return;
+    window._isRedirectingToLogin = true;
+
+    try {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('currentUserRole');
+    } catch (e) {}
+
+    const filename = path.split('/').pop() || 'index.html';
+    const redirectUrl = (filename && filename !== 'login.html') 
+        ? `login.html?redirect=${encodeURIComponent(filename + window.location.search)}` 
+        : 'login.html';
+    window.location.href = redirectUrl;
 }
 
 async function fetchAPI(endpoint, options = {}) {
@@ -24,6 +40,14 @@ async function fetchAPI(endpoint, options = {}) {
     const defaultHeaders = {
         'Accept': 'application/json',
     };
+
+    // Tự động đính kèm Bearer Token dự phòng cho cookie Lax/cross-port
+    try {
+        const storedToken = localStorage.getItem('authToken');
+        if (storedToken) {
+            defaultHeaders['Authorization'] = `Bearer ${storedToken}`;
+        }
+    } catch (e) {}
 
     if (fetchOptions.body && typeof fetchOptions.body === 'object' && !(fetchOptions.body instanceof FormData)) {
         defaultHeaders['Content-Type'] = 'application/json';
@@ -60,8 +84,24 @@ async function fetchAPI(endpoint, options = {}) {
 }
 
 export const AuthAPI = {
-    login: (data) => fetchAPI('/api/auth/login', { method: 'POST', body: data, skipAuthRedirect: true }),
-    logout: () => fetchAPI('/api/auth/logout', { method: 'POST', skipAuthRedirect: true }),
+    login: async (data) => {
+        const res = await fetchAPI('/api/auth/login', { method: 'POST', body: data, skipAuthRedirect: true });
+        if (res && res.token) {
+            try { localStorage.setItem('authToken', res.token); } catch (e) {}
+        }
+        return res;
+    },
+    logout: async () => {
+        try {
+            return await fetchAPI('/api/auth/logout', { method: 'POST', skipAuthRedirect: true });
+        } finally {
+            try {
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('currentUserRole');
+            } catch (e) {}
+        }
+    },
     me: () => fetchAPI('/api/auth/me', { skipAuthRedirect: true }),
     forgotPassword: (email) => fetchAPI('/api/auth/forgot-password', { method: 'POST', body: { email }, skipAuthRedirect: true }),
     resetPassword: (data) => fetchAPI('/api/auth/reset-password', { method: 'POST', body: data, skipAuthRedirect: true }),
@@ -130,7 +170,10 @@ export const ReportAPI = {
     getZaloConfig: () => fetchAPI('/api/reports/zalo-config'),
     saveZaloConfig: (data) => fetchAPI('/api/reports/save-zalo-config', { method: 'POST', body: data }),
     getNotificationSettings: () => fetchAPI('/api/reports/notification-settings'),
-    saveNotificationSettings: (data) => fetchAPI('/api/reports/notification-settings', { method: 'POST', body: data })
+    saveNotificationSettings: (data) => fetchAPI('/api/reports/notification-settings', { method: 'POST', body: data }),
+    getRetentionSettings: () => fetchAPI('/api/reports/retention-settings'),
+    saveRetentionSettings: (data) => fetchAPI('/api/reports/retention-settings', { method: 'POST', body: data }),
+    cleanupExpired: (days) => fetchAPI('/api/reports/cleanup-expired', { method: 'POST', body: { days } })
 };
 
 // === SYSTEM APIs ===

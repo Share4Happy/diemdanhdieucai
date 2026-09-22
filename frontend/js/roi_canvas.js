@@ -7,6 +7,15 @@ const API_BASE = (window.location.protocol === 'file:' || (!window.location.orig
     ? 'http://localhost:8000'
     : '';
 
+function getAuthHeaders(extra = {}) {
+    const headers = { 'Accept': 'application/json', ...extra };
+    try {
+        const token = localStorage.getItem('authToken');
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+    } catch (e) {}
+    return headers;
+}
+
 class ROICanvasEditor {
     constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
@@ -660,7 +669,10 @@ class ROICanvasEditor {
         this.currentClassId = classId;
         try {
             const url = `${API_BASE}/api/roi/${classId}${forceRefresh ? '?refresh=true' : ''}`;
-            const res = await fetch(url);
+            const res = await fetch(url, {
+                credentials: 'include',
+                headers: getAuthHeaders()
+            });
             const data = await res.json();
             
             const dbW = data.image_width || 1080;
@@ -702,7 +714,11 @@ class ROICanvasEditor {
         }
 
         try {
-            const res = await fetch(`${API_BASE}/api/roi/${classId}/refresh-snapshot`, { method: 'POST' });
+            const res = await fetch(`${API_BASE}/api/roi/${classId}/refresh-snapshot`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: getAuthHeaders()
+            });
             const data = await res.json();
             if (data.snapshot_url) {
                 let snap = data.snapshot_url;
@@ -747,7 +763,8 @@ class ROICanvasEditor {
         try {
             const res = await fetch(`${API_BASE}/api/roi/${classId}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({
                     red_zone: this.redZone,
                     green_zone: this.greenZone,

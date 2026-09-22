@@ -110,6 +110,11 @@ class Settings(BaseModel):
     EMAIL_SUBJECT_TEMPLATE: str = ""
     EMAIL_BODY_TEMPLATE: str = ""
 
+    # Data Retention Settings
+    DATA_RETENTION_DAYS: int = 90
+    DATA_AUTO_CLEANUP_ENABLED: bool = True
+    DATA_CLEANUP_EXCEL_ENABLED: bool = True
+
 
 settings = Settings()
 

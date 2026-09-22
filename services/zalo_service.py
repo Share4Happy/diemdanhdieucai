@@ -17,7 +17,8 @@ class ZaloNotificationService:
     """
 
     def __init__(self):
-        self.timeout = 8
+        # Gateway Zalo Bot xử lý batch có thể mất 7-12s để phản hồi => timeout phải đủ rộng để không lỗi giả.
+        self.timeout = 30
 
     def _collect_message_data(self, session, details) -> Dict[str, Any]:
         """Tổng hợp dữ liệu điểm danh thực tế để render mẫu tin nhắn tùy chỉnh."""
@@ -145,6 +146,34 @@ class ZaloNotificationService:
         finally:
             db.close()
 
+    @staticmethod
+    def _resolve_recipient_class_code(item: dict, db=None) -> str:
+        """Lấy mã lớp cho người nhận vai trò 'class'.
+
+        Frontend lưu class_id/class_name, backend cần ClassRooms.code (LOP_10A1) để
+        lập báo cáo đúng lớp. Ưu tiên class_code nếu có, ngược lại tra class_id.
+        """
+        code = str(item.get("class_code") or "").strip()
+        if code:
+            return code
+        class_id = item.get("class_id")
+        if class_id in (None, "", 0, "0"):
+            return ""
+        try:
+            cid = int(class_id)
+        except (TypeError, ValueError):
+            return ""
+        own_db = db is None
+        opened = SessionLocal() if own_db else db
+        try:
+            row = opened.query(Classroom).filter(Classroom.id == cid).first()
+            return row.code if row else ""
+        except Exception:
+            return ""
+        finally:
+            if own_db:
+                opened.close()
+
     def _get_recipient_groups(self) -> Dict[tuple, list]:
         """Nhóm người nhận theo vai trò: ('school', None) -> BGH, ('class', class_code) -> GVCN lớp.
 
@@ -164,9 +193,9 @@ class ZaloNotificationService:
                         continue
                     phone = str(it.get("phone", "")).strip()
                     role = str(it.get("role", "school")).strip().lower() or "school"
-                    class_code = str(it.get("class_code", "")).strip()
                     if not phone:
                         continue
+                    class_code = self._resolve_recipient_class_code(it) if role == "class" else ""
                     key = (role, class_code if role == "class" else None)
                     groups.setdefault(key, set()).add(phone)
 
@@ -561,14 +590,19 @@ class ZaloNotificationService:
             except json.JSONDecodeError:
                 items = []
             if isinstance(items, list):
-                recipients = [
-                    {
+                recipients = []
+                for it in items:
+                    if not isinstance(it, dict) or not str(it.get("phone", "")).strip():
+                        continue
+                    role = str(it.get("role", "school")).strip().lower() or "school"
+                    recipients.append({
                         "phone": str(it.get("phone", "")).strip(),
-                        "role": str(it.get("role", "school")).strip().lower() or "school",
-                        "class_code": str(it.get("class_code", "")).strip()
-                    }
-                    for it in items if isinstance(it, dict) and str(it.get("phone", "")).strip()
-                ]
+                        "role": role,
+                        "class_code": self._resolve_recipient_class_code(it) if role == "class" else "",
+                        "class_id": it.get("class_id") or None,
+                        "class_name": it.get("class_name", "") or "",
+                        "label": it.get("label", "") or "",
+                    })
         if not recipients and settings.ZALO_RECIPIENT_PHONES:
             recipients = [
                 {"phone": p.strip(), "role": "school", "class_code": ""}

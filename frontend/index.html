@@ -95,23 +95,6 @@
 
         <!-- Main Content Area -->
         <main class="app-main">
-            <!-- Header with Real-time Clock and Timezone -->
-            <header class="app-header">
-                <div class="header-left">
-                    <div class="header-breadcrumb">
-                        <span class="breadcrumb-item">Tổng quan</span>
-                        <span class="breadcrumb-separator">/</span>
-                        <span class="breadcrumb-item breadcrumb-current">Dashboard Điểm Danh</span>
-                    </div>
-                </div>
-                <div class="header-right">
-                    <div class="live-clock-container" id="liveClockContainer">
-                        <i class="fa-regular fa-clock clock-icon"></i>
-                        <span class="live-clock-text" id="liveClockText">Đang tải thời gian...</span>
-                    </div>
-                </div>
-            </header>
-
             <!-- Page Content -->
             <div class="page-container">
                 <!-- Page Header Compact -->
@@ -129,6 +112,10 @@
                             </p>
                         </div>
                         <div class="page-actions">
+                            <div class="live-clock-container" id="liveClockContainer" title="Thời gian thực tế">
+                                <i class="fa-regular fa-clock clock-icon"></i>
+                                <span class="live-clock-text" id="liveClockText">Đang tải thời gian...</span>
+                            </div>
                             <button id="btnRefreshDashboard" class="btn btn-secondary" type="button" title="Làm mới dữ liệu">
                                 <i class="fa-solid fa-rotate"></i>
                                 Làm Mới
@@ -422,8 +409,8 @@
     <!-- Toast Container -->
     <div id="toast-container"></div>
 
-    <script type="module" src="js/shared/auth-guard.js?v=2.0"></script>
-    <script src="js/shared/app-shell.js?v=2.2"></script>
+    <script type="module" src="js/shared/auth-guard.js?v=2.5"></script>
+    <script src="js/shared/app-shell.js?v=2.5"></script>
     <script src="js/shared/header-actions.js?v=2.2"></script>
     <!-- Chart.js Engine (Local + Offline First) -->
     <script src="js/libs/chart.umd.min.js"></script>

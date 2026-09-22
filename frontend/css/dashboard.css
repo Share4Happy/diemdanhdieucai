@@ -1438,9 +1438,16 @@
 .skeleton-badge,
 .skeleton-stat,
 .skeleton-bar {
-    background: linear-gradient(90deg, #f3f4f6 0%, #e5e7eb 50%, #f3f4f6 100%);
+    background: linear-gradient(
+        90deg,
+        #f1f5f9 0%,
+        #f8fafc 25%,
+        rgba(255, 255, 255, 0.85) 50%,
+        #f8fafc 75%,
+        #f1f5f9 100%
+    );
     background-size: 200% 100%;
-    animation: skeleton-loading 1.5s infinite;
+    animation: skeleton-loading 1.8s ease-in-out infinite;
     border-radius: 4px;
 }
 
@@ -2264,31 +2271,35 @@
 
 /* Real-time Clock */
 .live-clock-container {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: #f1f5f9;
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 0.875rem;
+    background: #ffffff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.84rem;
     font-weight: 600;
     color: #1e293b;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #cbd5e1;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    height: 38px;
+    box-sizing: border-box;
 }
 
 .live-clock-container .clock-icon {
     color: #2563eb;
-    font-size: 1rem;
+    font-size: 0.95rem;
 }
 
 .live-clock-container .timezone-badge {
-    background: #2563eb;
-    color: #ffffff;
+    background: #eff6ff;
+    color: #2563eb;
     font-size: 0.72rem;
     font-weight: 700;
-    padding: 2px 7px;
-    border-radius: 10px;
-    letter-spacing: 0.5px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.3px;
+    border: 1px solid #bfdbfe;
 }
 
 .status-pulse-dot {

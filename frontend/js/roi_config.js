@@ -2,7 +2,7 @@
  * roi_config.js - ROI Polygon Setup Page Controller
  * THPT Điều Cải - Attendance System
  */
-import { CameraAPI, ROIAPI, showToast, API_BASE } from './api.js?v=4.0';
+import { CameraAPI, ROIAPI, showToast, API_BASE } from './api.js';
 
 let editor = null;
 

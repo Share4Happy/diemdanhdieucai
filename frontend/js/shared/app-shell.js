@@ -29,18 +29,21 @@ class AppShell {
       this.sidebarOverlay = overlay;
     }
 
-    // Auto-inject mobile hamburger button into .header-left if missing
+    // Auto-inject mobile hamburger button if missing
     let mobileBtn = document.querySelector('.mobile-menu-btn');
     if (!mobileBtn) {
       const headerLeft = document.querySelector('.header-left');
+      mobileBtn = document.createElement('button');
+      mobileBtn.type = 'button';
+      mobileBtn.title = 'Mở Menu Điều Hướng';
+      mobileBtn.setAttribute('aria-label', 'Mở Menu Điều Hướng');
+      mobileBtn.innerHTML = '<i class="fa-solid fa-bars"></i>';
       if (headerLeft) {
-        mobileBtn = document.createElement('button');
         mobileBtn.className = 'mobile-menu-btn';
-        mobileBtn.type = 'button';
-        mobileBtn.title = 'Mở Menu Điều Hướng';
-        mobileBtn.setAttribute('aria-label', 'Mở Menu Điều Hướng');
-        mobileBtn.innerHTML = '<i class="fa-solid fa-bars"></i>';
         headerLeft.prepend(mobileBtn);
+      } else {
+        mobileBtn.className = 'mobile-menu-btn floating-mobile-btn';
+        document.body.appendChild(mobileBtn);
       }
     }
     this.mobileMenuBtn = mobileBtn;
@@ -236,5 +239,5 @@ if (document.readyState === 'loading') {
 } else {
   window.appShell = new AppShell();
 }
-
-export default AppShell;
+// Attach to window for global access
+window.AppShell = AppShell;

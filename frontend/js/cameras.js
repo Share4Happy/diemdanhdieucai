@@ -2,33 +2,9 @@
  * cameras.js - Camera Management Page Controller
  * THPT Điều Cải - Attendance System
  */
-import { CameraAPI, AttendanceAPI, showToast, API_BASE } from './api.js?v=4.0';
+import { CameraAPI, AttendanceAPI, showToast, API_BASE } from './api.js';
 import SkeletonTemplates from './components/skeleton-templates.js';
 
-// Đảm bảo các phương thức NVR luôn tồn tại kể cả khi trình duyệt nạp bản cache api.js cũ
-if (!CameraAPI.probeNVR) {
-    CameraAPI.probeNVR = (data) => fetch(`${API_BASE}/api/cameras/nvr/probe`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    }).then(r => r.json());
-}
-if (!CameraAPI.batchImportNVR) {
-    CameraAPI.batchImportNVR = (data) => fetch(`${API_BASE}/api/cameras/nvr/batch-import`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    }).then(r => r.json());
-}
-if (!CameraAPI.getMatrixWall) {
-    CameraAPI.getMatrixWall = () => fetch(`${API_BASE}/api/cameras/matrix-wall`).then(r => r.json());
-}
-if (!CameraAPI.deleteNVR) {
-    CameraAPI.deleteNVR = (id, deleteCameras = false) => fetch(`${API_BASE}/api/cameras/nvr/${id}?delete_cameras=${deleteCameras}`, { method: 'DELETE' }).then(r => r.json());
-}
-if (!AttendanceAPI?.triggerScan) {
-    AttendanceAPI.triggerScan = () => fetch(`${API_BASE}/api/attendance/trigger`, { method: 'POST' }).then(r => r.json());
-}
 if (typeof window !== 'undefined') {
     window.CameraAPI = CameraAPI;
     window.AttendanceAPI = AttendanceAPI;
@@ -252,17 +228,7 @@ export async function loadAvailableWebcams(forceRefresh = false) {
     }
 
     try {
-        let data = null;
-        const apiObj = window.CameraAPI || CameraAPI;
-        if (apiObj && typeof apiObj.getWebcams === 'function') {
-            data = await apiObj.getWebcams(forceRefresh);
-        } else if (apiObj && typeof apiObj.getAvailableWebcams === 'function') {
-            data = await apiObj.getAvailableWebcams(forceRefresh);
-        } else {
-            const base = (typeof window !== 'undefined' && window.API_BASE !== undefined) ? window.API_BASE : (API_BASE || '');
-            const res = await fetch(`${base}/api/cameras/available-webcams?refresh=${forceRefresh}`);
-            data = await res.json();
-        }
+        const data = await CameraAPI.getWebcams(forceRefresh);
 
         if (data && data.webcams) {
             availableWebcams = data.webcams;
@@ -435,7 +401,7 @@ export function toggleAdvancedInput() {
 export async function loadCameras() {
     const container = document.getElementById('matrixGrid');
     if (container && allCameras.length === 0) {
-        container.innerHTML = SkeletonTemplates.cameraMatrixGrid(8);
+        container.innerHTML = (SkeletonTemplates.cameraGrid || SkeletonTemplates.cameraMatrixGrid)(8);
     }
     try {
         const data = await CameraAPI.getAll();

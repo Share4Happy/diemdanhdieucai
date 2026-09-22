@@ -886,7 +886,7 @@ function initScheduleControls() {
             const morningInput = document.getElementById('ruleMorningTime');
             if (panel) {
                 panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                panel.style.boxShadow = '0 0 0 3px rgba(2, 132, 199, 0.35)';
+                panel.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.35)';
                 setTimeout(() => {
                     panel.style.boxShadow = '';
                     if (morningInput) morningInput.focus();

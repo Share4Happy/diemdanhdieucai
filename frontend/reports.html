@@ -100,17 +100,6 @@
 
         <!-- Main Content Area -->
         <main class="app-main">
-            <!-- Header -->
-            <header class="app-header">
-                <div class="header-left">
-                    <div class="header-breadcrumb">
-                        <span class="breadcrumb-item">Dữ liệu</span>
-                        <span class="breadcrumb-separator">/</span>
-                        <span class="breadcrumb-item breadcrumb-current">Báo Cáo & Dữ Liệu</span>
-                    </div>
-                </div>
-            </header>
-
             <!-- Page Content -->
             <div class="page-container">
                 <!-- Banner Hành Động Nhanh -->
@@ -132,6 +121,7 @@
                 </div>
 
                 <!-- Thanh Tabs Điều Hướng -->
+                <!-- Thanh Tabs Điều Hướng -->
                 <div class="tabs-container">
                     <div class="tabs-nav">
                         <button class="tab-btn active" data-tab="tab-database">
@@ -141,7 +131,7 @@
                             <i class="fa-solid fa-file-excel"></i> Xuất Excel
                         </button>
                         <button class="tab-btn" data-tab="tab-settings">
-                            <i class="fa-solid fa-server"></i> Cấu Hình CSDL
+                            <i class="fa-solid fa-sliders"></i> Cài Đặt Lưu Trữ & CSDL
                         </button>
                     </div>
                 </div>
@@ -154,10 +144,10 @@
                             <div class="reports-db-header-main">
                                 <div class="reports-title-group">
                                     <h3 class="reports-db-title">
-                                        <i class="fa-solid fa-database text-primary"></i> 1. Lưu Trữ Kết Quả Điểm Danh (CSDL)
+                                        <i class="fa-solid fa-database text-primary"></i> Lưu Trữ Kết Quả Điểm Danh (CSDL)
                                     </h3>
-                                    <span class="retention-badge">
-                                        <i class="fa-solid fa-clock-rotate-left"></i> Dữ liệu cũ tự động xóa sau 90 ngày
+                                    <span class="retention-badge" id="retentionNoticeBadge">
+                                        <i class="fa-solid fa-clock-rotate-left"></i> Dữ liệu tự động lưu <span id="lblRetentionDaysNotice">90</span> ngày
                                     </span>
                                 </div>
                                 <div class="reports-meta-count">
@@ -177,263 +167,411 @@
                             </div>
                         </div>
 
-                        <!-- Bộ Lọc Đa Chiều Cho Lịch Sử Điểm Danh (Redesigned) -->
-                        <div class="reports-filter-card">
-                            <!-- Hàng 1: Bộ lọc danh mục (Khối & Trạng thái) -->
-                            <div class="filter-card-row filter-categories-row">
-                                <!-- Lọc theo Khối -->
-                                <div class="filter-field-group">
-                                    <span class="filter-field-label">
-                                        <i class="fa-solid fa-graduation-cap"></i> Khối:
-                                    </span>
-                                    <div class="filter-pill-group" id="reportGradeFilterGroup">
-                                        <button class="pill-btn active" data-report-grade="all">Tất cả</button>
-                                        <button class="pill-btn" data-report-grade="10">Khối 10</button>
-                                        <button class="pill-btn" data-report-grade="11">Khối 11</button>
-                                        <button class="pill-btn" data-report-grade="12">Khối 12</button>
-                                    </div>
-                                </div>
+                        <!-- Bộ Lọc Đa Chiều Cho Lịch Sử Điểm Danh (Đồng nhất với Dashboard) -->
+                        <div class="table-controls-row reports-controls-row">
+                            <!-- Bộ điều khiển chuyển Khối dạng 1 nút tinh gọn -->
+                            <div class="filter-field-group grade-filter-control">
+                                <span class="control-label">Khối:</span>
+                                <div class="grade-stepper-group" id="gradeSwitcherPill" tabindex="0" title="Bấm mũi tên hoặc click để chuyển khối">
+                                    <button type="button" class="btn-stepper-nav prev" id="btnGradePrev" title="Khối trước">
+                                        <i class="fa-solid fa-chevron-left"></i>
+                                    </button>
+                                    <button type="button" class="btn-stepper-main" id="btnGradeCurrent" title="Bấm để chuyển nhanh qua lại hoặc chọn khối">
+                                        <span class="stepper-grade-name" id="currentGradeText">Tất Cả</span>
+                                        <i class="fa-solid fa-chevron-down stepper-caret"></i>
+                                    </button>
+                                    <button type="button" class="btn-stepper-nav next" id="btnGradeNext" title="Khối tiếp theo">
+                                        <i class="fa-solid fa-chevron-right"></i>
+                                    </button>
 
-                                <div class="filter-v-divider"></div>
-
-                                <!-- Lọc theo Trạng Thái -->
-                                <div class="filter-field-group">
-                                    <span class="filter-field-label">
-                                        <i class="fa-solid fa-filter"></i> Trạng thái:
-                                    </span>
-                                    <div class="filter-pill-group" id="reportStatusFilterGroup">
-                                        <button class="pill-btn active" data-report-status="all">Tất cả (<span id="repCountAll">0</span>)</button>
-                                        <button class="pill-btn pill-danger" data-report-status="absent">
-                                            <i class="fa-solid fa-triangle-exclamation"></i> Có vắng (<span id="repCountAbsent">0</span>)
+                                    <!-- Menu thả xuống chọn nhanh -->
+                                    <div class="grade-menu-popover" id="gradeDropdownMenu">
+                                        <button type="button" class="grade-menu-opt active" data-grade="all">
+                                            <span class="opt-name">Tất cả các khối</span>
+                                            <span class="opt-hint">Khối 10, 11 và 12</span>
+                                            <i class="fa-solid fa-check opt-check"></i>
                                         </button>
-                                        <button class="pill-btn pill-success" data-report-status="full">
-                                            <i class="fa-solid fa-circle-check"></i> Đủ sĩ số (<span id="repCountFull">0</span>)
+                                        <button type="button" class="grade-menu-opt" data-grade="10">
+                                            <span class="opt-name">Khối 10</span>
+                                            <span class="opt-hint">10A1 - 10A10</span>
+                                            <i class="fa-solid fa-check opt-check"></i>
+                                        </button>
+                                        <button type="button" class="grade-menu-opt" data-grade="11">
+                                            <span class="opt-name">Khối 11</span>
+                                            <span class="opt-hint">11A1 - 11A10</span>
+                                            <i class="fa-solid fa-check opt-check"></i>
+                                        </button>
+                                        <button type="button" class="grade-menu-opt" data-grade="12">
+                                            <span class="opt-name">Khối 12</span>
+                                            <span class="opt-hint">12A1 - 12A10</span>
+                                            <i class="fa-solid fa-check opt-check"></i>
                                         </button>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="filter-card-divider"></div>
+                            <div class="filter-separator"></div>
 
-                            <!-- Hàng 2: Bộ lọc thời gian & Tìm kiếm từ khóa -->
-                            <div class="filter-card-row filter-controls-row">
-                                <!-- Lọc theo Ngày -->
-                                <div class="filter-field-group filter-date-field">
-                                    <span class="filter-field-label">
-                                        <i class="fa-solid fa-calendar-day"></i> Ngày quét:
-                                    </span>
+                            <!-- Bộ lọc trạng thái: Segmented Tab Control -->
+                            <div class="filter-field-group">
+                                <span class="control-label">Trạng thái:</span>
+                                <div class="status-segmented-control" id="reportStatusFilterGroup">
+                                    <button type="button" class="segmented-tab active" data-report-status="all">
+                                        Tất cả <span class="tab-badge" id="repCountAll">0</span>
+                                    </button>
+                                    <button type="button" class="segmented-tab tab-danger" data-report-status="absent">
+                                        <span class="dot-indicator danger"></span>Có vắng <span class="tab-badge" id="repCountAbsent">0</span>
+                                    </button>
+                                    <button type="button" class="segmented-tab tab-success" data-report-status="full">
+                                        <span class="dot-indicator success"></span>Đủ sĩ số <span class="tab-badge" id="repCountFull">0</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="filter-separator"></div>
+
+                            <!-- Lọc theo Ngày -->
+                            <div class="filter-field-group filter-date-field">
+                                <span class="control-label">Ngày:</span>
+                                <div class="filter-date-wrapper">
+                                    <input type="date" id="filterReportDate" class="form-control-date" title="Chọn ngày điểm danh">
+                                    <button type="button" id="btnFilterToday" class="btn-quick-date" title="Xem kết quả hôm nay">Hôm nay</button>
+                                    <button type="button" id="btnClearDateFilter" class="btn-clear-date" title="Xem tất cả các ngày">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Tìm kiếm nhanh -->
+                            <div class="table-search-box">
+                                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                                <input type="text" id="filterDbInput" placeholder="Tìm kiếm lớp, phòng, mã phiên..." class="table-search-input">
+                                <button type="button" id="btnClearDbSearch" class="btn-clear-search" title="Xóa tìm kiếm" style="display: none;">
+                                    <i class="fa-solid fa-circle-xmark"></i>
+                                </button>
+                            </div>
+
+                            <button type="button" id="btnResetAllFilters" class="btn btn-secondary btn-sm" title="Khôi phục toàn bộ bộ lọc về mặc định" style="height: 34px; padding: 0 12px;">
+                                <i class="fa-solid fa-arrows-rotate"></i>
+                            </button>
+                        </div>
+
+                        <!-- Bảng Dữ Liệu Điểm Danh -->
+                        <div class="table-wrapper">
+                            <table class="data-table reports-db-table">
+                                <thead>
+                                    <tr>
+                                        <th class="cell-stt" style="width: 50px; text-align: center;">STT</th>
+                                        <th class="cell-datetime">NGÀY GIỜ</th>
+                                        <th class="cell-session">MÃ PHIÊN</th>
+                                        <th class="cell-class">LỚP HỌC</th>
+                                        <th class="cell-room">PHÒNG</th>
+                                        <th class="cell-standard" style="text-align: center;">SĨ SỐ</th>
+                                        <th class="cell-present" style="text-align: center;">CÓ MẶT</th>
+                                        <th class="cell-absent" style="text-align: center;">VẮNG</th>
+                                        <th class="cell-image" style="text-align: center;">ẢNH GỐC</th>
+                                        <th class="cell-image" style="text-align: center;">ẢNH AI</th>
+                                        <th class="cell-status" style="text-align: center;">TRẠNG THÁI</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dbTableBody">
+                                    <tr class="skeleton-table-row">
+                                        <td class="skeleton-table-cell" colspan="11"><div class="skeleton" style="height: 36px; width: 100%;"></div></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Phân Trang Dữ Liệu CSDL (Pagination) -->
+                        <div class="table-pagination-container" id="dbPaginationBox">
+                            <div class="pagination-info">
+                                <span>Hiển thị <strong id="pageRangeStart">0</strong> - <strong id="pageRangeEnd">0</strong> trên tổng số <strong id="pageTotalRecords">0</strong> bản ghi</span>
+                                <div class="page-size-selector">
+                                    <label for="pageSizeSelect">Hiển thị:</label>
+                                    <select id="pageSizeSelect" class="page-size-select">
+                                        <option value="15">15 dòng/trang</option>
+                                        <option value="30" selected>30 dòng/trang (1 ca)</option>
+                                        <option value="60">60 dòng/trang (2 ca)</option>
+                                        <option value="100">100 dòng/trang</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="pagination-controls" id="dbPaginationNav">
+                                <!-- Tạo tự động bằng JS -->
+                            </div>
+                        </div>
+
+                        <!-- Thông Báo Tự Động Xóa Dữ Liệu Sau 90 Ngày -->
+                        <div class="retention-notice-bar" style="margin-top: 1.25rem;">
+                            <i class="fa-solid fa-clock-rotate-left retention-icon"></i>
+                            <span class="retention-text">
+                                <strong>Chính sách lưu trữ:</strong> Dữ liệu điểm danh CSDL sẽ được hệ thống tự động lưu trữ trong <strong id="lblRetentionDaysNotice2">90</strong> ngày theo cấu hình tại tab Cài Đặt Lưu Trữ.
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: XUẤT EXCEL (KHO LƯU TRỮ FILE EXCEL TỔNG HỢP) -->
+                <div id="tab-excel" class="tab-content">
+                    <div class="report-section">
+                        <div class="section-title">
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <h3 style="margin: 0;">
+                                    <i class="fa-solid fa-file-excel text-success"></i> Kho Lưu Trữ File Excel Báo Cáo Tổng Hợp
+                                </h3>
+                                <span class="badge badge-success">pandas & openpyxl</span>
+                            </div>
+                            <div>
+                                <button id="btnExportExcelTab" class="btn btn-primary btn-sm" type="button" style="font-weight: 600;">
+                                    <i class="fa-solid fa-file-arrow-down"></i> Xuất Báo Cáo Excel Ngay
+                                </button>
+                            </div>
+                        </div>
+                        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
+                            Mỗi file Excel bao gồm đầy đủ tiêu đề Trường THPT Điều Cải, tổng hợp sĩ số 30 lớp học theo từng ca quét, công thức tự động tính tổng (SUM), highlight màu sắc cảnh báo và chữ ký duyệt.
+                        </p>
+
+                        <!-- Bộ Lọc Chuyên Biệt Cho File Excel Tổng Hợp -->
+                        <div class="excel-filter-card">
+                            <div class="excel-filter-row">
+                                <!-- Lọc theo Ngày xuất -->
+                                <div class="filter-field-group">
+                                    <span class="control-label"><i class="fa-regular fa-calendar"></i> Ngày xuất:</span>
                                     <div class="filter-date-wrapper">
-                                        <div class="date-input-box">
-                                            <i class="fa-regular fa-calendar date-input-icon"></i>
-                                            <input type="date" id="filterReportDate" class="form-control-date" title="Chọn ngày điểm danh">
-                                        </div>
-                                        <button id="btnFilterToday" class="btn-quick-date" title="Xem nhanh kết quả hôm nay">
-                                            Hôm nay
-                                        </button>
-                                        <button id="btnClearDateFilter" class="btn-clear-date" title="Xem tất cả các ngày">
-                                            <i class="fa-solid fa-xmark"></i> Bỏ lọc
+                                        <input type="date" id="filterExcelDate" class="form-control-date" title="Lọc theo ngày tạo file">
+                                        <button type="button" id="btnExcelDateToday" class="btn-quick-date" title="Xem file xuất hôm nay">Hôm nay</button>
+                                        <button type="button" id="btnExcelDateAll" class="btn-clear-date" title="Xem tất cả các ngày">
+                                            <i class="fa-solid fa-xmark"></i>
                                         </button>
                                     </div>
                                 </div>
 
-                                <!-- Tìm kiếm nhanh -->
-                                <div class="filter-field-group filter-search-field">
-                                    <div class="filter-search-wrapper">
-                                        <i class="fa-solid fa-magnifying-glass search-input-icon"></i>
-                                        <input type="text" id="filterDbInput" placeholder="Tìm kiếm lớp học, phòng, mã phiên..."
-                                            class="form-control-search">
-                                        <button id="btnClearDbSearch" class="btn-clear-search" title="Xóa từ khóa tìm kiếm" style="display: none;">
-                                            <i class="fa-solid fa-circle-xmark"></i>
-                                        </button>
+                                <div class="filter-separator"></div>
+
+                                <!-- Lọc theo Ca Học / Thời Điểm -->
+                                <div class="filter-field-group">
+                                    <span class="control-label"><i class="fa-solid fa-clock"></i> Ca học:</span>
+                                    <div class="status-segmented-control" id="excelShiftFilterGroup">
+                                        <button type="button" class="segmented-tab active" data-excel-shift="all">Tất cả</button>
+                                        <button type="button" class="segmented-tab" data-excel-shift="morning">Ca Sáng (06:45)</button>
+                                        <button type="button" class="segmented-tab" data-excel-shift="afternoon">Ca Chiều (12:45)</button>
                                     </div>
-                                    <button id="btnResetAllFilters" class="btn-reset-filters" title="Khôi phục toàn bộ bộ lọc về mặc định">
-                                        <i class="fa-solid fa-arrows-rotate"></i> Đặt lại
+                                </div>
+
+                                <!-- Tìm kiếm nhanh theo tên file -->
+                                <div class="table-search-box" style="flex: 1; min-width: 220px;">
+                                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                                    <input type="text" id="filterExcelSearch" class="table-search-input" placeholder="Tìm kiếm tên file Excel...">
+                                    <button type="button" id="btnClearExcelSearch" class="btn-clear-search" title="Xóa tìm kiếm" style="display: none;">
+                                        <i class="fa-solid fa-circle-xmark"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Bộ đếm & Reset -->
+                                <div class="excel-filter-actions">
+                                    <span class="badge-count-pill" id="excelCountBadge">
+                                        Hiển thị <strong id="excelFilteredCount">0</strong> / <span id="excelTotalCount">0</span> file
+                                    </span>
+                                    <button type="button" id="btnResetExcelFilters" class="btn btn-secondary btn-sm" title="Đặt lại bộ lọc file" style="height: 34px; padding: 0 12px;">
+                                        <i class="fa-solid fa-arrows-rotate"></i>
                                     </button>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="table-wrapper">
-                            <table class="data-table reports-db-table">
-                                <thead>
-                                    <tr>
-                                        <th class="cell-datetime">NGÀY GIỜ</th>
-                                        <th class="cell-session">MÃ PHIÊN</th>
-                                        <th class="cell-class">TÊN LỚP</th>
-                                        <th class="cell-standard">SĨ SỐ CHUẨN</th>
-                                        <th class="cell-present">HIỆN DIỆN</th>
-                                        <th class="cell-absent">VẮNG MẶT</th>
-                                        <th class="cell-image">ẢNH GỐC</th>
-                                        <th class="cell-image">ẢNH AI</th>
-                                        <th class="cell-status">TRẠNG THÁI</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="dbTableBody">
-                                    <tr class="skeleton-table-row">
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 90px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 75px; height: 18px; border-radius: 4px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 100px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 60px; height: 26px; border-radius: var(--radius-sm);"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 60px; height: 26px; border-radius: var(--radius-sm);"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 75px; height: 22px; border-radius: var(--radius-full);"></div></td>
-                                    </tr>
-                                    <tr class="skeleton-table-row">
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 95px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 75px; height: 18px; border-radius: 4px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 110px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 60px; height: 26px; border-radius: var(--radius-sm);"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 60px; height: 26px; border-radius: var(--radius-sm);"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 75px; height: 22px; border-radius: var(--radius-full);"></div></td>
-                                    </tr>
-                                    <tr class="skeleton-table-row">
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 90px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 75px; height: 18px; border-radius: 4px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 95px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 60px; height: 26px; border-radius: var(--radius-sm);"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 60px; height: 26px; border-radius: var(--radius-sm);"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 75px; height: 22px; border-radius: var(--radius-full);"></div></td>
-                                    </tr>
-                                    <tr class="skeleton-table-row">
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 95px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 75px; height: 18px; border-radius: 4px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 105px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 60px; height: 26px; border-radius: var(--radius-sm);"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 60px; height: 26px; border-radius: var(--radius-sm);"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 75px; height: 22px; border-radius: var(--radius-full);"></div></td>
-                                    </tr>
-                                    <tr class="skeleton-table-row">
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 90px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 75px; height: 18px; border-radius: 4px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 100px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 30px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 60px; height: 26px; border-radius: var(--radius-sm);"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 60px; height: 26px; border-radius: var(--radius-sm);"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 75px; height: 22px; border-radius: var(--radius-full);"></div></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <!-- Thông Báo Tự Động Xóa Dữ Liệu Sau 90 Ngày -->
-                        <div class="retention-notice-bar">
-                            <i class="fa-solid fa-clock-rotate-left retention-icon"></i>
-                            <span class="retention-text">
-                                <strong>Chính sách lưu trữ:</strong> Dữ liệu điểm danh cũ sẽ được hệ thống tự động xóa sau <strong>90 ngày</strong> để tối ưu hiệu năng và dung lượng lưu trữ CSDL.
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- TAB 2: XUẤT EXCEL -->
-                <div id="tab-excel" class="tab-content">
-                    <div class="report-section">
-                        <div class="section-title">
-                            <h3>2. Kho Lưu Trữ File Excel Đã Xuất (pandas & openpyxl)</h3>
-                            <span style="font-size: 0.85rem; color: var(--text-muted);">Tự động sinh sau mỗi ca quét
-                                06:45
-                                sáng</span>
-                        </div>
-                        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
-                            Mỗi file Excel bao gồm đầy đủ tiêu đề Trường THPT Điều Cải, tỷ lệ chuyên cần, công thức tự
-                            động tính
-                            tổng (SUM), highlight màu sắc cảnh báo theo 3 cấp độ (Xanh lá - Vàng cam - Đỏ nhạt) và chữ
-                            ký duyệt.
-                        </p>
+                        <!-- Bảng Danh Sách File Excel -->
                         <div class="table-wrapper">
                             <table class="data-table reports-files-table">
                                 <thead>
                                     <tr>
-                                        <th class="cell-filename">TÊN FILE BÁO CÁO</th>
+                                        <th style="width: 50px; text-align: center;">STT</th>
+                                        <th class="cell-filename">TÊN FILE BÁO CÁO TỔNG HỢP</th>
                                         <th class="cell-datetime">THỜI ĐIỂM XUẤT</th>
-                                        <th class="cell-filesize">DUNG LƯỢNG</th>
-                                        <th class="cell-format">ĐỊNH DẠNG</th>
-                                        <th class="cell-actions">HÀNH ĐỘNG</th>
+                                        <th style="width: 140px; text-align: center;">CA QUÉT</th>
+                                        <th class="cell-filesize" style="width: 110px; text-align: center;">DUNG LƯỢNG</th>
+                                        <th class="cell-format" style="width: 160px; text-align: center;">ĐỊNH DẠNG</th>
+                                        <th class="cell-actions" style="width: 120px; text-align: center;">THAO TÁC</th>
                                     </tr>
                                 </thead>
                                 <tbody id="excelFilesBody">
                                     <tr class="skeleton-table-row">
-                                        <td class="skeleton-table-cell">
-                                            <div style="display: flex; align-items: center; gap: 8px;">
-                                                <div class="skeleton" style="width: 18px; height: 18px; border-radius: 3px; flex-shrink: 0;"></div>
-                                                <div class="skeleton" style="width: 220px; height: 16px;"></div>
-                                            </div>
-                                        </td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 130px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 60px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 130px; height: 22px; border-radius: var(--radius-full);"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 75px; height: 28px; border-radius: var(--radius-sm);"></div></td>
-                                    </tr>
-                                    <tr class="skeleton-table-row">
-                                        <td class="skeleton-table-cell">
-                                            <div style="display: flex; align-items: center; gap: 8px;">
-                                                <div class="skeleton" style="width: 18px; height: 18px; border-radius: 3px; flex-shrink: 0;"></div>
-                                                <div class="skeleton" style="width: 190px; height: 16px;"></div>
-                                            </div>
-                                        </td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 130px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 60px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 130px; height: 22px; border-radius: var(--radius-full);"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 75px; height: 28px; border-radius: var(--radius-sm);"></div></td>
-                                    </tr>
-                                    <tr class="skeleton-table-row">
-                                        <td class="skeleton-table-cell">
-                                            <div style="display: flex; align-items: center; gap: 8px;">
-                                                <div class="skeleton" style="width: 18px; height: 18px; border-radius: 3px; flex-shrink: 0;"></div>
-                                                <div class="skeleton" style="width: 240px; height: 16px;"></div>
-                                            </div>
-                                        </td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 130px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 60px; height: 16px;"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 130px; height: 22px; border-radius: var(--radius-full);"></div></td>
-                                        <td class="skeleton-table-cell"><div class="skeleton" style="width: 75px; height: 28px; border-radius: var(--radius-sm);"></div></td>
+                                        <td class="skeleton-table-cell" colspan="7"><div class="skeleton" style="height: 36px; width: 100%;"></div></td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
+
+                        <!-- Phân Trang File Excel -->
+                        <div class="table-pagination-container" id="excelPaginationBox">
+                            <div class="pagination-info">
+                                <span>Hiển thị <strong id="excelPageRangeStart">0</strong> - <strong id="excelPageRangeEnd">0</strong> trên tổng số <strong id="excelPageTotalRecords">0</strong> file</span>
+                            </div>
+                            <div class="pagination-controls" id="excelPaginationNav">
+                                <!-- Tạo tự động bằng JS -->
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- TAB 3: CẤU HÌNH CSDL -->
+                <!-- TAB 3: CÀI ĐẶT LƯU TRỮ & CSDL -->
                 <div id="tab-settings" class="tab-content">
                     <div class="report-section">
                         <div class="section-title">
-                            <h3>3. Cấu Hình Cơ Sở Dữ Liệu (PostgreSQL / MySQL / SQLite)</h3>
-                            <span id="dbTypeBadge" class="status-pill" style="background: #e0e7ff; color: #4338ca;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <h3 style="margin: 0;">
+                                    <i class="fa-solid fa-sliders text-primary"></i> Cài Đặt Thời Gian Lưu Trữ & Cơ Sở Dữ Liệu
+                                </h3>
+                            </div>
+                            <span id="dbTypeBadge" class="status-pill" style="background: #eff6ff; color: var(--primary);">
                                 SQLite (Local Active)
                             </span>
                         </div>
-                        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
-                            Hệ thống hỗ trợ lưu trữ dữ liệu đa năm học trên <strong>PostgreSQL</strong> hoặc
-                            <strong>MySQL</strong>
-                            của trường học thông qua thư viện SQLAlchemy & psycopg2/pymysql.
+                        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+                            Tùy biến thời hạn lưu trữ nhật ký điểm danh, tự động dọn dẹp dữ liệu cũ để tối ưu bộ nhớ máy chủ và cấu hình chuỗi kết nối CSDL nâng cao.
                         </p>
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label>Chuỗi Kết Nối Cơ Sở Dữ Liệu (Database Connection String):</label>
-                            <input type="text" id="dbUriInput" class="form-control"
-                                value="sqlite:///database/attendance.db"
-                                placeholder="Ví dụ: postgresql+psycopg2://admin:pass@192.168.10.10:5432/diemdanh_dieucai">
+
+                        <!-- Khung Cài Đặt Lưu Trữ (Data Retention Policy) -->
+                        <div class="retention-settings-card">
+                            <div class="retention-card-header">
+                                <div>
+                                    <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                                        <i class="fa-solid fa-clock-rotate-left" style="color: var(--primary);"></i>
+                                        Quy Định Thời Hạn Lưu Trữ Dữ Liệu Điểm Danh
+                                    </h4>
+                                    <p style="margin: 4px 0 0 0; font-size: 0.82rem; color: var(--text-muted);">
+                                        Hệ thống sẽ bảo lưu dữ liệu trong khoảng thời gian này. Dữ liệu quá hạn có thể được dọn dẹp tự động hoặc thủ công.
+                                    </p>
+                                </div>
+                                <span class="badge badge-primary" id="badgeCurrentRetention" style="font-size: 0.88rem; padding: 6px 14px;">90 ngày</span>
+                            </div>
+
+                            <!-- Tùy Chọn Số Ngày Lưu Trữ -->
+                            <div style="margin: 1.25rem 0;">
+                                <label style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary); display: block; margin-bottom: 0.5rem;">
+                                    Chọn thời gian lưu trữ dữ liệu (Khuyến nghị: 90 ngày cho 1 học kỳ):
+                                </label>
+                                <div class="retention-presets-group" id="retentionPresetsGroup">
+                                    <button type="button" class="retention-preset-btn" data-days="30">
+                                        <span class="preset-val">30</span>
+                                        <span class="preset-label">Ngày (1 tháng)</span>
+                                    </button>
+                                    <button type="button" class="retention-preset-btn" data-days="60">
+                                        <span class="preset-val">60</span>
+                                        <span class="preset-label">Ngày (2 tháng)</span>
+                                    </button>
+                                    <button type="button" class="retention-preset-btn active" data-days="90">
+                                        <span class="preset-val">90</span>
+                                        <span class="preset-label">Ngày (Khuyến nghị)</span>
+                                    </button>
+                                    <button type="button" class="retention-preset-btn" data-days="180">
+                                        <span class="preset-val">180</span>
+                                        <span class="preset-label">Ngày (1 học kỳ)</span>
+                                    </button>
+                                    <button type="button" class="retention-preset-btn" data-days="365">
+                                        <span class="preset-val">365</span>
+                                        <span class="preset-label">Ngày (1 năm học)</span>
+                                    </button>
+                                    <div class="custom-days-box">
+                                        <label for="retentionDaysInput" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 2px; display: block;">Tùy chỉnh:</label>
+                                        <div style="display: flex; align-items: center; gap: 6px;">
+                                            <input type="number" id="retentionDaysInput" min="7" max="1000" value="90" class="form-control" style="width: 90px; padding: 6px 10px; font-weight: 700; text-align: center;">
+                                            <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">ngày</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Quy tắc dọn dẹp tự động (Toggles) -->
+                            <div class="retention-toggles-box">
+                                <div class="toggle-switch-row" style="margin-bottom: 0.75rem;">
+                                    <div class="toggle-switch-info">
+                                        <span class="toggle-switch-title">Tự động xóa CSDL điểm danh & ảnh đối chứng camera quá hạn</span>
+                                        <span class="toggle-switch-desc">Tiến trình nền tự động dọn dẹp các phiên quét cũ hơn số ngày quy định để giải phóng ổ cứng</span>
+                                    </div>
+                                    <label class="switch-ui">
+                                        <input type="checkbox" id="ruleAutoCleanupDb" checked>
+                                        <span class="slider-round"></span>
+                                    </label>
+                                </div>
+
+                                <div class="toggle-switch-row" style="margin-bottom: 0.75rem;">
+                                    <div class="toggle-switch-info">
+                                        <span class="toggle-switch-title">Tự động xóa các file Excel xuất báo cáo quá hạn</span>
+                                        <span class="toggle-switch-desc">Xóa các file .xlsx đã sinh tự động trong thư mục lưu trữ cũ hơn thời hạn</span>
+                                    </div>
+                                    <label class="switch-ui">
+                                        <input type="checkbox" id="ruleAutoCleanupExcel" checked>
+                                        <span class="slider-round"></span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Thống Kê Lưu Trữ Hiện Tại -->
+                            <div class="retention-stats-card" style="margin: 1.25rem 0;">
+                                <h5 style="margin: 0 0 0.75rem 0; font-size: 0.88rem; font-weight: 700; color: var(--text-primary);">
+                                    <i class="fa-solid fa-chart-pie" style="color: var(--primary);"></i> Thống Kê Dung Lượng & Dữ Liệu Hiện Tại:
+                                </h5>
+                                <div class="retention-stats-grid">
+                                    <div class="stat-mini-box">
+                                        <div class="stat-mini-label">Phiên Điểm Danh CSDL</div>
+                                        <div class="stat-mini-val" id="statTotalSessions">--</div>
+                                    </div>
+                                    <div class="stat-mini-box">
+                                        <div class="stat-mini-label">Bản Ghi Chi Tiết Lớp</div>
+                                        <div class="stat-mini-val" id="statTotalDetails">--</div>
+                                    </div>
+                                    <div class="stat-mini-box">
+                                        <div class="stat-mini-label">File Excel Báo Cáo</div>
+                                        <div class="stat-mini-val" id="statTotalExcel">--</div>
+                                    </div>
+                                    <div class="stat-mini-box">
+                                        <div class="stat-mini-label">Dung Lượng File CSDL</div>
+                                        <div class="stat-mini-val" id="statDbSizeMb">-- MB</div>
+                                    </div>
+                                    <div class="stat-mini-box" style="grid-column: span 2;">
+                                        <div class="stat-mini-label">Khoảng Thời Gian Dữ Liệu</div>
+                                        <div class="stat-mini-val" style="font-size: 0.92rem;" id="statDateRange">Đang nạp...</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 1.25rem;">
+                                <button type="button" id="btnSaveRetentionConfig" class="btn btn-primary" style="font-weight: 600;">
+                                    <i class="fa-solid fa-floppy-disk"></i> Lưu Cài Đặt Lưu Trữ
+                                </button>
+                                <button type="button" id="btnCleanupExpiredNow" class="btn btn-secondary" style="font-weight: 600; color: #b91c1c; border-color: #fecaca;" title="Chủ động dọn dẹp các bản ghi và file Excel cũ hơn thời hạn quy định">
+                                    <i class="fa-solid fa-broom"></i> Dọn Dẹp Dữ Liệu Quá Hạn Ngay
+                                </button>
+                            </div>
+                            <div id="retentionFeedbackMsg" class="zalo-feedback" style="margin-top: 0.75rem;"></div>
                         </div>
-                        <div style="display: flex; gap: 10px;">
-                            <button id="btnSaveDbConfig" class="btn btn-secondary">
-                                <i class="fa-solid fa-floppy-disk"></i> Lưu Cấu Hình CSDL
-                            </button>
-                            <button id="btnTestDbConnection" class="btn btn-secondary">
-                                <i class="fa-solid fa-plug-circle-check"></i> Kiểm Tra Kết Nối CSDL
-                            </button>
+
+                        <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border-color);">
+
+                        <!-- Khung Cấu Hình Kết Nối CSDL (Database Driver & String) -->
+                        <div>
+                            <h4 style="margin: 0 0 0.5rem 0; font-size: 1.05rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-server" style="color: var(--primary);"></i>
+                                Cấu Hình Cơ Sở Dữ Liệu (PostgreSQL / MySQL / SQLite)
+                            </h4>
+                            <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
+                                Hệ thống hỗ trợ lưu trữ dữ liệu đa năm học trên <strong>PostgreSQL</strong> hoặc <strong>MySQL</strong> của trường học thông qua thư viện SQLAlchemy & psycopg2/pymysql.
+                            </p>
+                            <div class="form-group" style="margin-bottom: 1rem;">
+                                <label>Chuỗi Kết Nối Cơ Sở Dữ Liệu (Database Connection String):</label>
+                                <input type="text" id="dbUriInput" class="form-control"
+                                    value="sqlite:///database/attendance.db"
+                                    placeholder="Ví dụ: postgresql+psycopg2://admin:pass@192.168.10.10:5432/diemdanh_dieucai">
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button id="btnSaveDbConfig" class="btn btn-secondary" style="font-weight: 600;">
+                                    <i class="fa-solid fa-floppy-disk"></i> Lưu Cấu Hình CSDL
+                                </button>
+                                <button id="btnTestDbConnection" class="btn btn-secondary" style="font-weight: 600;">
+                                    <i class="fa-solid fa-plug-circle-check"></i> Kiểm Tra Kết Nối CSDL
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -462,8 +600,8 @@
     <!-- Toast Container -->
     <div id="toastContainer" class="toast-container"></div>
 
-    <script type="module" src="js/shared/auth-guard.js?v=2.0"></script>
-    <script src="js/shared/app-shell.js?v=2.2"></script>
+    <script type="module" src="js/shared/auth-guard.js?v=2.5"></script>
+    <script src="js/shared/app-shell.js?v=2.5"></script>
     <script src="js/shared/header-actions.js?v=2.2"></script>
 
     <!-- Page Script -->
