@@ -1,3 +1,4 @@
+
 import os
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException
@@ -13,8 +14,10 @@ from services.notification import notification_service
 from services.zalo_service import zalo_service
 from config.zalo_runtime_store import save_runtime_zalo
 from config.notification_settings_store import save_notification_settings, DEFAULT_SETTINGS
+from services.scheduler import attendance_scheduler
 from backend.schemas.report_schemas import (
     SendEmailRequest,
+    EmailConfigSaveRequest,
     ZaloTestRequest,
     ZaloConfigSaveRequest,
     NotificationAdjustRequest
@@ -58,6 +61,15 @@ async def send_report_email(req: SendEmailRequest):
     res = notification_service.send_test_email(req.email)
     return res
 
+@router.post("/save-email-config")
+async def save_email_config(req: EmailConfigSaveRequest):
+    """Lưu cấu hình email Hiệu Trưởng vào hệ thống."""
+    if req.principal_email:
+        settings.PRINCIPAL_EMAIL = req.principal_email.strip()
+        payload = {"PRINCIPAL_EMAIL": settings.PRINCIPAL_EMAIL}
+        save_notification_settings(settings, payload)
+    return {"success": True, "message": f"Đã lưu email Hiệu Trưởng: {settings.PRINCIPAL_EMAIL}"}
+
 @router.get("/distribution-status")
 async def get_distribution_status():
     """Lấy thông tin trạng thái phân phối báo cáo nội bộ và email."""
@@ -69,15 +81,30 @@ async def send_zalo_report(req: ZaloTestRequest):
     if req.session_id:
         res = zalo_service.send_attendance_summary(req.session_id)
     else:
+        # Nhận diện đầy đủ cả 2 chuẩn đặt tên field từ frontend / API client
+        target_type = req.notification_type or req.target_type or settings.ZALO_NOTIFICATION_TYPE or "BOT_API"
+        bot_key = req.bot_api_key or req.api_key or settings.ZALO_BOT_API_KEY
+        bot_id = req.bot_id or settings.ZALO_BOT_ID
+        bot_url = req.bot_api_base_url or req.api_base_url or settings.ZALO_BOT_API_BASE_URL
+        phone = req.test_phone or req.phone
+        user_id = req.recipient_user_id or req.user_id or settings.ZALO_RECIPIENT_USER_ID
+        access_token = req.access_token or settings.ZALO_OA_ACCESS_TOKEN
+        webhook_url = req.webhook_url or settings.ZALO_WEBHOOK_URL
+
+        # Nếu có cấu hình bot_id hoặc bot_key và target_type là WEBHOOK nhưng không có webhook_url -> Tự động chuyển qua BOT_API
+        if (bot_id or bot_key) and (target_type.upper() == "WEBHOOK" and not webhook_url):
+            target_type = "BOT_API"
+
         res = zalo_service.send_test_message(
-            target_type=req.target_type or "WEBHOOK",
-            webhook_url=req.webhook_url,
-            access_token=req.access_token,
-            user_id=req.user_id,
-            phone=req.phone,
-            bot_id=req.bot_id,
-            api_key=req.api_key,
-            api_base_url=req.api_base_url
+            target_type=target_type,
+            webhook_url=webhook_url,
+            access_token=access_token,
+            user_id=user_id,
+            phone=phone,
+            bot_id=bot_id,
+            api_key=bot_key,
+            api_base_url=bot_url,
+            recipients=req.recipients
         )
     return res
 
@@ -85,6 +112,25 @@ async def send_zalo_report(req: ZaloTestRequest):
 async def get_zalo_status():
     """Lấy trạng thái cấu hình dịch vụ Zalo."""
     return zalo_service.get_status()
+
+@router.get("/zalo-config")
+async def get_zalo_config():
+    """Lấy toàn bộ cấu hình Zalo để nạp lên giao diện quản trị."""
+    return {
+        "success": True,
+        "config": {
+            "enabled": settings.ENABLE_ZALO_NOTIFICATION,
+            "notification_type": settings.ZALO_NOTIFICATION_TYPE,
+            "webhook_url": settings.ZALO_WEBHOOK_URL,
+            "access_token": settings.ZALO_OA_ACCESS_TOKEN,
+            "recipient_user_id": settings.ZALO_RECIPIENT_USER_ID,
+            "bot_api_base_url": settings.ZALO_BOT_API_BASE_URL,
+            "bot_id": settings.ZALO_BOT_ID,
+            "bot_api_key": settings.ZALO_BOT_API_KEY,
+            "recipient_phones": settings.ZALO_RECIPIENT_PHONES,
+            "recipients_json": settings.ZALO_RECIPIENTS_JSON
+        }
+    }
 
 @router.post("/save-zalo-config")
 async def save_zalo_config(req: ZaloConfigSaveRequest):
@@ -147,6 +193,14 @@ async def update_notification_settings(req: NotificationAdjustRequest):
         "EMAIL_BODY_TEMPLATE": req.email_body_template,
     }
     save_notification_settings(settings, payload)
+    try:
+        attendance_scheduler.update_schedule(
+            morning_time=req.scan_time_morning,
+            afternoon_time=req.scan_time_afternoon,
+            enabled=bool(req.auto_scan_enabled)
+        )
+    except Exception as e:
+        logger.warning(f"Lỗi cập nhật lịch trình quét nền: {e}")
     return {"success": True, "message": "Đã lưu cài đặt điều chỉnh thông báo thành công!"}
 
 @router.post("/clear-history")

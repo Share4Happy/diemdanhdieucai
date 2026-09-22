@@ -4,15 +4,24 @@ from typing import Optional
 class SendEmailRequest(BaseModel):
     email: Optional[str] = None
 
+class EmailConfigSaveRequest(BaseModel):
+    principal_email: str
+
 class ZaloTestRequest(BaseModel):
-    target_type: Optional[str] = "WEBHOOK"
+    target_type: Optional[str] = None
+    notification_type: Optional[str] = None
     webhook_url: Optional[str] = None
     access_token: Optional[str] = None
     user_id: Optional[str] = None
+    recipient_user_id: Optional[str] = None
     phone: Optional[str] = None
+    test_phone: Optional[str] = None
     bot_id: Optional[str] = None
     api_key: Optional[str] = None
+    bot_api_key: Optional[str] = None
     api_base_url: Optional[str] = None
+    bot_api_base_url: Optional[str] = None
+    recipients: Optional[list] = None
     session_id: Optional[int] = None
 
 class ZaloConfigSaveRequest(BaseModel):

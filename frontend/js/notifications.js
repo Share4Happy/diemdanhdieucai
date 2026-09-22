@@ -46,10 +46,15 @@ function setupEventListeners() {
         });
     }
 
-    // Send test email
     const btnEmail = document.getElementById('btnSendTestEmail');
     if (btnEmail) {
         btnEmail.addEventListener('click', handleSendTestEmail);
+    }
+
+    // Save Email button
+    const btnSaveEmail = document.getElementById('btnSaveEmailConfig');
+    if (btnSaveEmail) {
+        btnSaveEmail.addEventListener('click', handleSavePrincipalEmail);
     }
 
     // Open folder button
@@ -115,6 +120,9 @@ function setupEventListeners() {
 
     // Adjust notification controls
     initAdjustControls();
+
+    // Schedule tab controls
+    initScheduleControls();
 }
 
 // ===================== CLASSROOMS =====================
@@ -143,12 +151,47 @@ async function loadEmailConfig() {
         const badge = document.getElementById('emailStatusBadge');
         if (badge) {
             badge.className = 'status-pill';
-            badge.style.background = '#dcfce7';
-            badge.style.color = '#15803d';
-            badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Sẵn sàng phân phối';
+            if (data.smtp_configured) {
+                badge.style.background = '#dcfce7';
+                badge.style.color = '#15803d';
+                badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Sẵn sàng phân phối';
+            } else {
+                badge.style.background = '#fef3c7';
+                badge.style.color = '#b45309';
+                badge.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Chờ mật khẩu SMTP';
+            }
         }
     } catch (err) {
         console.error('Lỗi nạp trạng thái email:', err);
+    }
+}
+
+async function handleSavePrincipalEmail() {
+    const input = document.getElementById('principalEmailInput');
+    const email = input?.value.trim();
+    if (!email) {
+        showToast('Vui lòng nhập địa chỉ email Hiệu Trưởng!', 'warning');
+        return;
+    }
+    const btn = document.getElementById('btnSaveEmailConfig');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+    }
+    try {
+        const res = await ReportAPI.saveEmailConfig({ principal_email: email });
+        showToast(res.message || 'Đã lưu email Hiệu Trưởng thành công!', 'success');
+        if (typeof window.showSuccess === 'function') {
+            window.showSuccess(res.message, 'Lưu Email Hiệu Trưởng');
+        }
+    } catch (err) {
+        const msg = err.message || err;
+        showToast('Lỗi lưu email: ' + msg, 'danger');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Lưu Email Người Nhận';
+        }
     }
 }
 
@@ -210,19 +253,23 @@ async function loadZaloConfig() {
         const bu = document.getElementById('zaloBotBaseUrlInput');
         if (bu && cfg.bot_api_base_url) bu.value = cfg.bot_api_base_url;
 
+        let loadedRecipients = [];
         if (cfg.recipients_json) {
             try {
-                zaloRecipients = JSON.parse(cfg.recipients_json);
+                loadedRecipients = JSON.parse(cfg.recipients_json);
+                if (!Array.isArray(loadedRecipients)) loadedRecipients = [];
             } catch (e) {
-                zaloRecipients = [];
+                loadedRecipients = [];
             }
-        } else if (cfg.recipient_phones) {
-            zaloRecipients = cfg.recipient_phones
+        }
+        if (loadedRecipients.length === 0 && cfg.recipient_phones) {
+            loadedRecipients = cfg.recipient_phones
                 .split(',')
                 .map(p => p.trim())
                 .filter(p => p)
                 .map(p => ({ role: 'school', phone: p, label: 'Ban Giám Hiệu' }));
         }
+        zaloRecipients = loadedRecipients;
 
         renderRecipients();
         toggleZaloInputs();
@@ -316,6 +363,38 @@ async function handleSendTestZalo() {
     const botBaseUrl = document.getElementById('zaloBotBaseUrlInput')?.value.trim() || '';
     const testPhone = document.getElementById('zaloTestPhoneInput')?.value.trim() || '';
 
+    // Frontend validation based on chosen channel
+    if (targetType === 'BOT_API') {
+        if (!botKey || !botId) {
+            const warnMsg = 'Vui lòng nhập đầy đủ Bot ID và API Key của Zalo Bot Gateway trước khi gửi!';
+            showToast(warnMsg, 'warning');
+            if (feedbackEl) {
+                feedbackEl.className = 'zalo-feedback zalo-feedback--error';
+                feedbackEl.style.display = 'block';
+                feedbackEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${warnMsg}`;
+            }
+            return;
+        }
+        if (!testPhone && zaloRecipients.length === 0) {
+            const warnMsg = 'Vui lòng nhập 1 SĐT nhận tin thử nghiệm (hoặc thêm SĐT Ban Giám Hiệu vào danh sách) trước khi gửi!';
+            showToast(warnMsg, 'warning');
+            if (feedbackEl) {
+                feedbackEl.className = 'zalo-feedback zalo-feedback--error';
+                feedbackEl.style.display = 'block';
+                feedbackEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${warnMsg}`;
+            }
+            return;
+        }
+    } else if (targetType === 'WEBHOOK' && !webhookUrl) {
+        const warnMsg = 'Vui lòng nhập URL Webhook trước khi gửi!';
+        showToast(warnMsg, 'warning');
+        return;
+    } else if (targetType === 'OA_API' && (!token || !userId)) {
+        const warnMsg = 'Vui lòng nhập Access Token và User ID Zalo OA trước khi gửi!';
+        showToast(warnMsg, 'warning');
+        return;
+    }
+
     if (btnZalo) {
         btnZalo.disabled = true;
         btnZalo.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang gửi Zalo...';
@@ -324,21 +403,28 @@ async function handleSendTestZalo() {
     if (feedbackEl) {
         feedbackEl.className = 'zalo-feedback';
         feedbackEl.style.display = 'block';
-        feedbackEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang kết nối Zalo API...';
+        feedbackEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang kết nối Zalo API Gateway...';
     }
 
     try {
-        const result = await ReportAPI.sendZalo({
+        const payload = {
+            target_type: targetType,
             notification_type: targetType,
             webhook_url: webhookUrl,
             access_token: token,
+            user_id: userId,
             recipient_user_id: userId,
+            api_key: botKey,
             bot_api_key: botKey,
             bot_id: botId,
+            api_base_url: botBaseUrl,
             bot_api_base_url: botBaseUrl,
+            phone: testPhone,
             test_phone: testPhone,
             recipients: zaloRecipients
-        });
+        };
+
+        const result = await ReportAPI.sendZalo(payload);
 
         if (feedbackEl) {
             if (result.success) {
@@ -529,6 +615,12 @@ async function loadAdjustSettings() {
             const aTime = document.getElementById('ruleAfternoonTime');
             if (aTime) aTime.value = notificationSettings.scan_time_afternoon || '12:45';
 
+            updateScheduleTabTimes(
+                notificationSettings.scan_time_morning,
+                notificationSettings.scan_time_afternoon,
+                notificationSettings.auto_scan_enabled
+            );
+
             const emSubj = document.getElementById('emailSubjectInput');
             if (emSubj) emSubj.value = notificationSettings.email_subject_template || '';
 
@@ -536,6 +628,36 @@ async function loadAdjustSettings() {
         }
     } catch (err) {
         console.warn('Lỗi nạp cấu hình điều chỉnh thông báo:', err);
+    }
+}
+
+function updateScheduleTabTimes(morningTime, afternoonTime, isEnabled = true) {
+    const elMorning = document.getElementById('scheduleCardMorningTime');
+    const elAfternoon = document.getElementById('scheduleCardAfternoonTime');
+    const badgeM = document.getElementById('badgeMorningTime');
+    const badgeA = document.getElementById('badgeAfternoonTime');
+    const statusBadge = document.getElementById('scheduleStatusBadge');
+    const engineBadge = document.getElementById('badgeEngineStatus');
+
+    if (elMorning && morningTime) elMorning.textContent = `Ca Quét 1: ${morningTime} Sáng`;
+    if (elAfternoon && afternoonTime) elAfternoon.textContent = `Ca Quét 2: ${afternoonTime} Trưa`;
+    if (badgeM && morningTime) badgeM.textContent = morningTime;
+    if (badgeA && afternoonTime) badgeA.textContent = afternoonTime;
+
+    if (statusBadge) {
+        statusBadge.style.background = isEnabled ? '#dcfce7' : '#f1f5f9';
+        statusBadge.style.color = isEnabled ? '#15803d' : '#64748b';
+        statusBadge.innerHTML = isEnabled 
+            ? '<i class="fa-solid fa-circle-check"></i> Đang Kích Hoạt' 
+            : '<i class="fa-solid fa-circle-pause"></i> Đã Tạm Dừng';
+    }
+
+    if (engineBadge) {
+        engineBadge.style.background = isEnabled ? '#dcfce7' : '#f1f5f9';
+        engineBadge.style.color = isEnabled ? '#15803d' : '#64748b';
+        engineBadge.innerHTML = isEnabled 
+            ? '<i class="fa-solid fa-circle-check"></i> Đang Kích Hoạt' 
+            : '<i class="fa-solid fa-circle-pause"></i> Đã Tạm Dừng';
     }
 }
 
@@ -708,6 +830,7 @@ async function handleSaveAdjustSettings() {
 
     try {
         const res = await ReportAPI.saveNotificationSettings(payload);
+        updateScheduleTabTimes(payload.scan_time_morning, payload.scan_time_afternoon);
         showToast(res.message || 'Đã lưu cấu hình điều chỉnh thành công!', 'success');
         if (feedback) {
             feedback.style.color = '#059669';
@@ -742,4 +865,134 @@ function handleResetDefaultTemplates() {
     }
     syncEditorWithActiveTemplate();
     showToast('Đã khôi phục các mẫu tin nhắn mặc định!', 'info');
+}
+
+// ===================== SCHEDULE CONTROLS =====================
+function initScheduleControls() {
+    const btnSave = document.getElementById('btnSaveScheduleConfig');
+    if (btnSave) {
+        btnSave.addEventListener('click', handleSaveScheduleConfig);
+    }
+
+    const btnReset = document.getElementById('btnResetScheduleTimes');
+    if (btnReset) {
+        btnReset.addEventListener('click', handleResetScheduleTimes);
+    }
+
+    const btnToggle = document.getElementById('btnToggleEditSchedule');
+    if (btnToggle) {
+        btnToggle.addEventListener('click', () => {
+            const panel = document.getElementById('scheduleEditPanel');
+            const morningInput = document.getElementById('ruleMorningTime');
+            if (panel) {
+                panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                panel.style.boxShadow = '0 0 0 3px rgba(2, 132, 199, 0.35)';
+                setTimeout(() => {
+                    panel.style.boxShadow = '';
+                    if (morningInput) morningInput.focus();
+                }, 700);
+            }
+        });
+    }
+
+    // Live update badges
+    const mInput = document.getElementById('ruleMorningTime');
+    if (mInput) {
+        mInput.addEventListener('input', () => {
+            const b = document.getElementById('badgeMorningTime');
+            if (b && mInput.value) b.textContent = mInput.value;
+            notificationSettings.scan_time_morning = mInput.value;
+        });
+    }
+
+    const aInput = document.getElementById('ruleAfternoonTime');
+    if (aInput) {
+        aInput.addEventListener('input', () => {
+            const b = document.getElementById('badgeAfternoonTime');
+            if (b && aInput.value) b.textContent = aInput.value;
+            notificationSettings.scan_time_afternoon = aInput.value;
+        });
+    }
+
+    const autoSwitch = document.getElementById('ruleAutoScanActive');
+    if (autoSwitch) {
+        autoSwitch.addEventListener('change', () => {
+            const isEnabled = autoSwitch.checked;
+            notificationSettings.auto_scan_enabled = isEnabled;
+            updateScheduleTabTimes(
+                document.getElementById('ruleMorningTime')?.value || '06:45',
+                document.getElementById('ruleAfternoonTime')?.value || '12:45',
+                isEnabled
+            );
+        });
+    }
+}
+
+async function handleSaveScheduleConfig() {
+    const btnSave = document.getElementById('btnSaveScheduleConfig');
+    const feedback = document.getElementById('scheduleFeedbackMsg');
+    const morningTime = document.getElementById('ruleMorningTime')?.value || '06:45';
+    const afternoonTime = document.getElementById('ruleAfternoonTime')?.value || '12:45';
+    const autoScanActive = document.getElementById('ruleAutoScanActive')?.checked ?? true;
+
+    if (btnSave) {
+        btnSave.disabled = true;
+        btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu lịch trình...';
+    }
+
+    const payload = {
+        enable_zalo: notificationSettings.enable_zalo,
+        enable_email: notificationSettings.enable_email,
+        send_condition: notificationSettings.send_condition,
+        alert_threshold_percent: notificationSettings.alert_threshold_percent,
+        alert_class_absent_count: notificationSettings.alert_class_absent_count,
+        scan_time_morning: morningTime,
+        scan_time_afternoon: afternoonTime,
+        auto_scan_enabled: autoScanActive,
+        zalo_school_template: notificationSettings.zalo_school_template,
+        zalo_class_template: notificationSettings.zalo_class_template,
+        email_subject_template: notificationSettings.email_subject_template,
+        email_body_template: notificationSettings.email_body_template
+    };
+
+    try {
+        const res = await ReportAPI.saveNotificationSettings(payload);
+        notificationSettings.scan_time_morning = morningTime;
+        notificationSettings.scan_time_afternoon = afternoonTime;
+        notificationSettings.auto_scan_enabled = autoScanActive;
+
+        updateScheduleTabTimes(morningTime, afternoonTime, autoScanActive);
+        showToast(res.message || 'Đã lưu cài đặt lịch trình quét thành công!', 'success');
+        if (feedback) {
+            feedback.style.display = 'block';
+            feedback.className = 'zalo-feedback zalo-feedback--success';
+            feedback.innerHTML = '<i class="fa-solid fa-circle-check"></i> Đã cập nhật giờ quét và đồng bộ vào bộ lập lịch APScheduler thành công!';
+            setTimeout(() => { feedback.style.display = 'none'; }, 4000);
+        }
+    } catch (err) {
+        const msg = err.message || err;
+        showToast('Lỗi lưu lịch trình: ' + msg, 'danger');
+        if (feedback) {
+            feedback.style.display = 'block';
+            feedback.className = 'zalo-feedback zalo-feedback--error';
+            feedback.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Lỗi: ${msg}`;
+        }
+    } finally {
+        if (btnSave) {
+            btnSave.disabled = false;
+            btnSave.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Lưu Cài Đặt Lịch Trình';
+        }
+    }
+}
+
+function handleResetScheduleTimes() {
+    const mInput = document.getElementById('ruleMorningTime');
+    const aInput = document.getElementById('ruleAfternoonTime');
+    const autoSwitch = document.getElementById('ruleAutoScanActive');
+    if (mInput) mInput.value = '06:45';
+    if (aInput) aInput.value = '12:45';
+    if (autoSwitch) autoSwitch.checked = true;
+
+    updateScheduleTabTimes('06:45', '12:45', true);
+    showToast('Đã khôi phục giờ quét mặc định: 06:45 & 12:45 (Vui lòng bấm Lưu Cài Đặt để áp dụng)', 'info');
 }

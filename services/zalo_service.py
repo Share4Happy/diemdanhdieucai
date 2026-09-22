@@ -473,14 +473,15 @@ class ZaloNotificationService:
 
     def send_test_message(
         self,
-        target_type: str = "WEBHOOK",
+        target_type: Optional[str] = None,
         webhook_url: Optional[str] = None,
         access_token: Optional[str] = None,
         user_id: Optional[str] = None,
         phone: Optional[str] = None,
         bot_id: Optional[str] = None,
         api_key: Optional[str] = None,
-        api_base_url: Optional[str] = None
+        api_base_url: Optional[str] = None,
+        recipients: Optional[list] = None
     ) -> Dict[str, Any]:
         """Gửi tin nhắn thử nghiệm để kiểm tra thông kết nối Zalo."""
         test_msg = (
@@ -489,14 +490,36 @@ class ZaloNotificationService:
             "Hệ thống sẽ tự động gửi báo cáo sĩ số theo từng vai trò vào 06:48 mỗi sáng."
         )
 
-        if target_type.upper() == "BOT_API":
+        resolved_type = (target_type or settings.ZALO_NOTIFICATION_TYPE or "BOT_API").upper()
+
+        if resolved_type == "BOT_API":
+            target_recipients = None
             if phone:
-                recipients = [{"phone": phone}]
+                target_recipients = [{"phone": phone}]
+            elif recipients:
+                target_recipients = [
+                    {"phone": str(r.get("phone", "")).strip() if isinstance(r, dict) else str(r).strip()}
+                    for r in recipients
+                    if (str(r.get("phone", "")).strip() if isinstance(r, dict) else str(r).strip())
+                ]
             else:
                 groups = self._get_recipient_groups()
-                recipients = [{"phone": p} for phones in groups.values() for p in phones] or None
-            return self.send_via_bot_api(test_msg, recipients=recipients, api_base_url=api_base_url, bot_id=bot_id, api_key=api_key)
-        elif target_type.upper() == "OA_API":
+                target_recipients = [{"phone": p} for phones in groups.values() for p in phones] or None
+
+            if not target_recipients:
+                return {
+                    "success": False,
+                    "message": "Vui lòng nhập SĐT nhận tin thử nghiệm (hoặc thêm SĐT Ban Giám Hiệu vào danh sách người nhận) trước khi gửi!"
+                }
+
+            return self.send_via_bot_api(
+                test_msg,
+                recipients=target_recipients,
+                api_base_url=api_base_url,
+                bot_id=bot_id,
+                api_key=api_key
+            )
+        elif resolved_type == "OA_API":
             return self.send_via_oa_api(test_msg, access_token=access_token, recipient_user_id=user_id)
         else:
             return self.send_via_webhook(test_msg, webhook_url=webhook_url)

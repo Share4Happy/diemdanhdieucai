@@ -8,7 +8,7 @@
 
     <!-- Design System & Components -->
     <link rel="stylesheet" href="css/design-system.css">
-    <link rel="stylesheet" href="css/layout/app-shell.css?v=2.4">
+    <link rel="stylesheet" href="css/layout/app-shell.css?v=2.5">
     <link rel="stylesheet" href="css/components/buttons-redesign.css">
     <link rel="stylesheet" href="css/components/badges-redesign.css">
     <link rel="stylesheet" href="css/components/cards-redesign.css">
@@ -95,7 +95,7 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.15);
         }
         .switch-ui input:checked + .slider-round {
-            background: linear-gradient(135deg, #0284c7, #0369a1);
+            background: var(--primary, #2563eb);
         }
         .switch-ui input:checked + .slider-round:before {
             transform: translateX(22px);
@@ -110,9 +110,9 @@
             display: inline-flex;
             align-items: center;
             gap: 4px;
-            background: #f1f5f9;
-            color: #0369a1;
-            border: 1px dashed #93c5fd;
+            background: #f8fafc;
+            color: var(--primary, #2563eb);
+            border: 1px dashed #bfdbfe;
             border-radius: 6px;
             padding: 4px 9px;
             font-size: 0.76rem;
@@ -122,8 +122,8 @@
             transition: all 0.2s;
         }
         .token-pill:hover {
-            background: #e0f2fe;
-            border-color: #0284c7;
+            background: #eff6ff;
+            border-color: var(--primary, #2563eb);
             transform: translateY(-1px);
         }
         .template-selector-tabs {
@@ -146,9 +146,9 @@
             transition: all 0.2s;
         }
         .tpl-btn.active {
-            background: #e0f2fe;
-            color: #0284c7;
-            border-color: #bae6fd;
+            background: #eff6ff;
+            color: var(--primary, #2563eb);
+            border-color: #bfdbfe;
         }
         .phone-mockup {
             background: #f8fafc;
@@ -269,7 +269,7 @@
                             <span class="sidebar-nav-text">Thông Báo</span>
                         </a>
                     </li>
-                    <li class="sidebar-nav-item nav-admin-only" hidden>
+                    <li class="sidebar-nav-item nav-admin-only">
                         <a href="users.html" class="sidebar-nav-link">
                             <span class="sidebar-nav-icon"><i class="fa-solid fa-user-gear"></i></span>
                             <span class="sidebar-nav-text">Tài Khoản</span>
@@ -324,8 +324,7 @@
                         <button id="btnRefreshNotifications" class="btn btn-secondary" type="button" title="Làm mới trạng thái">
                             <i class="fa-solid fa-rotate"></i> Làm Mới
                         </button>
-                        <button id="btnSendAllTest" class="btn btn-primary"
-                            style="background: linear-gradient(135deg, #0284c7, #0369a1); border: none; font-weight: 700;">
+                        <button id="btnSendAllTest" class="btn btn-primary">
                             <i class="fa-solid fa-paper-plane"></i> Gửi Thử Zalo & Email
                         </button>
                     </div>
@@ -354,7 +353,7 @@
                     <div class="report-section">
                         <div class="section-title">
                             <h3>Phân Phối Thông Báo Điểm Danh Qua Zalo (BGH & GVCN)</h3>
-                            <span id="zaloStatusBadge" class="status-pill" style="background: #e0f2fe; color: #0369a1;">
+                            <span id="zaloStatusBadge" class="status-pill" style="background: #eff6ff; color: var(--primary, #2563eb);">
                                 <i class="fa-solid fa-circle-check"></i> Đang hoạt động
                             </span>
                         </div>
@@ -494,12 +493,10 @@
                         </div>
 
                         <div class="zalo-actions">
-                            <button id="btnSendTestZalo" class="btn btn-primary"
-                                style="font-weight: 700; font-size: 0.95rem; padding: 12px 24px;">
+                            <button id="btnSendTestZalo" class="btn btn-primary">
                                 <i class="fa-solid fa-paper-plane"></i> Gửi Thử Tin Nhắn Qua Zalo
                             </button>
-                            <button id="btnSaveZaloConfig" class="btn btn-secondary"
-                                style="padding: 12px 22px; font-weight: 600;">
+                            <button id="btnSaveZaloConfig" class="btn btn-secondary">
                                 <i class="fa-solid fa-floppy-disk"></i> Lưu Cấu Hình
                             </button>
                         </div>
@@ -535,8 +532,11 @@
                         </div>
 
                         <div style="margin-top: 1.25rem; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                            <button id="btnSendTestEmail" class="btn btn-primary" style="font-weight: 700;">
+                            <button id="btnSendTestEmail" class="btn btn-primary">
                                 <i class="fa-solid fa-envelope"></i> Gửi Thử Email Báo Cáo Cho Hiệu Trưởng
+                            </button>
+                            <button id="btnSaveEmailConfig" class="btn btn-secondary">
+                                <i class="fa-solid fa-floppy-disk"></i> Lưu Email Người Nhận
                             </button>
                             <button id="btnOpenFolder" class="btn btn-secondary">
                                 <i class="fa-solid fa-folder-open"></i> Vị Trí Thư Mục Báo Cáo
@@ -550,7 +550,7 @@
                     <div class="report-section">
                         <div class="section-title">
                             <h3>Điều Chỉnh Quy Tắc & Tùy Biến Mẫu Thông Báo</h3>
-                            <span id="adjustStatusBadge" class="status-pill" style="background: #e0f2fe; color: #0369a1;">
+                            <span id="adjustStatusBadge" class="status-pill" style="background: #eff6ff; color: var(--primary, #2563eb);">
                                 <i class="fa-solid fa-sliders"></i> Đã đồng bộ cấu hình
                             </span>
                         </div>
@@ -616,40 +616,11 @@
                                     </div>
                                 </div>
 
-                                <!-- Group 2: Thời gian ca quét tự động -->
-                                <div class="zalo-panel" style="margin-bottom: var(--space-4);">
-                                    <div class="zalo-panel-header">
-                                        <span class="zalo-panel-title">
-                                            <i class="fa-solid fa-business-time"></i> 2. Thời Gian Ca Quét Điểm Danh
-                                        </span>
-                                    </div>
-                                    <div class="toggle-switch-row">
-                                        <div class="toggle-switch-info">
-                                            <span class="toggle-switch-title">Tự Động Kích Hoạt Theo Ca Học</span>
-                                            <span class="toggle-switch-desc">Tiến trình nền tự động chụp và gửi đúng giờ đã đặt</span>
-                                        </div>
-                                        <label class="switch-ui">
-                                            <input type="checkbox" id="ruleAutoScanActive" checked>
-                                            <span class="slider-round"></span>
-                                        </label>
-                                    </div>
-                                    <div class="form-grid" style="margin-top: 0.75rem;">
-                                        <div class="form-group">
-                                            <label><i class="fa-solid fa-sun" style="color: #f59e0b;"></i> Ca Sáng (Đầu Giờ):</label>
-                                            <input type="time" id="ruleMorningTime" class="form-control" value="06:45">
-                                        </div>
-                                        <div class="form-group">
-                                            <label><i class="fa-solid fa-cloud-sun" style="color: #3b82f6;"></i> Ca Chiều (Đầu Giờ):</label>
-                                            <input type="time" id="ruleAfternoonTime" class="form-control" value="12:45">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Group 3: Soạn thảo mẫu tin nhắn -->
+                                <!-- Group 2: Soạn thảo mẫu tin nhắn -->
                                 <div class="zalo-panel">
                                     <div class="zalo-panel-header">
                                         <span class="zalo-panel-title">
-                                            <i class="fa-solid fa-pen-to-square"></i> 3. Mẫu Nội Dung Thông Báo
+                                            <i class="fa-solid fa-pen-to-square"></i> 2. Mẫu Nội Dung Thông Báo
                                         </span>
                                     </div>
 
@@ -699,7 +670,7 @@
 
                                     <!-- Action Buttons inside Panel -->
                                     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 1rem;">
-                                        <button type="button" id="btnSaveNotificationAdjust" class="btn btn-primary" style="font-weight: 700;">
+                                        <button type="button" id="btnSaveNotificationAdjust" class="btn btn-primary">
                                             <i class="fa-solid fa-floppy-disk"></i> Lưu Cấu Hình Điều Chỉnh
                                         </button>
                                         <button type="button" id="btnResetDefaultTemplates" class="btn btn-secondary" title="Khôi phục các mẫu gốc ban đầu">
@@ -759,60 +730,117 @@
                 <div id="tab-schedule" class="tab-content">
                     <div class="report-section">
                         <div class="section-title">
-                            <h3>Lịch Trình Quét & Phân Phối Tự Động</h3>
-                            <span class="status-pill" style="background: #dcfce7; color: #15803d;">
-                                <i class="fa-solid fa-circle-check"></i> Đang Kích Hoạt
-                            </span>
+                            <div>
+                                <h3>Lịch Trình Quét & Phân Phối Tự Động</h3>
+                                <p class="section-desc" style="margin: 4px 0 0 0;">
+                                    Tiến trình nền APScheduler tự động quét 30 luồng camera và phân phối báo cáo theo thời gian thực.
+                                </p>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <span id="scheduleStatusBadge" class="status-pill" style="background: #dcfce7; color: #15803d;">
+                                    <i class="fa-solid fa-circle-check"></i> Đang Kích Hoạt
+                                </span>
+                                <button id="btnToggleEditSchedule" class="btn btn-secondary" type="button" style="font-weight: 600;">
+                                    <i class="fa-solid fa-sliders"></i> Chỉnh Sửa Giờ Quét
+                                </button>
+                            </div>
                         </div>
-                        <p class="section-desc">
-                            Tiến trình nền Background Task theo dõi lịch học của trường THPT Điều Cải và kích hoạt các tác vụ theo thời gian thực.
-                        </p>
 
+                        <!-- 3 Stat Cards Overview -->
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-4); margin-top: var(--space-4);">
                             <div class="stat-card" style="background: var(--surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: var(--space-4);">
-                                <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3);">
-                                    <div style="width: 44px; height: 44px; border-radius: var(--radius); background: rgba(37, 99, 235, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
-                                        <i class="fa-solid fa-camera"></i>
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                                    <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(245, 158, 11, 0.12); color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                                        <i class="fa-solid fa-sun"></i>
                                     </div>
-                                    <div>
-                                        <div style="font-weight: 700; font-size: 1rem;">Ca Quét 1: 06:45 Sáng</div>
-                                        <div style="font-size: 0.82rem; color: var(--text-muted);">Đầu giờ học buổi sáng</div>
-                                    </div>
+                                    <span id="badgeMorningTime" class="badge" style="font-size: 1.15rem; font-weight: 700; padding: 5px 14px; font-family: monospace; background: #fef3c7; color: #b45309; border-radius: 8px;">06:45</span>
                                 </div>
-                                <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
-                                    Tự động chụp 30 luồng camera, phát hiện khuôn mặt & gửi Zalo / Email lúc 06:48.
+                                <div style="font-weight: 700; font-size: 1.05rem; color: var(--text-primary);">Ca Quét 1: Đầu Giờ Sáng</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">Thứ 2 đến Thứ 7 hàng tuần</div>
+                                <p style="font-size: 0.84rem; color: var(--text-secondary); margin: 0; line-height: 1.45;">
+                                    Tự động chụp 30 luồng camera, phát hiện khuôn mặt & gửi Zalo / Email tới BGH và GVCN.
                                 </p>
                             </div>
 
                             <div class="stat-card" style="background: var(--surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: var(--space-4);">
-                                <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3);">
-                                    <div style="width: 44px; height: 44px; border-radius: var(--radius); background: rgba(16, 185, 129, 0.1); color: var(--success); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
-                                        <i class="fa-solid fa-camera"></i>
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                                    <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(37, 99, 235, 0.1); color: var(--primary, #2563eb); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                                        <i class="fa-solid fa-cloud-sun"></i>
                                     </div>
-                                    <div>
-                                        <div style="font-weight: 700; font-size: 1rem;">Ca Quét 2: 12:45 Trưa</div>
-                                        <div style="font-size: 0.82rem; color: var(--text-muted);">Đầu giờ học buổi chiều</div>
-                                    </div>
+                                    <span id="badgeAfternoonTime" class="badge" style="font-size: 1.15rem; font-weight: 700; padding: 5px 14px; font-family: monospace; background: #eff6ff; color: var(--primary, #2563eb); border-radius: 8px;">12:45</span>
                                 </div>
-                                <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
-                                    Tự động chụp và phân tích đối chứng sĩ số các lớp học chiều, lưu trữ vào CSDL.
+                                <div style="font-weight: 700; font-size: 1.05rem; color: var(--text-primary);">Ca Quét 2: Đầu Giờ Chiều</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">Thứ 2 đến Thứ 7 hàng tuần</div>
+                                <p style="font-size: 0.84rem; color: var(--text-secondary); margin: 0; line-height: 1.45;">
+                                    Tự động chụp và phân tích đối chứng sĩ số các lớp học ca chiều, lưu trữ dữ liệu vào CSDL.
                                 </p>
                             </div>
 
                             <div class="stat-card" style="background: var(--surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: var(--space-4);">
-                                <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3);">
-                                    <div style="width: 44px; height: 44px; border-radius: var(--radius); background: rgba(245, 158, 11, 0.1); color: var(--warning); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
-                                        <i class="fa-solid fa-bell"></i>
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                                    <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(16, 185, 129, 0.12); color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                                        <i class="fa-solid fa-bolt"></i>
                                     </div>
-                                    <div>
-                                        <div style="font-weight: 700; font-size: 1rem;">Cảnh Báo Bất Thường</div>
-                                        <div style="font-size: 0.82rem; color: var(--text-muted);">Theo thời gian thực</div>
-                                    </div>
+                                    <span id="badgeEngineStatus" class="badge" style="font-size: 0.85rem; font-weight: 700; padding: 5px 12px; background: #dcfce7; color: #15803d; border-radius: 8px;">
+                                        <i class="fa-solid fa-circle-check"></i> Đang Kích Hoạt
+                                    </span>
                                 </div>
-                                <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
-                                    Cảnh báo tức thì nếu phát hiện lớp học có sĩ số vắng vượt quá 20% so với sĩ số chuẩn.
+                                <div style="font-weight: 700; font-size: 1.05rem; color: var(--text-primary);">Tiến Trình Chạy Ngầm</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">APScheduler Background Worker</div>
+                                <p style="font-size: 0.84rem; color: var(--text-secondary); margin: 0; line-height: 1.45;">
+                                    Theo dõi thời gian máy chủ và tự động phát cảnh báo nếu sĩ số vắng vượt ngưỡng cảnh báo đỏ.
                                 </p>
                             </div>
+                        </div>
+
+                        <!-- Cấu Hình Điều Chỉnh Thời Gian Ca Học (Chuyển từ Tab Điều Chỉnh qua) -->
+                        <div id="scheduleEditPanel" class="zalo-panel" style="margin-top: 1.5rem; transition: all 0.3s ease;">
+                            <div class="zalo-panel-header" style="display: flex; align-items: center; justify-content: space-between;">
+                                <span class="zalo-panel-title">
+                                    <i class="fa-solid fa-sliders"></i> Cấu Hình Giờ Quét & Bật/Tắt Lịch Trình Tự Động
+                                </span>
+                                <span class="badge badge-success">Đồng Bộ APScheduler</span>
+                            </div>
+
+                            <!-- Switch Bật / Tắt Lịch Trình -->
+                            <div class="toggle-switch-row" style="margin-bottom: 1rem;">
+                                <div class="toggle-switch-info">
+                                    <span class="toggle-switch-title">Tự Động Kích Hoạt Theo Ca Học</span>
+                                    <span class="toggle-switch-desc">Tiến trình nền tự động quét camera và gửi báo cáo đúng giờ đã đặt</span>
+                                </div>
+                                <label class="switch-ui">
+                                    <input type="checkbox" id="ruleAutoScanActive" checked>
+                                    <span class="slider-round"></span>
+                                </label>
+                            </div>
+
+                            <!-- Form Grid Giờ Quét -->
+                            <div class="form-grid" style="margin-top: 0.75rem;">
+                                <div class="form-group">
+                                    <label><i class="fa-solid fa-sun" style="color: #f59e0b;"></i> Ca Sáng (Đầu Giờ Học):</label>
+                                    <input type="time" id="ruleMorningTime" class="form-control" value="06:45"
+                                        style="font-size: 1.05rem; font-weight: 600; padding: 10px 14px;">
+                                    <span class="form-hint">Thời điểm quét và gửi thông báo buổi sáng (Mặc định: 06:45)</span>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fa-solid fa-cloud-sun" style="color: #3b82f6;"></i> Ca Chiều (Đầu Giờ Học):</label>
+                                    <input type="time" id="ruleAfternoonTime" class="form-control" value="12:45"
+                                        style="font-size: 1.05rem; font-weight: 600; padding: 10px 14px;">
+                                    <span class="form-hint">Thời điểm quét và gửi thông báo buổi chiều (Mặc định: 12:45)</span>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 1.25rem;">
+                                <button type="button" id="btnSaveScheduleConfig" class="btn btn-primary">
+                                    <i class="fa-solid fa-floppy-disk"></i> Lưu Cài Đặt Lịch Trình
+                                </button>
+                                <button type="button" id="btnResetScheduleTimes" class="btn btn-secondary"
+                                    title="Khôi phục giờ quét mặc định 06:45 và 12:45">
+                                    <i class="fa-solid fa-rotate-left"></i> Khôi Phục Giờ Chuẩn (06:45 & 12:45)
+                                </button>
+                            </div>
+                            <div id="scheduleFeedbackMsg" class="zalo-feedback" style="margin-top: 0.75rem;"></div>
                         </div>
                     </div>
                 </div>
@@ -821,8 +849,8 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="js/shared/auth-guard.js"></script>
-    <script src="js/shared/app-shell.js"></script>
+    <script type="module" src="js/shared/auth-guard.js?v=2.0"></script>
+    <script src="js/shared/app-shell.js?v=2.2"></script>
     <script src="js/shared/header-actions.js?v=2.2"></script>
     <script type="module" src="js/notifications.js?v=1.0"></script>
 </body>
