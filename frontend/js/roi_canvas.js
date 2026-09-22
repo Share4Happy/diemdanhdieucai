@@ -13,7 +13,7 @@ class ROICanvasEditor {
         this.ctx = this.canvas.getContext('2d');
         this.container = this.canvas.parentElement;
         this.currentClassId = 1;
-        this.currentMode = 'red'; // 'red' hoặc 'green'
+        this.currentMode = 'green'; // 'green' (phần lấy) hoặc 'red' (phần bỏ đi)
 
         this.redZone = [];
         this.greenZone = [];
@@ -156,8 +156,8 @@ class ROICanvasEditor {
         const greenCount = this.greenZone.length;
 
         let statusHtml = `
-            <span><i class="fa-solid fa-draw-polygon" style="color: #dc2626;"></i> Red Zone: <strong>${redCount} điểm</strong></span>
-            <span><i class="fa-solid fa-shield-halved" style="color: #059669;"></i> Green Zone: <strong>${greenCount} điểm</strong></span>
+            <span><i class="fa-solid fa-shield-halved" style="color: #059669;"></i> Green Zone: <strong>${greenCount} điểm</strong> (Phần lấy)</span>
+            <span><i class="fa-solid fa-ban" style="color: #dc2626;"></i> Red Zone: <strong>${redCount} điểm</strong> (Phần bỏ đi)</span>
         `;
 
         if (aiResult && aiResult.present_count !== undefined) {
@@ -580,11 +580,11 @@ class ROICanvasEditor {
             ctx.textAlign = 'left';
         }
 
-        // 1. Vẽ Red Zone (Bàn học)
-        this.drawPolygon(this.redZone, 'rgba(239, 68, 68, 0.35)', '#dc2626', 'RED ZONE (BÀN HỌC)', 'red');
+        // 1. Vẽ Green Zone (Phần LẤY - Bàn học)
+        this.drawPolygon(this.greenZone, 'rgba(16, 185, 129, 0.35)', '#059669', 'GREEN ZONE (PHẦN LẤY - BÀN HỌC)', 'green');
 
-        // 2. Vẽ Green Zone (Bục giảng)
-        this.drawPolygon(this.greenZone, 'rgba(16, 185, 129, 0.35)', '#059669', 'GREEN ZONE (BỤC GIẢNG - LOẠI TRỪ)', 'green');
+        // 2. Vẽ Red Zone (Phần BỎ ĐI - Bục giảng / Loại trừ)
+        this.drawPolygon(this.redZone, 'rgba(239, 68, 68, 0.35)', '#dc2626', 'RED ZONE (PHẦN BỎ ĐI - BỤC GIẢNG)', 'red');
     }
 
     drawPolygon(points, fillColor, strokeColor, label, zoneType) {

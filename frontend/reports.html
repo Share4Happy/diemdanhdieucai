@@ -353,7 +353,7 @@
         <div class="modal-content" style="max-width: 900px;">
             <div class="modal-header">
                 <h3 id="imgModalTitle">Đối Chứng Ảnh Điểm Danh</h3>
-                <button class="modal-close" id="imgModalCloseBtn">&times;</button>
+                <button type="button" class="modal-close modal-close-btn" id="imgModalCloseBtn" onclick="closeImgModal()" aria-label="Đóng">&times;</button>
             </div>
             <div class="modal-body" style="text-align: center;">
                 <img id="imgModalSrc" src="" style="max-width: 100%; border-radius: 8px; box-shadow: var(--shadow-md);">
@@ -370,7 +370,7 @@
     <script src="js/shared/header-actions.js?v=2.2"></script>
 
     <!-- Page Script -->
-    <script type="module" src="js/reports.js?v=3.2"></script>
+    <script type="module" src="js/reports.js?v=3.3"></script>
 </body>
 
 </html>

@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadExcelFiles();
     loadDatabaseInfo();
     initTabsNavigation();
+    initImgModalEvents();
 
     // Export Excel immediately
     const btnExport = document.getElementById('btnExportExcelNow');
@@ -248,5 +249,38 @@ export function showImgModal(src, title) {
     document.getElementById('imgModal')?.classList.add('active');
 }
 
+export function closeImgModal() {
+    const modal = document.getElementById('imgModal');
+    if (modal) {
+        modal.classList.remove('active');
+        const srcEl = document.getElementById('imgModalSrc');
+        if (srcEl) srcEl.src = '';
+    }
+}
+
+export function initImgModalEvents() {
+    const modal = document.getElementById('imgModal');
+    const closeBtn = document.getElementById('imgModalCloseBtn');
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeImgModal);
+    }
+
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeImgModal();
+            }
+        });
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal && modal.classList.contains('active')) {
+            closeImgModal();
+        }
+    });
+}
+
 window.showImgModal = showImgModal;
+window.closeImgModal = closeImgModal;
 window.initTabsNavigation = initTabsNavigation;

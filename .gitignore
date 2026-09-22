@@ -42,6 +42,7 @@ logs/*.log
 
 # Scratch / Temp
 scratch/
+clone_phat/
 
 # OS specific
 .DS_Store

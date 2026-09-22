@@ -87,8 +87,18 @@ export const CameraAPI = {
     update: (id, data) => fetchAPI(`/api/cameras/${id}`, { method: 'PUT', body: data }),
     delete: (id) => fetchAPI(`/api/cameras/${id}`, { method: 'DELETE' }),
     getWebcams: (refresh = false) => fetchAPI(`/api/cameras/available-webcams?refresh=${refresh}`),
-    getAvailableWebcams: (refresh = false) => fetchAPI(`/api/cameras/available-webcams?refresh=${refresh}`),
-    testConnection: (sourceUrl) => fetchAPI('/api/cameras/test-connection', { method: 'POST', body: { source_url: sourceUrl } }),
+    testConnection: (sourceUrl, triggerSignal = false, relayIp = "") => fetchAPI('/api/cameras/test-connection', {
+        method: 'POST',
+        body: { source_url: sourceUrl, trigger_signal: triggerSignal, relay_ip: relayIp }
+    }),
+    testIRByUrl: (sourceUrl, relayIp = "") => fetchAPI('/api/cameras/test-ir-by-url', {
+        method: 'POST',
+        body: { source_url: sourceUrl, relay_ip: relayIp }
+    }),
+    testClassroomIR: (classroomId, durationSeconds = 4, mode = "IR_ON") => fetchAPI(`/api/cameras/${classroomId}/test-ir`, {
+        method: 'POST',
+        body: { duration_seconds: durationSeconds, mode: mode }
+    }),
     resetDefaults: () => fetchAPI('/api/cameras/reset-defaults', { method: 'POST' }),
     probeNVR: (data) => fetchAPI('/api/cameras/nvr/probe', { method: 'POST', body: data }),
     batchImportNVR: (data) => fetchAPI('/api/cameras/nvr/batch-import', { method: 'POST', body: data }),

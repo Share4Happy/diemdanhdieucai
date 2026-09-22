@@ -141,13 +141,13 @@
                     <!-- Thanh Công Cụ Vẽ -->
                     <div class="tool-controls">
                         <div class="tool-actions-left">
-                            <button type="button" id="btnModeRed" class="btn-mode-red active"
-                                title="Kích hoạt chế độ vẽ vùng bàn học sinh (AI sẽ đếm người bên trong vùng này)">
-                                <i class="fa-solid fa-vector-square"></i> Vẽ Red Zone (Bàn Học Sinh)
+                            <button type="button" id="btnModeGreen" class="btn-mode-green active"
+                                title="Kích hoạt chế độ vẽ vùng bàn học sinh (AI sẽ đếm người bên trong vùng này - Phần lấy)">
+                                <i class="fa-solid fa-vector-square"></i> Vẽ Green Zone (Phần Lấy - Bàn Học)
                             </button>
-                            <button type="button" id="btnModeGreen" class="btn-mode-green"
-                                title="Kích hoạt chế độ vẽ vùng bục giảng (AI sẽ bỏ qua giáo viên bên trong vùng này)">
-                                <i class="fa-solid fa-shield-halved"></i> Vẽ Green Zone (Bục Giảng - Loại Trừ)
+                            <button type="button" id="btnModeRed" class="btn-mode-red"
+                                title="Kích hoạt chế độ vẽ vùng bục giảng / loại trừ (AI sẽ bỏ qua bên trong vùng này - Phần bỏ đi)">
+                                <i class="fa-solid fa-ban"></i> Vẽ Red Zone (Phần Bỏ Đi - Bục Giảng)
                             </button>
                             <span class="tool-sep"></span>
                             <button type="button" id="btnFourCorners" title="Tạo nhanh 4 điểm sát đúng 4 góc biên ảnh">
@@ -162,11 +162,8 @@
                         </div>
 
                         <div class="zone-badges-right">
-                            <span class="zone-badge zone-red"><i class="fa-solid fa-circle"></i> Red Zone: AI đếm bên
-                                trong</span>
-                            <span class="zone-badge zone-green"><i class="fa-solid fa-circle"></i> Green Zone: Bỏ qua
-                                giáo
-                                viên</span>
+                            <span class="zone-badge zone-green"><i class="fa-solid fa-circle"></i> Green Zone: Phần lấy (AI đếm bên trong)</span>
+                            <span class="zone-badge zone-red"><i class="fa-solid fa-circle"></i> Red Zone: Phần bỏ đi (Bỏ qua / Loại trừ)</span>
                         </div>
                     </div>
 
@@ -182,12 +179,9 @@
 
                     <!-- Thanh trạng thái nạp vùng -->
                     <div class="save-status-bar" id="saveStatusBar">
-                        <span><i class="fa-solid fa-draw-polygon" style="color: #dc2626;"></i> Red Zone: <strong>Đang
-                                nạp...</strong></span>
-                        <span><i class="fa-solid fa-shield-halved" style="color: #059669;"></i> Green Zone: <strong>Đang
-                                nạp...</strong></span>
-                        <span style="color: #475569;"><i class="fa-solid fa-database"></i> Sẵn sàng ghi CSDL & Phân tích
-                            AI</span>
+                        <span><i class="fa-solid fa-shield-halved" style="color: #059669;"></i> Green Zone: <strong>Đang nạp...</strong> (Phần lấy)</span>
+                        <span><i class="fa-solid fa-ban" style="color: #dc2626;"></i> Red Zone: <strong>Đang nạp...</strong> (Phần bỏ đi)</span>
+                        <span style="color: #475569;"><i class="fa-solid fa-database"></i> Sẵn sàng ghi CSDL & Phân tích AI</span>
                     </div>
 
                     <!-- Hướng dẫn và hiển thị độ phân giải -->
@@ -212,8 +206,8 @@
     <script type="module" src="js/shared/auth-guard.js"></script>
     <script src="js/shared/app-shell.js"></script>
     <script src="js/shared/header-actions.js?v=2.2"></script>
-    <script src="js/roi_canvas.js?v=3.2"></script>
-    <script type="module" src="js/roi_config.js?v=3.2"></script>
+    <script src="js/roi_canvas.js?v=3.3"></script>
+    <script type="module" src="js/roi_config.js?v=3.3"></script>
 </body>
 
 </html>

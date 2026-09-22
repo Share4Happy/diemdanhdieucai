@@ -67,6 +67,12 @@ function initApp() {
     const btnTest = document.getElementById('btnTestStream');
     if (btnTest) btnTest.addEventListener('click', testCurrentInputSource);
 
+    const btnTestIR = document.getElementById('btnTestCameraIR');
+    if (btnTestIR) btnTestIR.addEventListener('click', testCameraIRNow);
+
+    const btnTestSignal = document.getElementById('btnTestSignalFlow');
+    if (btnTestSignal) btnTestSignal.addEventListener('click', testSignalFlowAndCapture);
+
     const btnWebcamBanner = document.getElementById('btnWebcamBanner');
     if (btnWebcamBanner) btnWebcamBanner.addEventListener('click', openModalWithWebcam);
 
@@ -377,11 +383,22 @@ export async function loadCameras() {
     try {
         const data = await CameraAPI.getAll();
         allCameras = data.cameras || [];
-        // Stats removed - Dashboard handles metrics
         renderMatrixWall();
     } catch (err) {
         console.error('Lỗi tải danh sách camera:', err);
-        showToast('Không thể tải danh sách camera', 'error');
+        showToast('Không thể tải danh sách camera: ' + (err.message || err), 'error');
+        if (container) {
+            container.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #ef4444;">
+                    <i class="fa-solid fa-triangle-exclamation" style="font-size: 2rem; margin-bottom: 0.75rem; display: block;"></i>
+                    <p style="margin-bottom: 1rem; font-weight: 600;">Không thể tải danh sách camera từ máy chủ</p>
+                    <button type="button" class="btn btn-secondary btn-sm" id="btnRetryLoad">
+                        <i class="fa-solid fa-rotate-right"></i> Thử lại
+                    </button>
+                </div>
+            `;
+            container.querySelector('#btnRetryLoad')?.addEventListener('click', loadCameras);
+        }
     }
 }
 
@@ -528,7 +545,100 @@ export async function testCurrentInputSource() {
     } finally {
         if (btn) {
             btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-play"></i> Kiểm Tra Kết Nối Ngay';
+            btn.innerHTML = '<i class="fa-solid fa-play"></i> Bắt Ảnh Xem Trước';
+        }
+    }
+}
+
+export async function testCameraIRNow() {
+    const url = document.getElementById('formRtspUrl')?.value.trim();
+    const relayIp = document.getElementById('formRelayIp')?.value.trim();
+    const camId = document.getElementById('formCamId')?.value;
+    const btn = document.getElementById('btnTestCameraIR');
+    const msg = document.getElementById('irStatusMsg');
+
+    if (!url && !camId) {
+        alert('Vui lòng chọn hoặc nhập nguồn Camera trước khi thử đèn!');
+        return;
+    }
+
+    const originalText = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang bật đèn...';
+    }
+    if (msg) msg.innerHTML = '<span style="color: #ef4444; font-weight: 700;"><i class="fa-solid fa-lightbulb"></i> Đang kích hoạt đèn hồng ngoại camera (sáng đỏ 4 giây)...</span>';
+
+    try {
+        let res;
+        if (camId) {
+            res = await CameraAPI.testClassroomIR(camId, 4, 'IR_ON');
+        } else {
+            res = await CameraAPI.testIRByUrl(url, relayIp);
+        }
+        
+        if (res && res.success) {
+            if (msg) {
+                msg.innerHTML = `<span style="color: #10b981; font-weight: 700;"><i class="fa-solid fa-circle-check"></i> ${res.message || 'Đèn hồng ngoại đã kích hoạt thành công (tự động tắt sau 4s)!'}</span>`;
+            }
+            showToast(res.message || 'Đã kích hoạt đèn hồng ngoại camera!', 'success');
+        } else {
+            const errMsg = (res && res.message) ? res.message : 'Không thể gửi lệnh điều khiển tới camera!';
+            if (msg) {
+                msg.innerHTML = `<span style="color: #ef4444; font-weight: 700;"><i class="fa-solid fa-triangle-exclamation"></i> ${errMsg}</span>`;
+            }
+            showToast(errMsg, 'warning');
+        }
+    } catch (err) {
+        if (msg) msg.innerHTML = `<span style="color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Lỗi: ${err.message || err}</span>`;
+        showToast('Không thể kích hoạt đèn camera: ' + (err.message || err), 'warning');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+}
+
+export async function testSignalFlowAndCapture() {
+    const url = document.getElementById('formRtspUrl')?.value.trim();
+    const relayIp = document.getElementById('formRelayIp')?.value.trim();
+    if (!url) {
+        alert('Vui lòng nhập Đường dẫn nguồn Camera trước khi test!');
+        return;
+    }
+
+    const btn = document.getElementById('btnTestSignalFlow');
+    const msg = document.getElementById('testStatusMsg');
+    const img = document.getElementById('testPreviewImg');
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang thử chu trình...';
+    }
+    if (msg) msg.innerHTML = '<span style="color: #0284c7; font-weight: 700;"><i class="fa-solid fa-lightbulb" style="color: #ef4444;"></i> Bước 1: Bật đèn hồng ngoại báo hiệu (2.5s) -> Bước 2: Chuyển sang ẢNH MÀU...</span>';
+    if (img) img.style.display = 'none';
+
+    try {
+        const data = await CameraAPI.testConnection(url, true, relayIp);
+        if (data.success) {
+            if (msg) msg.innerHTML = `<span style="color: #10b981; font-weight: 700;"><i class="fa-solid fa-circle-check"></i> Hoàn tất chu trình: Đèn hồng ngoại đã báo hiệu thành công và thu nhận ẢNH MÀU chuẩn 100%!</span>`;
+            if (data.preview_url && img) {
+                img.src = data.preview_url;
+                img.style.display = 'inline-block';
+            }
+            showToast('Chu trình hoàn tất: Thu nhận ảnh màu chuẩn', 'success');
+        } else {
+            if (msg) msg.innerHTML = `<span style="color: #ef4444; font-weight: 600;"><i class="fa-solid fa-circle-xmark"></i> ${data.message}</span>`;
+            showToast(data.message || 'Thử chu trình thất bại', 'error');
+        }
+    } catch (err) {
+        if (msg) msg.innerHTML = `<span style="color: #ef4444;">Lỗi: ${err.message || err}</span>`;
+        showToast('Lỗi thử chu trình: ' + (err.message || err), 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Thử Chu Trình: Bật Đèn Báo -> Bắt Ảnh Màu';
         }
     }
 }
@@ -767,14 +877,31 @@ export function renderMatrixWall() {
 
     if (!allCameras || allCameras.length === 0) {
         container.innerHTML = `
-            <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #94a3b8;">
-                <i class="fa-solid fa-video-slash" style="font-size: 2.5rem; margin-bottom: 10px; display: block; color: #475569;"></i>
-                Chưa có camera nào trong hệ thống. Hãy bấm <strong>"Thêm Đầu Ghi (30 Camera)"</strong> để đồng bộ tự động!
+            <div class="camera-empty-state" style="grid-column: 1 / -1; text-align: center; padding: 3.5rem 1.5rem; color: var(--text-muted, #64748b);">
+                <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(14, 165, 233, 0.08); color: var(--primary, #0284c7); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                    <i class="fa-solid fa-video-slash" style="font-size: 1.6rem;"></i>
+                </div>
+                <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary, #0f172a); margin: 0 0 0.5rem 0;">Chưa có camera nào trong hệ thống</h3>
+                <p style="font-size: 0.875rem; color: var(--text-muted, #64748b); max-width: 480px; margin: 0 auto 1.5rem auto; line-height: 1.5;">
+                    Hệ thống chưa ghi nhận camera nào. Bạn có thể thêm camera từ máy tính/Webcam, camera IP RTSP của từng lớp học hoặc quét tự động từ đầu ghi NVR.
+                </p>
+                <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-primary btn-sm" id="btnEmptyAddCam">
+                        <i class="fa-solid fa-plus"></i> Thêm Camera / Lớp
+                    </button>
+                    <button type="button" class="btn btn-success btn-sm" id="btnEmptyAddNvr">
+                        <i class="fa-solid fa-server"></i> Thêm Đầu Ghi (NVR)
+                    </button>
+                </div>
             </div>`;
+        const btnAdd = container.querySelector('#btnEmptyAddCam');
+        if (btnAdd) btnAdd.onclick = () => document.getElementById('btnAddCamera')?.click();
+        const btnNvr = container.querySelector('#btnEmptyAddNvr');
+        if (btnNvr) btnNvr.onclick = () => document.getElementById('btnAddNVR')?.click();
         return;
     }
 
-    const badge = document.getElementById('matrixOnlineBadge');
+    const badge = document.getElementById('matrixOnlineBadge') || document.getElementById('matrixStatus');
     if (badge) {
         const activeCams = allCameras.filter(c => c.is_active).length;
         badge.innerText = `${activeCams}/${allCameras.length} Camera Sẵn Sàng`;

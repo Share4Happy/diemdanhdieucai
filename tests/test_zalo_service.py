@@ -2,11 +2,14 @@ import json
 import pytest
 from services.zalo_service import zalo_service
 from database.db_session import init_db, SessionLocal
-from database.models import AttendanceSession, AttendanceDetail, Classroom
+from database.models import AttendanceSession, AttendanceDetail, Classroom, User
 from fastapi.testclient import TestClient
-from app import app
+from backend.main import app
 from config.settings import settings
 from config.zalo_runtime_store import RUNTIME_FILE
+from backend.api.deps import get_current_user
+
+app.dependency_overrides[get_current_user] = lambda: User(id=1, email="admin@truongdieucai.edu.vn", role="admin")
 
 client = TestClient(app)
 

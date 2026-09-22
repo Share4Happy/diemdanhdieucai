@@ -66,7 +66,7 @@ class Settings(BaseModel):
     JWT_SECRET: str = os.getenv("JWT_SECRET", "change-me-diemdanh-dieucai")
     JWT_EXPIRE_HOURS: int = int(os.getenv("JWT_EXPIRE_HOURS", "12"))
     ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "admin@truongdieucai.edu.vn")
-    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "")
+    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "Admin@2025")
     ADMIN_FULL_NAME: str = os.getenv("ADMIN_FULL_NAME", "Quản trị hệ thống")
     APP_PUBLIC_URL: str = os.getenv("APP_PUBLIC_URL", "http://localhost:8000")
     CORS_ORIGINS: str = os.getenv(

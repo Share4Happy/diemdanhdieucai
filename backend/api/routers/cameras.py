@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -8,12 +9,14 @@ from config.logging_config import logger
 from database.db_session import get_db, init_db
 from database.models import Classroom, ROIPolygon, AttendanceDetail, NVRDevice
 from core.rtsp_client import rtsp_client
+from core.relay_service import relay_service
 from services.nvr_service import nvr_service
 from backend.api.deps import get_current_user
 from backend.schemas.camera_schemas import (
     CameraCreateRequest,
     CameraUpdateRequest,
     TestCameraRequest,
+    TestCameraIRRequest,
     NVRProbeRequest,
     NVRBatchImportRequest
 )
@@ -77,8 +80,8 @@ async def create_camera(data: CameraCreateRequest, db: Session = Depends(get_db)
     db.flush()
 
     # Tạo vùng ROI mặc định cho camera mới (1920x1080)
-    default_red_zone = [[200, 300], [1720, 300], [1850, 1050], [80, 1050]]
-    default_green_zone = [[350, 80], [900, 80], [950, 280], [300, 280]]
+    default_green_zone = [[200, 300], [1720, 300], [1850, 1050], [80, 1050]]  # Phần LẤY (bàn học)
+    default_red_zone = [[350, 80], [900, 80], [950, 280], [300, 280]]          # Phần BỎ ĐI (bục giảng)
     roi = ROIPolygon(
         classroom_id=cls.id,
         red_zone_json=json.dumps(default_red_zone),
@@ -163,8 +166,56 @@ async def get_available_webcams_endpoint(refresh: bool = False):
 @router.post("/test-connection")
 async def test_camera_connection(req: TestCameraRequest):
     """Kiểm tra trực tiếp kết nối tới nguồn camera (RTSP, Webcam, File) và trả về snapshot preview."""
-    res = rtsp_client.test_camera_stream(req.source_url)
+    res = rtsp_client.test_camera_stream(
+        source_url=req.source_url,
+        trigger_signal=req.trigger_signal or False,
+        relay_ip=req.relay_ip or ""
+    )
     return res
+
+@router.post("/test-ir-by-url")
+async def test_ir_by_url_endpoint(req: TestCameraRequest):
+    """Thử nghiệm chu trình bật đèn hồng ngoại camera (2.5s) rồi trả về Auto trên URL nhập từ form."""
+    cam_info = {"rtsp_url": req.source_url, "relay_ip": req.relay_ip or "", "name": "TestURLCamera"}
+    ok_on = relay_service.set_camera_day_night(cam_info, "IR_ON")
+    import time
+    time.sleep(2.5)
+    ok_off = relay_service.set_camera_day_night(cam_info, "AUTO")
+    success = ok_on or ok_off
+    return {
+        "success": success,
+        "message": "Đã kích hoạt đèn hồng ngoại camera thành công qua giao thức ONVIF (Đèn sáng đỏ 2.5s rồi tự động tắt)." if success else "Không thể kết nối hoặc camera không phản hồi giao thức ONVIF/CGI. Vui lòng kiểm tra lại IP/mật khẩu camera."
+    }
+
+@router.post("/{classroom_id}/test-ir")
+async def test_classroom_camera_ir_endpoint(classroom_id: int, req: Optional[TestCameraIRRequest] = None, db: Session = Depends(get_db)):
+    """Thử nghiệm bật đèn hồng ngoại trên camera lớp học trong X giây rồi tự động tắt."""
+    cls = db.query(Classroom).filter(Classroom.id == classroom_id).first()
+    if not cls:
+        raise HTTPException(status_code=404, detail="Không tìm thấy camera/lớp học")
+    
+    duration = req.duration_seconds if req and req.duration_seconds else 4
+    mode = req.mode if req and req.mode else "IR_ON"
+
+    ok = relay_service.set_camera_day_night(cls, mode)
+    
+    if ok:
+        def _auto_restore():
+            import time
+            time.sleep(duration)
+            relay_service.set_camera_day_night(cls, "AUTO")
+        
+        import threading
+        threading.Thread(target=_auto_restore, daemon=True).start()
+    
+    mode_vn = "hồng ngoại" if mode == "IR_ON" else ("trợ sáng trắng" if mode == "WHITE_LIGHT_ON" else mode)
+    return {
+        "success": ok,
+        "message": f"Đã kích hoạt đèn {mode_vn} cho {cls.name} (Tự động tắt sau {duration} giây)." if ok else f"Không thể gửi lệnh điều khiển tới camera {cls.name}. Vui lòng kiểm tra IP và cổng kết nối camera.",
+        "classroom_id": classroom_id,
+        "duration_seconds": duration
+    }
+
 
 @router.post("/reset-defaults")
 async def reset_default_cameras(db: Session = Depends(get_db)):
@@ -173,7 +224,7 @@ async def reset_default_cameras(db: Session = Depends(get_db)):
     db.query(AttendanceDetail).delete()
     db.query(Classroom).delete()
     db.commit()
-    init_db()
+    init_db(force_seed_classes=True)
     return {"success": True, "message": "Đã khôi phục thành công danh sách 30 lớp học chuẩn của trường Điều Cải!"}
 
 # ==================== NVR / DVR SMART INTEGRATION ====================

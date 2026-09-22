@@ -249,15 +249,39 @@ class RTSPCameraClient:
 
         return False, None, "UNKNOWN", f"Định dạng nguồn camera không được nhận diện: {source_str}"
 
-    def test_camera_stream(self, source_url: str) -> dict:
+    def test_camera_stream(self, source_url: str, trigger_signal: bool = False, relay_ip: str = "") -> dict:
         """
         Kiểm tra kết nối và độ trễ tới nguồn camera.
+        Nếu trigger_signal=True: Kích hoạt đèn hồng ngoại camera báo hiệu -> Chuyển về ảnh màu -> Bắt khung hình.
         Trả về ảnh xem trước dạng base64 data URL để hiển thị ngay trên Web UI.
         """
         import base64
+        cam_info = {"rtsp_url": source_url, "relay_ip": relay_ip, "name": "PreviewCamera"}
+
+        # Kích hoạt chu trình báo hiệu hồng ngoại trước khi bắt hình nếu được yêu cầu
+        if trigger_signal:
+            try:
+                from core.relay_service import relay_service
+                logger.info("[CAMERA-SIGNAL]: Bật đèn hồng ngoại camera thử nghiệm (2.5s)...")
+                relay_service.set_camera_day_night(cam_info, "IR_ON")
+                time.sleep(2.5)
+                logger.info("[CAMERA-SIGNAL]: Chuyển về chế độ ảnh màu để bắt khung hình preview...")
+                relay_service.set_camera_day_night(cam_info, "COLOR")
+                time.sleep(0.8)
+            except Exception as e:
+                logger.debug(f"Không thể kích hoạt tín hiệu đèn camera: {e}")
+
         start_t = time.time()
         success, frame, source_type, err_msg = self._fetch_frame_from_source(source_url)
         elapsed_ms = int((time.time() - start_t) * 1000)
+
+        # Trả camera về chế độ tự động sau khi bắt hình
+        if trigger_signal:
+            try:
+                from core.relay_service import relay_service
+                relay_service.set_camera_day_night(cam_info, "AUTO")
+            except Exception:
+                pass
 
         if success and frame is not None:
             h, w = frame.shape[:2]
@@ -271,13 +295,14 @@ class RTSPCameraClient:
             b64_str = base64.b64encode(buffer).decode('utf-8')
             preview_url = f"data:image/jpeg;base64,{b64_str}"
 
+            signal_note = " (Đã kích hoạt đèn hồng ngoại báo hiệu)" if trigger_signal else ""
             return {
                 "success": True,
                 "latency_ms": elapsed_ms,
                 "resolution": f"{w}x{h}",
                 "source_type": source_type,
                 "preview_url": preview_url,
-                "message": f"Kết nối thành công tới nguồn {source_type} ({w}x{h}, độ trễ: {elapsed_ms}ms)"
+                "message": f"Kết nối thành công tới nguồn {source_type} ({w}x{h}, độ trễ: {elapsed_ms}ms){signal_note}"
             }
         else:
             return {
@@ -294,15 +319,29 @@ class RTSPCameraClient:
         classroom_id: int,
         classroom_name: str,
         rtsp_url: str,
-        target_folder: Path
+        target_folder: Path,
+        trigger_signal: bool = False,
+        relay_ip: str = ""
     ) -> Tuple[int, bool, str, Optional[np.ndarray]]:
         """
         Chụp một khung hình chất lượng cao từ Camera (RTSP, Webcam, Video file).
+        Nếu trigger_signal=True: Kích hoạt đèn hồng ngoại báo hiệu rồi chụp ảnh màu.
         Nếu camera mất kết nối hoặc đang chạy mock, tự động kích hoạt cơ chế dự phòng an toàn.
         """
         target_folder.mkdir(parents=True, exist_ok=True)
         file_name = f"Lop_{classroom_id}.jpg"
         file_path = target_folder / file_name
+
+        cam_info = {"id": classroom_id, "name": classroom_name, "rtsp_url": rtsp_url, "relay_ip": relay_ip}
+        if trigger_signal:
+            try:
+                from core.relay_service import relay_service
+                relay_service.set_camera_day_night(cam_info, "IR_ON")
+                time.sleep(2.5)
+                relay_service.set_camera_day_night(cam_info, "COLOR")
+                time.sleep(0.8)
+            except Exception as e:
+                logger.debug(f"Lỗi kích hoạt đèn khi chụp đơn lớp {classroom_name}: {e}")
 
         frame = None
         is_success = False

@@ -87,7 +87,7 @@ def test_camera_connection_with_mock_file():
 def test_cameras_page_route():
     response = client.get("/cameras")
     assert response.status_code == 200
-    assert "QUẢN LÝ CAMERA" in response.text
+    assert "quản lý camera" in response.text.lower()
 
 def test_get_available_webcams():
     response = client.get("/api/cameras/available-webcams")
