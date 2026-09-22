@@ -371,6 +371,11 @@ class RTSPCameraClient:
                         frame = f_candidate
 
             if frame is None:
+                default_sample = settings.BASE_DIR / "dataset" / "samples" / "classroom_sample.jpg"
+                if default_sample.exists():
+                    frame = cv2.imread(str(default_sample))
+
+            if frame is None:
                 extracted_frames = sorted(list((settings.BASE_DIR / "dataset" / "extracted_frames").glob("*.jpg")))
                 if extracted_frames:
                     sample_path = extracted_frames[(classroom_id - 1) % len(extracted_frames)]
