@@ -8,13 +8,15 @@
 .skeleton {
     background: linear-gradient(
         90deg,
-        var(--gray-200) 0%,
-        var(--gray-100) 50%,
-        var(--gray-200) 100%
+        #f1f5f9 0%,
+        #f8fafc 25%,
+        rgba(255, 255, 255, 0.85) 50%,
+        #f8fafc 75%,
+        #f1f5f9 100%
     );
     background-size: 200% 100%;
-    animation: skeleton-shimmer 1.5s ease-in-out infinite;
-    border-radius: var(--radius);
+    animation: skeleton-shimmer 1.8s ease-in-out infinite;
+    border-radius: var(--radius, 6px);
 }
 
 @keyframes skeleton-shimmer {
@@ -201,16 +203,9 @@
     }
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-    .skeleton {
-        background: linear-gradient(
-            90deg,
-            var(--gray-700) 0%,
-            var(--gray-600) 50%,
-            var(--gray-700) 100%
-        );
-    }
+/* Explicit Light Theme Shimmer Guarantee */
+.skeleton {
+    color: transparent !important;
 }
 
 /* Utility classes */
@@ -273,16 +268,16 @@
 .matrix-card.skeleton-matrix-card {
     pointer-events: none;
     cursor: default;
-    background: var(--surface, #ffffff);
-    border: 1px solid var(--border-color, #e2e8f0);
-    border-radius: var(--radius-md, 8px);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
     overflow: hidden;
 }
 
 .matrix-card.skeleton-matrix-card .matrix-card-screen {
     position: relative;
     aspect-ratio: 16/9;
-    background: var(--gray-200, #e2e8f0);
+    background: #f1f5f9;
     overflow: hidden;
 }
 
@@ -302,8 +297,22 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: var(--surface, #ffffff);
-    border-top: 1px solid var(--border-color, #e2e8f0);
+    background: #ffffff;
+    border-top: 1px solid #f1f5f9;
+}
+
+.matrix-card.skeleton-matrix-card .skeleton {
+    background: linear-gradient(
+        90deg,
+        #f1f5f9 0%,
+        #f8fafc 25%,
+        rgba(255, 255, 255, 0.9) 50%,
+        #f8fafc 75%,
+        #f1f5f9 100%
+    ) !important;
+    background-size: 200% 100% !important;
+    animation: skeleton-shimmer 1.8s ease-in-out infinite !important;
+    border: none !important;
 }
 
 /* Canvas loading overlay */

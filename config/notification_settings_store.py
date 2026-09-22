@@ -14,6 +14,9 @@ DEFAULT_SETTINGS: Dict[str, Any] = {
     "SCAN_TIME_MORNING": "06:45",
     "SCAN_TIME_AFTERNOON": "12:45",
     "AUTO_SCAN_ENABLED": True,
+    "DATA_RETENTION_DAYS": 90,
+    "DATA_AUTO_CLEANUP_ENABLED": True,
+    "DATA_CLEANUP_EXCEL_ENABLED": True,
     "ZALO_SCHOOL_TEMPLATE": """🔔 [THPT ĐIỀU CẢI] BÁO CÁO ĐIỂM DANH SĨ SỐ ĐẦU GIỜ
 📅 Ngày quét: {ngay} | Giờ: {gio}
 🏫 Tổng số lớp: {tong_lop} lớp

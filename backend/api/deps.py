@@ -9,6 +9,10 @@ from services.auth_service import AUTH_COOKIE_NAME, decode_access_token
 def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
     token = request.cookies.get(AUTH_COOKIE_NAME)
     if not token:
+        auth_header = request.headers.get("Authorization") or request.headers.get("authorization")
+        if auth_header and auth_header.lower().startswith("bearer "):
+            token = auth_header[7:].strip()
+    if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Chưa đăng nhập")
     user_id = decode_access_token(token)
     if user_id is None:

@@ -110,7 +110,7 @@ class AttendanceDetail(Base):
 
     session = relationship("AttendanceSession", back_populates="details")
     classroom = relationship("Classroom", back_populates="attendance_details")
-
+ 
 class User(Base):
     __tablename__ = "users"
 

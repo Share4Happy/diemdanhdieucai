@@ -9,17 +9,17 @@ from config.settings import settings
 from config.zalo_runtime_store import RUNTIME_FILE
 from backend.api.deps import get_current_user
 
-app.dependency_overrides[get_current_user] = lambda: User(id=1, email="admin@truongdieucai.edu.vn", role="admin")
-
 client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def setup_db():
     init_db()
+    app.dependency_overrides[get_current_user] = lambda: User(id=1, email="admin@truongdieucai.edu.vn", role="admin")
     # Backup runtime JSON để tránh endpoint save-zalo-config ghi đè config thật
     runtime_path = settings.BASE_DIR / "storage" / RUNTIME_FILE
     backup = runtime_path.read_bytes() if runtime_path.exists() else None
     yield
+    app.dependency_overrides.pop(get_current_user, None)
     if backup is None:
         runtime_path.unlink(missing_ok=True)
     else:
@@ -220,3 +220,74 @@ def test_zalo_status_includes_bot_api():
     assert "bot_id" in data
     assert "bot_api_key_masked" in data
     assert "recipient_phones" in data
+
+def test_get_zalo_config_endpoint():
+    res = client.get("/api/reports/zalo-config")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["success"] is True
+    assert "config" in data
+    assert "notification_type" in data["config"]
+    assert "bot_id" in data["config"]
+
+def test_zalo_send_frontend_bot_api_payload(monkeypatch):
+    """Đảm bảo payload gửi từ giao diện web (notification_type, bot_api_key, test_phone) được xử lý chuẩn xác."""
+    captured = {}
+    def fake_post(url, json=None, headers=None, timeout=None):
+        captured["url"] = url
+        captured["json"] = json
+        captured["headers"] = headers
+        return FakeBotResponse(200, {
+            "success": True,
+            "accepted": 1,
+            "status": "completed",
+            "results": [{"uid": "5002868751631677765", "status": "success"}]
+        })
+    monkeypatch.setattr("services.zalo_service.requests.post", fake_post)
+
+    res = client.post("/api/reports/send-zalo", json={
+        "notification_type": "BOT_API",
+        "bot_api_key": "FRONTEND_KEY_123",
+        "bot_id": "FRONTEND_BOT_456",
+        "bot_api_base_url": "http://localhost:3000/api/gateway/v1.0",
+        "test_phone": "0334551531"
+    })
+    assert res.status_code == 200
+    data = res.json()
+    assert data["success"] is True
+    assert captured["headers"]["x-api-key"] == "FRONTEND_KEY_123"
+    assert "/bots/FRONTEND_BOT_456/messages/send-batch" in captured["url"]
+    assert captured["json"]["recipients"] == [{"phone": "0334551531"}]
+
+def test_zalo_send_auto_detects_bot_api(monkeypatch):
+    """Khi người dùng có bot_id và api_key nhưng target_type là WEBHOOK (do default cũ) mà không có webhook_url -> tự auto route sang BOT_API."""
+    captured = {}
+    def fake_post(url, json=None, headers=None, timeout=None):
+        captured["url"] = url
+        captured["json"] = json
+        return FakeBotResponse(200, {
+            "success": True,
+            "accepted": 1,
+            "status": "completed",
+            "results": [{"uid": "123", "status": "success"}]
+        })
+    monkeypatch.setattr("services.zalo_service.requests.post", fake_post)
+
+    res = client.post("/api/reports/send-zalo", json={
+        "target_type": "WEBHOOK",
+        "webhook_url": "",
+        "bot_id": "AUTO_BOT",
+        "bot_api_key": "AUTO_KEY",
+        "test_phone": "0988888888"
+    })
+    assert res.status_code == 200
+    assert res.json()["success"] is True
+    assert "/bots/AUTO_BOT/messages/send-batch" in captured["url"]
+
+def test_save_email_config_endpoint():
+    res = client.post("/api/reports/save-email-config", json={
+        "principal_email": "test_hieutruong@truongdieucai.edu.vn"
+    })
+    assert res.status_code == 200
+    assert res.json()["success"] is True
+    assert settings.PRINCIPAL_EMAIL == "test_hieutruong@truongdieucai.edu.vn"

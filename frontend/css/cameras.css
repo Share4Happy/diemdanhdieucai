@@ -261,7 +261,7 @@
 .webcam-thumb-box {
     width: 100%;
     height: 95px;
-    background: #0f172a;
+    background: #f8fafc;
     border-radius: 6px;
     overflow: hidden;
     position: relative;
@@ -855,12 +855,12 @@
 .nvr-ch-thumb {
     width: 105px;
     height: 65px;
-    background: #0f172a;
+    background: #f8fafc;
     border-radius: 6px;
     overflow: hidden;
     flex-shrink: 0;
     position: relative;
-    border: 1px solid #94a3b8;
+    border: 1px solid #cbd5e1;
 }
 
 .nvr-ch-thumb img {

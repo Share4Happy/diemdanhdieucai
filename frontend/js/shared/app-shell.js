@@ -20,7 +20,33 @@ class AppShell {
     this.sidebar = document.querySelector('.app-sidebar');
     this.sidebarOverlay = document.querySelector('.sidebar-overlay');
     this.toggleBtn = document.querySelector('.sidebar-toggle-btn');
-    this.mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+    
+    // Auto-create overlay if missing
+    if (!this.sidebarOverlay) {
+      const overlay = document.createElement('div');
+      overlay.className = 'sidebar-overlay';
+      document.body.appendChild(overlay);
+      this.sidebarOverlay = overlay;
+    }
+
+    // Auto-inject mobile hamburger button if missing
+    let mobileBtn = document.querySelector('.mobile-menu-btn');
+    if (!mobileBtn) {
+      const headerLeft = document.querySelector('.header-left');
+      mobileBtn = document.createElement('button');
+      mobileBtn.type = 'button';
+      mobileBtn.title = 'Mở Menu Điều Hướng';
+      mobileBtn.setAttribute('aria-label', 'Mở Menu Điều Hướng');
+      mobileBtn.innerHTML = '<i class="fa-solid fa-bars"></i>';
+      if (headerLeft) {
+        mobileBtn.className = 'mobile-menu-btn';
+        headerLeft.prepend(mobileBtn);
+      } else {
+        mobileBtn.className = 'mobile-menu-btn floating-mobile-btn';
+        document.body.appendChild(mobileBtn);
+      }
+    }
+    this.mobileMenuBtn = mobileBtn;
 
     if (!this.sidebar) return;
 
@@ -88,6 +114,11 @@ class AppShell {
         credentials: 'include',
       });
 
+      try {
+        localStorage.removeItem('currentUserRole');
+        localStorage.removeItem('currentUser');
+      } catch (e) {}
+
       if (response.ok) {
         window.location.href = '/login.html';
       } else {
@@ -95,6 +126,10 @@ class AppShell {
       }
     } catch (err) {
       console.error('Logout error:', err);
+      try {
+        localStorage.removeItem('currentUserRole');
+        localStorage.removeItem('currentUser');
+      } catch (e) {}
       alert('Lỗi kết nối. Vui lòng thử lại.');
     }
   }
@@ -204,5 +239,5 @@ if (document.readyState === 'loading') {
 } else {
   window.appShell = new AppShell();
 }
-
-export default AppShell;
+// Attach to window for global access
+window.AppShell = AppShell;

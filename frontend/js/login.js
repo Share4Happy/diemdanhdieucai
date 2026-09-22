@@ -6,10 +6,24 @@ function showAlert(el, message, type) {
     el.className = `auth-alert visible ${type}`;
 }
 
+function getRedirectTarget() {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const redirect = params.get('redirect');
+        if (redirect) {
+            const decoded = decodeURIComponent(redirect);
+            if (!decoded.includes('login') && !decoded.includes('forgot') && !decoded.includes('reset')) {
+                return decoded;
+            }
+        }
+    } catch (e) {}
+    return 'index.html';
+}
+
 async function tryRedirectIfLoggedIn() {
     try {
         await AuthAPI.me();
-        window.location.href = 'index.html';
+        window.location.href = getRedirectTarget();
     } catch (e) {
         /* chưa đăng nhập */
     }
@@ -27,7 +41,7 @@ function bindLogin() {
         btn.disabled = true;
         try {
             await AuthAPI.login({ email, password });
-            window.location.href = 'index.html';
+            window.location.href = getRedirectTarget();
         } catch (err) {
             showAlert(alertEl, err.message || 'Đăng nhập thất bại', 'error');
         } finally {

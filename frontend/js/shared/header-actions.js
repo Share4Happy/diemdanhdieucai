@@ -34,8 +34,14 @@ class HeaderActions {
         const base = (window.location.protocol === 'file:' || (!window.location.origin.includes(':8000') && !window.location.origin.includes(':80')))
             ? 'http://localhost:8000'
             : '';
+        const headers = { 'Accept': 'application/json' };
+        try {
+            const token = localStorage.getItem('authToken');
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+        } catch (e) {}
         return fetch(`${base}${endpoint}`, {
-            headers: { 'Accept': 'application/json' }
+            credentials: 'include',
+            headers: headers
         }).then(res => {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return res.json();

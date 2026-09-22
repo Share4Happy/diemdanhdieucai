@@ -2,32 +2,12 @@
  * cameras.js - Camera Management Page Controller
  * THPT Điều Cải - Attendance System
  */
-import { CameraAPI, showToast, API_BASE } from './api.js?v=4.0';
+import { CameraAPI, AttendanceAPI, showToast, API_BASE } from './api.js';
 import SkeletonTemplates from './components/skeleton-templates.js';
 
-// Đảm bảo các phương thức NVR luôn tồn tại kể cả khi trình duyệt nạp bản cache api.js cũ
-if (!CameraAPI.probeNVR) {
-    CameraAPI.probeNVR = (data) => fetch(`${API_BASE}/api/cameras/nvr/probe`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    }).then(r => r.json());
-}
-if (!CameraAPI.batchImportNVR) {
-    CameraAPI.batchImportNVR = (data) => fetch(`${API_BASE}/api/cameras/nvr/batch-import`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    }).then(r => r.json());
-}
-if (!CameraAPI.getMatrixWall) {
-    CameraAPI.getMatrixWall = () => fetch(`${API_BASE}/api/cameras/matrix-wall`).then(r => r.json());
-}
-if (!CameraAPI.deleteNVR) {
-    CameraAPI.deleteNVR = (id, deleteCameras = false) => fetch(`${API_BASE}/api/cameras/nvr/${id}?delete_cameras=${deleteCameras}`, { method: 'DELETE' }).then(r => r.json());
-}
 if (typeof window !== 'undefined') {
     window.CameraAPI = CameraAPI;
+    window.AttendanceAPI = AttendanceAPI;
 }
 
 let allCameras = [];
@@ -35,6 +15,7 @@ let availableWebcams = [];
 let selectedWebcamId = '0';
 let currentSourceType = 'WEBCAM';
 let probedChannels = [];
+let isScanning = false;
 
 function initApp() {
     loadCameras();
@@ -48,6 +29,10 @@ function initApp() {
     // Quick refresh button in banner
     const btnRefreshQuick = document.getElementById('btnRefreshQuick');
     if (btnRefreshQuick) btnRefreshQuick.addEventListener('click', loadCameras);
+
+    // Quét điểm danh nhanh từ trang camera
+    const btnTriggerScan = document.getElementById('btnTriggerScan');
+    if (btnTriggerScan) btnTriggerScan.addEventListener('click', handleTriggerScan);
 
     const btnAdd = document.getElementById('btnAddCamera');
     if (btnAdd) btnAdd.addEventListener('click', () => openModal());
@@ -167,6 +152,54 @@ if (document.readyState === 'loading') {
     initApp();
 }
 
+/**
+ * Quét điểm danh đồng loạt tất cả các lớp học trực tiếp từ trang Camera
+ */
+export async function handleTriggerScan() {
+    if (isScanning) {
+        showToast('Hệ thống đang trong quá trình quét điểm danh!', 'warning');
+        return;
+    }
+
+    const btn = document.getElementById('btnTriggerScan');
+    if (!confirm('Bạn có chắc chắn muốn kích hoạt quét điểm danh đồng loạt 30 lớp ngay bây giờ?')) {
+        return;
+    }
+
+    try {
+        isScanning = true;
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang quét...';
+        }
+
+        showToast('Đang kích hoạt quét và chụp ảnh đồng loạt các camera lớp học...', 'info');
+
+        const result = await AttendanceAPI.triggerScan();
+
+        if (result && result.success) {
+            showToast('Đã hoàn tất phiên điểm danh 30 lớp!', 'success');
+            await loadCameras();
+        } else {
+            showToast(result?.message || 'Quét điểm danh hoàn tất', 'info');
+            await loadCameras();
+        }
+
+    } catch (err) {
+        console.error('Lỗi khi quét điểm danh:', err);
+        showToast('Lỗi khi kích hoạt quét điểm danh: ' + (err.message || err), 'danger');
+    } finally {
+        isScanning = false;
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-bolt" style="color: #fde047;"></i> Quét Điểm Danh';
+        }
+    }
+}
+if (typeof window !== 'undefined') {
+    window.handleTriggerScan = handleTriggerScan;
+}
+
 // Load available webcams
 export async function loadAvailableWebcams(forceRefresh = false) {
     const icon = document.getElementById('webcamRefreshIcon');
@@ -195,17 +228,7 @@ export async function loadAvailableWebcams(forceRefresh = false) {
     }
 
     try {
-        let data = null;
-        const apiObj = window.CameraAPI || CameraAPI;
-        if (apiObj && typeof apiObj.getWebcams === 'function') {
-            data = await apiObj.getWebcams(forceRefresh);
-        } else if (apiObj && typeof apiObj.getAvailableWebcams === 'function') {
-            data = await apiObj.getAvailableWebcams(forceRefresh);
-        } else {
-            const base = (typeof window !== 'undefined' && window.API_BASE !== undefined) ? window.API_BASE : (API_BASE || '');
-            const res = await fetch(`${base}/api/cameras/available-webcams?refresh=${forceRefresh}`);
-            data = await res.json();
-        }
+        const data = await CameraAPI.getWebcams(forceRefresh);
 
         if (data && data.webcams) {
             availableWebcams = data.webcams;
@@ -378,12 +401,7 @@ export function toggleAdvancedInput() {
 export async function loadCameras() {
     const container = document.getElementById('matrixGrid');
     if (container && allCameras.length === 0) {
-        container.innerHTML = `
-            <div style="grid-column: 1 / -1; text-align: center; padding: 3.5rem 1.5rem; color: var(--text-muted, #64748b);">
-                <i class="fa-solid fa-spinner fa-spin" style="font-size: 1.75rem; color: var(--primary, #0284c7); margin-bottom: 0.75rem; display: block;"></i>
-                <span style="font-size: 0.95rem;">Đang tải danh sách camera...</span>
-            </div>
-        `;
+        container.innerHTML = (SkeletonTemplates.cameraGrid || SkeletonTemplates.cameraMatrixGrid)(8);
     }
     try {
         const data = await CameraAPI.getAll();

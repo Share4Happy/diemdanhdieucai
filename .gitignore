@@ -37,6 +37,7 @@ storage/reports/
 storage/*.jpg
 storage/*.png
 storage/*.json
+storage/*.log
 
 # Logs
 logs/*.log
@@ -49,3 +50,6 @@ clone_phat/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Documentation & Private Assets
+docs/

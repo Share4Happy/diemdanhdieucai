@@ -1,3 +1,5 @@
+
+from datetime import datetime, timedelta
 import os
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException
@@ -6,18 +8,22 @@ from sqlalchemy.orm import Session
 from config.settings import settings
 from config.logging_config import logger
 from database.db_session import get_db
-from database.models import AttendanceSession
+from database.models import AttendanceSession, AttendanceDetail
 from core.attendance_engine import attendance_engine
 from services.excel_exporter import excel_exporter
 from services.notification import notification_service
 from services.zalo_service import zalo_service
 from config.zalo_runtime_store import save_runtime_zalo
 from config.notification_settings_store import save_notification_settings, DEFAULT_SETTINGS
+from services.scheduler import attendance_scheduler
 from backend.schemas.report_schemas import (
     SendEmailRequest,
+    EmailConfigSaveRequest,
     ZaloTestRequest,
     ZaloConfigSaveRequest,
-    NotificationAdjustRequest
+    NotificationAdjustRequest,
+    RetentionSettingsRequest,
+    CleanupExpiredRequest
 )
 from backend.api.deps import get_current_user
 
@@ -58,6 +64,15 @@ async def send_report_email(req: SendEmailRequest):
     res = notification_service.send_test_email(req.email)
     return res
 
+@router.post("/save-email-config")
+async def save_email_config(req: EmailConfigSaveRequest):
+    """Lưu cấu hình email Hiệu Trưởng vào hệ thống."""
+    if req.principal_email:
+        settings.PRINCIPAL_EMAIL = req.principal_email.strip()
+        payload = {"PRINCIPAL_EMAIL": settings.PRINCIPAL_EMAIL}
+        save_notification_settings(settings, payload)
+    return {"success": True, "message": f"Đã lưu email Hiệu Trưởng: {settings.PRINCIPAL_EMAIL}"}
+
 @router.get("/distribution-status")
 async def get_distribution_status():
     """Lấy thông tin trạng thái phân phối báo cáo nội bộ và email."""
@@ -69,15 +84,30 @@ async def send_zalo_report(req: ZaloTestRequest):
     if req.session_id:
         res = zalo_service.send_attendance_summary(req.session_id)
     else:
+        # Nhận diện đầy đủ cả 2 chuẩn đặt tên field từ frontend / API client
+        target_type = req.notification_type or req.target_type or settings.ZALO_NOTIFICATION_TYPE or "BOT_API"
+        bot_key = req.bot_api_key or req.api_key or settings.ZALO_BOT_API_KEY
+        bot_id = req.bot_id or settings.ZALO_BOT_ID
+        bot_url = req.bot_api_base_url or req.api_base_url or settings.ZALO_BOT_API_BASE_URL
+        phone = req.test_phone or req.phone
+        user_id = req.recipient_user_id or req.user_id or settings.ZALO_RECIPIENT_USER_ID
+        access_token = req.access_token or settings.ZALO_OA_ACCESS_TOKEN
+        webhook_url = req.webhook_url or settings.ZALO_WEBHOOK_URL
+
+        # Nếu có cấu hình bot_id hoặc bot_key và target_type là WEBHOOK nhưng không có webhook_url -> Tự động chuyển qua BOT_API
+        if (bot_id or bot_key) and (target_type.upper() == "WEBHOOK" and not webhook_url):
+            target_type = "BOT_API"
+
         res = zalo_service.send_test_message(
-            target_type=req.target_type or "WEBHOOK",
-            webhook_url=req.webhook_url,
-            access_token=req.access_token,
-            user_id=req.user_id,
-            phone=req.phone,
-            bot_id=req.bot_id,
-            api_key=req.api_key,
-            api_base_url=req.api_base_url
+            target_type=target_type,
+            webhook_url=webhook_url,
+            access_token=access_token,
+            user_id=user_id,
+            phone=phone,
+            bot_id=bot_id,
+            api_key=bot_key,
+            api_base_url=bot_url,
+            recipients=req.recipients
         )
     return res
 
@@ -85,6 +115,25 @@ async def send_zalo_report(req: ZaloTestRequest):
 async def get_zalo_status():
     """Lấy trạng thái cấu hình dịch vụ Zalo."""
     return zalo_service.get_status()
+
+@router.get("/zalo-config")
+async def get_zalo_config():
+    """Lấy toàn bộ cấu hình Zalo để nạp lên giao diện quản trị."""
+    return {
+        "success": True,
+        "config": {
+            "enabled": settings.ENABLE_ZALO_NOTIFICATION,
+            "notification_type": settings.ZALO_NOTIFICATION_TYPE,
+            "webhook_url": settings.ZALO_WEBHOOK_URL,
+            "access_token": settings.ZALO_OA_ACCESS_TOKEN,
+            "recipient_user_id": settings.ZALO_RECIPIENT_USER_ID,
+            "bot_api_base_url": settings.ZALO_BOT_API_BASE_URL,
+            "bot_id": settings.ZALO_BOT_ID,
+            "bot_api_key": settings.ZALO_BOT_API_KEY,
+            "recipient_phones": settings.ZALO_RECIPIENT_PHONES,
+            "recipients_json": settings.ZALO_RECIPIENTS_JSON
+        }
+    }
 
 @router.post("/save-zalo-config")
 async def save_zalo_config(req: ZaloConfigSaveRequest):
@@ -147,7 +196,117 @@ async def update_notification_settings(req: NotificationAdjustRequest):
         "EMAIL_BODY_TEMPLATE": req.email_body_template,
     }
     save_notification_settings(settings, payload)
+    try:
+        attendance_scheduler.update_schedule(
+            morning_time=req.scan_time_morning,
+            afternoon_time=req.scan_time_afternoon,
+            enabled=bool(req.auto_scan_enabled)
+        )
+    except Exception as e:
+        logger.warning(f"Lỗi cập nhật lịch trình quét nền: {e}")
     return {"success": True, "message": "Đã lưu cài đặt điều chỉnh thông báo thành công!"}
+
+@router.get("/retention-settings")
+async def get_retention_settings(db: Session = Depends(get_db)):
+    """Lấy cấu hình thời gian lưu trữ dữ liệu và thông số thống kê CSDL."""
+    total_sessions = db.query(AttendanceSession).count()
+    total_details = db.query(AttendanceDetail).count()
+
+    excel_files = list(settings.REPORTS_DIR.glob("*.xlsx"))
+    total_excel_files = len(excel_files)
+
+    db_file = settings.BASE_DIR / "database" / "attendance.db"
+    db_size_mb = 0.0
+    if db_file.exists():
+        db_size_mb = round(db_file.stat().st_size / (1024 * 1024), 2)
+
+    oldest_session = db.query(AttendanceSession).order_by(AttendanceSession.id.asc()).first()
+    newest_session = db.query(AttendanceSession).order_by(AttendanceSession.id.desc()).first()
+
+    return {
+        "success": True,
+        "retention_days": getattr(settings, "DATA_RETENTION_DAYS", 90),
+        "auto_cleanup_enabled": getattr(settings, "DATA_AUTO_CLEANUP_ENABLED", True),
+        "cleanup_excel_enabled": getattr(settings, "DATA_CLEANUP_EXCEL_ENABLED", True),
+        "stats": {
+            "total_sessions": total_sessions,
+            "total_details": total_details,
+            "total_excel_files": total_excel_files,
+            "db_size_mb": db_size_mb,
+            "oldest_date": oldest_session.scan_date if oldest_session else None,
+            "newest_date": newest_session.scan_date if newest_session else None,
+        }
+    }
+
+@router.post("/retention-settings")
+async def save_retention_settings_endpoint(req: RetentionSettingsRequest):
+    """Lưu cấu hình thời gian lưu trữ dữ liệu."""
+    if req.retention_days < 7:
+        raise HTTPException(status_code=400, detail="Thời gian lưu trữ tối thiểu là 7 ngày.")
+    if req.retention_days > 1000:
+        raise HTTPException(status_code=400, detail="Thời gian lưu trữ tối đa là 1000 ngày.")
+
+    payload = {
+        "DATA_RETENTION_DAYS": int(req.retention_days),
+        "DATA_AUTO_CLEANUP_ENABLED": bool(req.auto_cleanup_enabled),
+        "DATA_CLEANUP_EXCEL_ENABLED": bool(req.cleanup_excel_enabled),
+    }
+    save_notification_settings(settings, payload)
+    return {
+        "success": True,
+        "message": f"Đã cập nhật thời gian lưu trữ dữ liệu thành {req.retention_days} ngày.",
+        "config": payload
+    }
+
+@router.post("/cleanup-expired")
+async def cleanup_expired_data(req: CleanupExpiredRequest = None, db: Session = Depends(get_db)):
+    """Chủ động dọn dẹp các bản ghi điểm danh và file Excel cũ hơn thời hạn quy định."""
+    days = req.days if (req and req.days) else getattr(settings, "DATA_RETENTION_DAYS", 90)
+    cutoff_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+
+    expired_sessions = db.query(AttendanceSession).filter(AttendanceSession.scan_date < cutoff_date).all()
+    deleted_sessions_count = len(expired_sessions)
+    deleted_details_count = 0
+
+    if expired_sessions:
+        session_ids = [s.id for s in expired_sessions]
+        for s in expired_sessions:
+            for d in s.details:
+                deleted_details_count += 1
+                if d.raw_image_path and os.path.exists(d.raw_image_path):
+                    try:
+                        os.remove(d.raw_image_path)
+                    except Exception:
+                        pass
+                if d.annotated_image_path and os.path.exists(d.annotated_image_path):
+                    try:
+                        os.remove(d.annotated_image_path)
+                    except Exception:
+                        pass
+
+        db.query(AttendanceDetail).filter(AttendanceDetail.session_id.in_(session_ids)).delete(synchronize_session=False)
+        db.query(AttendanceSession).filter(AttendanceSession.id.in_(session_ids)).delete(synchronize_session=False)
+        db.commit()
+
+    deleted_files_count = 0
+    if getattr(settings, "DATA_CLEANUP_EXCEL_ENABLED", True):
+        cutoff_timestamp = (datetime.now() - timedelta(days=days)).timestamp()
+        for f in settings.REPORTS_DIR.glob("*.xlsx"):
+            try:
+                if f.stat().st_mtime < cutoff_timestamp:
+                    f.unlink(missing_ok=True)
+                    deleted_files_count += 1
+            except Exception:
+                pass
+
+    return {
+        "success": True,
+        "message": f"Đã dọn dẹp dữ liệu trước ngày {cutoff_date} ({days} ngày trước): {deleted_sessions_count} phiên ({deleted_details_count} bản ghi) và {deleted_files_count} file Excel.",
+        "cutoff_date": cutoff_date,
+        "deleted_sessions": deleted_sessions_count,
+        "deleted_details": deleted_details_count,
+        "deleted_excel_files": deleted_files_count
+    }
 
 @router.post("/clear-history")
 @router.delete("/clear-history")
@@ -155,4 +314,5 @@ async def clear_reports_history(db: Session = Depends(get_db)):
     """Xóa toàn bộ lịch sử điểm danh để làm mới hệ thống (Endpoint dự phòng cho Reports)."""
     from backend.api.routers.attendance import clear_attendance_history
     return await clear_attendance_history(db)
+
 

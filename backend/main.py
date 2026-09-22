@@ -25,7 +25,7 @@ from backend.api.routers import (
     roi_router,
     reports_router,
     system_router,
-    auth_router
+    auth_router,
 )
 
 @asynccontextmanager

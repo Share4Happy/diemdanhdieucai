@@ -74,6 +74,9 @@ def seed_default_classes(db=None):
         if created_count > 0:
             db.commit()
             logger.info(f"Đã bổ sung thành công {created_count} lớp học chuẩn THPT Điều Cải!")
+
+        from services.auth_service import seed_admin_if_empty
+        seed_admin_if_empty(db)
     except Exception as e:
         db.rollback()
         logger.error(f"Lỗi khi seed lớp học: {e}")

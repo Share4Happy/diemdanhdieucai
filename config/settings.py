@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from pydantic import BaseModel
 
+# Load .env file
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -67,6 +68,7 @@ class Settings(BaseModel):
     # Auth / Login
     JWT_SECRET: str = os.getenv("JWT_SECRET", "change-me-diemdanh-dieucai")
     JWT_EXPIRE_HOURS: int = int(os.getenv("JWT_EXPIRE_HOURS", "12"))
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("JWT_EXPIRE_HOURS", "12")) * 60
     ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "admin@truongdieucai.edu.vn")
     ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "Admin@2025")
     ADMIN_FULL_NAME: str = os.getenv("ADMIN_FULL_NAME", "Quản trị hệ thống")
@@ -110,6 +112,11 @@ class Settings(BaseModel):
     ZALO_CLASS_TEMPLATE: str = ""
     EMAIL_SUBJECT_TEMPLATE: str = ""
     EMAIL_BODY_TEMPLATE: str = ""
+
+    # Data Retention Settings
+    DATA_RETENTION_DAYS: int = 90
+    DATA_AUTO_CLEANUP_ENABLED: bool = True
+    DATA_CLEANUP_EXCEL_ENABLED: bool = True
 
 
 settings = Settings()
