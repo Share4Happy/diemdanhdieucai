@@ -2,7 +2,7 @@
  * cameras.js - Camera Management Page Controller
  * THPT Điều Cải - Attendance System
  */
-import { CameraAPI, showToast, API_BASE } from './api.js?v=4.0';
+import { CameraAPI, AttendanceAPI, showToast, API_BASE } from './api.js?v=4.0';
 import SkeletonTemplates from './components/skeleton-templates.js';
 
 // Đảm bảo các phương thức NVR luôn tồn tại kể cả khi trình duyệt nạp bản cache api.js cũ
@@ -26,8 +26,12 @@ if (!CameraAPI.getMatrixWall) {
 if (!CameraAPI.deleteNVR) {
     CameraAPI.deleteNVR = (id, deleteCameras = false) => fetch(`${API_BASE}/api/cameras/nvr/${id}?delete_cameras=${deleteCameras}`, { method: 'DELETE' }).then(r => r.json());
 }
+if (!AttendanceAPI?.triggerScan) {
+    AttendanceAPI.triggerScan = () => fetch(`${API_BASE}/api/attendance/trigger`, { method: 'POST' }).then(r => r.json());
+}
 if (typeof window !== 'undefined') {
     window.CameraAPI = CameraAPI;
+    window.AttendanceAPI = AttendanceAPI;
 }
 
 let allCameras = [];
@@ -35,6 +39,7 @@ let availableWebcams = [];
 let selectedWebcamId = '0';
 let currentSourceType = 'WEBCAM';
 let probedChannels = [];
+let isScanning = false;
 
 function initApp() {
     loadCameras();
@@ -48,6 +53,10 @@ function initApp() {
     // Quick refresh button in banner
     const btnRefreshQuick = document.getElementById('btnRefreshQuick');
     if (btnRefreshQuick) btnRefreshQuick.addEventListener('click', loadCameras);
+
+    // Quét điểm danh nhanh từ trang camera
+    const btnTriggerScan = document.getElementById('btnTriggerScan');
+    if (btnTriggerScan) btnTriggerScan.addEventListener('click', handleTriggerScan);
 
     const btnAdd = document.getElementById('btnAddCamera');
     if (btnAdd) btnAdd.addEventListener('click', () => openModal());
@@ -165,6 +174,54 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initApp);
 } else {
     initApp();
+}
+
+/**
+ * Quét điểm danh đồng loạt tất cả các lớp học trực tiếp từ trang Camera
+ */
+export async function handleTriggerScan() {
+    if (isScanning) {
+        showToast('Hệ thống đang trong quá trình quét điểm danh!', 'warning');
+        return;
+    }
+
+    const btn = document.getElementById('btnTriggerScan');
+    if (!confirm('Bạn có chắc chắn muốn kích hoạt quét điểm danh đồng loạt 30 lớp ngay bây giờ?')) {
+        return;
+    }
+
+    try {
+        isScanning = true;
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang quét...';
+        }
+
+        showToast('Đang kích hoạt quét và chụp ảnh đồng loạt các camera lớp học...', 'info');
+
+        const result = await AttendanceAPI.triggerScan();
+
+        if (result && result.success) {
+            showToast('Đã hoàn tất phiên điểm danh 30 lớp!', 'success');
+            await loadCameras();
+        } else {
+            showToast(result?.message || 'Quét điểm danh hoàn tất', 'info');
+            await loadCameras();
+        }
+
+    } catch (err) {
+        console.error('Lỗi khi quét điểm danh:', err);
+        showToast('Lỗi khi kích hoạt quét điểm danh: ' + (err.message || err), 'danger');
+    } finally {
+        isScanning = false;
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-bolt" style="color: #fde047;"></i> Quét Điểm Danh';
+        }
+    }
+}
+if (typeof window !== 'undefined') {
+    window.handleTriggerScan = handleTriggerScan;
 }
 
 // Load available webcams

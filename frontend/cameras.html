@@ -8,7 +8,7 @@
 
     <!-- Design System & Components -->
     <link rel="stylesheet" href="css/design-system.css">
-    <link rel="stylesheet" href="css/layout/app-shell.css?v=2.4">
+    <link rel="stylesheet" href="css/layout/app-shell.css?v=2.5">
     <link rel="stylesheet" href="css/components/buttons-redesign.css">
     <link rel="stylesheet" href="css/components/badges-redesign.css">
     <link rel="stylesheet" href="css/components/cards-redesign.css">
@@ -202,7 +202,7 @@
                             <span class="sidebar-nav-text">Thông Báo</span>
                         </a>
                     </li>
-                    <li class="sidebar-nav-item nav-admin-only" hidden>
+                    <li class="sidebar-nav-item nav-admin-only">
                         <a href="users.html" class="sidebar-nav-link">
                             <span class="sidebar-nav-icon"><i class="fa-solid fa-user-gear"></i></span>
                             <span class="sidebar-nav-text">Tài Khoản</span>
@@ -251,6 +251,10 @@
                             <p class="page-description">Quản trị camera IP, cấu hình lớp học và giám sát trực tuyến</p>
                         </div>
                         <div class="page-actions">
+                            <button id="btnTriggerScan" class="btn btn-primary" type="button" style="background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); border-color: #4f46e5; font-weight: 600;">
+                                <i class="fa-solid fa-bolt" style="color: #fde047;"></i>
+                                Quét Điểm Danh
+                            </button>
                             <button id="btnAddNVR" class="btn btn-success" type="button">
                                 <i class="fa-solid fa-server"></i>
                                 Thêm Đầu Ghi
@@ -588,7 +592,7 @@
                             </button>
                         </div>
                         <div id="irStatusMsg" style="font-size: 0.8rem; margin-top: 6px; color: #64748b;">
-                            <i class="fa-solid fa-circle-info" style="color: #0284c7;"></i> Đèn hồng ngoại của camera sẽ bật sáng đỏ trong 4 giây để học sinh nhận biết giờ điểm danh, sau đó tự động chuyển sang ảnh màu khi chụp.
+                            <i class="fa-solid fa-circle-info" style="color: var(--primary);"></i> Đèn hồng ngoại của camera sẽ bật sáng đỏ trong 4 giây để học sinh nhận biết giờ điểm danh, sau đó tự động chuyển sang ảnh màu khi chụp.
                         </div>
                     </div>
 
@@ -604,7 +608,7 @@
                                     <i class="fa-solid fa-play"></i> Bắt Ảnh Xem Trước
                                 </button>
                                 <button type="button" id="btnTestSignalFlow" class="btn btn-primary btn-sm"
-                                    style="font-weight: 700; background: #0284c7; border-color: #0369a1;">
+                                    style="font-weight: 600;">
                                     <i class="fa-solid fa-wand-magic-sparkles"></i> Thử Chu Trình: Bật Đèn Báo -> Bắt Ảnh Màu
                                 </button>
                             </div>
@@ -823,7 +827,7 @@
                     </div>
                     <div
                         style="font-size: 0.82rem; color: #475569; margin-bottom: 12px; background: #f1f5f9; padding: 8px 12px; border-radius: 6px;">
-                        <i class="fa-solid fa-circle-info" style="color: #0284c7;"></i> Bạn có thể chỉnh sửa trực tiếp
+                        <i class="fa-solid fa-circle-info" style="color: var(--primary);"></i> Bạn có thể chỉnh sửa trực tiếp
                         <strong>Tên Lớp, Số Phòng</strong> hoặc <strong>Sĩ Số</strong> ngay trên từng ô bên dưới trước
                         khi lưu:
                     </div>
@@ -912,11 +916,11 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="js/shared/auth-guard.js"></script>
-    <script src="js/shared/app-shell.js?v=2.1"></script>
+    <script type="module" src="js/shared/auth-guard.js?v=2.0"></script>
+    <script src="js/shared/app-shell.js?v=2.2"></script>
     <script src="js/shared/header-actions.js?v=2.2"></script>
     <script src="js/shared/confirmation-dialog.js?v=1.0"></script>
-    <script type="module" src="js/cameras.js?v=3.2"></script>
+    <script type="module" src="js/cameras.js?v=3.3"></script>
 </body>
 
 </html>

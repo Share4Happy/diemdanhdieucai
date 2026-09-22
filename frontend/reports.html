@@ -8,7 +8,7 @@
 
     <!-- Design System & Components -->
     <link rel="stylesheet" href="css/design-system.css">
-    <link rel="stylesheet" href="css/layout/app-shell.css?v=2.4">
+    <link rel="stylesheet" href="css/layout/app-shell.css?v=2.5">
     <link rel="stylesheet" href="css/components/buttons-redesign.css">
     <link rel="stylesheet" href="css/components/badges-redesign.css">
     <link rel="stylesheet" href="css/components/header-actions.css">
@@ -57,7 +57,7 @@
                     <li class="sidebar-nav-item">
                         <a href="roi-config.html" class="sidebar-nav-link">
                             <span class="sidebar-nav-icon"><i class="fa-solid fa-draw-polygon"></i></span>
-                            <span class="sidebar-nav-text">Vùng</span>
+                            <span class="sidebar-nav-text">Vùng ROI</span>
                         </a>
                     </li>
                     <li class="sidebar-nav-item">
@@ -72,7 +72,7 @@
                             <span class="sidebar-nav-text">Thông Báo</span>
                         </a>
                     </li>
-                    <li class="sidebar-nav-item nav-admin-only" hidden>
+                    <li class="sidebar-nav-item nav-admin-only">
                         <a href="users.html" class="sidebar-nav-link">
                             <span class="sidebar-nav-icon"><i class="fa-solid fa-user-gear"></i></span>
                             <span class="sidebar-nav-text">Tài Khoản</span>
@@ -149,17 +149,107 @@
                 <!-- TAB 1: DỮ LIỆU CSDL -->
                 <div id="tab-database" class="tab-content active">
                     <div class="report-section">
-                        <div class="section-title">
-                            <h3>1. Lưu Trữ Kết Quả Điểm Danh (CSDL)</h3>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <input type="text" id="filterDbInput" placeholder="Lọc theo tên lớp hoặc phòng..."
-                                    class="form-control" style="width: 240px; padding: 6px 12px;">
-                                <button id="btnReloadDb" class="btn btn-secondary btn-sm"><i
-                                        class="fa-solid fa-rotate-right"></i> Làm Mới</button>
+                        <!-- Header Lịch Sử Điểm Danh CSDL -->
+                        <div class="reports-db-header">
+                            <div class="reports-db-header-main">
+                                <div class="reports-title-group">
+                                    <h3 class="reports-db-title">
+                                        <i class="fa-solid fa-database text-primary"></i> 1. Lưu Trữ Kết Quả Điểm Danh (CSDL)
+                                    </h3>
+                                    <span class="retention-badge">
+                                        <i class="fa-solid fa-clock-rotate-left"></i> Dữ liệu cũ tự động xóa sau 90 ngày
+                                    </span>
+                                </div>
+                                <div class="reports-meta-count">
+                                    <span class="badge-count-pill" id="repSummaryBadge">
+                                        <i class="fa-solid fa-layer-group"></i> Hiển thị <strong id="repFilteredCount">0</strong> / <span id="repTotalCount">0</span> bản ghi
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="reports-db-header-actions">
+                                <button id="btnReloadDb" class="btn btn-secondary btn-sm" title="Tải lại dữ liệu mới nhất từ CSDL">
+                                    <i class="fa-solid fa-rotate-right"></i> Làm Mới
+                                </button>
                                 <button id="btnClearAttendanceHistory" class="btn btn-danger btn-sm"
-                                    style="white-space: nowrap;">
+                                    style="white-space: nowrap;" title="Xóa toàn bộ lịch sử điểm danh">
                                     <i class="fa-solid fa-trash-can"></i> Xóa Lịch Sử
                                 </button>
+                            </div>
+                        </div>
+
+                        <!-- Bộ Lọc Đa Chiều Cho Lịch Sử Điểm Danh (Redesigned) -->
+                        <div class="reports-filter-card">
+                            <!-- Hàng 1: Bộ lọc danh mục (Khối & Trạng thái) -->
+                            <div class="filter-card-row filter-categories-row">
+                                <!-- Lọc theo Khối -->
+                                <div class="filter-field-group">
+                                    <span class="filter-field-label">
+                                        <i class="fa-solid fa-graduation-cap"></i> Khối:
+                                    </span>
+                                    <div class="filter-pill-group" id="reportGradeFilterGroup">
+                                        <button class="pill-btn active" data-report-grade="all">Tất cả</button>
+                                        <button class="pill-btn" data-report-grade="10">Khối 10</button>
+                                        <button class="pill-btn" data-report-grade="11">Khối 11</button>
+                                        <button class="pill-btn" data-report-grade="12">Khối 12</button>
+                                    </div>
+                                </div>
+
+                                <div class="filter-v-divider"></div>
+
+                                <!-- Lọc theo Trạng Thái -->
+                                <div class="filter-field-group">
+                                    <span class="filter-field-label">
+                                        <i class="fa-solid fa-filter"></i> Trạng thái:
+                                    </span>
+                                    <div class="filter-pill-group" id="reportStatusFilterGroup">
+                                        <button class="pill-btn active" data-report-status="all">Tất cả (<span id="repCountAll">0</span>)</button>
+                                        <button class="pill-btn pill-danger" data-report-status="absent">
+                                            <i class="fa-solid fa-triangle-exclamation"></i> Có vắng (<span id="repCountAbsent">0</span>)
+                                        </button>
+                                        <button class="pill-btn pill-success" data-report-status="full">
+                                            <i class="fa-solid fa-circle-check"></i> Đủ sĩ số (<span id="repCountFull">0</span>)
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="filter-card-divider"></div>
+
+                            <!-- Hàng 2: Bộ lọc thời gian & Tìm kiếm từ khóa -->
+                            <div class="filter-card-row filter-controls-row">
+                                <!-- Lọc theo Ngày -->
+                                <div class="filter-field-group filter-date-field">
+                                    <span class="filter-field-label">
+                                        <i class="fa-solid fa-calendar-day"></i> Ngày quét:
+                                    </span>
+                                    <div class="filter-date-wrapper">
+                                        <div class="date-input-box">
+                                            <i class="fa-regular fa-calendar date-input-icon"></i>
+                                            <input type="date" id="filterReportDate" class="form-control-date" title="Chọn ngày điểm danh">
+                                        </div>
+                                        <button id="btnFilterToday" class="btn-quick-date" title="Xem nhanh kết quả hôm nay">
+                                            Hôm nay
+                                        </button>
+                                        <button id="btnClearDateFilter" class="btn-clear-date" title="Xem tất cả các ngày">
+                                            <i class="fa-solid fa-xmark"></i> Bỏ lọc
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Tìm kiếm nhanh -->
+                                <div class="filter-field-group filter-search-field">
+                                    <div class="filter-search-wrapper">
+                                        <i class="fa-solid fa-magnifying-glass search-input-icon"></i>
+                                        <input type="text" id="filterDbInput" placeholder="Tìm kiếm lớp học, phòng, mã phiên..."
+                                            class="form-control-search">
+                                        <button id="btnClearDbSearch" class="btn-clear-search" title="Xóa từ khóa tìm kiếm" style="display: none;">
+                                            <i class="fa-solid fa-circle-xmark"></i>
+                                        </button>
+                                    </div>
+                                    <button id="btnResetAllFilters" class="btn-reset-filters" title="Khôi phục toàn bộ bộ lọc về mặc định">
+                                        <i class="fa-solid fa-arrows-rotate"></i> Đặt lại
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -236,6 +326,14 @@
                                     </tr>
                                 </tbody>
                             </table>
+                        </div>
+
+                        <!-- Thông Báo Tự Động Xóa Dữ Liệu Sau 90 Ngày -->
+                        <div class="retention-notice-bar">
+                            <i class="fa-solid fa-clock-rotate-left retention-icon"></i>
+                            <span class="retention-text">
+                                <strong>Chính sách lưu trữ:</strong> Dữ liệu điểm danh cũ sẽ được hệ thống tự động xóa sau <strong>90 ngày</strong> để tối ưu hiệu năng và dung lượng lưu trữ CSDL.
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -364,9 +462,8 @@
     <!-- Toast Container -->
     <div id="toastContainer" class="toast-container"></div>
 
-    <!-- App Shell Controller -->
-    <script type="module" src="js/shared/auth-guard.js"></script>
-    <script src="js/shared/app-shell.js"></script>
+    <script type="module" src="js/shared/auth-guard.js?v=2.0"></script>
+    <script src="js/shared/app-shell.js?v=2.2"></script>
     <script src="js/shared/header-actions.js?v=2.2"></script>
 
     <!-- Page Script -->
