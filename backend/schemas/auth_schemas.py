@@ -36,9 +36,8 @@ class UserStatusRequest(BaseModel):
 class UserPublic(BaseModel):
     id: int
     email: str
-    full_name: str = ""
-    role: str
-    is_active: bool
+    full_name: str | None = ""
+    role: str = "staff"
+    is_active: bool = True
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
