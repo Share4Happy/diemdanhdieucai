@@ -369,11 +369,13 @@ function applyDbFilters() {
 
         // 4. Tìm kiếm từ khóa
         if (reportKeyword) {
+            const kw = reportKeyword.toLowerCase();
+            const kwClean = kw.replace(/^#/, '');
             const name = (r.class_name || '').toLowerCase();
             const room = (r.room_number || '').toLowerCase();
             const session = (r.session_code || '').toLowerCase();
             const date = (r.scan_date || '').toLowerCase();
-            if (!name.includes(reportKeyword) && !room.includes(reportKeyword) && !session.includes(reportKeyword) && !date.includes(reportKeyword)) {
+            if (!name.includes(kw) && !room.includes(kw) && !session.includes(kwClean) && !date.includes(kw)) {
                 return false;
             }
         }
@@ -446,13 +448,31 @@ function renderDbTable(rows, startIdx = 0) {
         const rawImgUrl = r.raw_image_path ? (r.raw_image_path.startsWith('http') ? r.raw_image_path : `${API_BASE}${r.raw_image_path}`) : '';
         const annoImgUrl = r.annotated_image_path ? (r.annotated_image_path.startsWith('http') ? r.annotated_image_path : `${API_BASE}${r.annotated_image_path}`) : '';
 
+        // Rút gọn mã phiên dài SESSION_YYYYMMDD_HHMMSS thành định dạng #HHMMSS (hoặc #HH:MM:SS) gọn gàng
+        let shortSession = r.session_code || '--';
+        if (typeof shortSession === 'string') {
+            const m = shortSession.match(/SESSION_\d{8}_(\d{6})/i);
+            if (m) {
+                shortSession = `#${m[1]}`;
+            } else if (shortSession.startsWith('SESSION_')) {
+                shortSession = `#${shortSession.slice(8)}`;
+            }
+        }
+
+        // Định dạng số phòng chuẩn xác, tránh in chữ 'Phòng' trơ trọi khi rỗng
+        let roomDisplay = '<span style="color: #94a3b8;">--</span>';
+        if (r.room_number && String(r.room_number).trim()) {
+            const cleanRoom = String(r.room_number).trim();
+            roomDisplay = cleanRoom.toLowerCase().startsWith('phòng') ? cleanRoom : `Phòng ${cleanRoom}`;
+        }
+
         return `
             <tr class="${absent > 0 ? 'row-absent-highlight' : ''}">
                 <td class="cell-stt" style="text-align: center; color: var(--text-muted); font-size: 0.8rem;">${stt}</td>
                 <td class="cell-datetime"><strong>${r.scan_date}</strong> <span style="font-size: 0.78rem; color: var(--text-muted);">${r.scan_time}</span></td>
-                <td class="cell-session"><code style="font-size: 0.75rem; background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">${r.session_code}</code></td>
-                <td class="cell-class"><strong>${r.class_name}</strong></td>
-                <td class="cell-room"><span style="color: var(--text-secondary); font-size: 0.85rem;">${r.room_number || 'Phòng'}</span></td>
+                <td class="cell-session"><code class="session-code-pill" title="Mã phiên đầy đủ: ${r.session_code}">${shortSession}</code></td>
+                <td class="cell-class"><strong title="${r.class_name}">${r.class_name}</strong></td>
+                <td class="cell-room"><span style="color: var(--text-secondary); font-size: 0.85rem;">${roomDisplay}</span></td>
                 <td class="cell-standard" style="text-align: center;">${r.standard_count}</td>
                 <td class="cell-present" style="text-align: center; font-weight: 700; color: #16a34a;">${r.present_count}</td>
                 <td class="cell-absent" style="text-align: center; font-weight: 800;">

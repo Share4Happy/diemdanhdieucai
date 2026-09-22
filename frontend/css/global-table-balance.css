@@ -459,7 +459,8 @@
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 8px;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     width: 100%;
 }
@@ -720,50 +721,81 @@
 
 /* === REPORTS PAGE TABLE WIDTHS === */
 
-/* Reports Database Table (9 columns) */
+/* Reports Database Table (11 columns balanced) */
+.reports-db-table {
+    min-width: 980px;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.reports-db-table .cell-stt {
+    width: 4.5%;
+    min-width: 44px;
+    text-align: center;
+}
+
 .reports-db-table .cell-datetime {
-    width: 12%;
+    width: 13.5%;
+    min-width: 125px;
+    text-align: left;
 }
 
 .reports-db-table .cell-session {
-    width: 10%;
+    width: 8.5%;
+    min-width: 80px;
+    text-align: left;
 }
 
 .reports-db-table .cell-class {
-    width: 15%;
+    width: 14%;
+    min-width: 120px;
+    text-align: left;
+}
+
+.reports-db-table .cell-room {
+    width: 9%;
+    min-width: 80px;
+    text-align: left;
 }
 
 .reports-db-table .cell-standard {
-    width: 8%;
+    width: 6.5%;
+    min-width: 55px;
     text-align: center;
 }
 
 .reports-db-table .cell-present {
-    width: 8%;
+    width: 7%;
+    min-width: 60px;
     text-align: center;
 }
 
 .reports-db-table .cell-absent {
-    width: 8%;
+    width: 6.5%;
+    min-width: 55px;
     text-align: center;
 }
 
 .reports-db-table .cell-image {
-    width: 12%;
+    width: 8.5%;
+    min-width: 75px;
     text-align: center;
 }
 
 .reports-db-table .cell-status {
     width: 11%;
+    min-width: 95px;
     text-align: center;
 }
 
 .reports-db-table tbody .cell-datetime,
 .reports-db-table tbody .cell-session,
-.reports-db-table tbody .cell-class {
+.reports-db-table tbody .cell-class,
+.reports-db-table tbody .cell-room {
     text-align: left;
 }
 
+.reports-db-table tbody .cell-stt,
 .reports-db-table tbody .cell-standard,
 .reports-db-table tbody .cell-present,
 .reports-db-table tbody .cell-absent,
@@ -780,6 +812,36 @@
 .reports-db-table tbody .cell-absent {
     color: var(--danger);
     font-weight: var(--font-semibold);
+}
+
+.reports-db-table .cell-session code,
+.session-code-pill {
+    font-size: 0.76rem;
+    font-weight: 600;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    background: #f1f5f9;
+    color: #475569;
+    padding: 2px 7px;
+    border-radius: 4px;
+    border: 1px solid #e2e8f0;
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    letter-spacing: 0.2px;
+}
+
+.reports-db-table .cell-class {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.reports-db-table .cell-room {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Reports Files Table (5 columns) */
