@@ -21,26 +21,111 @@ class StudentDetector:
         if model_name is None:
             model_name = settings.YOLO_MODEL_NAME
 
-        logger.info(f"Đang tải mô hình phát hiện đối tượng: {model_name}...")
-        try:
-            self.model = YOLO(model_name)
-            logger.info("Đã nạp mô hình YOLO thành công!")
-        except Exception as e:
-            logger.error(f"Lỗi nạp mô hình {model_name}: {e}. Đang sử dụng yolov8n.pt mặc định.")
-            self.model = YOLO("yolov8n.pt")
+        self.model_name = str(model_name)
+        logger.info(f"Đang tải mô hình phát hiện đối tượng AI: {self.model_name}...")
+        
+        # Kiểm tra đường dẫn trọng số
+        candidate_paths = [
+            Path(self.model_name),
+            settings.MODELS_DIR / Path(self.model_name).name,
+            settings.BASE_DIR / self.model_name,
+            settings.MODELS_DIR / "yolo26m.pt",
+            settings.BASE_DIR / "yolo26m.pt",
+            settings.MODELS_DIR / "yolo26s.pt",
+        ]
+
+        loaded = False
+        for p in candidate_paths:
+            if p.exists() or str(p).endswith(".pt"):
+                try:
+                    self.model = YOLO(str(p))
+                    self.model_name = str(p)
+                    loaded = True
+                    logger.info(f"Đã nạp thành công mô hình {settings.YOLO_FAMILY} ({p.name})!")
+                    break
+                except Exception as e:
+                    logger.warning(f"Không thể nạp checkpoint từ {p}: {e}")
+
+        if not loaded:
+            logger.warning("Đang tải mô hình yolo26m.pt trực tiếp từ Ultralytics...")
+            try:
+                self.model = YOLO("yolo26m.pt")
+                self.model_name = "yolo26m.pt"
+            except Exception as e:
+                logger.error(f"Lỗi tải yolo26m.pt: {e}. Sử dụng yolo26s.pt làm dự phòng.")
+                self.model = YOLO("yolo26s.pt")
+                self.model_name = "yolo26s.pt"
+
+        self.target_class_ids = self._determine_target_classes_for_model(self.model)
+        logger.info(f"AI Target Classes cho điểm danh: {self.target_class_ids} (Tên: {[self.model.names.get(i, 'unknown') for i in self.target_class_ids]})")
+
+        # Nạp mô hình bổ trợ chuyên nhận diện đầu học sinh (chống sót góc xa & cúi gục đầu)
+        self.head_model = None
+        self.head_target_class_ids = [0]
+        head_candidates = [
+            Path(getattr(settings, "HEAD_MODEL_NAME", "models/classroom_best.pt")),
+            settings.MODELS_DIR / "classroom_best.pt",
+            settings.BASE_DIR / "models" / "classroom_best.pt",
+        ]
+        for hp in head_candidates:
+            if hp.exists() and str(hp) != str(self.model_name):
+                try:
+                    self.head_model = YOLO(str(hp))
+                    self.head_target_class_ids = self._determine_target_classes_for_model(self.head_model)
+                    logger.info(f"Đã nạp mô hình bổ trợ chuyên nhận diện đầu học sinh: {hp.name} (Classes: {self.head_target_class_ids})")
+                    break
+                except Exception as e:
+                    logger.warning(f"Không thể nạp mô hình đầu học sinh từ {hp}: {e}")
+
+    def _determine_target_classes_for_model(self, model: Any) -> List[int]:
+        """Tự động nhận diện class id tương ứng với học sinh/người/đầu trong mô hình."""
+        if not hasattr(model, "names") or not model.names:
+            return [0]
+
+        names = model.names
+        matched_ids = []
+        for cls_id, name in names.items():
+            name_lower = str(name).lower()
+            if name_lower in ["person", "student_head", "student", "head", "item"]:
+                matched_ids.append(int(cls_id))
+
+        return matched_ids if matched_ids else [0]
+
+    def _determine_target_classes(self) -> List[int]:
+        return self._determine_target_classes_for_model(self.model)
+
+    def get_model_info(self) -> Dict[str, Any]:
+        """Trả về thông tin chi tiết mô hình AI phục vụ giám sát và báo cáo hệ thống."""
+        import torch
+        is_cuda = torch.cuda.is_available()
+        device_name = torch.cuda.get_device_name(0) if is_cuda else "CPU"
+        return {
+            "family": getattr(settings, "YOLO_FAMILY", "YOLO26"),
+            "variant": getattr(settings, "YOLO_VARIANT", "26m"),
+            "model_name": Path(self.model_name).name,
+            "model_path": self.model_name,
+            "head_model": Path(getattr(settings, "HEAD_MODEL_NAME", "")).name if self.head_model else None,
+            "device": device_name,
+            "is_cuda": is_cuda,
+            "imgsz": settings.YOLO_IMGSZ,
+            "confidence_threshold": settings.AI_CONFIDENCE_THRESHOLD,
+            "iou_threshold": settings.AI_IOU_THRESHOLD,
+            "target_classes": self.target_class_ids,
+            "target_class_names": [self.model.names.get(i, "unknown") for i in self.target_class_ids] if hasattr(self.model, "names") else ["person"]
+        }
 
     @staticmethod
     def deduplicate_boxes(
         boxes: List[List[int]],
         confs: List[float],
-        iou_thresh: float = 0.48,
-        ios_thresh: float = 0.68
+        iou_thresh: float = 0.45,
+        ios_thresh: float = 0.50
     ) -> Tuple[List[List[int]], List[float]]:
         """
-        Hợp nhất các bounding boxes đa tỷ lệ (Global + Tiled):
+        Hợp nhất các bounding boxes đa tỷ lệ (Global + Tiled + Head Model):
         - Nếu IoU >= iou_thresh: trùng lặp đối tượng.
-        - Nếu 1 box lọt trong box kia (IoS >= ios_thresh) và đỉnh đầu gần nhau (|y1_a - y1_b| nhỏ):
-          cùng là 1 người (một box toàn thân + một box nửa người).
+        - Nếu 1 box lọt trong box kia (IoS >= ios_thresh):
+          hợp nhất thông minh giữa box toàn thân (COCO) và box đầu (Head Specialist).
         - Đảm bảo KHÔNG gộp 2 người khác nhau khi 1 người đứng trước che 1 người ngồi sau.
         """
         if not boxes:
@@ -52,13 +137,13 @@ class StudentDetector:
         for i in indices:
             b1 = boxes[i]
             x1_a, y1_a, x2_a, y2_a = b1
-            area_a = (x2_a - x1_a) * (y2_a - y1_a)
+            area_a = max(1, (x2_a - x1_a) * (y2_a - y1_a))
 
             duplicate = False
             for j in kept:
                 b2 = boxes[j]
                 x1_b, y1_b, x2_b, y2_b = b2
-                area_b = (x2_b - x1_b) * (y2_b - y1_b)
+                area_b = max(1, (x2_b - x1_b) * (y2_b - y1_b))
 
                 # Giao điểm
                 ix1 = max(x1_a, x1_b)
@@ -71,15 +156,23 @@ class StudentDetector:
                     iou = inter / float(area_a + area_b - inter)
                     ios = inter / float(min(area_a, area_b))
 
-                    min_h = min(y2_a - y1_a, y2_b - y1_b)
-                    y_diff = abs(y1_a - y1_b)
-
                     if iou >= iou_thresh:
                         duplicate = True
                         break
-                    if ios >= ios_thresh and (y_diff / float(max(1, min_h))) < 0.25:
-                        duplicate = True
-                        break
+
+                    # Một box nằm trong box kia (Head nằm trong Upper-body/Person hoặc ngược lại)
+                    if ios >= ios_thresh:
+                        big_b = b2 if area_b > area_a else b1
+                        small_b = b1 if area_b > area_a else b2
+                        bx1, by1, bx2, by2 = big_b
+                        sx1, sy1, sx2, sy2 = small_b
+                        scx = (sx1 + sx2) / 2.0
+                        scy = (sy1 + sy2) / 2.0
+
+                        # Nếu tâm box nhỏ nằm trong box lớn và ở nửa trên (75% trên) -> Cùng 1 học sinh
+                        if (bx1 - 10 <= scx <= bx2 + 10) and (by1 - 10 <= scy <= by1 + (by2 - by1) * 0.75):
+                            duplicate = True
+                            break
 
             if not duplicate:
                 kept.append(i)
@@ -93,22 +186,23 @@ class StudentDetector:
         imgsz: int = None
     ) -> Tuple[List[List[int]], List[float]]:
         """
-        Chạy phát hiện người theo cơ chế đa tầng (Global + Sliced Tiles)
-        giúp phát hiện rõ nét học sinh ngồi ở xa và học sinh bị che khuất một phần.
+        Chạy phát hiện người theo cơ chế đa tầng (Global + Head Specialist + Sliced Tiles)
+        giúp phát hiện rõ nét học sinh ngồi ở xa và học sinh cúi đầu bị che khuất một phần.
         """
         h, w = image.shape[:2]
         if imgsz is None:
-            # Luôn quét ở độ phân giải lớn (settings.YOLO_IMGSZ = 1280px) để phóng đại chi tiết đầu học sinh ở các dãy bàn xa
             imgsz = settings.YOLO_IMGSZ
 
         all_boxes = []
         all_confs = []
 
-        # 1. Quét toàn cục với kích thước phân giải tối ưu
+        # 1. Quét toàn cục với mô hình chính (YOLO person detector)
+        # Sử dụng ngưỡng conf 0.25 để loại trừ hoàn toàn nhiễu mặt bàn/ghế gỗ
+        coco_conf = max(0.25, conf_threshold)
         res_global = self.model.predict(
             source=image,
-            classes=[0],
-            conf=conf_threshold,
+            classes=self.target_class_ids,
+            conf=coco_conf,
             imgsz=imgsz,
             iou=settings.AI_IOU_THRESHOLD,
             verbose=False
@@ -120,10 +214,29 @@ class StudentDetector:
                 all_boxes.append(xyxy)
                 all_confs.append(conf)
 
-        # 2. Quét chi tiết phân mảnh (Sliced Tiled Pass - SAHI) nếu là ảnh độ phân giải cao (>= 1280px)
+        # 2. Quét toàn cục bổ trợ bằng mô hình chuyên phát hiện đầu (Head Specialist)
+        # Chạy ở ngưỡng nhạy cao (conf_threshold = 0.18) để bắt trọn học sinh cúi đầu / góc xa
+        if self.head_model is not None:
+            res_head = self.head_model.predict(
+                source=image,
+                classes=self.head_target_class_ids,
+                conf=conf_threshold,
+                imgsz=imgsz,
+                iou=settings.AI_IOU_THRESHOLD,
+                verbose=False
+            )
+            if res_head and len(res_head) > 0:
+                for b in res_head[0].boxes:
+                    xyxy = [int(v) for v in b.xyxy[0].cpu().numpy()]
+                    conf = float(b.conf[0].cpu().numpy())
+                    all_boxes.append(xyxy)
+                    all_confs.append(conf)
+
+        # 3. Quét chi tiết phân mảnh đa tỷ lệ (Sliced Tiled Pass - SAHI) khi ảnh độ nét cao (>= 720p)
         if settings.USE_TILED_INFERENCE and (w >= 1280 or h >= 720):
             tile_w, tile_h = 1200, 800
             step_x, step_y = 900, 600
+            tile_imgsz = 960
 
             for y in range(0, h, step_y):
                 for x in range(0, w, step_x):
@@ -135,9 +248,9 @@ class StudentDetector:
                     tile = image[y1:y2, x1:x2]
                     res_tile = self.model.predict(
                         source=tile,
-                        classes=[0],
-                        conf=conf_threshold,
-                        imgsz=960,
+                        classes=self.target_class_ids,
+                        conf=coco_conf,
+                        imgsz=tile_imgsz,
                         verbose=False
                     )
                     if res_tile and len(res_tile) > 0:
@@ -146,9 +259,9 @@ class StudentDetector:
                             all_boxes.append([bx1 + x1, by1 + y1, bx2 + x1, by2 + y1])
                             all_confs.append(float(b.conf[0].cpu().numpy()))
 
-        # 3. Khử trùng lặp đa tầng thông minh
+        # 4. Khử trùng lặp đa tầng thông minh
         fused_boxes, fused_confs = self.deduplicate_boxes(
-            all_boxes, all_confs, iou_thresh=settings.AI_IOU_THRESHOLD, ios_thresh=0.68
+            all_boxes, all_confs, iou_thresh=settings.AI_IOU_THRESHOLD, ios_thresh=0.60
         )
         return fused_boxes, fused_confs
 
@@ -202,8 +315,8 @@ class StudentDetector:
             box_w = x2 - x1
             box_h = y2 - y1
 
-            # Loại bỏ các box nhiễu cực nhỏ (< 12px)
-            if box_w < 12 or box_h < 15:
+            # Loại bỏ các box nhiễu cực nhỏ (< 8px)
+            if box_w < 8 or box_h < 10:
                 continue
 
             # Tinh chỉnh box thích ứng cho đầu & thân trên
@@ -215,9 +328,9 @@ class StudentDetector:
             else:
                 head_y2 = y2
 
-            head_bbox = [x1, y1, x2, max(y1 + 15, head_y2)]
+            head_bbox = [x1, y1, x2, max(y1 + 10, head_y2)]
             cx = (x1 + x2) / 2.0
-            cy = y1 + (head_bbox[3] - y1) * 0.40
+            cy = y1 + (head_bbox[3] - y1) * 0.35
 
             detected_boxes.append({
                 "bbox": [x1, y1, x2, y2],

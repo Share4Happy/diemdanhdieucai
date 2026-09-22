@@ -1,7 +1,7 @@
 """
 =============================================================================
-CHƯƠNG TRÌNH HUẤN LUYỆN & TINH CHỈNH MÔ HÌNH AI YOLOv8 (AI TRAINING MODULE)
-Chuyên Biệt Cho Lớp Học Trường THPT Điều Cải
+CHƯƠNG TRÌNH HUẤN LUYỆN & TINH CHỈNH MÔ HÌNH AI YOLO26m (AI TRAINING MODULE)
+Chuyên Biệt Cho Lớp Học Trường THPT Điều Cải (Ultralytics YOLO26 NMS-Free)
 =============================================================================
 """
 
@@ -32,10 +32,18 @@ import torch
 from ultralytics import YOLO
 
 def parse_args():
-    default_checkpoint = str(MODELS_DIR / "classroom_best.pt") if (MODELS_DIR / "classroom_best.pt").exists() else "yolov8s.pt"
-    parser = argparse.ArgumentParser(description="Huấn luyện mô hình YOLOv8 nhận diện học sinh lớp học Điều Cải")
+    if (MODELS_DIR / "classroom_yolo26m_best.pt").exists():
+        default_checkpoint = str(MODELS_DIR / "classroom_yolo26m_best.pt")
+    elif (MODELS_DIR / "yolo26m.pt").exists():
+        default_checkpoint = str(MODELS_DIR / "yolo26m.pt")
+    elif (BASE_DIR / "yolo26m.pt").exists():
+        default_checkpoint = str(BASE_DIR / "yolo26m.pt")
+    else:
+        default_checkpoint = "yolo26m.pt"
+
+    parser = argparse.ArgumentParser(description="Huấn luyện mô hình YOLO26m nhận diện học sinh lớp học Điều Cải")
     parser.add_argument("--data", type=str, default=str(DATASET_DIR / "classroom.yaml"), help="Đường dẫn file cấu hình dataset.yaml")
-    parser.add_argument("--model", type=str, default=default_checkpoint, help="Mô hình checkpoint ban đầu (yolov8s.pt hoặc models/classroom_best.pt)")
+    parser.add_argument("--model", type=str, default=default_checkpoint, help="Mô hình checkpoint ban đầu (yolo26m.pt hoặc models/classroom_yolo26m_best.pt)")
     parser.add_argument("--epochs", type=int, default=25, help="Số lượt huấn luyện (epochs)")
     parser.add_argument("--imgsz", type=int, default=640, help="Kích thước phân giải ảnh huấn luyện (mặc định 640 tối ưu cho GPU 4GB)")
     parser.add_argument("--batch", type=int, default=4, help="Kích thước batch (khuyến nghị 4 cho GPU 4GB VRAM)")
@@ -145,16 +153,18 @@ def main():
         # 5. Xuất mô hình tốt nhất vào thư mục models/
         best_weight = BASE_DIR / "runs" / "train" / "dieucai_classroom" / "weights" / "best.pt"
         if best_weight.exists():
-            target_model_path = MODELS_DIR / "classroom_best.pt"
+            target_model_path = MODELS_DIR / "classroom_yolo26m_best.pt"
             shutil.copy2(str(best_weight), str(target_model_path))
+            # Tạo bản sao tương thích ngược
+            shutil.copy2(str(best_weight), str(MODELS_DIR / "classroom_best.pt"))
             print("\n=================================================================")
-            print(f"[THÀNH CÔNG] Đã huấn luyện xong mô hình AI cho trường Điều Cải!")
+            print(f"[THÀNH CÔNG] Đã huấn luyện xong mô hình YOLO26m cho trường Điều Cải!")
             print(f"[+] File trọng số tối ưu đã được lưu tại: {target_model_path}")
             print("\nCÁCH KÍCH HOẠT MÔ HÌNH MỚI:")
-            print("1. Mở file 'config/settings.py'")
+            print("1. Mở file '.env' hoặc 'config/settings.py'")
             print("2. Đổi dòng cấu hình:")
-            print('   YOLO_MODEL_NAME: str = "models/classroom_best.pt"')
-            print("3. Khởi động lại hệ thống bằng 'run.bat' để tận hưởng độ chính xác cao nhất!")
+            print('   YOLO_MODEL_NAME=models/classroom_yolo26m_best.pt')
+            print("3. Khởi động lại hệ thống bằng 'run.bat' để áp dụng mô hình mới!")
             print("=================================================================")
         else:
             print("[!] Hoàn tất nhưng không tìm thấy file best.pt đầu ra.")

@@ -3,14 +3,14 @@
 
 ![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.110%2B-009688?logo=fastapi)
-![YOLOv8](https://img.shields.io/badge/Ultralytics-YOLOv8-FF7F00?logo=yolo)
+![YOLO26m](https://img.shields.io/badge/Ultralytics-YOLO26m-FF7F00?logo=yolo)
 ![PyTorch CUDA](https://img.shields.io/badge/PyTorch-CUDA%20Accelerated-EE4C2C?logo=pytorch)
 ![OpenCV](https://img.shields.io/badge/OpenCV-Computer%20Vision-5C3EE8?logo=opencv)
 ![Tests](https://img.shields.io/badge/Tests-25%20Passed-brightgreen)
 ![Auth](https://img.shields.io/badge/Auth-JWT%20%2B%20Bcrypt-orange)
 ![License](https://img.shields.io/badge/License-THPT%20Điều%20Cải-green)
 
-Hệ thống điểm danh tự động toàn diện cho **30 lớp học** (tổng quy mô **1.246 học sinh**) tại **Trường THPT Điều Cải** ứng dụng thị giác máy tính AI (**YOLOv8 Custom Fine-tuned**), thuật toán phân vùng không gian đa giác ROI (**Green Zone** - khu vực bàn học sinh tính sĩ số / **Red Zone** - khu vực bục giảng giáo viên loại trừ), kiến trúc phân tầng độc lập (**Frontend Glassmorphism + FastAPI RESTful Backend + SQLite/PostgreSQL Database + AI Training Subsystem**), **hệ thống xác thực bảo mật JWT + Bcrypt**, tích hợp điều khiển Relay đèn LED báo hiệu phần cứng, lập lịch quét tự động lúc **06:45 AM** hàng ngày, tự động xuất báo cáo Excel chuẩn mẫu GD&ĐT và thông báo Zalo tức thời.
+Hệ thống điểm danh tự động toàn diện cho **30 lớp học** (tổng quy mô **1.246 học sinh**) tại **Trường THPT Điều Cải** ứng dụng thị giác máy tính AI thế hệ mới (**Ultralytics YOLO26m Native NMS-Free & STAL**), thuật toán phân vùng không gian đa giác ROI (**Green Zone** - khu vực bàn học sinh tính sĩ số / **Red Zone** - khu vực bục giảng giáo viên loại trừ), kiến trúc phân tầng độc lập (**Frontend Glassmorphism + FastAPI RESTful Backend + SQLite/PostgreSQL Database + AI Training Subsystem**), **hệ thống xác thực bảo mật JWT + Bcrypt**, tích hợp điều khiển Relay đèn LED báo hiệu phần cứng, lập lịch quét tự động lúc **06:45 AM** hàng ngày, tự động xuất báo cáo Excel chuẩn mẫu GD&ĐT và thông báo Zalo tức thời.
 
 ---
 
@@ -23,9 +23,9 @@ Hệ thống điểm danh tự động toàn diện cho **30 lớp học** (tổ
    - Quên mật khẩu qua email SMTP với token có thời hạn 1 giờ.
    - Chỉ admin có thể tạo tài khoản mới - không có đăng ký công khai.
 
-2. **AI Đếm Sĩ Số Lớp Học Độ Chính Xác Cao (YOLOv8 Head & Upper Body Detection):**
-   - Huấn luyện chuyên sâu để nhận diện đỉnh đầu và nửa thân trên học sinh từ camera góc cao lớp học.
-   - Nhận diện chính xác học sinh ngồi cúi đầu đọc sách, viết bài hoặc bị bạn ngồi trước che khuất (*Occlusion*).
+2. **AI Đếm Sĩ Số Lớp Học Độ Chính Xác Cao (YOLO26m Native NMS-Free & STAL):**
+   - Ứng dụng mô hình **YOLO26m** với cơ chế loại bỏ NMS (NMS-free End-to-End) giải quyết triệt để vấn đề gộp nhầm hoặc bỏ sót học sinh khi hai em ngồi sát nhau hoặc che khuất nhau.
+   - Cơ chế **STAL** (Small Target Adaptive Labeling) giúp nhận diện cực kỳ sắc nét học sinh ở các dãy bàn xa góc camera với độ tự tin cao (0.80 - 0.90+).
    - Tích hợp thuật toán **SAHI** (cắt lát ảnh đa tỷ lệ) và cân bằng sáng thích ứng cục bộ **CLAHE** (loại bỏ hoàn toàn hiện tượng ngược sáng và chói lóa từ dãy cửa sổ lớp học).
 
 3. **Phân Vùng Không Gian Đa Giác Độc Lập (Spatial ROI Masking):**
@@ -96,16 +96,16 @@ hethongdiemdanh Dieu Cai/
 │   ├── attendance.db               # Tệp tin CSDL SQLite chính thức
 │   └── README_DATABASE.md          # Sơ đồ thực thể quan hệ (ERD) & Quy chuẩn CSDL
 │
-├── 🧠 training/                     # [PHÂN HỆ AI TRAINING] Huấn luyện mô hình YOLOv8
-│   ├── train_yolo.py               # Script huấn luyện YOLOv8 (GPU CUDA / CPU PyTorch)
+├── 🧠 training/                     # [PHÂN HỆ AI TRAINING] Huấn luyện mô hình YOLO26m
+│   ├── train_yolo.py               # Script huấn luyện YOLO26m (GPU CUDA / CPU PyTorch)
 │   ├── prepare_dataset.py          # Chuẩn hóa nhãn & phân bổ tập train/val
 │   ├── sample_extractor.py         # Trích xuất khung hình từ video phục vụ gán nhãn
 │   ├── generate_classrooms_media.py# Bộ sinh dữ liệu ảnh Full HD và video 15s cho 30 lớp
-│   ├── train_gpu.bat               # Kịch bản 1-click huấn luyện GPU NVIDIA RTX
-│   └── HUONG_DAN_TRAINING_AI.md    # Hướng dẫn chi tiết quy trình gán nhãn & huấn luyện AI
+│   ├── train_gpu.bat               # Kịch bản 1-click huấn luyện GPU NVIDIA RTX 3050
+│   └── HUONG_DAN_TRAINING_AI.md    # Hướng dẫn chi tiết quy trình gán nhãn & huấn luyện AI YOLO26m
 │
 ├── 🧱 core/                         # [CỐT LÕI HỆ THỐNG] Động cơ AI & Giao tiếp thiết bị
-│   ├── detector.py                 # AI YOLOv8 nhận diện đỉnh đầu + SAHI + CLAHE
+│   ├── detector.py                 # AI YOLO26m nhận diện học sinh + SAHI + CLAHE
 │   ├── attendance_engine.py        # Điều phối quét điểm danh đồng loạt 30 lớp học
 │   ├── rtsp_client.py              # Thu nhận luồng hình ảnh đa luồng (RTSP/Webcam/File)
 │   ├── roi_manager.py              # Thuật toán Point-in-Polygon lọc khu vực Green (Lấy) / Red (Bỏ đi)
@@ -120,7 +120,7 @@ hethongdiemdanh Dieu Cai/
 │   └── notification.py             # Quản lý kênh thông báo Email (gửi mail reset password)
 │
 ├── 📁 dataset/                      # Kho dữ liệu hình ảnh, video & cấu hình huấn luyện
-│   ├── classroom.yaml              # Cấu hình dataset cho YOLOv8
+│   ├── classroom.yaml              # Cấu hình dataset cho YOLO26
 │   ├── classroom_data/             # Dữ liệu ảnh & nhãn YOLO phục vụ huấn luyện
 │   └── classrooms_media/           # Bộ dữ liệu 30 lớp học (5 ảnh 1080p + 1 video 15s/lớp)
 │       ├── danh_sach_si_so_toan_truong.xlsx # Bảng Excel tổng hợp sĩ số 30 lớp
@@ -129,7 +129,9 @@ hethongdiemdanh Dieu Cai/
 │       ├── Lop_10A1/ ... Lop_12A10/# 30 thư mục tương ứng 30 lớp học
 │
 ├── 📦 models/                       # Trọng số mô hình AI
-│   └── classroom_best.pt           # Model YOLOv8 Custom đã tinh chỉnh cho THPT Điều Cải
+│   ├── yolo26m.pt                  # Trọng số nền tảng YOLO26m (Ultralytics)
+│   ├── classroom_yolo26m_best.pt   # Model YOLO26m Custom tinh chỉnh cho THPT Điều Cải
+│   └── classroom_best.pt           # Checkpoint tương thích ngược
 │
 ├── ⚙️ config/                       # Cấu hình tập trung (settings.py, logging_config.py)
 ├── 🧪 tests/                        # Bộ kiểm thử tự động Pytest (13 test cases passed)
@@ -254,9 +256,9 @@ Sau khi khởi chạy hệ thống, mở trình duyệt tại:
 
 ---
 
-## 🧠 QUY TRÌNH HUẤN LUYỆN MÔ HÌNH AI (TRAINING PIPELINE)
+## 🧠 QUY TRÌNH HUẤN LUYỆN MÔ HÌNH AI YOLO26m (TRAINING PIPELINE)
 
-Toàn bộ công cụ phục vụ huấn luyện mô hình YOLOv8 được bố trí gọn gàng trong thư mục `training/`:
+Toàn bộ công cụ phục vụ huấn luyện mô hình YOLO26m được bố trí gọn gàng trong thư mục `training/`:
 
 1. **Trích xuất khung hình từ video mẫu:**
    ```powershell
@@ -270,15 +272,15 @@ Toàn bộ công cụ phục vụ huấn luyện mô hình YOLOv8 được bố 
    ```powershell
    python training/generate_classrooms_media.py
    ```
-4. **Kích hoạt huấn luyện trên GPU NVIDIA RTX (1-Click):**
+4. **Kích hoạt huấn luyện trên GPU NVIDIA RTX 3050 (1-Click):**
    ```powershell
    training\train_gpu.bat
    ```
    *Hoặc chạy trực tiếp qua CLI với các tham số tùy biến:*
    ```powershell
-   python training/train_yolo.py --epochs 30 --imgsz 640 --batch 4 --device 0
+   venv_cuda\Scripts\python training/train_yolo.py --model models/yolo26m.pt --epochs 25 --imgsz 640 --batch 4 --device 0
    ```
-   Sau khi huấn luyện hoàn tất, trọng số tối ưu nhất sẽ được tự động xuất bản vào `models/classroom_best.pt`.
+   Sau khi huấn luyện hoàn tất, trọng số tối ưu nhất sẽ được tự động xuất bản vào `models/classroom_yolo26m_best.pt`.
 
 *Xem sổ tay chi tiết tại: [training/HUONG_DAN_TRAINING_AI.md](training/HUONG_DAN_TRAINING_AI.md).*
 

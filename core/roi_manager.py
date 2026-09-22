@@ -82,24 +82,24 @@ class ROIManager:
     ) -> bool:
         """
         Kiểm tra tọa độ tâm điểm (x, y) của đầu người:
-        - Phải nằm TRONG Green Zone (Phần LẤY - pointPolygonTest >= 0)
-        - Và phải nằm NGOÀI Red Zone (Phần BỎ ĐI / Loại trừ - pointPolygonTest < 0)
+        - Phải nằm TRONG Green Zone (Phần LẤY - có dung sai sát mép viền 12px)
+        - Và phải nằm NGOÀI Red Zone (Phần BỎ ĐI / Loại trừ bục giảng)
         """
         px, py = float(point[0]), float(point[1])
 
-        # 1. Kiểm tra Green Zone (Phần LẤY / Bàn học sinh): Phải nằm bên trong
+        # 1. Kiểm tra Green Zone (Phần LẤY / Bàn học sinh): Phải nằm bên trong hoặc sát viền mép (dung sai 12px)
         if green_zone and len(green_zone) >= 3:
             green_poly = cls.points_to_np(green_zone)
-            in_green = cv2.pointPolygonTest(green_poly, (px, py), False) >= 0
-            if not in_green:
+            dist_green = cv2.pointPolygonTest(green_poly, (px, py), True)
+            if dist_green < -12.0:
                 return False
 
-        # 2. Kiểm tra Red Zone (Phần BỎ ĐI / Bục giảng): Phải nằm bên ngoài
+        # 2. Kiểm tra Red Zone (Phần BỎ ĐI / Bục giảng): Phải nằm bên ngoài (chỉ loại trừ khi lọt sâu vào trong)
         if red_zone and len(red_zone) >= 3:
             red_poly = cls.points_to_np(red_zone)
-            in_red = cv2.pointPolygonTest(red_poly, (px, py), False) >= 0
-            if in_red:
-                # Nằm trong vùng đỏ loại trừ -> Bỏ qua
+            dist_red = cv2.pointPolygonTest(red_poly, (px, py), True)
+            if dist_red > 2.0:
+                # Nằm sâu trong vùng đỏ loại trừ -> Bỏ qua
                 return False
 
         return True
@@ -120,11 +120,13 @@ class ROIManager:
         ignored_boxes = []
 
         for box in boxes:
-            # Tọa độ box: x1, y1, x2, y2
-            x1, y1, x2, y2 = box["bbox"]
-            # Lấy tâm đầu hoặc điểm 1/3 trên của box để đại diện cho đỉnh đầu
-            cx = (x1 + x2) / 2.0
-            cy = y1 + (y2 - y1) * 0.35 # Trọng tâm đầu
+            # Ưu tiên sử dụng centroid đã tính chính xác từ StudentDetector (tâm đầu học sinh)
+            if "centroid" in box and box["centroid"] is not None:
+                cx, cy = box["centroid"]
+            else:
+                x1, y1, x2, y2 = box["bbox"]
+                cx = (x1 + x2) / 2.0
+                cy = y1 + (y2 - y1) * 0.35 # Trọng tâm đầu
 
             if cls.is_point_in_roi((cx, cy), red_zone, green_zone):
                 box["centroid"] = (cx, cy)

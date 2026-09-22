@@ -26,7 +26,24 @@ async def health_check():
         "status": "ok",
         "app": settings.APP_NAME,
         "version": settings.APP_VERSION,
-        "architecture": "Decoupled Backend (FastAPI REST API)"
+        "architecture": "Decoupled Backend (FastAPI REST API)",
+        "ai_model": {
+            "family": getattr(settings, "YOLO_FAMILY", "YOLO26"),
+            "variant": getattr(settings, "YOLO_VARIANT", "26m"),
+            "model_name": settings.YOLO_MODEL_NAME,
+            "imgsz": settings.YOLO_IMGSZ,
+            "confidence_threshold": settings.AI_CONFIDENCE_THRESHOLD
+        }
+    }
+
+@router.get("/ai/info")
+@router.get("/system/ai/info")
+async def get_ai_info():
+    """Lấy thông tin chi tiết mô hình AI (YOLO26m), thiết bị tính toán (GPU/CPU) và tham số nhận diện."""
+    from core.detector import detector
+    return {
+        "success": True,
+        "data": detector.get_model_info()
     }
 
 @router.get("/system/classrooms-media")

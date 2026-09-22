@@ -214,16 +214,15 @@ class RelayService:
         brand = info["brand"]
         http_port = info["http_port"]
 
-        # Ánh xạ giá trị ONVIF IrCutFilter
-        # Trên Dahua/Imou Profile T:
-        # "ON" = Chế độ ban đêm (Night Mode / Bật LED hồng ngoại / Ảnh B&W)
-        # "OFF" = Chế độ ban ngày (Day Mode / Tắt hồng ngoại / Khóa ảnh màu chuẩn)
-        # "AUTO" = Chế độ tự động
+        # Ánh xạ giá trị ONVIF IrCutFilter theo đặc tả chuẩn quốc tế (ONVIF Imaging Service):
+        # "OFF" = Ngắt kính lọc hồng ngoại -> Kính lọc mở cho tia hồng ngoại vào -> BẬT ĐÈN HỒNG NGOẠI (Night Mode / B&W)
+        # "ON"  = Bật kính lọc hồng ngoại -> Kính lọc chặn tia hồng ngoại -> CHẾ ĐỘ BAN NGÀY (Day Mode / ẢNH MÀU 100%)
+        # "AUTO" = Chế độ tự động cảm biến ánh sáng
         onvif_filter = "AUTO"
         if mode == "IR_ON":
-            onvif_filter = "ON"
-        elif mode == "COLOR":
             onvif_filter = "OFF"
+        elif mode == "COLOR":
+            onvif_filter = "ON"
         elif mode == "AUTO":
             onvif_filter = "AUTO"
 
@@ -236,29 +235,43 @@ class RelayService:
         auth_digest = HTTPDigestAuth(user, pwd)
 
         try:
-            # 2. XỬ LÝ CAMERA DAHUA / KBVISION QUA CGI (Đầu ghi NVR / Camera công nghiệp mở cổng CGI)
+            # 2. XỬ LÝ CAMERA DAHUA / KBVISION QUA CGI (Cả Camera IPC độc lập và Đầu ghi NVR đa kênh)
             if brand == "DAHUA":
-                color_val = 1
+                # Chuẩn Dahua DayNightColor: 0 = Color (Ngày/Màu), 1 = Auto (Tự động), 2 = Black&White (Đêm/Bật hồng ngoại)
                 if mode == "IR_ON":
-                    color_val = 0
-                elif mode == "AUTO":
                     color_val = 2
+                    is_ir = "true"
+                    light_state = "On"
+                elif mode == "AUTO":
+                    color_val = 1
+                    is_ir = "auto"
+                    light_state = "Auto"
+                else:  # COLOR
+                    color_val = 0
+                    is_ir = "false"
+                    light_state = "Off"
 
-                # Lệnh 2.1: Điều khiển DayNightColor qua VideoInOptions
                 ch_idx = max(0, ch - 1)
-                url_daynight = (
-                    f"http://{host}:{http_port}/cgi-bin/configManager.cgi"
-                    f"?action=setConfig&VideoInOptions[{ch_idx}].NormalOptions.DayNightColor={color_val}"
-                )
-                try:
-                    res = requests.get(url_daynight, auth=auth_digest, timeout=timeout)
-                    if res.status_code in [200, 204]:
-                        logger.info(f"[DAHUA-CGI]: Đã chuyển DayNightColor={color_val} trên {host}")
-                        return True
-                except Exception:
-                    pass
 
-                # Lệnh 2.2: Bật / Tắt đèn trợ sáng trắng / Active Deterrence
+                # Thử các cú pháp lệnh CGI tương thích cho cả Dahua IPC và Đầu ghi Dahua NVR
+                dahua_endpoints = [
+                    f"?action=setConfig&VideoInOptions[{ch_idx}].DayNightColor={color_val}",
+                    f"?action=setConfig&VideoInOptions[{ch_idx}].NormalOptions.DayNightColor={color_val}",
+                    f"?action=setConfig&VideoInOptions[{ch_idx}].NightOptions.DayNightColor={color_val}&VideoInOptions[{ch_idx}].NightOptions.InfraRed={is_ir}",
+                    f"?action=setConfig&Lighting[{ch_idx}][0].Mode={'Manual' if mode == 'IR_ON' else 'Auto'}&Lighting[{ch_idx}][0].State={light_state}"
+                ]
+
+                for ep in dahua_endpoints:
+                    try:
+                        url = f"http://{host}:{http_port}/cgi-bin/configManager.cgi{ep}"
+                        res = requests.get(url, auth=auth_digest, timeout=timeout)
+                        if res.status_code in [200, 204] and ("OK" in res.text or not res.text.strip()):
+                            logger.info(f"[DAHUA-CGI]: Đã gửi lệnh '{ep}' thành công tới {host}")
+                            return True
+                    except Exception:
+                        pass
+
+                # Lệnh 2.2: Bật / Tắt đèn trợ sáng trắng / Active Deterrence (cho camera hỗ trợ Coaxial / NVR)
                 if mode in ["IR_ON", "WHITE_LIGHT_ON"]:
                     url_light = f"http://{host}:{http_port}/cgi-bin/coaxialControlIO.cgi?action=control&channel={ch}&info[0].Type=1&info[0].IO=1"
                 else:
@@ -294,25 +307,27 @@ class RelayService:
                 elif mode == "AUTO":
                     filter_mode = "auto"
 
-                url_hik = f"http://{host}:{http_port}/ISAPI/Image/channels/{ch}/IrcutFilter"
-                xml_data = (
-                    f'<IrcutFilter version="2.0" xmlns="http://www.isapi.org/ver20/XMLSchema">'
-                    f'<IrcutFilterType>{filter_mode}</IrcutFilterType>'
-                    f'</IrcutFilter>'
-                )
-                try:
-                    res = requests.put(
-                    url_hik,
-                    data=xml_data,
-                    headers={"Content-Type": "application/xml"},
-                    auth=auth_digest,
-                    timeout=timeout
-                )
-                    if res.status_code in [200, 204]:
-                        logger.info(f"[HIK-ISAPI]: Đã chuyển IrcutFilter={filter_mode} trên {host}")
-                        return True
-                except Exception:
-                    pass
+                hik_channels = [ch, ch * 100 + 1] if ch < 100 else [ch]
+                for h_ch in hik_channels:
+                    url_hik = f"http://{host}:{http_port}/ISAPI/Image/channels/{h_ch}/IrcutFilter"
+                    xml_data = (
+                        f'<IrcutFilter version="2.0" xmlns="http://www.isapi.org/ver20/XMLSchema">'
+                        f'<IrcutFilterType>{filter_mode}</IrcutFilterType>'
+                        f'</IrcutFilter>'
+                    )
+                    try:
+                        res = requests.put(
+                            url_hik,
+                            data=xml_data,
+                            headers={"Content-Type": "application/xml"},
+                            auth=auth_digest,
+                            timeout=timeout
+                        )
+                        if res.status_code in [200, 204]:
+                            logger.info(f"[HIK-ISAPI]: Đã chuyển IrcutFilter={filter_mode} trên kênh {h_ch} ({host})")
+                            return True
+                    except Exception:
+                        pass
 
             # 4. THỬ QUA HTTP RELAY THÔNG DỤNG (ESP32, SHELLY)
             if mode in ["IR_ON", "WHITE_LIGHT_ON"]:

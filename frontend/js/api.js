@@ -99,6 +99,10 @@ export const CameraAPI = {
         method: 'POST',
         body: { duration_seconds: durationSeconds, mode: mode }
     }),
+    testAllIR: (durationSeconds = 3) => fetchAPI('/api/cameras/test-all-ir', {
+        method: 'POST',
+        body: { duration_seconds: durationSeconds, mode: "IR_ON" }
+    }),
     resetDefaults: () => fetchAPI('/api/cameras/reset-defaults', { method: 'POST' }),
     probeNVR: (data) => fetchAPI('/api/cameras/nvr/probe', { method: 'POST', body: data }),
     batchImportNVR: (data) => fetchAPI('/api/cameras/nvr/batch-import', { method: 'POST', body: data }),

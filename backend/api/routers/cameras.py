@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -210,8 +211,32 @@ async def test_classroom_camera_ir_endpoint(classroom_id: int, req: Optional[Tes
     mode_vn = "hồng ngoại" if mode == "IR_ON" else ("trợ sáng trắng" if mode == "WHITE_LIGHT_ON" else mode)
     return {
         "success": ok,
-        "message": f"Đã kích hoạt đèn {mode_vn} cho {cls.name} (Tự động tắt sau {duration} giây)." if ok else f"Không thể gửi lệnh điều khiển tới camera {cls.name}. Vui lòng kiểm tra IP và cổng kết nối camera.",
+        "message": f"Đã kích hoạt đèn {mode_vn} cho {cls.name} (Tự động tắt sau {duration} giây)." if ok else f"Không thể gửi lệnh điều khiển đèn {mode_vn} tới camera {cls.name}. Vui lòng kiểm tra lại địa chỉ IP ({cls.relay_ip or 'chưa cấu hình'}) và kết nối mạng.",
         "classroom_id": classroom_id,
+        "duration_seconds": duration
+    }
+
+@router.post("/test-all-ir")
+async def test_all_cameras_ir_endpoint(req: Optional[TestCameraIRRequest] = None, db: Session = Depends(get_db)):
+    """Thử nghiệm kích hoạt đèn hồng ngoại đồng loạt trên toàn bộ 30 camera lớp học trong 3-4 giây rồi tự động chuyển màu & tắt."""
+    classrooms = db.query(Classroom).filter(Classroom.is_active == True).order_by(Classroom.id).all()
+    if not classrooms:
+        raise HTTPException(status_code=404, detail="Chưa có camera lớp học nào đang kích hoạt trong hệ thống.")
+
+    duration = req.duration_seconds if req and req.duration_seconds else 3
+    logger.info(f"Kích hoạt thử nghiệm đèn hồng ngoại đồng loạt {len(classrooms)} camera ({duration}s)...")
+
+    relay_service.signal_classrooms_before_capture(
+        classrooms=classrooms,
+        signal_seconds=duration,
+        capture_color=True
+    )
+    relay_service.restore_classrooms_auto(classrooms)
+
+    return {
+        "success": True,
+        "message": f"Đã phát tín hiệu đèn hồng ngoại đồng loạt trên {len(classrooms)} camera thành công ({duration}s báo hiệu đỏ -> chuyển ảnh màu -> tự động tắt)!",
+        "count": len(classrooms),
         "duration_seconds": duration
     }
 
@@ -330,16 +355,11 @@ async def batch_import_nvr_endpoint(req: NVRBatchImportRequest, db: Session = De
             )
             db.add(roi)
 
-        # Lưu ảnh thumbnail thành Lop_{cls.id}.jpg
-        if item.thumbnail and "base64," in item.thumbnail:
-            try:
-                b64_data = item.thumbnail.split("base64,")[1]
-                img_bytes = base64.b64decode(b64_data)
-                img_path = latest_dir / f"Lop_{cls.id}.jpg"
-                with open(img_path, "wb") as f:
-                    f.write(img_bytes)
-            except Exception as e:
-                logger.debug(f"Không thể lưu thumbnail cho Lop_{cls.id}: {e}")
+        # Chụp ngay khung hình Full HD 1080p sắc nét từ nguồn camera (hoặc nạp ảnh mẫu chuẩn 1080p nếu camera offline)
+        try:
+            rtsp_client.capture_single_camera(cls.id, cls.name, cls.rtsp_url, latest_dir)
+        except Exception as e:
+            logger.debug(f"Không thể nạp snapshot Full HD cho Lop_{cls.id}: {e}")
 
         imported_count += 1
 

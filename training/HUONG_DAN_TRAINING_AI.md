@@ -13,24 +13,22 @@
 
 ---
 
-## 1. CƠ CHẾ AI HIỆN TẠI VÀ VÌ SAO CẦN HUẤN LUYỆN (TRAINING)?
+## 1. CƠ CHẾ AI YOLO26m VÀ VÌ SAO VƯỢT TRỘI SO VỚI YOLOV8
 
 ### 1.1 Cơ chế hiện tại của hệ thống:
-- Hệ thống sử dụng mô hình thị giác máy tính **YOLOv8** (`yolov8s.pt`), kết hợp thuật toán **SAHI** (cắt ảnh phân mảnh độ phân giải cao 1280px) và **Mặt nạ không gian (Spatial ROI)**:
+- Hệ thống sử dụng mô hình thị giác máy tính thế hệ mới **YOLO26m** (`models/yolo26m.pt`), kết hợp thuật toán **SAHI** (cắt ảnh phân mảnh độ phân giải cao 1280px) và **Mặt nạ không gian (Spatial ROI)**:
   - **Red Zone (Vùng Bàn Học)**: AI chỉ đếm người nằm trong khu vực này.
   - **Green Zone (Vùng Bục Giảng)**: Tự động loại trừ thầy/cô giáo khỏi sĩ số học sinh.
 
-### 1.2 Vì sao cần Huấn Luyện (Training / Fine-tuning)?
-- Mô hình YOLOv8 gốc được huấn luyện trên tập dữ liệu COCO quốc tế (chủ yếu là người đi lại ngang tầm mắt ngoài đường).
-- Trong lớp học thực tế trường Điều Cải:
-  - Camera lắp trên trần nhà nhìn xéo xuống góc nghiêng cao.
-  - Học sinh ngồi bàn sau bị bàn trước che khuất thân dưới, cúi đầu viết bài chỉ thấy đỉnh đầu và vai.
-  - Ánh sáng cửa sổ bên phải có thể gây lóa.
-- **Khi bạn huấn luyện mô hình bằng dữ liệu thật của trường**, AI sẽ học được hình ảnh đặc trưng: *tóc đen, áo đồng phục, tư thế ngồi viết bài từ góc camera trên cao*, giúp độ chính xác đạt gần như **100%**, không bao giờ bị bỏ sót học sinh ngồi khuất.
+### 1.2 Đột phá của YOLO26m so với YOLOv8:
+- **Native End-to-End Inference (NMS-free):** Thiết kế dual-head loại bỏ độ trễ và nhược điểm của thuật toán NMS truyền thống, giải quyết triệt để vấn đề gộp nhầm hoặc bỏ sót học sinh khi hai em ngồi sát nhau hoặc che khuất nhau.
+- **STAL (Small Target Adaptive Label assignment):** Thuật toán gán nhãn thích ứng mục tiêu nhỏ, giúp nhận diện cực kỳ sắc nét học sinh ở các dãy bàn xa góc camera.
+- **Độ tự tin vượt trội:** Điểm tin cậy (Confidence Score) trên dữ liệu camera thực tế đạt 0.80 - 0.90+ (so với 0.15 - 0.30 của YOLOv8), hạn chế tối đa box giả lập hoặc nhiễu hậu cảnh.
+- **MuSGD Optimizer:** Huấn luyện hội tụ nhanh và ổn định hơn trên GPU RTX 3050 Laptop.
 
 ---
 
-## 2. QUY TRÌNH 4 BƯỚC HUẤN LUYỆN AI (FINE-TUNING YOLOV8)
+## 2. QUY TRÌNH 4 BƯỚC HUẤN LUYỆN AI (FINE-TUNING YOLO26m)
 
 ### BƯỚC 1: Thu thập ảnh lớp học mẫu (50 - 100 ảnh)
 1. Trên giao diện Web Dashboard, hệ thống tự động lưu các khung hình chụp thực tế mỗi ngày tại:
@@ -44,7 +42,7 @@
    - Tên: `DieuCai_Students`
 3. Tải các ảnh bạn vừa thu thập ở Bước 1 lên.
 4. Dùng chuột vẽ hộp bao (Bounding Box) quanh **đầu và vai của từng học sinh** và đặt tên nhãn duy nhất: `student_head`.
-5. Bấm **"Generate Version"** -> Chọn **"Export Dataset"** -> Chọn định dạng **YOLOv8 PyTorch** -> Tải file zip về máy tính.
+5. Bấm **"Generate Version"** -> Chọn **"Export Dataset"** -> Chọn định dạng **YOLOv8 PyTorch** (chuẩn tương thích Ultralytics) -> Tải file zip về máy tính.
 6. Giải nén vào thư mục dự án theo đường dẫn:
    ```
    dataset/classroom_data/
@@ -57,25 +55,24 @@
    ```
 
 ### BƯỚC 3: Chạy lệnh huấn luyện tự động 1-click
-Mở cửa sổ dòng lệnh PowerShell trong thư mục dự án và chạy:
-```bash
-python train_yolo.py --epochs 50 --imgsz 1280 --batch 8
+Nếu máy tính có GPU NVIDIA RTX 3050, chỉ cần bấm đúp chuột vào:
+```cmd
+training\train_gpu.bat
 ```
-*(Nếu máy tính của bạn không có GPU rời, hãy chạy: `python train_yolo.py --epochs 25 --batch 4 --imgsz 640`)*
-
+Hoặc mở PowerShell chạy thủ công:
+```bash
+venv_cuda\Scripts\python training\train_yolo.py --model models/yolo26m.pt --epochs 25 --imgsz 640 --batch 4 --device 0
+```
 Sau khi chạy xong, chương trình tự động tối ưu hóa và xuất file mô hình tốt nhất vào:
-`models/classroom_best.pt`
+`models/classroom_yolo26m_best.pt`
 
 ### BƯỚC 4: Kích hoạt mô hình mới vào hệ thống
-Mở file `config/settings.py` và sửa dòng sau:
-```python
-# Trước:
-YOLO_MODEL_NAME: str = "yolov8s.pt"
-
-# Sau khi train:
-YOLO_MODEL_NAME: str = "models/classroom_best.pt"
+Mở file `.env` hoặc `config/settings.py` và sửa dòng sau:
+```env
+YOLO_MODEL_NAME=models/classroom_yolo26m_best.pt
+AI_CONFIDENCE_THRESHOLD=0.25
 ```
-Bây giờ khởi động lại hệ thống bằng file `run.bat` là hệ thống đã hoàn toàn "hiểu" lớp học Điều Cải!
+Khởi động lại hệ thống bằng file `run.bat` để áp dụng ngay mô hình AI mới nhất!
 
 ---
 

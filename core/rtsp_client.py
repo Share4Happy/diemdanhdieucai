@@ -173,6 +173,12 @@ class RTSPCameraClient:
                 if not cap.isOpened():
                     cap = cv2.VideoCapture(cam_idx)
                 if cap.isOpened():
+                    # Yêu cầu độ phân giải Full HD (1920x1080) để nhận diện rõ các góc xa lớp học
+                    try:
+                        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+                        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+                    except Exception:
+                        pass
                     ret, frame = False, None
                     for _ in range(4):
                         ret, frame = cap.read()
@@ -357,10 +363,15 @@ class RTSPCameraClient:
         if frame is None:
             latest_capture = settings.CAPTURES_DIR / "latest" / f"Lop_{classroom_id}.jpg"
             if latest_capture.exists():
-                frame = cv2.imread(str(latest_capture))
+                f_candidate = cv2.imread(str(latest_capture))
+                if f_candidate is not None:
+                    h, w = f_candidate.shape[:2]
+                    # Chỉ dùng ảnh cache nếu đạt chuẩn tối thiểu 720p (ngăn chặn tái sử dụng thumbnail mờ 320x180)
+                    if w >= 1280 and h >= 720:
+                        frame = f_candidate
 
             if frame is None:
-                extracted_frames = list((settings.BASE_DIR / "dataset" / "extracted_frames").glob("*.jpg"))
+                extracted_frames = sorted(list((settings.BASE_DIR / "dataset" / "extracted_frames").glob("*.jpg")))
                 if extracted_frames:
                     sample_path = extracted_frames[(classroom_id - 1) % len(extracted_frames)]
                     frame = cv2.imread(str(sample_path))
@@ -372,9 +383,13 @@ class RTSPCameraClient:
 
             is_success = True
 
-        # Lưu ảnh vào thư mục máy chủ: storage/captures/YYYY-MM-DD/Lop_X.jpg
+        # Lưu ảnh vào thư mục máy chủ với độ nén JPEG chất lượng cao 95%
         if frame is not None:
-            cv2.imwrite(str(file_path), frame)
+            cv2.imwrite(str(file_path), frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
+            # Đồng bộ cập nhật ngay vào thư mục latest để hiển thị sắc nét trên giao diện ROI
+            latest_path = settings.CAPTURES_DIR / "latest" / f"Lop_{classroom_id}.jpg"
+            if str(file_path) != str(latest_path):
+                cv2.imwrite(str(latest_path), frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
             return classroom_id, True, str(file_path), frame
         else:
             logger.error(f"Lỗi chụp ảnh cho lớp {classroom_name}")

@@ -14,6 +14,8 @@ env/
 
 # Weights & Dataset
 weights/
+*.pt
+models/*.pt
 dataset/classroom_data/
 
 # Testing & Cache

@@ -39,7 +39,7 @@ graph TD
 
     subgraph "3. LỚP NGHIỆP VỤ CỐT LÕI (CORE & SERVICES)"
         Engine["attendance_engine.py<br/>(Bộ điều phối quét 30 lớp)"]
-        Detector["detector.py<br/>(AI YOLOv8 + Tiled SAHI)"]
+        Detector["detector.py<br/>(AI YOLO26m + Tiled SAHI)"]
         RTSP["rtsp_client.py<br/>(Thu nhận luồng hình ảnh)"]
         Relay["relay_service.py<br/>(Điều khiển đèn LED)"]
         ROIMgr["roi_manager.py<br/>(Tọa độ Red/Green Zone)"]
@@ -69,11 +69,11 @@ graph TD
     end
 
     subgraph "5. PHÂN HỆ HUẤN LUYỆN AI (AI TRAINING)"
-        TrainScript["train_yolo.py<br/>(Huấn luyện GPU PyTorch)"]
+        TrainScript["train_yolo.py<br/>(Huấn luyện YOLO26m GPU RTX)"]
         PrepData["prepare_dataset.py<br/>(Chuẩn hóa nhãn nhãn)"]
         SampleExt["sample_extractor.py<br/>(Trích xuất frame mẫu)"]
         DatasetDir[("dataset/classroom_data<br/>(Ảnh & Nhãn YOLO)")]
-        ModelBest[("models/classroom_best.pt<br/>(Trọng số AI)")]
+        ModelBest[("models/classroom_yolo26m_best.pt<br/>(Trọng số YOLO26m)")]
 
         DatasetDir --> PrepData
         PrepData --> TrainScript
@@ -91,7 +91,7 @@ graph TD
 | **Frontend Developer** | `frontend/` (`html`, `css`, `js`) | Thiết kế giao diện, vẽ đồ thị Chart.js, hiển thị bảng điểm danh, form camera, cấu hình canvas ROI. Gọi API qua `api.js`. | `run_frontend.bat` (Cổng 3000) |
 | **Backend Developer** | `backend/`, `core/`, `services/`, `config/` | Xây dựng REST API, xử lý nghiệp vụ điểm danh, tích hợp Zalo/Excel/Relay, lập lịch tự động, viết test case. | `run_backend.bat` (Cổng 8000) |
 | **Database Developer** | `database/` | Thiết kế cấu trúc bảng ORM (`models.py`), quản lý kết nối (`db_session.py`), nạp dữ liệu mẫu, backup dữ liệu. | `python -c "from database.db_session import init_db; init_db()"` |
-| **AI Training Engineer** | `training/`, `dataset/`, `models/` | Chuẩn bị dữ liệu ảnh/nhãn, gán nhãn, fine-tuning mô hình YOLOv8 trên GPU NVIDIA RTX, đánh giá mAP/Loss. | `training\train_gpu.bat` |
+| **AI Training Engineer** | `training/`, `dataset/`, `models/` | Chuẩn bị dữ liệu ảnh/nhãn, gán nhãn, fine-tuning mô hình YOLO26m trên GPU NVIDIA RTX 3050, đánh giá mAP/Loss. | `training\train_gpu.bat` |
 
 ---
 
@@ -105,7 +105,7 @@ graph TD
 2. **Huấn luyện AI độc lập không làm treo hệ thống:**
    - Kỹ sư AI thử nghiệm mô hình trong thư mục `training/`.
    - Quá trình huấn luyện sinh ra file kết quả trong `runs/` và không can thiệp vào các tiến trình Backend đang chạy.
-   - Khi có mô hình mới tốt hơn, chỉ cần copy vào `models/classroom_best.pt`.
+   - Khi có mô hình mới tốt hơn, chỉ cần lưu vào `models/classroom_yolo26m_best.pt` và cấu hình trong `.env`.
 
 3. **Cơ cấu điều khiển trực quan & Tinh gọn thư mục gốc:**
    - Thư mục gốc được tinh gọn tối đa chỉ còn 9 tệp tin điều khiển cốt lõi (`run.bat`, `run_backend.bat`, `run_frontend.bat`, `xem_tien_do.bat`, `app.py`,...).

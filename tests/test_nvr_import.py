@@ -3,7 +3,10 @@ from fastapi.testclient import TestClient
 from backend.main import app
 from services.nvr_service import nvr_service
 from database.db_session import SessionLocal, init_db
-from database.models import Classroom, ROIPolygon, NVRDevice
+from backend.api.deps import get_current_user
+from database.models import User
+
+app.dependency_overrides[get_current_user] = lambda: User(id=1, email="admin@truongdieucai.edu.vn", role="admin")
 
 client = TestClient(app)
 
