@@ -20,7 +20,30 @@ class AppShell {
     this.sidebar = document.querySelector('.app-sidebar');
     this.sidebarOverlay = document.querySelector('.sidebar-overlay');
     this.toggleBtn = document.querySelector('.sidebar-toggle-btn');
-    this.mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+    
+    // Auto-create overlay if missing
+    if (!this.sidebarOverlay) {
+      const overlay = document.createElement('div');
+      overlay.className = 'sidebar-overlay';
+      document.body.appendChild(overlay);
+      this.sidebarOverlay = overlay;
+    }
+
+    // Auto-inject mobile hamburger button into .header-left if missing
+    let mobileBtn = document.querySelector('.mobile-menu-btn');
+    if (!mobileBtn) {
+      const headerLeft = document.querySelector('.header-left');
+      if (headerLeft) {
+        mobileBtn = document.createElement('button');
+        mobileBtn.className = 'mobile-menu-btn';
+        mobileBtn.type = 'button';
+        mobileBtn.title = 'Mở Menu Điều Hướng';
+        mobileBtn.setAttribute('aria-label', 'Mở Menu Điều Hướng');
+        mobileBtn.innerHTML = '<i class="fa-solid fa-bars"></i>';
+        headerLeft.prepend(mobileBtn);
+      }
+    }
+    this.mobileMenuBtn = mobileBtn;
 
     if (!this.sidebar) return;
 
@@ -88,6 +111,11 @@ class AppShell {
         credentials: 'include',
       });
 
+      try {
+        localStorage.removeItem('currentUserRole');
+        localStorage.removeItem('currentUser');
+      } catch (e) {}
+
       if (response.ok) {
         window.location.href = '/login.html';
       } else {
@@ -95,6 +123,10 @@ class AppShell {
       }
     } catch (err) {
       console.error('Logout error:', err);
+      try {
+        localStorage.removeItem('currentUserRole');
+        localStorage.removeItem('currentUser');
+      } catch (e) {}
       alert('Lỗi kết nối. Vui lòng thử lại.');
     }
   }

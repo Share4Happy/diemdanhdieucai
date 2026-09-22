@@ -74,6 +74,8 @@ export const AuthAPI = {
 // === ATTENDANCE APIs ===
 export const AttendanceAPI = {
     getLatest: () => fetchAPI('/api/attendance/latest'),
+    getTodaySessions: () => fetchAPI('/api/attendance/today-sessions'),
+    get7DaysTrend: () => fetchAPI('/api/attendance/trend-7days'),
     triggerScan: () => fetchAPI('/api/attendance/trigger', { method: 'POST' }),
     getHistory: (limit = 150) => fetchAPI(`/api/attendance/history?limit=${limit}`),
     clearHistory: () => fetchAPI('/api/attendance/clear-history', { method: 'DELETE' }),
@@ -121,9 +123,11 @@ export const ReportAPI = {
     exportExcel: () => fetchAPI('/api/reports/export-now', { method: 'POST' }),
     exportNow: () => fetchAPI('/api/reports/export-now', { method: 'POST' }),
     sendEmail: (email) => fetchAPI('/api/reports/send-email', { method: 'POST', body: { email } }),
+    saveEmailConfig: (data) => fetchAPI('/api/reports/save-email-config', { method: 'POST', body: data }),
     getDistributionStatus: () => fetchAPI('/api/reports/distribution-status'),
     sendZalo: (data) => fetchAPI('/api/reports/send-zalo', { method: 'POST', body: data }),
     getZaloStatus: () => fetchAPI('/api/reports/zalo-status'),
+    getZaloConfig: () => fetchAPI('/api/reports/zalo-config'),
     saveZaloConfig: (data) => fetchAPI('/api/reports/save-zalo-config', { method: 'POST', body: data }),
     getNotificationSettings: () => fetchAPI('/api/reports/notification-settings'),
     saveNotificationSettings: (data) => fetchAPI('/api/reports/notification-settings', { method: 'POST', body: data })
