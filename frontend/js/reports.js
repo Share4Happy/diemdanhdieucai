@@ -4,6 +4,7 @@
  */
 import { ReportAPI, AttendanceAPI, SystemAPI, showToast, API_BASE } from './api.js';
 import SkeletonTemplates from './components/skeleton-templates.js';
+import { ImageZoomViewer } from './shared/image-zoom-viewer.js';
 
 // === STATE: CSDL ATTENDANCE RECORDS ===
 let allHistoryRows = [];
@@ -1011,18 +1012,51 @@ export function initTabsNavigation() {
     });
 }
 
+let reportZoomViewer = null;
+
 export function showImgModal(src, title) {
     const titleEl = document.getElementById('imgModalTitle');
     const srcEl = document.getElementById('imgModalSrc');
-    if (titleEl) titleEl.innerText = title;
-    if (srcEl) srcEl.src = src;
-    document.getElementById('imgModal')?.classList.add('active');
+    const modal = document.getElementById('imgModal');
+    const zoomPercent = document.getElementById('imgZoomPercent');
+
+    if (titleEl) {
+        titleEl.innerHTML = `<i class="fa-solid fa-image" style="color: var(--primary);"></i> ${title}`;
+    }
+
+    if (srcEl) {
+        srcEl.src = src;
+    }
+
+    // Đặt lại tỉ lệ zoom và vị trí khi mở ảnh mới
+    if (reportZoomViewer) {
+        reportZoomViewer.reset(false);
+    }
+    if (zoomPercent) {
+        zoomPercent.textContent = '100%';
+    }
+
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
 }
 
 export function closeImgModal() {
     const modal = document.getElementById('imgModal');
     if (modal) {
         modal.classList.remove('active');
+        document.body.style.overflow = '';
+        const modalDialog = document.getElementById('imgModalDialog');
+        if (modalDialog) modalDialog.classList.remove('is-fullscreen');
+        const btnFullscreen = document.getElementById('btnImgFullscreen');
+        if (btnFullscreen) {
+            btnFullscreen.innerHTML = '<i class="fa-solid fa-expand"></i>';
+            btnFullscreen.title = 'Toàn màn hình';
+        }
+        if (reportZoomViewer) {
+            reportZoomViewer.reset(false);
+        }
         const srcEl = document.getElementById('imgModalSrc');
         if (srcEl) srcEl.src = '';
     }
@@ -1031,6 +1065,34 @@ export function closeImgModal() {
 export function initImgModalEvents() {
     const modal = document.getElementById('imgModal');
     const closeBtn = document.getElementById('imgModalCloseBtn');
+    const viewport = document.getElementById('imgZoomViewport');
+    const layer = document.getElementById('imgZoomLayer');
+    const img = document.getElementById('imgModalSrc');
+    const zoomPercent = document.getElementById('imgZoomPercent');
+
+    if (viewport && layer && img) {
+        reportZoomViewer = new ImageZoomViewer({
+            viewport,
+            layer,
+            img,
+            minScale: 0.6,
+            maxScale: 12.0,
+            onZoomChange: (scale) => {
+                if (zoomPercent) {
+                    zoomPercent.textContent = `${Math.round(scale * 100)}%`;
+                }
+            }
+        });
+
+        reportZoomViewer.bindControls({
+            btnZoomIn: document.getElementById('btnImgZoomIn'),
+            btnZoomOut: document.getElementById('btnImgZoomOut'),
+            btnReset: document.getElementById('btnImgZoomReset'),
+            levelPill: document.getElementById('btnImgZoomLevel'),
+            btnFullscreen: document.getElementById('btnImgFullscreen'),
+            modalDialog: document.getElementById('imgModalDialog')
+        });
+    }
 
     if (closeBtn) {
         closeBtn.addEventListener('click', closeImgModal);
@@ -1045,8 +1107,15 @@ export function initImgModalEvents() {
     }
 
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && modal && modal.classList.contains('active')) {
+        if (!modal || !modal.classList.contains('active')) return;
+        if (e.key === 'Escape') {
             closeImgModal();
+        } else if (e.key === '+' || e.key === '=') {
+            reportZoomViewer?.zoomIn();
+        } else if (e.key === '-' || e.key === '_') {
+            reportZoomViewer?.zoomOut();
+        } else if (e.key === '0') {
+            reportZoomViewer?.reset(true);
         }
     });
 }
@@ -1054,3 +1123,4 @@ export function initImgModalEvents() {
 window.showImgModal = showImgModal;
 window.closeImgModal = closeImgModal;
 window.initTabsNavigation = initTabsNavigation;
+

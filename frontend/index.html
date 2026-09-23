@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="css/components/skeleton-loader.css">
     <link rel="stylesheet" href="css/global-table-balance.css?v=2.5">
     <link rel="stylesheet" href="css/dashboard.css?v=2.5">
+    <link rel="stylesheet" href="css/components/image-zoom-viewer.css?v=1.0">
     <link rel="stylesheet" href="css/auth.css">
 
     <!-- Font Awesome -->
@@ -401,6 +402,46 @@
             </div>
             <div class="modal-footer" style="padding: 12px 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 10px;">
                 <button class="btn btn-secondary" type="button" id="modalCloseBtn">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Xem Chi Tiết Phóng To Bằng Con Lăn Chuột -->
+    <div class="modal-backdrop" id="imgModal" style="display: none;">
+        <div class="modal-content zoom-modal-dialog" id="imgModalDialog">
+            <div class="zoom-modal-header">
+                <div class="zoom-modal-title-group">
+                    <h3 id="imgModalTitle" class="zoom-modal-title">
+                        <i class="fa-solid fa-image" style="color: var(--primary);"></i> Đối Chứng Ảnh Điểm Danh
+                    </h3>
+                </div>
+                <div class="zoom-modal-toolbar">
+                    <button type="button" class="zoom-btn" id="btnImgZoomOut" title="Thu nhỏ (-)">
+                        <i class="fa-solid fa-minus"></i>
+                    </button>
+                    <button type="button" class="zoom-level-pill" id="btnImgZoomLevel" title="Bấm để đặt lại 100%">
+                        <span id="imgZoomPercent">100%</span>
+                    </button>
+                    <button type="button" class="zoom-btn" id="btnImgZoomIn" title="Phóng to (+)">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                    <button type="button" class="zoom-btn" id="btnImgZoomReset" title="Đặt lại kích thước & vị trí">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                    </button>
+                    <button type="button" class="zoom-btn" id="btnImgFullscreen" title="Bật/Tắt toàn màn hình">
+                        <i class="fa-solid fa-expand"></i>
+                    </button>
+                    <div style="width: 1px; height: 22px; background: #e2e8f0; margin: 0 4px;"></div>
+                    <button type="button" class="modal-close modal-close-btn" id="imgModalCloseBtn" onclick="closeImgModal()" aria-label="Đóng">&times;</button>
+                </div>
+            </div>
+            <div class="zoom-viewport" id="imgZoomViewport">
+                <div class="zoom-img-layer" id="imgZoomLayer">
+                    <img id="imgModalSrc" class="zoomable-image" src="" alt="Ảnh điểm danh đối chứng">
+                </div>
+                <div class="zoom-floating-hint" id="zoomFloatingHint">
+                    <i class="fa-solid fa-mouse"></i> Lăn chuột để phóng to / thu nhỏ • Kéo chuột để di chuyển • Nhấp đúp để đặt lại
+                </div>
             </div>
         </div>
     </div>

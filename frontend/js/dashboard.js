@@ -12,6 +12,7 @@
  */
 
 import { AttendanceAPI, showToast } from './api.js';
+import { ImageZoomViewer } from './shared/image-zoom-viewer.js';
 
 // Global state
 let currentSession = null;
@@ -25,6 +26,7 @@ let trendChartInstance = null;
 function initDashboard() {
     initLiveClock();
     initEventListeners();
+    initZoomModal();
     loadDashboardData();
 
     // Tự động làm mới dữ liệu mỗi 30 giây
@@ -217,9 +219,93 @@ function initEventListeners() {
     });
 
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeModal();
+        if (e.key === 'Escape') {
+            closeModal();
+            closeImgModal();
+        }
     });
 }
+
+let dashboardZoomViewer = null;
+
+function initZoomModal() {
+    const modal = document.getElementById('imgModal');
+    const closeBtn = document.getElementById('imgModalCloseBtn');
+    const viewport = document.getElementById('imgZoomViewport');
+    const layer = document.getElementById('imgZoomLayer');
+    const img = document.getElementById('imgModalSrc');
+    const zoomPercent = document.getElementById('imgZoomPercent');
+
+    if (viewport && layer && img) {
+        dashboardZoomViewer = new ImageZoomViewer({
+            viewport,
+            layer,
+            img,
+            minScale: 0.6,
+            maxScale: 12.0,
+            onZoomChange: (scale) => {
+                if (zoomPercent) zoomPercent.textContent = `${Math.round(scale * 100)}%`;
+            }
+        });
+
+        dashboardZoomViewer.bindControls({
+            btnZoomIn: document.getElementById('btnImgZoomIn'),
+            btnZoomOut: document.getElementById('btnImgZoomOut'),
+            btnReset: document.getElementById('btnImgZoomReset'),
+            levelPill: document.getElementById('btnImgZoomLevel'),
+            btnFullscreen: document.getElementById('btnImgFullscreen'),
+            modalDialog: document.getElementById('imgModalDialog')
+        });
+    }
+
+    closeBtn?.addEventListener('click', closeImgModal);
+    modal?.addEventListener('click', (e) => {
+        if (e.target === modal) closeImgModal();
+    });
+}
+
+function showImgModal(src, title) {
+    const titleEl = document.getElementById('imgModalTitle');
+    const srcEl = document.getElementById('imgModalSrc');
+    const modal = document.getElementById('imgModal');
+    const zoomPercent = document.getElementById('imgZoomPercent');
+
+    if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-image" style="color: var(--primary);"></i> ${title}`;
+    if (srcEl) srcEl.src = src;
+
+    if (dashboardZoomViewer) dashboardZoomViewer.reset(false);
+    if (zoomPercent) zoomPercent.textContent = '100%';
+
+    if (modal) {
+        modal.classList.add('active');
+        modal.style.display = 'flex';
+        modal.style.opacity = '1';
+        modal.style.visibility = 'visible';
+    }
+}
+
+function closeImgModal() {
+    const modal = document.getElementById('imgModal');
+    if (modal) {
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+        modal.style.opacity = '0';
+        modal.style.visibility = 'hidden';
+        const modalDialog = document.getElementById('imgModalDialog');
+        if (modalDialog) modalDialog.classList.remove('is-fullscreen');
+        const btnFullscreen = document.getElementById('btnImgFullscreen');
+        if (btnFullscreen) {
+            btnFullscreen.innerHTML = '<i class="fa-solid fa-expand"></i>';
+            btnFullscreen.title = 'Toàn màn hình';
+        }
+        if (dashboardZoomViewer) dashboardZoomViewer.reset(false);
+        const srcEl = document.getElementById('imgModalSrc');
+        if (srcEl) srcEl.src = '';
+    }
+}
+
+window.showImgModal = showImgModal;
+window.closeImgModal = closeImgModal;
 
 /**
  * ===================================================================
@@ -553,7 +639,11 @@ function openImageModal(classroomId) {
     const nowTs = Date.now();
     if (rawImgWrap) {
         if (detail.raw_image_path) {
-            rawImgWrap.innerHTML = `<img id="modalRawImg" src="${detail.raw_image_path}&_t=${nowTs}" alt="Ảnh gốc camera ${detail.class_name}" style="max-height: 420px; width: 100%; object-fit: contain; border-radius: 8px;">`;
+            const rawUrl = `${detail.raw_image_path}&_t=${nowTs}`;
+            rawImgWrap.innerHTML = `<img id="modalRawImg" src="${rawUrl}" alt="Ảnh gốc camera ${detail.class_name}" style="max-height: 420px; width: 100%; object-fit: contain; border-radius: 8px; cursor: zoom-in;" title="Bấm vào ảnh để phóng to và soi bằng con lăn chuột">`;
+            document.getElementById('modalRawImg')?.addEventListener('click', () => {
+                showImgModal(rawUrl, `Ảnh Gốc Camera - ${detail.class_name}`);
+            });
         } else {
             rawImgWrap.innerHTML = `
                 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 240px; background: #f8fafc; border-radius: 8px; color: #94a3b8; text-align: center; padding: 20px;">
@@ -567,7 +657,11 @@ function openImageModal(classroomId) {
 
     if (annotatedImgWrap) {
         if (detail.annotated_image_path) {
-            annotatedImgWrap.innerHTML = `<img id="modalAnnotatedImg" src="${detail.annotated_image_path}&_t=${nowTs}" alt="Ảnh AI khoanh vùng ${detail.class_name}" style="max-height: 420px; width: 100%; object-fit: contain; border-radius: 8px;">`;
+            const annoUrl = `${detail.annotated_image_path}&_t=${nowTs}`;
+            annotatedImgWrap.innerHTML = `<img id="modalAnnotatedImg" src="${annoUrl}" alt="Ảnh AI khoanh vùng ${detail.class_name}" style="max-height: 420px; width: 100%; object-fit: contain; border-radius: 8px; cursor: zoom-in;" title="Bấm vào ảnh để phóng to và soi bằng con lăn chuột">`;
+            document.getElementById('modalAnnotatedImg')?.addEventListener('click', () => {
+                showImgModal(annoUrl, `Ảnh AI Đối Chứng - ${detail.class_name}`);
+            });
         } else {
             annotatedImgWrap.innerHTML = `
                 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 240px; background: #f8fafc; border-radius: 8px; color: #94a3b8; text-align: center; padding: 20px;">
