@@ -32,6 +32,21 @@ class AttendanceScheduler:
         logger.info("Đã khởi động bộ lập lịch điểm danh tự động.")
         self.update_schedule(morning_time=m_time, afternoon_time=a_time, days=days, enabled=is_enabled)
 
+        # Lập lịch tự động sao lưu dữ liệu toàn hệ thống hàng ngày lúc 23:00
+        try:
+            tz = get_app_timezone()
+            trigger_backup = CronTrigger(hour=23, minute=0, timezone=tz)
+            self.scheduler.add_job(
+                func=self.run_daily_backup_job,
+                trigger=trigger_backup,
+                id="daily_system_backup_job",
+                name="Tự Động Sao Lưu Dữ Liệu Hàng Ngày",
+                replace_existing=True
+            )
+            logger.info("Đã đăng ký tiến trình tự động sao lưu CSDL hàng ngày lúc 23:00.")
+        except Exception as e:
+            logger.warning(f"Lỗi đăng ký lịch sao lưu tự động: {e}")
+
     def run_scheduled_job(self):
         logger.info("=== [CRON] TỰ ĐỘNG KÍCH HOẠT CHU TRÌNH ĐIỂM DANH ===")
         try:
@@ -39,6 +54,17 @@ class AttendanceScheduler:
             logger.info(f"Hoàn thành tác vụ lập lịch: {res.get('session_code')}")
         except Exception as e:
             logger.error(f"Lỗi khi thực thi tác vụ lập lịch: {e}")
+
+    def run_daily_backup_job(self):
+        """Tác vụ tự động sao lưu dữ liệu và cấu hình hàng đêm (23:00 hàng ngày)."""
+        logger.info("=== [CRON] TỰ ĐỘNG SAO LƯU DỮ LIỆU HỆ THỐNG ===")
+        try:
+            from services.backup_service import backup_service
+            res = backup_service.create_backup(note="Tự động sao lưu định kỳ hàng ngày (23:00)", backup_type="AUTO_DAILY")
+            backup_service.cleanup_old_backups(keep_count=15)
+            logger.info(f"Hoàn thành tự động sao lưu: {res.get('message')}")
+        except Exception as e:
+            logger.error(f"Lỗi khi thực thi tự động sao lưu: {e}")
 
     def trigger_now(self):
         """Kích hoạt chạy ngay lập tức (phục vụ kiểm thử hoặc bấm thủ công từ Dashboard)."""

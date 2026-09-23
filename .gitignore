@@ -34,10 +34,12 @@ database/*.db
 storage/captures/
 storage/annotated/
 storage/reports/
+storage/backups/
 storage/*.jpg
 storage/*.png
 storage/*.json
 storage/*.log
+storage/*.zip
 
 # Logs
 logs/*.log
