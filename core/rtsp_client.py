@@ -11,6 +11,7 @@ import numpy as np
 
 from config.settings import settings
 from config.logging_config import logger
+from core.timezone_utils import get_today_str
 
 class RTSPCameraClient:
     """
@@ -410,7 +411,7 @@ class RTSPCameraClient:
         Sử dụng đa luồng (multi-threading) để chụp ảnh từ 30 camera cùng lúc.
         """
         if not date_str:
-            date_str = datetime.now().strftime("%Y-%m-%d")
+            date_str = get_today_str()
 
         target_folder = settings.CAPTURES_DIR / date_str
         target_folder.mkdir(parents=True, exist_ok=True)

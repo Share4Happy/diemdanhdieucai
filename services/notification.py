@@ -42,7 +42,13 @@ class NotificationService:
         except Exception as e:
             logger.error(f"Lỗi sao chép báo cáo nội bộ: {e}")
 
-        # 2. Tự động gửi thông báo sĩ số tức thì qua Zalo
+        # 2. Kiểm tra điều kiện gửi (Luôn gửi hoặc chỉ gửi khi có học sinh vắng)
+        send_cond = getattr(settings, "NOTIFICATION_SEND_CONDITION", "always")
+        if send_cond == "has_absent" and (session.total_absent or 0) == 0:
+            logger.info("[NOTIFICATION-LOG]: 100% học sinh đi học đủ và cấu hình gửi là 'has_absent' -> Bỏ qua phát thông báo.")
+            return True
+
+        # 3. Tự động gửi thông báo sĩ số tức thì qua Zalo
         try:
             zalo_res = zalo_service.send_attendance_summary(session_id)
             logger.info(f"Kết quả gửi tin nhắn Zalo: {zalo_res.get('message')}")

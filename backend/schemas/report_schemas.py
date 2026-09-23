@@ -44,6 +44,7 @@ class NotificationAdjustRequest(BaseModel):
     alert_class_absent_count: Optional[int] = 3
     scan_time_morning: Optional[str] = "06:45"
     scan_time_afternoon: Optional[str] = "12:45"
+    schedule_days: Optional[str] = "mon-sat"
     auto_scan_enabled: Optional[bool] = True
     zalo_school_template: Optional[str] = ""
     zalo_class_template: Optional[str] = ""

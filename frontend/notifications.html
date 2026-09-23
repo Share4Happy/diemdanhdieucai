@@ -221,6 +221,81 @@
             text-align: right;
             margin-top: 4px;
         }
+
+        /* Day Picker Styles for Schedule */
+        .schedule-days-container {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1.1rem 1.25rem;
+            margin-top: 1.25rem;
+        }
+        .schedule-days-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.85rem;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .schedule-days-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .schedule-days-grid {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .day-check-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 7px 14px;
+            border-radius: 8px;
+            border: 1.5px solid #cbd5e1;
+            background: #ffffff;
+            color: #334155;
+            font-size: 0.86rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        .day-check-btn:hover {
+            border-color: #93c5fd;
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+        .day-check-btn.active {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: #ffffff;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.28);
+        }
+        .day-quick-select {
+            display: flex;
+            gap: 6px;
+        }
+        .btn-day-preset {
+            padding: 3px 9px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-day-preset:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
     </style>
 </head>
 
@@ -254,7 +329,7 @@
                     <li class="sidebar-nav-item">
                         <a href="roi-config.html" class="sidebar-nav-link">
                             <span class="sidebar-nav-icon"><i class="fa-solid fa-draw-polygon"></i></span>
-                            <span class="sidebar-nav-text">Vùng</span>
+                            <span class="sidebar-nav-text">Vùng ROI</span>
                         </a>
                     </li>
                     <li class="sidebar-nav-item">
@@ -314,7 +389,7 @@
                             <i class="fa-solid fa-rotate"></i> Làm Mới
                         </button>
                         <button id="btnSendAllTest" class="btn btn-primary">
-                            <i class="fa-solid fa-paper-plane"></i> Gửi Thử Zalo & Email
+                            <i class="fa-solid fa-paper-plane"></i> Gửi Báo Cáo Zalo & Email
                         </button>
                     </div>
                 </div>
@@ -432,17 +507,17 @@
                                 <input type="hidden" id="zaloRecipientsInput" value="">
                             </div>
 
-                            <!-- SĐT Thử Nghiệm -->
+                            <!-- SĐT Nhận Tin Báo Cáo Ngay -->
                             <div class="zalo-panel zalo-panel--test" style="margin-bottom: 0;">
                                 <div class="zalo-panel-header">
                                     <span class="zalo-panel-title">
-                                        <i class="fa-solid fa-mobile-screen"></i> SĐT Nhận Tin Thử Nghiệm (Test nhanh)
+                                        <i class="fa-solid fa-mobile-screen"></i> SĐT Nhận Tin Báo Cáo Ngay (Tùy chọn)
                                     </span>
                                 </div>
                                 <input type="text" id="zaloTestPhoneInput" class="form-control"
-                                    placeholder="Để trống để gửi tin thử tới danh sách Ban Giám Hiệu">
+                                    placeholder="Để trống để gửi báo cáo tới danh sách Ban Giám Hiệu">
                                 <p class="form-hint">
-                                    Nhập 1 SĐT để gửi tin thử riêng. Để trống sẽ gửi tới toàn bộ SĐT Ban Giám Hiệu để kiểm tra kết nối.
+                                    Nhập 1 SĐT để gửi riêng bản tin báo cáo điểm danh thực tế. Để trống sẽ gửi tới toàn bộ danh sách Ban Giám Hiệu.
                                 </p>
                             </div>
                         </div>
@@ -483,7 +558,7 @@
 
                         <div class="zalo-actions">
                             <button id="btnSendTestZalo" class="btn btn-primary">
-                                <i class="fa-solid fa-paper-plane"></i> Gửi Thử Tin Nhắn Qua Zalo
+                                <i class="fa-solid fa-paper-plane"></i> Gửi Tin Nhắn Báo Cáo Zalo Ngay
                             </button>
                             <button id="btnSaveZaloConfig" class="btn btn-secondary">
                                 <i class="fa-solid fa-floppy-disk"></i> Lưu Cấu Hình
@@ -746,7 +821,7 @@
                                 </div>
                                 <div class="schedule-card-title">Ca Quét 1: Đầu Giờ Sáng</div>
                                 <div class="schedule-card-sub">
-                                    <i class="fa-regular fa-calendar-days"></i> Thứ 2 đến Thứ 7 hàng tuần
+                                    <i class="fa-regular fa-calendar-days"></i> <span id="badgeMorningDays">Thứ 2 đến Thứ 7 hàng tuần</span>
                                 </div>
                                 <p class="schedule-card-desc">
                                     Tự động chụp 30 luồng camera, phát hiện khuôn mặt & gửi Zalo / Email tới BGH và GVCN.
@@ -762,7 +837,7 @@
                                 </div>
                                 <div class="schedule-card-title">Ca Quét 2: Đầu Giờ Chiều</div>
                                 <div class="schedule-card-sub">
-                                    <i class="fa-regular fa-calendar-days"></i> Thứ 2 đến Thứ 7 hàng tuần
+                                    <i class="fa-regular fa-calendar-days"></i> <span id="badgeAfternoonDays">Thứ 2 đến Thứ 7 hàng tuần</span>
                                 </div>
                                 <p class="schedule-card-desc">
                                     Tự động chụp và phân tích đối chứng sĩ số các lớp học ca chiều, lưu trữ dữ liệu vào CSDL.
@@ -788,23 +863,28 @@
                             </div>
                         </div>
 
-                        <!-- Cấu Hình Điều Chỉnh Thời Gian Ca Học -->
-                        <div id="scheduleEditPanel" class="schedule-edit-card">
-                            <div class="schedule-edit-header">
-                                <div>
-                                    <div class="schedule-edit-title">
-                                        <i class="fa-solid fa-sliders" style="color: var(--primary, #2563eb);"></i>
-                                        Cấu Hình Giờ Quét & Bật/Tắt Lịch Trình Tự Động
-                                    </div>
-                                    <p class="schedule-edit-desc">
-                                        Tùy chỉnh thời điểm máy chủ kích hoạt chụp ảnh 30 camera và tự động gửi tin nhắn báo cáo
-                                    </p>
-                                </div>
-                                <span class="badge badge-success" style="padding: 6px 12px; font-size: 0.8rem; font-weight: 600;">
-                                    <i class="fa-solid fa-bolt"></i> Đồng Bộ APScheduler
-                                </span>
-                            </div>
+                    </div>
+                </div>
 
+                <!-- MODAL POPUP CẤU HÌNH LỊCH TRÌNH & GIỜ QUÉT -->
+                <div class="modal-backdrop" id="scheduleEditModal">
+                    <div class="modal-container modal-lg">
+                        <div class="modal-header">
+                            <div class="modal-header-content">
+                                <h3 class="modal-title">
+                                    <i class="fa-solid fa-sliders modal-title-icon" style="color: var(--primary, #2563eb);"></i>
+                                    Cấu Hình Giờ Quét & Lịch Trình Tự Động
+                                </h3>
+                                <p class="modal-subtitle">
+                                    Tùy chỉnh thời điểm máy chủ tự động chụp 30 camera và gửi tin nhắn Zalo/Email
+                                </p>
+                            </div>
+                            <button type="button" class="modal-close-btn" id="btnCloseScheduleModal" title="Đóng">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+
+                        <div class="modal-body" style="padding: 1.5rem 1.75rem;">
                             <!-- Switch Bật / Tắt Lịch Trình -->
                             <div class="toggle-switch-row" style="margin-bottom: 1.25rem;">
                                 <div class="toggle-switch-info">
@@ -818,7 +898,7 @@
                             </div>
 
                             <!-- Form Grid Giờ Quét -->
-                            <div class="schedule-time-grid">
+                            <div class="schedule-time-grid" style="margin-top: 0;">
                                 <div class="schedule-time-card">
                                     <div class="schedule-time-label">
                                         <div class="time-label-left">
@@ -844,29 +924,62 @@
                                 </div>
                             </div>
 
-                            <!-- Action Buttons -->
-                            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 1.5rem;">
+                            <!-- Chọn Lịch Ngày Trong Tuần Tự Động Quét & Thông Báo -->
+                            <div class="schedule-days-container">
+                                <div class="schedule-days-header">
+                                    <div class="schedule-days-title">
+                                        <i class="fa-regular fa-calendar-check" style="color: #2563eb;"></i>
+                                        <span>Ngày Quét & Gửi Thông Báo Tự Động Trong Tuần</span>
+                                    </div>
+                                    <div class="day-quick-select">
+                                        <button type="button" class="btn-day-preset" id="btnPresetMonSat" title="Thứ 2 đến Thứ 7">Thứ 2 - Thứ 7</button>
+                                        <button type="button" class="btn-day-preset" id="btnPresetMonFri" title="Thứ 2 đến Thứ 6">Thứ 2 - Thứ 5/6</button>
+                                        <button type="button" class="btn-day-preset" id="btnPresetAllDays" title="Tất cả các ngày trong tuần">Cả tuần</button>
+                                    </div>
+                                </div>
+                                <div class="schedule-days-grid" id="scheduleDaysPicker">
+                                    <button type="button" class="day-check-btn active" data-day="mon">Thứ 2</button>
+                                    <button type="button" class="day-check-btn active" data-day="tue">Thứ 3</button>
+                                    <button type="button" class="day-check-btn active" data-day="wed">Thứ 4</button>
+                                    <button type="button" class="day-check-btn active" data-day="thu">Thứ 5</button>
+                                    <button type="button" class="day-check-btn active" data-day="fri">Thứ 6</button>
+                                    <button type="button" class="day-check-btn active" data-day="sat">Thứ 7</button>
+                                    <button type="button" class="day-check-btn" data-day="sun">Chủ Nhật</button>
+                                </div>
+                                <span class="form-hint" style="margin-top: 8px; display: block;">
+                                    <i class="fa-solid fa-circle-info" style="color: var(--primary);"></i>
+                                    Hệ thống sẽ chỉ tự động quét camera và gửi báo cáo Zalo/Email vào các ngày được chọn ở trên.
+                                </span>
+                            </div>
+                            <div id="scheduleFeedbackMsg" class="zalo-feedback" style="margin-top: 1rem;"></div>
+                        </div>
+
+                        <div class="modal-footer space-between">
+                            <button type="button" id="btnResetScheduleTimes" class="btn btn-secondary" style="font-weight: 600;"
+                                title="Khôi phục giờ và ngày quét mặc định">
+                                <i class="fa-solid fa-rotate-left"></i> Khôi Phục Giờ Chuẩn
+                            </button>
+                            <div style="display: flex; gap: 10px;">
+                                <button type="button" id="btnCancelScheduleModal" class="btn btn-secondary">
+                                    Hủy Bỏ
+                                </button>
                                 <button type="button" id="btnSaveScheduleConfig" class="btn btn-primary" style="font-weight: 600;">
                                     <i class="fa-solid fa-floppy-disk"></i> Lưu Cài Đặt Lịch Trình
                                 </button>
-                                <button type="button" id="btnResetScheduleTimes" class="btn btn-secondary" style="font-weight: 600;"
-                                    title="Khôi phục giờ quét mặc định 06:45 và 12:45">
-                                    <i class="fa-solid fa-rotate-left"></i> Khôi Phục Giờ Chuẩn (06:45 & 12:45)
-                                </button>
                             </div>
-                            <div id="scheduleFeedbackMsg" class="zalo-feedback" style="margin-top: 0.75rem;"></div>
                         </div>
                     </div>
                 </div>
+
             </div>
         </main>
     </div>
 
     <!-- Scripts -->
     <script type="module" src="js/shared/auth-guard.js?v=2.5"></script>
-    <script src="js/shared/app-shell.js?v=2.5"></script>
+    <script src="js/shared/app-shell.js?v=3.0"></script>
     <script src="js/shared/header-actions.js?v=2.2"></script>
-    <script type="module" src="js/notifications.js?v=1.0"></script>
+    <script type="module" src="js/notifications.js?v=3.6"></script>
 </body>
 
 </html>

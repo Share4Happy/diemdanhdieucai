@@ -8,8 +8,9 @@ from sqlalchemy.orm import Session
 from config.settings import settings
 from config.logging_config import logger
 from database.db_session import get_db
-from database.models import AttendanceSession, AttendanceDetail
+from database.models import AttendanceSession, AttendanceDetail, Classroom
 from core.attendance_engine import attendance_engine
+from core.timezone_utils import get_now
 from services.excel_exporter import excel_exporter
 from services.notification import notification_service
 from services.zalo_service import zalo_service
@@ -79,10 +80,32 @@ async def get_distribution_status():
     return notification_service.get_status()
 
 @router.post("/send-zalo")
-async def send_zalo_report(req: ZaloTestRequest):
-    """Gửi tin nhắn báo cáo điểm danh hoặc tin thử nghiệm qua Zalo."""
-    if req.session_id:
-        res = zalo_service.send_attendance_summary(req.session_id)
+async def send_zalo_report(req: ZaloTestRequest, db: Session = Depends(get_db)):
+    """Gửi tin nhắn báo cáo điểm danh qua Zalo."""
+    session_id = req.session_id
+    if not session_id:
+        latest = (
+            db.query(AttendanceSession)
+            .filter(~AttendanceSession.session_code.like("%TEST%"), AttendanceSession.total_standard > 0)
+            .order_by(AttendanceSession.id.desc())
+            .first()
+        )
+        if not latest:
+            latest = (
+                db.query(AttendanceSession)
+                .filter(~AttendanceSession.session_code.like("%TEST%"))
+                .order_by(AttendanceSession.id.desc())
+                .first()
+            )
+        if latest:
+            session_id = latest.id
+
+    has_custom_target = bool(
+        req.phone or req.test_phone or req.api_key or req.bot_api_key or
+        req.bot_id or req.webhook_url or req.access_token
+    )
+    if session_id and not has_custom_target:
+        res = zalo_service.send_attendance_summary(session_id)
     else:
         # Nhận diện đầy đủ cả 2 chuẩn đặt tên field từ frontend / API client
         target_type = req.notification_type or req.target_type or settings.ZALO_NOTIFICATION_TYPE or "BOT_API"
@@ -107,9 +130,61 @@ async def send_zalo_report(req: ZaloTestRequest):
             bot_id=bot_id,
             api_key=bot_key,
             api_base_url=bot_url,
-            recipients=req.recipients
+            recipients=req.recipients,
+            session_id=session_id
         )
     return res
+
+@router.get("/latest-summary")
+async def get_latest_summary(db: Session = Depends(get_db)):
+    """Lấy dữ liệu thống kê của phiên điểm danh thực tế mới nhất cho xem trước tin nhắn."""
+    session = (
+        db.query(AttendanceSession)
+        .filter(~AttendanceSession.session_code.like("%TEST%"), AttendanceSession.total_standard > 0)
+        .order_by(AttendanceSession.id.desc())
+        .first()
+    )
+    if not session:
+        session = (
+            db.query(AttendanceSession)
+            .filter(~AttendanceSession.session_code.like("%TEST%"))
+            .order_by(AttendanceSession.id.desc())
+            .first()
+        )
+    if session:
+        details = (
+            db.query(AttendanceDetail)
+            .filter(AttendanceDetail.session_id == session.id)
+            .order_by(AttendanceDetail.absent_count.desc())
+            .all()
+        )
+        data = zalo_service._collect_message_data(session, details)
+        first_detail = details[0] if details else None
+        if first_detail and first_detail.classroom:
+            data["lop"] = first_detail.classroom.name
+            data["phong"] = f"({first_detail.classroom.room_number})" if first_detail.classroom.room_number else ""
+        return {"success": True, "data": data, "session_id": session.id}
+
+    classrooms = db.query(Classroom).filter(Classroom.is_active == True).all()
+    total_std = sum(c.standard_count for c in classrooms)
+    now = get_now()
+    first_c = classrooms[0] if classrooms else None
+    return {
+        "success": True,
+        "data": {
+            "ngay": now.strftime("%d/%m/%Y"),
+            "gio": now.strftime("%H:%M:%S"),
+            "tong_lop": str(len(classrooms)),
+            "si_so": f"{total_std}/{total_std}",
+            "co_mat": str(total_std),
+            "vang_mat": "0",
+            "ty_le": "100.0%",
+            "danh_sach_vang": "🎉 XUẤT SẮC: 100% tất cả các lớp đi học đầy đủ!",
+            "lop": first_c.name if first_c else "Lớp 10A1",
+            "phong": f"({first_c.room_number})" if first_c and first_c.room_number else "",
+        },
+        "session_id": None
+    }
 
 @router.get("/zalo-status")
 async def get_zalo_status():
@@ -170,6 +245,7 @@ async def get_notification_settings():
         "alert_class_absent_count": getattr(settings, "NOTIFICATION_ALERT_CLASS_ABSENT", 3),
         "scan_time_morning": getattr(settings, "SCAN_TIME_MORNING", "06:45"),
         "scan_time_afternoon": getattr(settings, "SCAN_TIME_AFTERNOON", "12:45"),
+        "schedule_days": getattr(settings, "SCHEDULE_DAYS", "mon-sat"),
         "auto_scan_enabled": getattr(settings, "AUTO_SCAN_ENABLED", True),
         "zalo_school_template": getattr(settings, "ZALO_SCHOOL_TEMPLATE", "") or DEFAULT_SETTINGS["ZALO_SCHOOL_TEMPLATE"],
         "zalo_class_template": getattr(settings, "ZALO_CLASS_TEMPLATE", "") or DEFAULT_SETTINGS["ZALO_CLASS_TEMPLATE"],
@@ -181,6 +257,7 @@ async def get_notification_settings():
 @router.post("/notification-settings")
 async def update_notification_settings(req: NotificationAdjustRequest):
     """Cập nhật cấu hình điều chỉnh thông báo (quy tắc, ngưỡng cảnh báo, lịch trình, mẫu tin nhắn)."""
+    schedule_days = req.schedule_days or getattr(settings, "SCHEDULE_DAYS", "mon-sat")
     payload = {
         "ENABLE_ZALO_NOTIFICATION": req.enable_zalo,
         "ENABLE_EMAIL_NOTIFICATION": req.enable_email,
@@ -189,6 +266,7 @@ async def update_notification_settings(req: NotificationAdjustRequest):
         "NOTIFICATION_ALERT_CLASS_ABSENT": req.alert_class_absent_count,
         "SCAN_TIME_MORNING": req.scan_time_morning,
         "SCAN_TIME_AFTERNOON": req.scan_time_afternoon,
+        "SCHEDULE_DAYS": schedule_days,
         "AUTO_SCAN_ENABLED": req.auto_scan_enabled,
         "ZALO_SCHOOL_TEMPLATE": req.zalo_school_template,
         "ZALO_CLASS_TEMPLATE": req.zalo_class_template,
@@ -200,6 +278,7 @@ async def update_notification_settings(req: NotificationAdjustRequest):
         attendance_scheduler.update_schedule(
             morning_time=req.scan_time_morning,
             afternoon_time=req.scan_time_afternoon,
+            days=schedule_days,
             enabled=bool(req.auto_scan_enabled)
         )
     except Exception as e:
@@ -262,7 +341,7 @@ async def save_retention_settings_endpoint(req: RetentionSettingsRequest):
 async def cleanup_expired_data(req: CleanupExpiredRequest = None, db: Session = Depends(get_db)):
     """Chủ động dọn dẹp các bản ghi điểm danh và file Excel cũ hơn thời hạn quy định."""
     days = req.days if (req and req.days) else getattr(settings, "DATA_RETENTION_DAYS", 90)
-    cutoff_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+    cutoff_date = (get_now() - timedelta(days=days)).strftime("%Y-%m-%d")
 
     expired_sessions = db.query(AttendanceSession).filter(AttendanceSession.scan_date < cutoff_date).all()
     deleted_sessions_count = len(expired_sessions)
@@ -290,7 +369,7 @@ async def cleanup_expired_data(req: CleanupExpiredRequest = None, db: Session = 
 
     deleted_files_count = 0
     if getattr(settings, "DATA_CLEANUP_EXCEL_ENABLED", True):
-        cutoff_timestamp = (datetime.now() - timedelta(days=days)).timestamp()
+        cutoff_timestamp = (get_now() - timedelta(days=days)).timestamp()
         for f in settings.REPORTS_DIR.glob("*.xlsx"):
             try:
                 if f.stat().st_mtime < cutoff_timestamp:

@@ -16,6 +16,7 @@ let selectedWebcamId = '0';
 let currentSourceType = 'WEBCAM';
 let probedChannels = [];
 let isScanning = false;
+let selectedCameraIds = new Set();
 
 function initApp() {
     loadCameras();
@@ -79,7 +80,40 @@ function initApp() {
     const btnLiveClose = document.getElementById('liveViewCloseBtn');
     if (btnLiveClose) btnLiveClose.addEventListener('click', closeLiveModal);
 
-    // Sự kiện Modal Xóa Camera Chọn Lọc
+    // ==================== BATCH ACTION BAR EVENTS ====================
+    const btnBatchSelectAll = document.getElementById('btnBatchSelectAll');
+    if (btnBatchSelectAll) {
+        btnBatchSelectAll.addEventListener('click', () => {
+            allCameras.forEach(c => selectedCameraIds.add(c.id));
+            document.querySelectorAll('.matrix-card-checkbox').forEach(cb => cb.checked = true);
+            document.querySelectorAll('.matrix-card').forEach(card => card.classList.add('selected'));
+            updateBatchActionBar();
+        });
+    }
+
+    const btnBatchDeselectAll = document.getElementById('btnBatchDeselectAll');
+    if (btnBatchDeselectAll) {
+        btnBatchDeselectAll.addEventListener('click', () => {
+            selectedCameraIds.clear();
+            document.querySelectorAll('.matrix-card-checkbox').forEach(cb => cb.checked = false);
+            document.querySelectorAll('.matrix-card').forEach(card => card.classList.remove('selected'));
+            updateBatchActionBar();
+        });
+    }
+
+    const btnBatchDelete = document.getElementById('btnBatchDeleteSelected');
+    if (btnBatchDelete) {
+        btnBatchDelete.addEventListener('click', deleteSelectedCameras);
+    }
+
+    // Đóng 3-dots dropdown menu khi bấm ra ngoài bất kỳ đâu
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.matrix-card-menu')) {
+            closeAllCardMenus();
+        }
+    });
+
+    // Sự kiện Modal Xóa Camera Chọn Lọc (nếu vẫn cần)
     const btnOpenDelete = document.getElementById('btnOpenBatchDeleteModal');
     if (btnOpenDelete) btnOpenDelete.addEventListener('click', openDeleteModal);
 
@@ -930,8 +964,10 @@ export function renderMatrixWall() {
     allCameras.forEach((cam, idx) => {
         const chNum = cam.channel_number || (idx + 1);
         const card = document.createElement('div');
-        card.className = 'matrix-card';
+        const isSelected = selectedCameraIds.has(cam.id);
+        card.className = `matrix-card ${isSelected ? 'selected' : ''}`;
         card.id = `matrix_card_${cam.id}`;
+        card.setAttribute('data-id', cam.id);
 
         const snapUrl = `/storage/captures/latest/Lop_${cam.id}.jpg?t=${Date.now()}`;
         const isOnline = cam.is_active;
@@ -940,23 +976,38 @@ export function renderMatrixWall() {
             <div class="matrix-card-screen">
                 <img src="${snapUrl}" class="matrix-thumb-img" alt="${cam.name}" 
                      onerror="this.onerror=null; this.src='dataset/samples/classroom_sample.jpg';">
-                <div class="matrix-osd-top">
+                
+                <!-- Ô chọn phòng -->
+                <div class="matrix-card-select" title="Chọn phòng này để thao tác">
+                    <input type="checkbox" class="matrix-card-checkbox" data-id="${cam.id}" ${isSelected ? 'checked' : ''}>
+                </div>
+
+                <!-- OSD số kênh & trạng thái -->
+                <div class="matrix-osd-top" style="left: 36px; right: 42px;">
                     <span class="matrix-ch-badge">CH${String(chNum).padStart(2, '0')}</span>
                     <span class="matrix-status-dot ${isOnline ? '' : 'offline'}" title="${isOnline ? 'Đang kích hoạt' : 'Tạm dừng'}"></span>
                 </div>
-                <div class="matrix-hover-actions">
-                    <button type="button" class="matrix-action-btn view" title="Xem ảnh phóng to" data-id="${cam.id}" data-name="${encodeURIComponent(cam.name)}">
-                        <i class="fa-solid fa-expand"></i>
+
+                <!-- Nút 3 chấm góc phải trên cùng thẻ phòng -->
+                <div class="matrix-card-menu">
+                    <button type="button" class="card-menu-btn" title="Tùy chọn phòng ${cam.name}" data-id="${cam.id}">
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
                     </button>
-                    <button type="button" class="matrix-action-btn edit" title="Sửa thông tin camera này" data-id="${cam.id}">
-                        <i class="fa-solid fa-pen"></i>
-                    </button>
-                    <button type="button" class="matrix-action-btn roi" title="Vẽ vùng nhận diện" data-id="${cam.id}">
-                        <i class="fa-solid fa-draw-polygon"></i>
-                    </button>
-                    <button type="button" class="matrix-action-btn delete" title="Xóa riêng camera này" data-id="${cam.id}" data-name="${encodeURIComponent(cam.name)}">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
+                    <div class="card-dropdown-menu" id="card_menu_${cam.id}">
+                        <button type="button" class="card-dropdown-item menu-item-view" data-id="${cam.id}" data-name="${encodeURIComponent(cam.name)}">
+                            <i class="fa-solid fa-expand" style="color: #0284c7;"></i> Xem trực tiếp
+                        </button>
+                        <button type="button" class="card-dropdown-item menu-item-edit" data-id="${cam.id}">
+                            <i class="fa-solid fa-pen-to-square" style="color: #f59e0b;"></i> Chỉnh sửa thông tin
+                        </button>
+                        <button type="button" class="card-dropdown-item menu-item-roi" data-id="${cam.id}">
+                            <i class="fa-solid fa-draw-polygon" style="color: #8b5cf6;"></i> Cấu hình vùng ROI
+                        </button>
+                        <div class="card-dropdown-divider"></div>
+                        <button type="button" class="card-dropdown-item text-danger menu-item-delete" data-id="${cam.id}" data-name="${encodeURIComponent(cam.name)}">
+                            <i class="fa-solid fa-trash-can"></i> Xóa phòng này
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="matrix-card-footer">
@@ -970,55 +1021,198 @@ export function renderMatrixWall() {
         container.appendChild(card);
     });
 
-    // Attach quick actions inside Matrix cards
-    container.querySelectorAll('.matrix-action-btn.view').forEach(btn => {
+    // Checkbox chọn / bỏ chọn phòng
+    container.querySelectorAll('.matrix-card-checkbox').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+            e.stopPropagation();
+            const id = parseInt(cb.getAttribute('data-id'));
+            const card = document.getElementById(`matrix_card_${id}`);
+            if (cb.checked) {
+                selectedCameraIds.add(id);
+                if (card) card.classList.add('selected');
+            } else {
+                selectedCameraIds.delete(id);
+                if (card) card.classList.remove('selected');
+            }
+            updateBatchActionBar();
+        });
+
+        cb.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+    });
+
+    // Nút 3 chấm mở menu
+    container.querySelectorAll('.card-menu-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
+            const id = btn.getAttribute('data-id');
+            const targetMenu = document.getElementById(`card_menu_${id}`);
+            const isCurrentlyOpen = targetMenu && targetMenu.classList.contains('show');
+
+            // Đóng tất cả menu khác
+            closeAllCardMenus();
+
+            if (!isCurrentlyOpen && targetMenu) {
+                targetMenu.classList.add('show');
+                btn.classList.add('active');
+                const card = btn.closest('.matrix-card');
+                if (card) card.style.zIndex = '99';
+            }
+        });
+    });
+
+    // Hành động Xem trực tiếp từ menu 3 chấm
+    container.querySelectorAll('.menu-item-view').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeAllCardMenus();
             const id = btn.getAttribute('data-id');
             const name = decodeURIComponent(btn.getAttribute('data-name'));
             openLiveModal(id, name);
         });
     });
 
-    container.querySelectorAll('.matrix-action-btn.edit').forEach(btn => {
+    // Hành động Chỉnh sửa từ menu 3 chấm
+    container.querySelectorAll('.menu-item-edit').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
+            closeAllCardMenus();
             const id = parseInt(btn.getAttribute('data-id'));
             editCamera(id);
         });
     });
 
-    container.querySelectorAll('.matrix-action-btn.roi').forEach(btn => {
+    // Hành động Cấu hình vùng ROI từ menu 3 chấm
+    container.querySelectorAll('.menu-item-roi').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
+            closeAllCardMenus();
             const id = btn.getAttribute('data-id');
             window.location.href = `roi-config.html?class_id=${id}&refresh=true`;
         });
     });
 
-    container.querySelectorAll('.matrix-action-btn.delete').forEach(btn => {
+    // Hành động Xóa riêng phòng này từ menu 3 chấm
+    container.querySelectorAll('.menu-item-delete').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
+            closeAllCardMenus();
             const id = parseInt(btn.getAttribute('data-id'));
             const name = decodeURIComponent(btn.getAttribute('data-name'));
             deleteCamera(id, name);
         });
     });
 
-    // Click on any card to open modal (except action buttons)
+    // Click vào thẻ phòng để xem trực tiếp (nếu không bấm vào checkbox hay menu)
     container.querySelectorAll('.matrix-card').forEach(card => {
         card.addEventListener('click', (e) => {
-            // Don't open if clicking on action buttons
-            if (!e.target.closest('.matrix-action-btn')) {
-                const viewBtn = card.querySelector('.matrix-action-btn.view');
-                if (viewBtn) {
-                    const id = viewBtn.getAttribute('data-id');
-                    const name = decodeURIComponent(viewBtn.getAttribute('data-name'));
-                    openLiveModal(id, name);
-                }
+            if (e.target.closest('.matrix-card-select') || e.target.closest('.matrix-card-menu')) {
+                return;
+            }
+            const id = card.getAttribute('data-id');
+            const cam = allCameras.find(c => c.id === parseInt(id));
+            if (cam) {
+                openLiveModal(cam.id, cam.name);
             }
         });
     });
+
+    updateBatchActionBar();
+}
+
+/**
+ * Đóng tất cả dropdown 3 chấm trên các thẻ phòng
+ */
+export function closeAllCardMenus() {
+    document.querySelectorAll('.card-dropdown-menu.show').forEach(m => m.classList.remove('show'));
+    document.querySelectorAll('.card-menu-btn.active').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.matrix-card').forEach(c => {
+        if (!c.classList.contains('selected')) {
+            c.style.zIndex = '';
+        }
+    });
+}
+
+/**
+ * Cập nhật thanh thao tác xoá nhỏ khi chọn nhiều phòng
+ */
+export function updateBatchActionBar() {
+    const bar = document.getElementById('batchActionBar');
+    const countEl = document.getElementById('batchSelectedCount');
+    const count = selectedCameraIds.size;
+
+    if (countEl) countEl.innerText = count;
+
+    if (bar) {
+        if (count > 0) {
+            bar.classList.add('show');
+        } else {
+            bar.classList.remove('show');
+        }
+    }
+}
+
+/**
+ * Xóa nhanh tất cả camera đã chọn qua checkbox
+ */
+export async function deleteSelectedCameras() {
+    const count = selectedCameraIds.size;
+    if (count === 0) {
+        showToast('Vui lòng chọn ít nhất 1 phòng để xóa.', 'warning');
+        return;
+    }
+
+    const selectedCams = allCameras.filter(c => selectedCameraIds.has(c.id));
+    const names = selectedCams.slice(0, 3).map(c => c.name).join(', ') + (count > 3 ? ` và ${count - 3} phòng khác` : '');
+
+    const confirmed = await ConfirmationDialog.confirm({
+        title: `Xóa ${count} phòng học đã chọn`,
+        message: `Bạn có chắc chắn muốn xóa ${count} phòng học (${names})? Toàn bộ cấu hình camera và vùng nhận diện ROI của các phòng này cũng sẽ bị xóa. Thao tác này không thể hoàn tác!`,
+        confirmText: `Xác nhận xóa (${count})`,
+        cancelText: 'Hủy bỏ',
+        type: 'danger'
+    });
+
+    if (!confirmed) return;
+
+    const btnDelete = document.getElementById('btnBatchDeleteSelected');
+    if (btnDelete) {
+        btnDelete.disabled = true;
+        btnDelete.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xóa...';
+    }
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const id of Array.from(selectedCameraIds)) {
+        try {
+            const res = await CameraAPI.delete(id);
+            if (res.success) {
+                successCount++;
+                selectedCameraIds.delete(id);
+            } else {
+                failCount++;
+            }
+        } catch (err) {
+            console.error('Lỗi khi xóa camera ID', id, err);
+            failCount++;
+        }
+    }
+
+    if (btnDelete) {
+        btnDelete.disabled = false;
+        btnDelete.innerHTML = '<i class="fa-solid fa-trash-can"></i> Xóa đã chọn';
+    }
+
+    await loadCameras();
+    updateBatchActionBar();
+
+    if (failCount === 0) {
+        showToast(`Đã xóa thành công ${successCount} phòng học đã chọn!`, 'info');
+    } else {
+        showToast(`Đã xóa ${successCount} phòng, thất bại ${failCount} phòng.`, 'warning');
+    }
 }
 
 export function openLiveModal(id, name) {
@@ -1417,5 +1611,7 @@ window.probeNVRChannels = probeNVRChannels;
 window.toggleAllNvrChannels = toggleAllNvrChannels;
 window.saveNvrImport = saveNvrImport;
 window.renderMatrixWall = renderMatrixWall;
+window.deleteSelectedCameras = deleteSelectedCameras;
+window.updateBatchActionBar = updateBatchActionBar;
 
 

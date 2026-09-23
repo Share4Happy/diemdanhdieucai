@@ -11,6 +11,7 @@ from config.logging_config import logger
 from database.db_session import get_db
 from database.models import Classroom, AttendanceSession, AttendanceDetail
 from core.attendance_engine import attendance_engine
+from core.timezone_utils import get_now, get_today, get_today_str, get_current_time_str
 from backend.api.deps import get_current_user
 
 router = APIRouter(prefix="/attendance", tags=["Attendance"], dependencies=[Depends(get_current_user)])
@@ -108,8 +109,8 @@ async def get_latest_attendance(db: Session = Depends(get_db)):
         session_obj = {
             "id": 0,
             "session_code": "CHƯA CÓ PHIÊN",
-            "scan_date": datetime.now().strftime("%Y-%m-%d"),
-            "scan_time": datetime.now().strftime("%H:%M:%S"),
+            "scan_date": get_today_str(),
+            "scan_time": get_current_time_str(),
             "total_classes": len(all_classrooms),
             "total_standard": total_std,
             "total_present": 0,
@@ -210,7 +211,7 @@ async def get_attendance_history(limit: int = 1000, db: Session = Depends(get_db
 @router.get("/today-sessions")
 async def get_today_sessions(db: Session = Depends(get_db)):
     """Lấy danh sách các phiên điểm danh diễn ra trong ngày hôm nay kèm fallback phiên gần nhất."""
-    today_str = datetime.now().strftime("%Y-%m-%d")
+    today_str = get_today_str()
     sessions = (
         db.query(AttendanceSession)
         .filter(AttendanceSession.scan_date == today_str)
@@ -246,10 +247,10 @@ async def get_today_sessions(db: Session = Depends(get_db)):
 @router.get("/trend-7days")
 async def get_7days_trend(db: Session = Depends(get_db)):
     """Trả về dữ liệu xu hướng chuyên cần & số học sinh vắng 7 ngày gần nhất phục vụ biểu đồ Trend Line."""
-    from datetime import datetime, timedelta
+    from datetime import timedelta
     import random
 
-    today = datetime.now().date()
+    today = get_today()
     date_list = [(today - timedelta(days=i)).strftime("%Y-%m-%d") for i in range(6, -1, -1)]
 
     # Lấy các phiên điểm danh từ CSDL

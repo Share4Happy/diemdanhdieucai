@@ -50,6 +50,9 @@ class AppShell {
 
     if (!this.sidebar) return;
 
+    // Tự động render menu điều hướng từ 1 nguồn cấu hình duy nhất (Single Source of Truth)
+    this.renderFullSidebar();
+
     // Apply initial state
     if (this.isCollapsed && !this.isMobile) {
       this.sidebar.classList.add('collapsed');
@@ -57,9 +60,88 @@ class AppShell {
 
     // Setup event listeners
     this.setupEventListeners();
-    this.setActiveNavItem();
     this.handleResize();
     this.setupUserNav();
+  }
+
+  renderFullSidebar() {
+    if (!this.sidebar) return;
+
+    // Nếu thẻ sidebar rỗng thì tự động tạo đầy đủ cấu trúc khung
+    if (!this.sidebar.querySelector('.sidebar-header')) {
+      this.sidebar.innerHTML = `
+        <div class="sidebar-header">
+            <div class="sidebar-logo">ĐC</div>
+            <div class="sidebar-brand-text">
+                <span class="brand-title">THPT ĐIỀU CẢI</span>
+                <span class="brand-subtitle">AI CAMERA</span>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <ul class="sidebar-nav-list"></ul>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sidebar-user-profile" id="sidebarUserProfile" title="Thông tin tài khoản">
+                <div class="sidebar-user-avatar" id="sidebarUserAvatar">A</div>
+                <div class="sidebar-user-info">
+                    <span class="sidebar-user-name" id="sidebarUserName">Admin</span>
+                    <span class="sidebar-user-role" id="sidebarUserRole">Quản Trị Viên</span>
+                </div>
+                <button class="sidebar-logout-btn" type="button" id="sidebarLogoutBtn" title="Đăng Xuất">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </div>
+        </div>
+      `;
+    }
+
+    this.renderSidebarNav();
+  }
+
+  renderSidebarNav() {
+    if (!this.sidebar) return;
+    const navList = this.sidebar.querySelector('.sidebar-nav-list');
+    if (!navList) return;
+
+    // CẤU HÌNH TẬP TRUNG TẤT CẢ CÁC TABS MENU CỦA HỆ THỐNG (Chỉ cần sửa tại đây sẽ tự động áp dụng mọi trang)
+    const NAV_ITEMS = [
+      { href: 'index.html', icon: 'fa-chart-line', text: 'Dashboard' },
+      { href: 'cameras.html', icon: 'fa-video', text: 'Camera & Lớp Học' },
+      { href: 'roi-config.html', icon: 'fa-draw-polygon', text: 'Vùng ROI' },
+      { href: 'reports.html', icon: 'fa-file-excel', text: 'Báo Cáo & Dữ Liệu' },
+      { href: 'notifications.html', icon: 'fa-paper-plane', text: 'Thông Báo' },
+      { href: 'users.html', icon: 'fa-user-gear', text: 'Tài Khoản', adminOnly: true }
+    ];
+
+    const currentPath = window.location.pathname.toLowerCase();
+
+    navList.innerHTML = NAV_ITEMS.map(item => {
+      const pageName = item.href.replace('.html', '').toLowerCase();
+      const isHome = (currentPath === '/' || currentPath === '' || currentPath.endsWith('/index.html') || currentPath.endsWith('/index')) && pageName === 'index';
+      const isActive = isHome || (pageName !== 'index' && currentPath.includes(pageName)) || currentPath.includes(item.href.toLowerCase());
+      const adminClass = item.adminOnly ? ' nav-admin-only' : '';
+      const activeClass = isActive ? ' active' : '';
+
+      return `
+        <li class="sidebar-nav-item${adminClass}">
+            <a href="${item.href}" class="sidebar-nav-link${activeClass}">
+                <span class="sidebar-nav-icon"><i class="fa-solid ${item.icon}"></i></span>
+                <span class="sidebar-nav-text">${item.text}</span>
+            </a>
+        </li>
+      `;
+    }).join('');
+
+    // Đồng bộ quyền hiển thị cho các mục admin
+    try {
+      const role = localStorage.getItem('currentUserRole');
+      const isAdmin = role === 'admin';
+      this.sidebar.querySelectorAll('.nav-admin-only').forEach(el => {
+        el.hidden = !isAdmin;
+        if (isAdmin) el.classList.add('is-visible');
+        else el.classList.remove('is-visible');
+      });
+    } catch (e) {}
   }
 
   setupUserNav() {
