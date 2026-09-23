@@ -7,6 +7,7 @@ import { ReportAPI, CameraAPI, showToast, API_BASE } from './api.js';
 let zaloRecipients = [];
 let zaloSaveTimer = null;
 let allClassrooms = [];
+let realReportSummary = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     initTabs();
@@ -376,7 +377,7 @@ async function handleSendTestZalo() {
             return;
         }
         if (!testPhone && zaloRecipients.length === 0) {
-            const warnMsg = 'Vui lòng nhập 1 SĐT nhận tin thử nghiệm (hoặc thêm SĐT Ban Giám Hiệu vào danh sách) trước khi gửi!';
+            const warnMsg = 'Vui lòng nhập 1 SĐT nhận tin (hoặc thêm SĐT Ban Giám Hiệu vào danh sách) trước khi gửi!';
             showToast(warnMsg, 'warning');
             if (feedbackEl) {
                 feedbackEl.className = 'zalo-feedback zalo-feedback--error';
@@ -397,13 +398,13 @@ async function handleSendTestZalo() {
 
     if (btnZalo) {
         btnZalo.disabled = true;
-        btnZalo.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang gửi Zalo...';
+        btnZalo.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang gửi báo cáo Zalo...';
     }
 
     if (feedbackEl) {
         feedbackEl.className = 'zalo-feedback';
         feedbackEl.style.display = 'block';
-        feedbackEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang kết nối Zalo API Gateway...';
+        feedbackEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang gửi báo cáo điểm danh thực tế qua Zalo...';
     }
 
     try {
@@ -431,7 +432,7 @@ async function handleSendTestZalo() {
                 feedbackEl.className = 'zalo-feedback zalo-feedback--success';
                 feedbackEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${result.message}`;
                 if (typeof window.showSuccess === 'function') {
-                    window.showSuccess(result.message, 'Gửi Tin Nhắn Zalo Thành Công');
+                    window.showSuccess(result.message, 'Gửi Báo Cáo Zalo Thành Công');
                 } else {
                     showToast(result.message, 'success');
                 }
@@ -455,7 +456,7 @@ async function handleSendTestZalo() {
     } finally {
         if (btnZalo) {
             btnZalo.disabled = false;
-            btnZalo.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Gửi Thử Tin Nhắn Qua Zalo';
+            btnZalo.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Gửi Tin Nhắn Báo Cáo Zalo Ngay';
         }
     }
 }
@@ -587,8 +588,15 @@ let activeTemplateType = 'school'; // 'school' | 'class' | 'email'
 
 async function loadAdjustSettings() {
     try {
-        const data = await ReportAPI.getNotificationSettings();
-        if (data) {
+        const [dataRes, summaryRes] = await Promise.allSettled([
+            ReportAPI.getNotificationSettings(),
+            ReportAPI.getLatestSummary()
+        ]);
+        if (summaryRes.status === 'fulfilled' && summaryRes.value?.data) {
+            realReportSummary = summaryRes.value.data;
+        }
+        if (dataRes.status === 'fulfilled' && dataRes.value) {
+            const data = dataRes.value;
             notificationSettings = { ...notificationSettings, ...data };
 
             const zActive = document.getElementById('ruleZaloActive');
@@ -769,22 +777,33 @@ function updateLivePreview() {
 
     if (previewTime) previewTime.textContent = timeStr;
 
-    // Simulated data
-    const sampleData = {
+    // Dữ liệu thực tế từ hệ thống điểm danh
+    const previewData = realReportSummary ? {
+        '{ngay}': realReportSummary.ngay || dateStr,
+        '{gio}': realReportSummary.gio || timeStr,
+        '{tong_lop}': String(realReportSummary.tong_lop || (allClassrooms.length || '30')),
+        '{si_so}': String(realReportSummary.si_so || '0'),
+        '{co_mat}': String(realReportSummary.co_mat || '0'),
+        '{vang_mat}': String(realReportSummary.vang_mat || '0'),
+        '{ty_le}': String(realReportSummary.ty_le || '100%'),
+        '{danh_sach_vang}': realReportSummary.danh_sach_vang || '🎉 XUẤT SẮC: 100% tất cả các lớp đi học đầy đủ!',
+        '{lop}': realReportSummary.lop || (allClassrooms[0]?.name || 'Lớp 10A1'),
+        '{phong}': realReportSummary.phong || (allClassrooms[0]?.room_number ? `(${allClassrooms[0].room_number})` : '')
+    } : {
         '{ngay}': dateStr,
         '{gio}': timeStr,
-        '{tong_lop}': '30',
-        '{si_so}': '1275',
-        '{co_mat}': '1253',
-        '{vang_mat}': '22',
-        '{ty_le}': '98.3%',
-        '{danh_sach_vang}': '⚠️ DANH SÁCH LỚP CÓ HỌC SINH VẮNG:\n• Lớp 10A1 (P.101): Vắng 2 em (Hiện diện: 40/42)\n• Lớp 11B3 (P.205): Vắng 1 em (Hiện diện: 41/42)',
-        '{lop}': 'Lớp 10A1',
-        '{phong}': '(P.101)'
+        '{tong_lop}': String(allClassrooms.length || '30'),
+        '{si_so}': '0/0',
+        '{co_mat}': '0',
+        '{vang_mat}': '0',
+        '{ty_le}': '100%',
+        '{danh_sach_vang}': '🎉 XUẤT SẮC: 100% tất cả các lớp đi học đầy đủ!',
+        '{lop}': allClassrooms[0]?.name || 'Lớp 10A1',
+        '{phong}': allClassrooms[0]?.room_number ? `(${allClassrooms[0].room_number})` : ''
     };
 
     let rendered = rawTpl;
-    for (const [k, v] of Object.entries(sampleData)) {
+    for (const [k, v] of Object.entries(previewData)) {
         rendered = rendered.split(k).join(v);
     }
 

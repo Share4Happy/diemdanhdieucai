@@ -174,6 +174,7 @@ export const ReportAPI = {
     getZaloConfig: () => fetchAPI('/api/reports/zalo-config'),
     saveZaloConfig: (data) => fetchAPI('/api/reports/save-zalo-config', { method: 'POST', body: data }),
     getNotificationSettings: () => fetchAPI('/api/reports/notification-settings'),
+    getLatestSummary: () => fetchAPI('/api/reports/latest-summary'),
     saveNotificationSettings: (data) => fetchAPI('/api/reports/notification-settings', { method: 'POST', body: data }),
     getRetentionSettings: () => fetchAPI('/api/reports/retention-settings'),
     saveRetentionSettings: (data) => fetchAPI('/api/reports/retention-settings', { method: 'POST', body: data }),

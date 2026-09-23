@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from config.settings import settings
 from config.logging_config import logger
 from database.db_session import get_db
-from database.models import AttendanceSession, AttendanceDetail
+from database.models import AttendanceSession, AttendanceDetail, Classroom
 from core.attendance_engine import attendance_engine
 from services.excel_exporter import excel_exporter
 from services.notification import notification_service
@@ -79,10 +79,32 @@ async def get_distribution_status():
     return notification_service.get_status()
 
 @router.post("/send-zalo")
-async def send_zalo_report(req: ZaloTestRequest):
-    """Gửi tin nhắn báo cáo điểm danh hoặc tin thử nghiệm qua Zalo."""
-    if req.session_id:
-        res = zalo_service.send_attendance_summary(req.session_id)
+async def send_zalo_report(req: ZaloTestRequest, db: Session = Depends(get_db)):
+    """Gửi tin nhắn báo cáo điểm danh qua Zalo."""
+    session_id = req.session_id
+    if not session_id:
+        latest = (
+            db.query(AttendanceSession)
+            .filter(~AttendanceSession.session_code.like("%TEST%"), AttendanceSession.total_standard > 0)
+            .order_by(AttendanceSession.id.desc())
+            .first()
+        )
+        if not latest:
+            latest = (
+                db.query(AttendanceSession)
+                .filter(~AttendanceSession.session_code.like("%TEST%"))
+                .order_by(AttendanceSession.id.desc())
+                .first()
+            )
+        if latest:
+            session_id = latest.id
+
+    has_custom_target = bool(
+        req.phone or req.test_phone or req.api_key or req.bot_api_key or
+        req.bot_id or req.webhook_url or req.access_token
+    )
+    if session_id and not has_custom_target:
+        res = zalo_service.send_attendance_summary(session_id)
     else:
         # Nhận diện đầy đủ cả 2 chuẩn đặt tên field từ frontend / API client
         target_type = req.notification_type or req.target_type or settings.ZALO_NOTIFICATION_TYPE or "BOT_API"
@@ -107,9 +129,61 @@ async def send_zalo_report(req: ZaloTestRequest):
             bot_id=bot_id,
             api_key=bot_key,
             api_base_url=bot_url,
-            recipients=req.recipients
+            recipients=req.recipients,
+            session_id=session_id
         )
     return res
+
+@router.get("/latest-summary")
+async def get_latest_summary(db: Session = Depends(get_db)):
+    """Lấy dữ liệu thống kê của phiên điểm danh thực tế mới nhất cho xem trước tin nhắn."""
+    session = (
+        db.query(AttendanceSession)
+        .filter(~AttendanceSession.session_code.like("%TEST%"), AttendanceSession.total_standard > 0)
+        .order_by(AttendanceSession.id.desc())
+        .first()
+    )
+    if not session:
+        session = (
+            db.query(AttendanceSession)
+            .filter(~AttendanceSession.session_code.like("%TEST%"))
+            .order_by(AttendanceSession.id.desc())
+            .first()
+        )
+    if session:
+        details = (
+            db.query(AttendanceDetail)
+            .filter(AttendanceDetail.session_id == session.id)
+            .order_by(AttendanceDetail.absent_count.desc())
+            .all()
+        )
+        data = zalo_service._collect_message_data(session, details)
+        first_detail = details[0] if details else None
+        if first_detail and first_detail.classroom:
+            data["lop"] = first_detail.classroom.name
+            data["phong"] = f"({first_detail.classroom.room_number})" if first_detail.classroom.room_number else ""
+        return {"success": True, "data": data, "session_id": session.id}
+
+    classrooms = db.query(Classroom).filter(Classroom.is_active == True).all()
+    total_std = sum(c.standard_count for c in classrooms)
+    now = datetime.now()
+    first_c = classrooms[0] if classrooms else None
+    return {
+        "success": True,
+        "data": {
+            "ngay": now.strftime("%d/%m/%Y"),
+            "gio": now.strftime("%H:%M:%S"),
+            "tong_lop": str(len(classrooms)),
+            "si_so": f"{total_std}/{total_std}",
+            "co_mat": str(total_std),
+            "vang_mat": "0",
+            "ty_le": "100.0%",
+            "danh_sach_vang": "🎉 XUẤT SẮC: 100% tất cả các lớp đi học đầy đủ!",
+            "lop": first_c.name if first_c else "Lớp 10A1",
+            "phong": f"({first_c.room_number})" if first_c and first_c.room_number else "",
+        },
+        "session_id": None
+    }
 
 @router.get("/zalo-status")
 async def get_zalo_status():
