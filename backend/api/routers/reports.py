@@ -10,6 +10,7 @@ from config.logging_config import logger
 from database.db_session import get_db
 from database.models import AttendanceSession, AttendanceDetail, Classroom
 from core.attendance_engine import attendance_engine
+from core.timezone_utils import get_now
 from services.excel_exporter import excel_exporter
 from services.notification import notification_service
 from services.zalo_service import zalo_service
@@ -166,7 +167,7 @@ async def get_latest_summary(db: Session = Depends(get_db)):
 
     classrooms = db.query(Classroom).filter(Classroom.is_active == True).all()
     total_std = sum(c.standard_count for c in classrooms)
-    now = datetime.now()
+    now = get_now()
     first_c = classrooms[0] if classrooms else None
     return {
         "success": True,
@@ -244,6 +245,7 @@ async def get_notification_settings():
         "alert_class_absent_count": getattr(settings, "NOTIFICATION_ALERT_CLASS_ABSENT", 3),
         "scan_time_morning": getattr(settings, "SCAN_TIME_MORNING", "06:45"),
         "scan_time_afternoon": getattr(settings, "SCAN_TIME_AFTERNOON", "12:45"),
+        "schedule_days": getattr(settings, "SCHEDULE_DAYS", "mon-sat"),
         "auto_scan_enabled": getattr(settings, "AUTO_SCAN_ENABLED", True),
         "zalo_school_template": getattr(settings, "ZALO_SCHOOL_TEMPLATE", "") or DEFAULT_SETTINGS["ZALO_SCHOOL_TEMPLATE"],
         "zalo_class_template": getattr(settings, "ZALO_CLASS_TEMPLATE", "") or DEFAULT_SETTINGS["ZALO_CLASS_TEMPLATE"],
@@ -255,6 +257,7 @@ async def get_notification_settings():
 @router.post("/notification-settings")
 async def update_notification_settings(req: NotificationAdjustRequest):
     """Cập nhật cấu hình điều chỉnh thông báo (quy tắc, ngưỡng cảnh báo, lịch trình, mẫu tin nhắn)."""
+    schedule_days = req.schedule_days or getattr(settings, "SCHEDULE_DAYS", "mon-sat")
     payload = {
         "ENABLE_ZALO_NOTIFICATION": req.enable_zalo,
         "ENABLE_EMAIL_NOTIFICATION": req.enable_email,
@@ -263,6 +266,7 @@ async def update_notification_settings(req: NotificationAdjustRequest):
         "NOTIFICATION_ALERT_CLASS_ABSENT": req.alert_class_absent_count,
         "SCAN_TIME_MORNING": req.scan_time_morning,
         "SCAN_TIME_AFTERNOON": req.scan_time_afternoon,
+        "SCHEDULE_DAYS": schedule_days,
         "AUTO_SCAN_ENABLED": req.auto_scan_enabled,
         "ZALO_SCHOOL_TEMPLATE": req.zalo_school_template,
         "ZALO_CLASS_TEMPLATE": req.zalo_class_template,
@@ -274,6 +278,7 @@ async def update_notification_settings(req: NotificationAdjustRequest):
         attendance_scheduler.update_schedule(
             morning_time=req.scan_time_morning,
             afternoon_time=req.scan_time_afternoon,
+            days=schedule_days,
             enabled=bool(req.auto_scan_enabled)
         )
     except Exception as e:
@@ -336,7 +341,7 @@ async def save_retention_settings_endpoint(req: RetentionSettingsRequest):
 async def cleanup_expired_data(req: CleanupExpiredRequest = None, db: Session = Depends(get_db)):
     """Chủ động dọn dẹp các bản ghi điểm danh và file Excel cũ hơn thời hạn quy định."""
     days = req.days if (req and req.days) else getattr(settings, "DATA_RETENTION_DAYS", 90)
-    cutoff_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+    cutoff_date = (get_now() - timedelta(days=days)).strftime("%Y-%m-%d")
 
     expired_sessions = db.query(AttendanceSession).filter(AttendanceSession.scan_date < cutoff_date).all()
     deleted_sessions_count = len(expired_sessions)
@@ -364,7 +369,7 @@ async def cleanup_expired_data(req: CleanupExpiredRequest = None, db: Session = 
 
     deleted_files_count = 0
     if getattr(settings, "DATA_CLEANUP_EXCEL_ENABLED", True):
-        cutoff_timestamp = (datetime.now() - timedelta(days=days)).timestamp()
+        cutoff_timestamp = (get_now() - timedelta(days=days)).timestamp()
         for f in settings.REPORTS_DIR.glob("*.xlsx"):
             try:
                 if f.stat().st_mtime < cutoff_timestamp:

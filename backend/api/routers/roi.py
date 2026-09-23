@@ -144,7 +144,7 @@ async def execute_roi_rescan(cls: Classroom, red_zone: list, green_zone: list, i
     try:
         import cv2
         import numpy as np
-        from datetime import datetime
+        from core.timezone_utils import get_today_str
         from core.detector import detector
         from database.models import AttendanceSession, AttendanceDetail
 
@@ -152,7 +152,7 @@ async def execute_roi_rescan(cls: Classroom, red_zone: list, green_zone: list, i
         frame = None
         raw_path = None
         latest_capture = settings.CAPTURES_DIR / "latest" / f"Lop_{classroom_id}.jpg"
-        today_str = datetime.now().strftime("%Y-%m-%d")
+        today_str = get_today_str()
         today_capture = settings.CAPTURES_DIR / today_str / f"Lop_{classroom_id}.jpg"
 
         if latest_capture.exists():

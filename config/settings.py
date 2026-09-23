@@ -16,6 +16,7 @@ class Settings(BaseModel):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
     DEBUG: bool = True
+    TIMEZONE: str = os.getenv("APP_TIMEZONE", "Asia/Ho_Chi_Minh") # Múi giờ chuẩn Việt Nam (GMT+7)
 
     # Storage Paths
     STORAGE_DIR: Path = BASE_DIR / "storage"

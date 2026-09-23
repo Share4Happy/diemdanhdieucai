@@ -8,6 +8,7 @@ from config.settings import settings
 from config.logging_config import logger
 from database.db_session import SessionLocal
 from database.models import AttendanceSession, AttendanceDetail, Classroom
+from core.timezone_utils import get_now
 
 class ZaloNotificationService:
     """
@@ -532,7 +533,7 @@ class ZaloNotificationService:
             classrooms = db.query(Classroom).filter(Classroom.is_active == True).all()
             total_classes = len(classrooms)
             total_std = sum(c.standard_count for c in classrooms)
-            now = datetime.now()
+            now = get_now()
             data = {
                 "ngay": now.strftime("%d/%m/%Y"),
                 "gio": now.strftime("%H:%M:%S"),
@@ -633,7 +634,7 @@ class ZaloNotificationService:
                 )
                 return self._collect_message_data(session, details)
 
-            now = datetime.now()
+            now = get_now()
             classrooms = db.query(Classroom).filter(Classroom.is_active == True).all()
             total_std = sum(c.standard_count for c in classrooms)
             return {

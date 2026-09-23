@@ -13,6 +13,7 @@ from database.models import Classroom, ROIPolygon, AttendanceSession, Attendance
 from core.rtsp_client import rtsp_client
 from core.relay_service import relay_service
 from core.detector import detector
+from core.timezone_utils import get_now
 
 class AttendanceEngine:
     """
@@ -36,7 +37,7 @@ class AttendanceEngine:
         4. Tính toán số học sinh hiện diện, số học sinh vắng.
         5. Lưu kết quả và đường dẫn file ảnh đối chứng vào CSDL.
         """
-        now = datetime.now()
+        now = get_now()
         if not date_str:
             date_str = now.strftime("%Y-%m-%d")
         scan_time_str = now.strftime("%H:%M:%S")
