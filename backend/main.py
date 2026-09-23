@@ -26,6 +26,7 @@ from backend.api.routers import (
     reports_router,
     system_router,
     auth_router,
+    backup_router,
 )
 
 @asynccontextmanager
@@ -62,6 +63,7 @@ app.include_router(cameras_router, prefix="/api")
 app.include_router(roi_router, prefix="/api")
 app.include_router(reports_router, prefix="/api")
 app.include_router(system_router, prefix="/api")
+app.include_router(backup_router, prefix="/api")
 
 class CORSStaticFiles(StaticFiles):
     """Phục vụ file tĩnh kèm tiêu đề CORS mở cho phép Frontend port 3000 tải ảnh an toàn."""

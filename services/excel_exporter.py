@@ -278,11 +278,30 @@ class ExcelExporter:
             mtime = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
             rel_path = f.relative_to(settings.REPORTS_DIR)
             rel_str = str(rel_path).replace("\\", "/")
+
+            # Xác định ca học: Ca Sáng (< 12:00) hoặc Ca Chiều (>= 12:00)
+            shift = "morning"
+            shift_label = "Ca Sáng"
+            import re
+            m = re.search(r"SESSION_\d{8}_(\d{2})(\d{2})", f.name, re.IGNORECASE)
+            if m:
+                hour = int(m.group(1))
+                if hour >= 12:
+                    shift = "afternoon"
+                    shift_label = "Ca Chiều"
+            else:
+                hour = datetime.fromtimestamp(stat.st_mtime).hour
+                if hour >= 12:
+                    shift = "afternoon"
+                    shift_label = "Ca Chiều"
+
             reports.append({
                 "filename": f.name,
                 "relative_path": rel_str,
                 "size_kb": size_kb,
                 "created_at": mtime,
+                "shift": shift,
+                "shift_label": shift_label,
                 "download_url": f"/storage/reports/{rel_str}"
             })
 

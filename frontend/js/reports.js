@@ -2,7 +2,7 @@
  * reports.js - Reports & Data Management Controller
  * THPT Điều Cải - Attendance System (Database & Excel Archive & Data Retention)
  */
-import { ReportAPI, AttendanceAPI, SystemAPI, showToast, API_BASE } from './api.js';
+import { ReportAPI, AttendanceAPI, SystemAPI, BackupAPI, showToast, API_BASE } from './api.js';
 import SkeletonTemplates from './components/skeleton-templates.js';
 import { ImageZoomViewer } from './shared/image-zoom-viewer.js';
 
@@ -26,23 +26,38 @@ let excelPageSize = 15;
 // === STATE: DATA RETENTION ===
 let currentRetentionDays = 90;
 
+// === STATE: BACKUP LIST ===
+let allBackupsList = [];
+
+/**
+ * Trích xuất chính xác khối học (10, 11, 12) từ tên lớp học (ví dụ: 'Lớp 10A2' -> '10', '12A10' -> '12').
+ * Tránh lỗi name.includes('10') bắt nhầm các lớp đuôi 10 của khối khác (11A10, 12A10).
+ */
+function extractGradeFromClassName(className) {
+    if (!className) return '';
+    const match = String(className).match(/\b(?:lớp\s*)?(10|11|12)(?=[a-zA-Z\s]|$)/i);
+    return match ? match[1] : '';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     loadAttendanceHistory();
     loadExcelFiles();
     loadRetentionSettings();
     loadDatabaseInfo();
+    loadBackupList();
     initTabsNavigation();
     initImgModalEvents();
     initDbControlsEvents();
     initExcelFilterEvents();
     initRetentionEvents();
+    initBackupEvents();
 
     // Export Excel immediately from Banner or Tab
     const handleExportExcel = async (btn) => {
         if (!btn) return;
         const originalText = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tổng hợp pandas & xuất Excel...';
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tổng hợp & xuất file Excel...';
 
         try {
             const result = await ReportAPI.exportExcel();
@@ -354,10 +369,8 @@ function applyDbFilters() {
     const filtered = allHistoryRows.filter(r => {
         // 1. Lọc Khối
         if (reportActiveGrade !== 'all') {
-            const name = (r.class_name || '').toUpperCase();
-            if (reportActiveGrade === '10' && !name.includes('10')) return false;
-            if (reportActiveGrade === '11' && !name.includes('11')) return false;
-            if (reportActiveGrade === '12' && !name.includes('12')) return false;
+            const grade = extractGradeFromClassName(r.class_name);
+            if (grade !== reportActiveGrade) return false;
         }
 
         // 2. Lọc Trạng thái
@@ -405,9 +418,14 @@ function applyDbFilters() {
 }
 
 function updateReportCounts(filtered = null) {
-    const all = allHistoryRows.length;
-    const absent = allHistoryRows.filter(r => (r.absent_count || 0) > 0).length;
-    const full = allHistoryRows.filter(r => (r.absent_count || 0) === 0).length;
+    let baseRows = allHistoryRows;
+    if (reportActiveGrade !== 'all') {
+        baseRows = allHistoryRows.filter(r => extractGradeFromClassName(r.class_name) === reportActiveGrade);
+    }
+
+    const all = baseRows.length;
+    const absent = baseRows.filter(r => (r.absent_count || 0) > 0).length;
+    const full = baseRows.filter(r => (r.absent_count || 0) === 0).length;
 
     const countAllEl = document.getElementById('repCountAll');
     const countAbsentEl = document.getElementById('repCountAbsent');
@@ -420,7 +438,7 @@ function updateReportCounts(filtered = null) {
     const repFilteredCountEl = document.getElementById('repFilteredCount');
     const repTotalCountEl = document.getElementById('repTotalCount');
     if (repFilteredCountEl) repFilteredCountEl.textContent = filtered ? filtered.length : all;
-    if (repTotalCountEl) repTotalCountEl.textContent = all;
+    if (repTotalCountEl) repTotalCountEl.textContent = allHistoryRows.length;
 }
 
 function renderDbTable(rows, startIdx = 0) {
@@ -616,6 +634,42 @@ function initExcelFilterEvents() {
     }
 }
 
+/**
+ * Xác định chính xác ca học (morning / afternoon) của file Excel:
+ * - Ưu tiên thuộc tính shift từ máy chủ backend
+ * - Trích xuất giờ từ mã phiên SESSION_YYYYMMDD_HHMMSS trong tên file
+ * - Trích xuất giờ từ mốc thời gian tạo file created_at
+ * Giờ < 12:00 là Ca Sáng, từ 12:00 trở đi là Ca Chiều.
+ */
+function getExcelFileShift(file) {
+    if (!file) return 'morning';
+    if (file.shift) return file.shift;
+
+    const filename = (file.filename || '').toLowerCase();
+    const created = (file.created_at || '');
+
+    const sessionMatch = filename.match(/session_\d{8}_(\d{2})(\d{2})/i) || filename.match(/_(\d{2})(\d{2})\d{2}\.xlsx$/i);
+    if (sessionMatch) {
+        const hour = parseInt(sessionMatch[1], 10);
+        if (!isNaN(hour)) {
+            return hour < 12 ? 'morning' : 'afternoon';
+        }
+    }
+
+    if (filename.includes('sang') || filename.includes('morning')) return 'morning';
+    if (filename.includes('chieu') || filename.includes('afternoon')) return 'afternoon';
+
+    const timeMatch = created.match(/\b(\d{1,2}):(\d{2})(?::\d{2})?\b/);
+    if (timeMatch) {
+        const hour = parseInt(timeMatch[1], 10);
+        if (!isNaN(hour)) {
+            return hour < 12 ? 'morning' : 'afternoon';
+        }
+    }
+
+    return 'morning';
+}
+
 function applyExcelFilters() {
     const filtered = allExcelFiles.filter(f => {
         const filename = (f.filename || '').toLowerCase();
@@ -629,13 +683,10 @@ function applyExcelFilters() {
             }
         }
 
-        // 2. Lọc ca học
-        if (excelShiftFilter === 'morning') {
-            const isMorning = filename.includes('06h45') || filename.includes('sang') || created.includes('06:');
-            if (!isMorning) return false;
-        } else if (excelShiftFilter === 'afternoon') {
-            const isAfternoon = filename.includes('12h45') || filename.includes('chieu') || created.includes('12:');
-            if (!isAfternoon) return false;
+        // 2. Lọc ca học chuẩn xác
+        if (excelShiftFilter !== 'all') {
+            const shift = getExcelFileShift(f);
+            if (shift !== excelShiftFilter) return false;
         }
 
         // 3. Tìm kiếm từ khóa
@@ -697,8 +748,8 @@ function renderExcelTable(files, startIdx = 0) {
     tbody.innerHTML = files.map((f, idx) => {
         const stt = startIdx + idx + 1;
         const dlUrl = f.download_url.startsWith('http') ? f.download_url : `${API_BASE}${f.download_url}`;
-        const isMorning = (f.filename || '').includes('06h45') || (f.created_at || '').includes('06:');
-        const shiftBadge = isMorning 
+        const shift = getExcelFileShift(f);
+        const shiftBadge = shift === 'morning' 
             ? '<span class="status-pill" style="background: #fef3c7; color: #b45309;"><i class="fa-solid fa-sun"></i> Ca Sáng</span>'
             : '<span class="status-pill" style="background: #eff6ff; color: #1d4ed8;"><i class="fa-solid fa-cloud-sun"></i> Ca Chiều</span>';
 
@@ -1120,7 +1171,223 @@ export function initImgModalEvents() {
     });
 }
 
+// ===================================================================
+// BACKUP & RESTORE CONTROLLER
+// ===================================================================
+async function loadBackupList() {
+    const tbody = document.getElementById('backupTableBody');
+    if (!tbody) return;
+
+    try {
+        const res = await BackupAPI.list();
+        if (res && res.success) {
+            allBackupsList = res.backups || [];
+            renderBackupTable(allBackupsList);
+        } else {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 25px; color: var(--danger);">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Không thể nạp danh sách bản sao lưu.
+                    </td>
+                </tr>
+            `;
+        }
+    } catch (err) {
+        console.warn('Lỗi nạp danh sách backup:', err);
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 25px; color: var(--text-muted);">
+                    Chưa có bản sao lưu nào hoặc không thể kết nối API backup.
+                </td>
+            </tr>
+        `;
+    }
+}
+
+function renderBackupTable(backups) {
+    const tbody = document.getElementById('backupTableBody');
+    if (!tbody) return;
+
+    if (!backups || backups.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 30px; color: var(--text-muted);">
+                    <i class="fa-solid fa-box-open" style="font-size: 1.8rem; margin-bottom: 8px; display: block; opacity: 0.5;"></i>
+                    Chưa có bản sao lưu nào được tạo. Hãy bấm <strong>Tạo Bản Sao Lưu Ngay</strong> để bảo vệ dữ liệu!
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = backups.map((b, idx) => {
+        const downloadUrl = BackupAPI.getDownloadUrl(b.filename);
+        const statsBadge = b.total_sessions !== '--' 
+            ? `<span class="badge badge-info" style="font-size: 0.76rem; margin-left: 6px;">${b.total_sessions} phiên (${b.total_details} lượt)</span>` 
+            : '';
+        return `
+            <tr>
+                <td style="text-align: center; font-weight: 600; color: var(--text-muted);">${idx + 1}</td>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-file-zipper" style="color: #2563eb; font-size: 1.1rem;"></i>
+                        <div>
+                            <strong style="color: var(--text-primary); font-size: 0.9rem;">${b.filename}</strong>
+                            <div style="font-size: 0.78rem; color: var(--text-muted);">${b.backup_type === 'AUTO_DAILY' ? '<span style="color: #16a34a; font-weight: 600;">[Tự động 23h]</span> ' : ''}${b.note || 'Bản sao lưu'}</div>
+                        </div>
+                    </div>
+                </td>
+                <td style="white-space: nowrap; font-size: 0.88rem; color: var(--text-secondary);">${b.created_at || '--'}</td>
+                <td style="text-align: center; font-weight: 600; color: var(--primary);">${b.size_mb} MB</td>
+                <td>
+                    <span style="font-size: 0.84rem; color: var(--text-secondary);">${b.note || 'Bản sao lưu'}</span>
+                    ${statsBadge}
+                </td>
+                <td style="text-align: center;">
+                    <div style="display: inline-flex; gap: 6px; align-items: center;">
+                        <a href="${downloadUrl}" class="btn btn-sm btn-secondary" title="Tải file zip về máy" download>
+                            <i class="fa-solid fa-download"></i>
+                        </a>
+                        <button type="button" class="btn btn-sm btn-secondary btn-restore-backup" data-filename="${b.filename}" title="Khôi phục lại dữ liệu từ bản sao lưu này" style="color: #b45309; border-color: #fde68a;">
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-secondary btn-delete-backup" data-filename="${b.filename}" title="Xóa bản sao lưu" style="color: #dc2626; border-color: #fecaca;">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    // Gán sự kiện Restore và Delete
+    tbody.querySelectorAll('.btn-restore-backup').forEach(btn => {
+        btn.addEventListener('click', () => handleRestoreBackup(btn.dataset.filename));
+    });
+    tbody.querySelectorAll('.btn-delete-backup').forEach(btn => {
+        btn.addEventListener('click', () => handleDeleteBackup(btn.dataset.filename));
+    });
+}
+
+async function handleCreateBackup() {
+    const btn = document.getElementById('btnCreateBackupNow');
+    const note = prompt('Nhập ghi chú cho bản sao lưu (hoặc bấm OK để tạo nhanh):', 'Sao lưu thủ công trước khi cập nhật');
+    if (note === null) return; // Người dùng ấn Cancel
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang đóng gói CSDL...';
+    }
+
+    try {
+        const res = await BackupAPI.create({ note: note.trim() || 'Sao lưu thủ công', include_excel: true });
+        if (res && res.success) {
+            showToast(res.message || 'Tạo bản sao lưu thành công!', 'success');
+            await loadBackupList();
+        } else {
+            showToast(res?.message || 'Lỗi khi tạo bản sao lưu', 'danger');
+        }
+    } catch (err) {
+        showToast('Lỗi: ' + (err.message || 'Không thể tạo bản sao lưu'), 'danger');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Tạo Bản Sao Lưu Ngay';
+        }
+    }
+}
+
+async function handleRestoreBackup(filename) {
+    if (!filename) return;
+    const confirmMsg = `CẢNH BÁO NGUY HIỂM:\n\nBạn có chắc chắn muốn khôi phục CSDL từ bản sao lưu:\n"${filename}"?\n\nDữ liệu hiện tại sẽ được thay thế bằng dữ liệu trong bản sao lưu này (Hệ thống sẽ tự động tạo một snapshot cứu hộ trước khi ghi đè).`;
+    if (!confirm(confirmMsg)) return;
+
+    try {
+        showToast('Đang tiến hành giải nén và khôi phục CSDL...', 'info');
+        const res = await BackupAPI.restore(filename);
+        if (res && res.success) {
+            alert(`Phục hồi dữ liệu thành công!\n\n${res.message}\n\nTrang sẽ tự động làm mới để cập nhật dữ liệu.`);
+            window.location.reload();
+        } else {
+            showToast(res?.message || 'Lỗi khi khôi phục dữ liệu', 'danger');
+        }
+    } catch (err) {
+        showToast('Lỗi phục hồi: ' + (err.message || err), 'danger');
+    }
+}
+
+async function handleDeleteBackup(filename) {
+    if (!filename) return;
+    if (!confirm(`Bạn có chắc chắn muốn xóa bản sao lưu:\n"${filename}"?`)) return;
+
+    try {
+        const res = await BackupAPI.delete(filename);
+        if (res && res.success) {
+            showToast('Đã xóa bản sao lưu!', 'info');
+            await loadBackupList();
+        } else {
+            showToast(res?.message || 'Lỗi xóa file', 'danger');
+        }
+    } catch (err) {
+        showToast('Lỗi: ' + (err.message || err), 'danger');
+    }
+}
+
+async function handleUploadBackupZip(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith('.zip')) {
+        alert('Vui lòng chọn file nén .ZIP bản sao lưu của hệ thống!');
+        e.target.value = '';
+        return;
+    }
+
+    const confirmMsg = `Bạn vừa chọn file tải lên: "${file.name}" (${(file.size / (1024 * 1024)).toFixed(2)} MB).\n\nBạn có muốn tải file lên và TIẾN HÀNH PHỤC HỒI HỆ THỐNG ngay lập tức không?`;
+    if (!confirm(confirmMsg)) {
+        e.target.value = '';
+        return;
+    }
+
+    try {
+        showToast('Đang tải file lên máy chủ và tiến hành phục hồi...', 'info');
+        const res = await BackupAPI.uploadAndRestore(file);
+        if (res && res.success) {
+            alert(`Tải lên và phục hồi thành công!\n\nTrang sẽ tự động tải lại để đồng bộ CSDL.`);
+            window.location.reload();
+        } else {
+            alert('Lỗi: ' + (res?.message || 'Không thể phục hồi từ file tải lên.'));
+        }
+    } catch (err) {
+        alert('Lỗi tải lên và khôi phục: ' + (err.message || err));
+    } finally {
+        e.target.value = '';
+    }
+}
+
+function initBackupEvents() {
+    const btnCreate = document.getElementById('btnCreateBackupNow');
+    if (btnCreate) {
+        btnCreate.addEventListener('click', handleCreateBackup);
+    }
+
+    const btnRefresh = document.getElementById('btnRefreshBackupList');
+    if (btnRefresh) {
+        btnRefresh.addEventListener('click', async () => {
+            btnRefresh.classList.add('fa-spin');
+            await loadBackupList();
+            setTimeout(() => btnRefresh.classList.remove('fa-spin'), 600);
+            showToast('Đã cập nhật danh sách bản sao lưu!', 'info');
+        });
+    }
+
+    const inputUpload = document.getElementById('inputUploadBackupZip');
+    if (inputUpload) {
+        inputUpload.addEventListener('change', handleUploadBackupZip);
+    }
+}
+
 window.showImgModal = showImgModal;
 window.closeImgModal = closeImgModal;
 window.initTabsNavigation = initTabsNavigation;
-
+window.loadBackupList = loadBackupList;

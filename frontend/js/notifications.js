@@ -970,15 +970,44 @@ function initScheduleControls() {
 
     function openScheduleModal() {
         if (modal) {
+            // Đồng bộ dữ liệu hiện tại từ notificationSettings vào các ô điều khiển của modal
+            const mInput = document.getElementById('ruleMorningTime');
+            const aInput = document.getElementById('ruleAfternoonTime');
+            const autoSwitch = document.getElementById('ruleAutoScanActive');
+
+            if (mInput && notificationSettings.scan_time_morning) {
+                mInput.value = notificationSettings.scan_time_morning;
+            }
+            if (aInput && notificationSettings.scan_time_afternoon) {
+                aInput.value = notificationSettings.scan_time_afternoon;
+            }
+            if (autoSwitch && typeof notificationSettings.auto_scan_enabled === 'boolean') {
+                autoSwitch.checked = notificationSettings.auto_scan_enabled;
+            }
+            if (notificationSettings.schedule_days) {
+                setSelectedScheduleDays(notificationSettings.schedule_days);
+            }
+            const feedback = document.getElementById('scheduleFeedbackMsg');
+            if (feedback) {
+                feedback.style.display = 'none';
+                feedback.innerHTML = '';
+            }
+
             modal.classList.add('active');
-            const morningInput = document.getElementById('ruleMorningTime');
-            if (morningInput) setTimeout(() => morningInput.focus(), 150);
+            if (mInput) setTimeout(() => mInput.focus(), 150);
         }
     }
 
     function closeScheduleModal() {
         if (modal) {
             modal.classList.remove('active');
+            // Phục hồi lại hiển thị giao diện bên ngoài theo đúng notificationSettings đã lưu (nếu chưa lưu)
+            updateScheduleTabTimes(
+                notificationSettings.scan_time_morning || '06:45',
+                notificationSettings.scan_time_afternoon || '12:45',
+                notificationSettings.auto_scan_enabled ?? true,
+                notificationSettings.schedule_days || 'mon-sat'
+            );
         }
     }
 
@@ -1012,13 +1041,6 @@ function initScheduleControls() {
                     showToast('Vui lòng chọn ít nhất 1 ngày trong tuần để quét!', 'warning');
                     return;
                 }
-                const currentDays = getSelectedScheduleDays();
-                updateScheduleTabTimes(
-                    document.getElementById('ruleMorningTime')?.value || '06:45',
-                    document.getElementById('ruleAfternoonTime')?.value || '12:45',
-                    document.getElementById('ruleAutoScanActive')?.checked ?? true,
-                    currentDays
-                );
             });
         });
     }
@@ -1028,12 +1050,6 @@ function initScheduleControls() {
     if (btnPresetMonSat) {
         btnPresetMonSat.addEventListener('click', () => {
             setSelectedScheduleDays('mon-sat');
-            updateScheduleTabTimes(
-                document.getElementById('ruleMorningTime')?.value || '06:45',
-                document.getElementById('ruleAfternoonTime')?.value || '12:45',
-                document.getElementById('ruleAutoScanActive')?.checked ?? true,
-                'mon-sat'
-            );
         });
     }
 
@@ -1041,12 +1057,6 @@ function initScheduleControls() {
     if (btnPresetMonFri) {
         btnPresetMonFri.addEventListener('click', () => {
             setSelectedScheduleDays('mon-fri');
-            updateScheduleTabTimes(
-                document.getElementById('ruleMorningTime')?.value || '06:45',
-                document.getElementById('ruleAfternoonTime')?.value || '12:45',
-                document.getElementById('ruleAutoScanActive')?.checked ?? true,
-                'mon-fri'
-            );
         });
     }
 
@@ -1054,45 +1064,6 @@ function initScheduleControls() {
     if (btnPresetAll) {
         btnPresetAll.addEventListener('click', () => {
             setSelectedScheduleDays('mon,tue,wed,thu,fri,sat,sun');
-            updateScheduleTabTimes(
-                document.getElementById('ruleMorningTime')?.value || '06:45',
-                document.getElementById('ruleAfternoonTime')?.value || '12:45',
-                document.getElementById('ruleAutoScanActive')?.checked ?? true,
-                'mon,tue,wed,thu,fri,sat,sun'
-            );
-        });
-    }
-
-    // Live update badges
-    const mInput = document.getElementById('ruleMorningTime');
-    if (mInput) {
-        mInput.addEventListener('input', () => {
-            const b = document.getElementById('badgeMorningTime');
-            if (b && mInput.value) b.textContent = mInput.value;
-            notificationSettings.scan_time_morning = mInput.value;
-        });
-    }
-
-    const aInput = document.getElementById('ruleAfternoonTime');
-    if (aInput) {
-        aInput.addEventListener('input', () => {
-            const b = document.getElementById('badgeAfternoonTime');
-            if (b && aInput.value) b.textContent = aInput.value;
-            notificationSettings.scan_time_afternoon = aInput.value;
-        });
-    }
-
-    const autoSwitch = document.getElementById('ruleAutoScanActive');
-    if (autoSwitch) {
-        autoSwitch.addEventListener('change', () => {
-            const isEnabled = autoSwitch.checked;
-            notificationSettings.auto_scan_enabled = isEnabled;
-            updateScheduleTabTimes(
-                document.getElementById('ruleMorningTime')?.value || '06:45',
-                document.getElementById('ruleAfternoonTime')?.value || '12:45',
-                isEnabled,
-                getSelectedScheduleDays()
-            );
         });
     }
 }
@@ -1103,19 +1074,22 @@ async function handleSaveScheduleConfig() {
     const morningTime = document.getElementById('ruleMorningTime')?.value || '06:45';
     const afternoonTime = document.getElementById('ruleAfternoonTime')?.value || '12:45';
     const autoScanActive = document.getElementById('ruleAutoScanActive')?.checked ?? true;
-    const scheduleDays = getSelectedScheduleDays();
+    const scheduleDays = getSelectedScheduleDays() || 'mon-sat';
 
     if (btnSave) {
         btnSave.disabled = true;
         btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu lịch trình...';
     }
 
+    // Đảm bảo lưu template hiện tại vào bộ nhớ trước khi gửi
+    saveCurrentEditorToMemory();
+
     const payload = {
-        enable_zalo: notificationSettings.enable_zalo,
-        enable_email: notificationSettings.enable_email,
-        send_condition: notificationSettings.send_condition,
-        alert_threshold_percent: notificationSettings.alert_threshold_percent,
-        alert_class_absent_count: notificationSettings.alert_class_absent_count,
+        enable_zalo: notificationSettings.enable_zalo ?? true,
+        enable_email: notificationSettings.enable_email ?? false,
+        send_condition: notificationSettings.send_condition || 'always',
+        alert_threshold_percent: notificationSettings.alert_threshold_percent ?? 10.0,
+        alert_class_absent_count: notificationSettings.alert_class_absent_count ?? 3,
         scan_time_morning: morningTime,
         scan_time_afternoon: afternoonTime,
         schedule_days: scheduleDays,
@@ -1138,11 +1112,11 @@ async function handleSaveScheduleConfig() {
         if (feedback) {
             feedback.style.display = 'block';
             feedback.className = 'zalo-feedback zalo-feedback--success';
-            feedback.innerHTML = '<i class="fa-solid fa-circle-check"></i> Đã cập nhật giờ quét, ngày quét và đồng bộ vào bộ lập lịch APScheduler thành công!';
+            feedback.innerHTML = '<i class="fa-solid fa-circle-check"></i> Đã cập nhật giờ quét, ngày quét và đồng bộ vào bộ lập lịch tự động thành công!';
             setTimeout(() => { 
                 feedback.style.display = 'none';
                 document.getElementById('scheduleEditModal')?.classList.remove('active');
-            }, 1200);
+            }, 800);
         } else {
             document.getElementById('scheduleEditModal')?.classList.remove('active');
         }
@@ -1171,7 +1145,6 @@ function handleResetScheduleTimes() {
     if (autoSwitch) autoSwitch.checked = true;
 
     setSelectedScheduleDays('mon-sat');
-    updateScheduleTabTimes('06:45', '12:45', true, 'mon-sat');
-    showToast('Đã khôi phục giờ và ngày quét chuẩn: 06:45 & 12:45 (T2-T7). Vui lòng bấm Lưu Cài Đặt để áp dụng.', 'info');
+    showToast('Đã đặt lại giờ và ngày quét chuẩn: 06:45 & 12:45 (T2-T7). Hãy bấm "Lưu Cài Đặt Lịch Trình" để áp dụng.', 'info');
 }
 

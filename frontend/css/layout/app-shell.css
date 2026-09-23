@@ -122,6 +122,17 @@
   margin: 0;
 }
 
+.sidebar-nav-item[hidden],
+.nav-admin-only,
+.sidebar-nav-item.nav-admin-only {
+  display: none !important;
+}
+
+.nav-admin-only.is-visible,
+.sidebar-nav-item.nav-admin-only.is-visible {
+  display: block !important;
+}
+
 .sidebar-nav-link {
   display: flex;
   align-items: center;

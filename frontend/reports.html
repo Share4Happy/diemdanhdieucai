@@ -73,7 +73,7 @@
                             <span class="sidebar-nav-text">Thông Báo</span>
                         </a>
                     </li>
-                    <li class="sidebar-nav-item nav-admin-only">
+                    <li class="sidebar-nav-item nav-admin-only" hidden style="display: none !important;">
                         <a href="users.html" class="sidebar-nav-link">
                             <span class="sidebar-nav-icon"><i class="fa-solid fa-user-gear"></i></span>
                             <span class="sidebar-nav-text">Tài Khoản</span>
@@ -84,10 +84,10 @@
 
             <div class="sidebar-footer">
                 <div class="sidebar-user-profile" id="sidebarUserProfile" title="Thông tin tài khoản">
-                    <div class="sidebar-user-avatar" id="sidebarUserAvatar">A</div>
+                    <div class="sidebar-user-avatar" id="sidebarUserAvatar">U</div>
                     <div class="sidebar-user-info">
-                        <span class="sidebar-user-name" id="sidebarUserName">Admin</span>
-                        <span class="sidebar-user-role" id="sidebarUserRole">Quản Trị Viên</span>
+                        <span class="sidebar-user-name" id="sidebarUserName">Người Dùng</span>
+                        <span class="sidebar-user-role" id="sidebarUserRole">---</span>
                     </div>
                     <button class="sidebar-logout-btn" type="button" id="sidebarLogoutBtn" title="Đăng Xuất">
                         <i class="fa-solid fa-right-from-bracket"></i>
@@ -109,7 +109,7 @@
                         <div>
                             <h2>Trung Tâm Dữ Liệu & Báo Cáo Điểm Danh</h2>
                             <p style="color: var(--text-muted); margin: 0; font-size: 0.9rem;">
-                                Hệ thống tự động lưu trữ CSDL, xử lý báo cáo tổng hợp pandas / openpyxl và kết xuất dữ liệu thống kê chuyên cần.
+                                Hệ thống tự động lưu trữ CSDL, xử lý báo cáo tổng hợp và kết xuất dữ liệu thống kê chuyên cần.
                             </p>
                         </div>
                     </div>
@@ -320,7 +320,6 @@
                                 <h3 style="margin: 0;">
                                     <i class="fa-solid fa-file-excel text-success"></i> Kho Lưu Trữ File Excel Báo Cáo Tổng Hợp
                                 </h3>
-                                <span class="badge badge-success">pandas & openpyxl</span>
                             </div>
                             <div>
                                 <button id="btnExportExcelTab" class="btn btn-primary btn-sm" type="button" style="font-weight: 600;">
@@ -354,8 +353,8 @@
                                     <span class="control-label"><i class="fa-solid fa-clock"></i> Ca học:</span>
                                     <div class="status-segmented-control" id="excelShiftFilterGroup">
                                         <button type="button" class="segmented-tab active" data-excel-shift="all">Tất cả</button>
-                                        <button type="button" class="segmented-tab" data-excel-shift="morning">Ca Sáng (06:45)</button>
-                                        <button type="button" class="segmented-tab" data-excel-shift="afternoon">Ca Chiều (12:45)</button>
+                                        <button type="button" class="segmented-tab" data-excel-shift="morning"><i class="fa-solid fa-sun" style="color: #d97706;"></i> Ca Sáng</button>
+                                        <button type="button" class="segmented-tab" data-excel-shift="afternoon"><i class="fa-solid fa-cloud-sun" style="color: #2563eb;"></i> Ca Chiều</button>
                                     </div>
                                 </div>
 
@@ -550,6 +549,67 @@
 
                         <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border-color);">
 
+                        <!-- Khung Quản Lý Sao Lưu & Phục Hồi Dữ Liệu (Backup & Restore) -->
+                        <div id="backupManagementSection">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 0.75rem;">
+                                <div>
+                                    <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                                        <i class="fa-solid fa-box-archive" style="color: #2563eb;"></i>
+                                        Trung Tâm Sao Lưu & Phục Hồi Dữ Liệu (Backup & Restore)
+                                    </h4>
+                                    <p style="font-size: 0.88rem; color: var(--text-muted); margin: 4px 0 0 0;">
+                                        Tự động đóng gói an toàn CSDL, cấu hình hệ thống và file báo cáo Excel vào gói nén .ZIP. Hỗ trợ tải về máy hoặc tải lên để khôi phục.
+                                    </p>
+                                </div>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <button type="button" id="btnCreateBackupNow" class="btn btn-primary" style="font-weight: 600;">
+                                        <i class="fa-solid fa-cloud-arrow-up"></i> Tạo Bản Sao Lưu Ngay
+                                    </button>
+                                    <label class="btn btn-secondary" style="font-weight: 600; cursor: pointer; margin: 0;" title="Tải file backup .zip từ máy tính để phục hồi">
+                                        <i class="fa-solid fa-file-import"></i> Tải Lên & Khôi Phục
+                                        <input type="file" id="inputUploadBackupZip" accept=".zip" style="display: none;">
+                                    </label>
+                                    <button type="button" id="btnRefreshBackupList" class="btn btn-secondary" style="padding: 0 10px;" title="Làm mới danh sách">
+                                        <i class="fa-solid fa-rotate-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Thẻ ghi chú thông tin tự động sao lưu -->
+                            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 14px; margin-bottom: 1rem; display: flex; align-items: center; gap: 10px; font-size: 0.88rem; color: #166534;">
+                                <i class="fa-solid fa-shield-halved" style="font-size: 1.1rem; color: #15803d;"></i>
+                                <span>
+                                    <strong>Bảo vệ dữ liệu tự động:</strong> Hệ thống tự động sao lưu toàn bộ CSDL vào lúc <strong>23:00 hàng ngày</strong> và lưu trữ 15 bản sao lưu gần nhất.
+                                </span>
+                            </div>
+
+                            <!-- Bảng danh sách các bản sao lưu -->
+                            <div class="table-wrapper" style="border: 1px solid var(--border-color); border-radius: 8px; max-height: 280px; overflow-y: auto;">
+                                <table class="table" style="margin: 0;">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 45px; text-align: center;">STT</th>
+                                            <th>Tên Bản Sao Lưu</th>
+                                            <th>Thời Điểm Tạo</th>
+                                            <th style="text-align: center;">Dung Lượng</th>
+                                            <th>Ghi Chú / Thống Kê</th>
+                                            <th style="text-align: center; width: 140px;">Thao Tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="backupTableBody">
+                                        <tr>
+                                            <td colspan="6" style="text-align: center; padding: 25px; color: var(--text-muted);">
+                                                <i class="fa-solid fa-spinner fa-spin"></i> Đang nạp danh sách bản sao lưu...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="backupFeedbackMsg" class="zalo-feedback" style="margin-top: 0.75rem;"></div>
+                        </div>
+
+                        <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border-color);">
+
                         <!-- Khung Cấu Hình Kết Nối CSDL (Database Driver & String) -->
                         <div>
                             <h4 style="margin: 0 0 0.5rem 0; font-size: 1.05rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
@@ -633,7 +693,7 @@
     <script src="js/shared/header-actions.js?v=2.2"></script>
 
     <!-- Page Script -->
-    <script type="module" src="js/reports.js?v=3.5"></script>
+    <script type="module" src="js/reports.js?v=3.8"></script>
 </body>
 
 </html>

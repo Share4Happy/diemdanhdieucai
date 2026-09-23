@@ -38,6 +38,6 @@ class UserPublic(BaseModel):
     email: str
     full_name: str | None = ""
     role: str = "staff"
-    is_active: bool = True
+    is_active: bool | None = True
 
     model_config = {"from_attributes": True}

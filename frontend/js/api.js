@@ -89,6 +89,12 @@ export const AuthAPI = {
         if (res && res.token) {
             try { localStorage.setItem('authToken', res.token); } catch (e) {}
         }
+        if (res && res.user) {
+            try {
+                localStorage.setItem('currentUserRole', res.user.role || 'staff');
+                localStorage.setItem('currentUser', JSON.stringify(res.user));
+            } catch (e) {}
+        }
         return res;
     },
     logout: async () => {
@@ -254,6 +260,23 @@ export function showToast(message, type = 'info') {
     }, 4000);
 }
 
+// === BACKUP & RESTORE APIs ===
+export const BackupAPI = {
+    list: () => fetchAPI('/api/backup/list'),
+    create: (data = {}) => fetchAPI('/api/backup/create', { method: 'POST', body: data }),
+    restore: (filename) => fetchAPI(`/api/backup/restore/${encodeURIComponent(filename)}`, { method: 'POST' }),
+    delete: (filename) => fetchAPI(`/api/backup/${encodeURIComponent(filename)}`, { method: 'DELETE' }),
+    getDownloadUrl: (filename) => `${API_BASE}/api/backup/download/${encodeURIComponent(filename)}`,
+    uploadAndRestore: async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        return fetchAPI('/api/backup/upload-restore', {
+            method: 'POST',
+            body: formData
+        });
+    }
+};
+
 // Luôn gắn các API lên window để đảm bảo tương thích toàn diện kể cả khi có cache cũ
 if (typeof window !== 'undefined') {
     window.API_BASE = API_BASE;
@@ -262,6 +285,7 @@ if (typeof window !== 'undefined') {
     window.ROIAPI = ROIAPI;
     window.AuthAPI = AuthAPI;
     window.ReportAPI = ReportAPI;
+    window.BackupAPI = BackupAPI;
     window.SystemAPI = SystemAPI;
     window.showToast = showToast;
     window.getMediaUrl = getMediaUrl;

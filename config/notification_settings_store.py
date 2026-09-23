@@ -59,7 +59,12 @@ def load_notification_settings(settings) -> Dict[str, Any]:
         try:
             saved = json.loads(path.read_text(encoding="utf-8"))
             if isinstance(saved, dict):
-                data.update(saved)
+                for k, v in saved.items():
+                    if k in ("ZALO_SCHOOL_TEMPLATE", "ZALO_CLASS_TEMPLATE", "EMAIL_SUBJECT_TEMPLATE", "EMAIL_BODY_TEMPLATE"):
+                        if v and str(v).strip():
+                            data[k] = v
+                    else:
+                        data[k] = v
         except Exception:
             pass
 
@@ -79,7 +84,18 @@ def save_notification_settings(settings, payload: Dict[str, Any]) -> Dict[str, A
         except Exception:
             pass
 
-    current.update(payload)
+    for k, v in payload.items():
+        if k in ("ZALO_SCHOOL_TEMPLATE", "ZALO_CLASS_TEMPLATE", "EMAIL_SUBJECT_TEMPLATE", "EMAIL_BODY_TEMPLATE"):
+            if v and str(v).strip():
+                current[k] = v
+        else:
+            current[k] = v
+
+    # Đảm bảo nếu template nào trong current bị rỗng thì khôi phục lại từ DEFAULT_SETTINGS
+    for k in ("ZALO_SCHOOL_TEMPLATE", "ZALO_CLASS_TEMPLATE", "EMAIL_SUBJECT_TEMPLATE", "EMAIL_BODY_TEMPLATE"):
+        if not current.get(k) or not str(current.get(k, "")).strip():
+            current[k] = DEFAULT_SETTINGS[k]
+
     for k, v in current.items():
         setattr(settings, k, v)
 

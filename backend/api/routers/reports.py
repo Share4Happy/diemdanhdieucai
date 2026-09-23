@@ -258,32 +258,42 @@ async def get_notification_settings():
 async def update_notification_settings(req: NotificationAdjustRequest):
     """Cập nhật cấu hình điều chỉnh thông báo (quy tắc, ngưỡng cảnh báo, lịch trình, mẫu tin nhắn)."""
     schedule_days = req.schedule_days or getattr(settings, "SCHEDULE_DAYS", "mon-sat")
+    morning_time = req.scan_time_morning or getattr(settings, "SCAN_TIME_MORNING", "06:45")
+    afternoon_time = req.scan_time_afternoon or getattr(settings, "SCAN_TIME_AFTERNOON", "12:45")
+    auto_enabled = req.auto_scan_enabled if req.auto_scan_enabled is not None else getattr(settings, "AUTO_SCAN_ENABLED", True)
+
     payload = {
-        "ENABLE_ZALO_NOTIFICATION": req.enable_zalo,
-        "ENABLE_EMAIL_NOTIFICATION": req.enable_email,
-        "NOTIFICATION_SEND_CONDITION": req.send_condition,
-        "NOTIFICATION_ALERT_THRESHOLD_PERCENT": req.alert_threshold_percent,
-        "NOTIFICATION_ALERT_CLASS_ABSENT": req.alert_class_absent_count,
-        "SCAN_TIME_MORNING": req.scan_time_morning,
-        "SCAN_TIME_AFTERNOON": req.scan_time_afternoon,
+        "ENABLE_ZALO_NOTIFICATION": req.enable_zalo if req.enable_zalo is not None else getattr(settings, "ENABLE_ZALO_NOTIFICATION", True),
+        "ENABLE_EMAIL_NOTIFICATION": req.enable_email if req.enable_email is not None else getattr(settings, "ENABLE_EMAIL_NOTIFICATION", False),
+        "NOTIFICATION_SEND_CONDITION": req.send_condition or getattr(settings, "NOTIFICATION_SEND_CONDITION", "always"),
+        "NOTIFICATION_ALERT_THRESHOLD_PERCENT": req.alert_threshold_percent if req.alert_threshold_percent is not None else getattr(settings, "NOTIFICATION_ALERT_THRESHOLD_PERCENT", 10.0),
+        "NOTIFICATION_ALERT_CLASS_ABSENT": req.alert_class_absent_count if req.alert_class_absent_count is not None else getattr(settings, "NOTIFICATION_ALERT_CLASS_ABSENT", 3),
+        "SCAN_TIME_MORNING": morning_time,
+        "SCAN_TIME_AFTERNOON": afternoon_time,
         "SCHEDULE_DAYS": schedule_days,
-        "AUTO_SCAN_ENABLED": req.auto_scan_enabled,
-        "ZALO_SCHOOL_TEMPLATE": req.zalo_school_template,
-        "ZALO_CLASS_TEMPLATE": req.zalo_class_template,
-        "EMAIL_SUBJECT_TEMPLATE": req.email_subject_template,
-        "EMAIL_BODY_TEMPLATE": req.email_body_template,
+        "AUTO_SCAN_ENABLED": auto_enabled,
     }
+
+    if req.zalo_school_template and req.zalo_school_template.strip():
+        payload["ZALO_SCHOOL_TEMPLATE"] = req.zalo_school_template.strip()
+    if req.zalo_class_template and req.zalo_class_template.strip():
+        payload["ZALO_CLASS_TEMPLATE"] = req.zalo_class_template.strip()
+    if req.email_subject_template and req.email_subject_template.strip():
+        payload["EMAIL_SUBJECT_TEMPLATE"] = req.email_subject_template.strip()
+    if req.email_body_template and req.email_body_template.strip():
+        payload["EMAIL_BODY_TEMPLATE"] = req.email_body_template.strip()
+
     save_notification_settings(settings, payload)
     try:
         attendance_scheduler.update_schedule(
-            morning_time=req.scan_time_morning,
-            afternoon_time=req.scan_time_afternoon,
+            morning_time=morning_time,
+            afternoon_time=afternoon_time,
             days=schedule_days,
-            enabled=bool(req.auto_scan_enabled)
+            enabled=bool(auto_enabled)
         )
     except Exception as e:
         logger.warning(f"Lỗi cập nhật lịch trình quét nền: {e}")
-    return {"success": True, "message": "Đã lưu cài đặt điều chỉnh thông báo thành công!"}
+    return {"success": True, "message": "Đã lưu cài đặt điều chỉnh thông báo và lịch trình quét thành công!"}
 
 @router.get("/retention-settings")
 async def get_retention_settings(db: Session = Depends(get_db)):

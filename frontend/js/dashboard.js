@@ -23,6 +23,16 @@ let searchKeyword = '';
 let isScanning = false;
 let trendChartInstance = null;
 
+/**
+ * Trích xuất chính xác khối học (10, 11, 12) từ tên lớp học (ví dụ: 'Lớp 10A2' -> '10', '12A10' -> '12').
+ * Tránh lỗi name.includes('10') bắt nhầm các lớp đuôi 10 của khối khác (11A10, 12A10).
+ */
+function extractGradeFromClassName(className) {
+    if (!className) return '';
+    const match = String(className).match(/\b(?:lớp\s*)?(10|11|12)(?=[a-zA-Z\s]|$)/i);
+    return match ? match[1] : '';
+}
+
 function initDashboard() {
     initLiveClock();
     initEventListeners();
@@ -113,6 +123,7 @@ function initEventListeners() {
         }
 
         gradeSwitcherPill?.classList.remove('dropdown-open');
+        updateFilterBadgeCounts();
         renderAttendanceTable();
     }
 
@@ -426,10 +437,15 @@ function updateKPIs() {
  * ===================================================================
  */
 function updateFilterBadgeCounts() {
-    const all = currentDetails.length;
-    const absent = currentDetails.filter(d => (d.absent_count || 0) > 0).length;
-    const full = currentDetails.filter(d => (d.absent_count || 0) === 0 && (d.present_count || 0) > 0).length;
-    const pending = currentDetails.filter(d => (d.standard_count || 0) === 0 || (d.present_count || 0) === 0).length;
+    const gradeDetails = currentDetails.filter(d => {
+        const grade = extractGradeFromClassName(d.class_name);
+        return grade === activeGrade;
+    });
+
+    const all = gradeDetails.length;
+    const absent = gradeDetails.filter(d => (d.absent_count || 0) > 0).length;
+    const full = gradeDetails.filter(d => (d.absent_count || 0) === 0 && (d.present_count || 0) > 0).length;
+    const pending = gradeDetails.filter(d => (d.standard_count || 0) === 0 || (d.present_count || 0) === 0).length;
 
     const countAllEl = document.getElementById('filterCountAll');
     const countAbsentEl = document.getElementById('filterCountAbsent');
@@ -465,11 +481,8 @@ function renderAttendanceTable() {
 
     // 1. Lọc theo Khối (Chỉ còn Khối 10, 11, 12; mặc định Khối 10)
     let filtered = currentDetails.filter(d => {
-        const name = (d.class_name || '').toUpperCase();
-        if (activeGrade === '10') return name.includes('10');
-        if (activeGrade === '11') return name.includes('11');
-        if (activeGrade === '12') return name.includes('12');
-        return true;
+        const grade = extractGradeFromClassName(d.class_name);
+        return grade === activeGrade;
     });
 
     // 2. Lọc theo Trạng Thái

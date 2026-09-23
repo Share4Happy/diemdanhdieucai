@@ -75,8 +75,8 @@ class ConfirmationDialog {
         // Set content
         titleEl.textContent = title;
         messageEl.innerHTML = message;
-        confirmBtn.textContent = confirmText;
-        cancelBtn.textContent = cancelText;
+        confirmBtn.innerHTML = confirmText;
+        cancelBtn.innerHTML = cancelText;
 
         // Set icon and colors based on type
         iconEl.className = 'confirmation-icon';

@@ -10,8 +10,10 @@ function updateAdminNav(isAdmin) {
         el.hidden = !isAdmin;
         if (isAdmin) {
             el.classList.add('is-visible');
+            el.style.removeProperty('display');
         } else {
             el.classList.remove('is-visible');
+            el.style.setProperty('display', 'none', 'important');
         }
     });
 }
@@ -19,9 +21,7 @@ function updateAdminNav(isAdmin) {
 // 1. Phục hồi ngay thông tin tài khoản và quyền từ localStorage để hiển thị tức thời, triệt tiêu FOUC/nhấp nháy
 try {
     const cachedRole = localStorage.getItem('currentUserRole');
-    if (cachedRole) {
-        updateAdminNav(cachedRole === 'admin');
-    }
+    updateAdminNav(cachedRole === 'admin');
     const cachedUserStr = localStorage.getItem('currentUser');
     if (cachedUserStr) {
         window.currentUser = JSON.parse(cachedUserStr);
@@ -39,28 +39,33 @@ async function guardApp() {
         const user = await AuthAPI.me();
 
         window.currentUser = user;
+        const isAdmin = user.role === 'admin';
+
         try {
             localStorage.setItem('currentUserRole', user.role || 'staff');
             localStorage.setItem('currentUser', JSON.stringify(user));
         } catch (e) {}
 
-        // Cập nhật thông tin tài khoản trên sidebar navigation
+        // Cập nhật trạng thái hiển thị của các thành phần admin
+        updateAdminNav(isAdmin);
+
+        // Cập nhật thông tin tài khoản & menu trên sidebar navigation
         try {
-            if (window.appShell && typeof window.appShell.displayUserInfo === 'function') {
-                window.appShell.displayUserInfo();
+            if (window.appShell) {
+                if (typeof window.appShell.renderSidebarNav === 'function') {
+                    window.appShell.renderSidebarNav();
+                }
+                if (typeof window.appShell.displayUserInfo === 'function') {
+                    window.appShell.displayUserInfo();
+                }
             }
         } catch (e) {
             console.warn('[Auth Guard] Lỗi cập nhật giao diện người dùng:', e);
         }
 
-        if (user.role === 'admin') {
-            updateAdminNav(true);
-        } else {
-            updateAdminNav(false);
-            if ((window.location.pathname || '').includes('users')) {
-                showToast('Chỉ quản trị viên mới vào được trang Tài Khoản.', 'danger');
-                window.location.href = 'index.html';
-            }
+        if (!isAdmin && (window.location.pathname || '').includes('users')) {
+            showToast('Chỉ quản trị viên mới vào được trang Tài Khoản.', 'danger');
+            window.location.href = 'index.html';
         }
     } catch (err) {
         console.warn('[Auth Guard] Lỗi khi kiểm tra phiên làm việc:', err);

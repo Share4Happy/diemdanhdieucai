@@ -23,6 +23,7 @@ class Settings(BaseModel):
     CAPTURES_DIR: Path = BASE_DIR / "storage" / "captures"
     ANNOTATED_DIR: Path = BASE_DIR / "storage" / "annotated"
     REPORTS_DIR: Path = BASE_DIR / "storage" / "reports"
+    BACKUPS_DIR: Path = BASE_DIR / "storage" / "backups"
     SAMPLES_DIR: Path = BASE_DIR / "dataset" / "samples"
     CLASSROOMS_MEDIA_DIR: Path = BASE_DIR / "dataset" / "classrooms_media"
     MODELS_DIR: Path = BASE_DIR / "models"
