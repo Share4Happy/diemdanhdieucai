@@ -89,6 +89,12 @@ export const AuthAPI = {
         if (res && res.token) {
             try { localStorage.setItem('authToken', res.token); } catch (e) {}
         }
+        if (res && res.user) {
+            try {
+                localStorage.setItem('currentUserRole', res.user.role || 'staff');
+                localStorage.setItem('currentUser', JSON.stringify(res.user));
+            } catch (e) {}
+        }
         return res;
     },
     logout: async () => {

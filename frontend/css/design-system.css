@@ -212,3 +212,17 @@ a:hover {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--gray-400);
 }
+
+/* === ROLE ACCESS CONTROL UTILITIES === */
+.nav-admin-only,
+.admin-only,
+[data-role="admin"],
+.sidebar-nav-item.nav-admin-only {
+  display: none !important;
+}
+
+.nav-admin-only.is-visible,
+.admin-only.is-visible,
+.sidebar-nav-item.nav-admin-only.is-visible {
+  display: block !important;
+}

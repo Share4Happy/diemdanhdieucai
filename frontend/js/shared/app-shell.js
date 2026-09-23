@@ -84,8 +84,8 @@ class AppShell {
             <div class="sidebar-user-profile" id="sidebarUserProfile" title="Thông tin tài khoản">
                 <div class="sidebar-user-avatar" id="sidebarUserAvatar">A</div>
                 <div class="sidebar-user-info">
-                    <span class="sidebar-user-name" id="sidebarUserName">Admin</span>
-                    <span class="sidebar-user-role" id="sidebarUserRole">Quản Trị Viên</span>
+                    <span class="sidebar-user-name" id="sidebarUserName">Người Dùng</span>
+                    <span class="sidebar-user-role" id="sidebarUserRole">---</span>
                 </div>
                 <button class="sidebar-logout-btn" type="button" id="sidebarLogoutBtn" title="Đăng Xuất">
                     <i class="fa-solid fa-right-from-bracket"></i>
@@ -114,12 +114,17 @@ class AppShell {
     ];
 
     const currentPath = window.location.pathname.toLowerCase();
+    const role = (window.currentUser && window.currentUser.role) || localStorage.getItem('currentUserRole');
+    const isAdmin = role === 'admin';
 
-    navList.innerHTML = NAV_ITEMS.map(item => {
+    // Nhân viên (staff) sẽ KHÔNG hiển thị tab quản trị viên (adminOnly)
+    const visibleItems = NAV_ITEMS.filter(item => !item.adminOnly || isAdmin);
+
+    navList.innerHTML = visibleItems.map(item => {
       const pageName = item.href.replace('.html', '').toLowerCase();
       const isHome = (currentPath === '/' || currentPath === '' || currentPath.endsWith('/index.html') || currentPath.endsWith('/index')) && pageName === 'index';
       const isActive = isHome || (pageName !== 'index' && currentPath.includes(pageName)) || currentPath.includes(item.href.toLowerCase());
-      const adminClass = item.adminOnly ? ' nav-admin-only' : '';
+      const adminClass = item.adminOnly ? ' nav-admin-only is-visible' : '';
       const activeClass = isActive ? ' active' : '';
 
       return `
@@ -132,14 +137,15 @@ class AppShell {
       `;
     }).join('');
 
-    // Đồng bộ quyền hiển thị cho các mục admin
+    // Đồng bộ trạng thái ẩn/hiện cho các phần tử nav-admin-only tĩnh nếu còn trên DOM
     try {
-      const role = localStorage.getItem('currentUserRole');
-      const isAdmin = role === 'admin';
-      this.sidebar.querySelectorAll('.nav-admin-only').forEach(el => {
+      document.querySelectorAll('.nav-admin-only').forEach(el => {
         el.hidden = !isAdmin;
-        if (isAdmin) el.classList.add('is-visible');
-        else el.classList.remove('is-visible');
+        if (isAdmin) {
+          el.classList.add('is-visible');
+        } else {
+          el.classList.remove('is-visible');
+        }
       });
     } catch (e) {}
   }
@@ -165,7 +171,7 @@ class AppShell {
       const roleEls = document.querySelectorAll('#sidebarUserRole, #headerUserRole');
       const avatarEls = document.querySelectorAll('#sidebarUserAvatar, #headerUserAvatar');
 
-      const displayName = user.full_name || user.email || 'Admin';
+      const displayName = user.full_name || user.email || (user.role === 'admin' ? 'Admin' : 'Nhân Viên');
       const displayRole = user.role === 'admin' ? 'Quản Trị Viên' : 'Nhân Viên';
       const initial = displayName.charAt(0).toUpperCase();
 
@@ -182,6 +188,9 @@ class AppShell {
         el.textContent = initial;
         el.title = `${displayName} (${displayRole})`;
       });
+
+      // Tự động render lại sidebar nav nếu vai trò người dùng thay đổi
+      this.renderSidebarNav();
     } catch (err) {
       console.error('Failed to display user info:', err);
     }
