@@ -599,9 +599,6 @@ async function handleTriggerScan() {
     }
 
     const btn = document.getElementById('btnTriggerScan');
-    if (!confirm('Bạn có chắc chắn muốn kích hoạt quét điểm danh đồng loạt 30 lớp ngay bây giờ?')) {
-        return;
-    }
 
     try {
         isScanning = true;
@@ -629,7 +626,7 @@ async function handleTriggerScan() {
         isScanning = false;
         if (btn) {
             btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Quét Điểm Danh';
+            btn.innerHTML = 'Quét Điểm Danh';
         }
     }
 }

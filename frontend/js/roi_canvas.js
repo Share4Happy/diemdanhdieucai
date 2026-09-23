@@ -124,10 +124,7 @@ class ROICanvasEditor {
     }
 
     saveState() {
-        this.history.push({
-            red: JSON.parse(JSON.stringify(this.redZone)),
-            green: JSON.parse(JSON.stringify(this.greenZone))
-        });
+        this.history.push(JSON.parse(JSON.stringify(this.greenZone)));
         if (this.history.length > 20) {
             this.history.shift();
         }
@@ -138,19 +135,17 @@ class ROICanvasEditor {
             this.showToast("Thông báo", "Không có thao tác nào trước đó để hoàn tác");
             return;
         }
-        const prev = this.history.pop();
-        this.redZone = prev.red;
-        this.greenZone = prev.green;
+        this.greenZone = this.history.pop() || [];
+        this.redZone = [];
         this.render();
         this.updateStatsBar();
         this.showToast("Đã hoàn tác", "Đã quay lại bước trước đó");
     }
 
     deleteLastPoint() {
-        const activeZone = this.currentMode === 'red' ? this.redZone : this.greenZone;
-        if (activeZone.length > 0) {
+        if (this.greenZone.length > 0) {
             this.saveState();
-            const removed = activeZone.pop();
+            const removed = this.greenZone.pop();
             this.render();
             this.updateStatsBar();
             this.showToast("Đã xóa điểm", `Đã xóa điểm cuối cùng (${removed[0]}, ${removed[1]})`);
@@ -161,12 +156,11 @@ class ROICanvasEditor {
         const statsElem = document.getElementById('saveStatusBar');
         if (!statsElem) return;
 
-        const redCount = this.redZone.length;
         const greenCount = this.greenZone.length;
 
         let statusHtml = `
-            <span><i class="fa-solid fa-shield-halved" style="color: #059669;"></i> Green Zone: <strong>${greenCount} điểm</strong> (Phần lấy)</span>
-            <span><i class="fa-solid fa-ban" style="color: #dc2626;"></i> Red Zone: <strong>${redCount} điểm</strong> (Phần bỏ đi)</span>
+            <span><i class="fa-solid fa-draw-polygon" style="color: #059669;"></i> Vùng Nhận Diện: <strong>${greenCount} điểm</strong> (Bàn học)</span>
+            <span style="color: #64748b;"><i class="fa-solid fa-ban"></i> Ngoài vùng: Tự động bỏ qua</span>
         `;
 
         if (aiResult && aiResult.present_count !== undefined) {
@@ -217,10 +211,7 @@ class ROICanvasEditor {
         if (oldW > 0 && oldH > 0 && (oldW !== newW || oldH !== newH)) {
             const sx = newW / oldW;
             const sy = newH / oldH;
-            this.redZone = this.redZone.map(([x, y]) => [
-                Math.max(0, Math.min(newW, Math.round(x * sx))),
-                Math.max(0, Math.min(newH, Math.round(y * sy)))
-            ]);
+            this.redZone = [];
             this.greenZone = this.greenZone.map(([x, y]) => [
                 Math.max(0, Math.min(newW, Math.round(x * sx))),
                 Math.max(0, Math.min(newH, Math.round(y * sy)))
@@ -268,10 +259,7 @@ class ROICanvasEditor {
                 const sx = targetW / this.storedRoiDims.width;
                 const sy = targetH / this.storedRoiDims.height;
                 if (Math.abs(sx - 1.0) > 0.005 || Math.abs(sy - 1.0) > 0.005) {
-                    this.redZone = this.redZone.map(([x, y]) => [
-                        Math.max(0, Math.min(targetW, Math.round(x * sx))),
-                        Math.max(0, Math.min(targetH, Math.round(y * sy)))
-                    ]);
+                    this.redZone = [];
                     this.greenZone = this.greenZone.map(([x, y]) => [
                         Math.max(0, Math.min(targetW, Math.round(x * sx))),
                         Math.max(0, Math.min(targetH, Math.round(y * sy)))
@@ -317,7 +305,7 @@ class ROICanvasEditor {
     }
 
     setMode(mode) {
-        this.currentMode = mode;
+        this.currentMode = 'green';
         this.render();
     }
 
@@ -375,36 +363,24 @@ class ROICanvasEditor {
         if (!this.imageLoaded) return;
         if (e.button !== 0) return;
 
-        const activeZone = this.currentMode === 'red' ? this.redZone : this.greenZone;
-        const otherZone = this.currentMode === 'red' ? this.greenZone : this.redZone;
-        const otherMode = this.currentMode === 'red' ? 'green' : 'red';
-
-        let nearIdx = this.findPointNear(e.clientX, e.clientY, activeZone);
+        let nearIdx = this.findPointNear(e.clientX, e.clientY, this.greenZone);
         if (nearIdx !== -1) {
-            this.startDragging(nearIdx, this.currentMode);
-            return;
-        }
-
-        nearIdx = this.findPointNear(e.clientX, e.clientY, otherZone);
-        if (nearIdx !== -1) {
-            this.setMode(otherMode);
-            this.updateModeButtons();
-            this.startDragging(nearIdx, otherMode);
+            this.startDragging(nearIdx, 'green');
             return;
         }
 
         this.saveState();
         const coords = this.getCanvasCoords(e);
-        activeZone.push(coords);
+        this.greenZone.push(coords);
         this.render();
         this.updateStatsBar();
 
-        this.startDragging(activeZone.length - 1, this.currentMode);
+        this.startDragging(this.greenZone.length - 1, 'green');
     }
 
     startDragging(pointIndex, zoneMode) {
         this.draggingPointIndex = pointIndex;
-        this.draggingZone = zoneMode;
+        this.draggingZone = 'green';
 
         window.addEventListener('mousemove', this.boundWindowMouseMove);
         window.addEventListener('mouseup', this.boundWindowMouseUp);
@@ -415,12 +391,11 @@ class ROICanvasEditor {
     }
 
     onWindowMouseMove(e) {
-        if (this.draggingPointIndex === -1 || !this.draggingZone) return;
-        const activeZone = this.draggingZone === 'red' ? this.redZone : this.greenZone;
-        if (!activeZone || this.draggingPointIndex >= activeZone.length) return;
+        if (this.draggingPointIndex === -1) return;
+        if (!this.greenZone || this.draggingPointIndex >= this.greenZone.length) return;
 
         const coords = this.getCanvasCoords(e);
-        activeZone[this.draggingPointIndex] = coords;
+        this.greenZone[this.draggingPointIndex] = coords;
         this.render();
     }
 
@@ -446,27 +421,12 @@ class ROICanvasEditor {
     onCanvasMouseMove(e) {
         if (this.draggingPointIndex !== -1) return;
 
-        const activeZone = this.currentMode === 'red' ? this.redZone : this.greenZone;
-        const otherZone = this.currentMode === 'red' ? this.greenZone : this.redZone;
+        const nearIdx = this.findPointNear(e.clientX, e.clientY, this.greenZone);
 
-        const nearActive = this.findPointNear(e.clientX, e.clientY, activeZone);
-        const nearOther = this.findPointNear(e.clientX, e.clientY, otherZone);
-
-        let newHoverIdx = -1;
-        let newHoverZone = null;
-
-        if (nearActive !== -1) {
-            newHoverIdx = nearActive;
-            newHoverZone = this.currentMode;
-        } else if (nearOther !== -1) {
-            newHoverIdx = nearOther;
-            newHoverZone = this.currentMode === 'red' ? 'green' : 'red';
-        }
-
-        if (newHoverIdx !== this.hoveredPointIndex || newHoverZone !== this.hoveredZone) {
-            this.hoveredPointIndex = newHoverIdx;
-            this.hoveredZone = newHoverZone;
-            this.canvas.style.cursor = newHoverIdx !== -1 ? 'grab' : 'crosshair';
+        if (nearIdx !== this.hoveredPointIndex) {
+            this.hoveredPointIndex = nearIdx;
+            this.hoveredZone = nearIdx !== -1 ? 'green' : null;
+            this.canvas.style.cursor = nearIdx !== -1 ? 'grab' : 'crosshair';
             this.render();
         }
     }
@@ -481,41 +441,23 @@ class ROICanvasEditor {
 
     onContextMenu(e) {
         e.preventDefault();
-        const activeZone = this.currentMode === 'red' ? this.redZone : this.greenZone;
-        const otherZone = this.currentMode === 'red' ? this.greenZone : this.redZone;
-
-        let nearIdx = this.findPointNear(e.clientX, e.clientY, activeZone);
-        let targetZone = activeZone;
-        let zoneName = this.currentMode === 'red' ? 'Red Zone' : 'Green Zone';
-
-        if (nearIdx === -1) {
-            nearIdx = this.findPointNear(e.clientX, e.clientY, otherZone);
-            targetZone = otherZone;
-            zoneName = this.currentMode === 'red' ? 'Green Zone' : 'Red Zone';
-        }
+        let nearIdx = this.findPointNear(e.clientX, e.clientY, this.greenZone);
 
         if (nearIdx !== -1) {
             this.saveState();
-            targetZone.splice(nearIdx, 1);
+            this.greenZone.splice(nearIdx, 1);
             this.hoveredPointIndex = -1;
             this.hoveredZone = null;
             this.render();
             this.updateStatsBar();
-            this.showToast("Đã xóa điểm", `Đã xóa điểm #${nearIdx + 1} của ${zoneName}`);
+            this.showToast("Đã xóa điểm", `Đã xóa điểm #${nearIdx + 1} của Vùng Nhận Diện`);
         }
     }
 
     updateModeButtons() {
-        const btnRed = document.getElementById('btnModeRed');
         const btnGreen = document.getElementById('btnModeGreen');
-        if (btnRed && btnGreen) {
-            if (this.currentMode === 'red') {
-                btnRed.classList.add('active');
-                btnGreen.classList.remove('active');
-            } else {
-                btnGreen.classList.add('active');
-                btnRed.classList.remove('active');
-            }
+        if (btnGreen) {
+            btnGreen.classList.add('active');
         }
     }
 
@@ -523,28 +465,25 @@ class ROICanvasEditor {
         this.saveState();
         const w = this.canvas.width;
         const h = this.canvas.height;
-        const activeZone = this.currentMode === 'red' ? this.redZone : this.greenZone;
         
-        activeZone.length = 0;
-        activeZone.push([0, 0]);
-        activeZone.push([w, 0]);
-        activeZone.push([w, h]);
-        activeZone.push([0, h]);
+        this.greenZone = [
+            [0, 0],
+            [w, 0],
+            [w, h],
+            [0, h]
+        ];
 
         this.render();
         this.updateStatsBar();
-        this.showToast("Bắt 4 góc hoàn tất", `Đã gán 4 góc chuẩn biên ảnh (${w}×${h}) cho ${this.currentMode === 'red' ? 'Red Zone' : 'Green Zone'}`);
+        this.showToast("Bắt 4 góc hoàn tất", `Đã gán 4 góc chuẩn biên ảnh (${w}×${h}) cho Vùng Nhận Diện`);
     }
 
     clearCurrentZone() {
         this.saveState();
-        if (this.currentMode === 'red') {
-            this.redZone = [];
-        } else {
-            this.greenZone = [];
-        }
+        this.greenZone = [];
         this.render();
         this.updateStatsBar();
+        this.showToast("Đã xóa vùng", "Đã xóa toàn bộ các điểm của Vùng Nhận Diện");
     }
 
     render() {
@@ -562,7 +501,7 @@ class ROICanvasEditor {
             ctx.fillStyle = '#0f172a';
             ctx.fillRect(0, 0, w, h);
 
-            // Lưới ô vuông 50px
+            // Lưới ô vuông 60px
             ctx.strokeStyle = 'rgba(51, 65, 85, 0.45)';
             ctx.lineWidth = 1;
             for (let x = 0; x < w; x += 60) {
@@ -589,11 +528,8 @@ class ROICanvasEditor {
             ctx.textAlign = 'left';
         }
 
-        // 1. Vẽ Green Zone (Phần LẤY - Bàn học)
-        this.drawPolygon(this.greenZone, 'rgba(16, 185, 129, 0.35)', '#059669', 'GREEN ZONE (PHẦN LẤY - BÀN HỌC)', 'green');
-
-        // 2. Vẽ Red Zone (Phần BỎ ĐI - Bục giảng / Loại trừ)
-        this.drawPolygon(this.redZone, 'rgba(239, 68, 68, 0.35)', '#dc2626', 'RED ZONE (PHẦN BỎ ĐI - BỤC GIẢNG)', 'red');
+        // Vẽ Vùng Nhận Diện (Green Zone - Bàn học sinh)
+        this.drawPolygon(this.greenZone, 'rgba(16, 185, 129, 0.35)', '#059669', 'VÙNG NHẬN DIỆN (BÀN HỌC)', 'green');
     }
 
     drawPolygon(points, fillColor, strokeColor, label, zoneType) {
@@ -678,8 +614,7 @@ class ROICanvasEditor {
             const dbW = data.image_width || 1080;
             const dbH = data.image_height || 1024;
             this.storedRoiDims = { width: dbW, height: dbH };
-
-            this.redZone = data.red_zone || [];
+            this.redZone = [];
             this.greenZone = data.green_zone || [];
             this.history = [];
             

@@ -40,9 +40,7 @@ def seed_default_classes(db=None):
         default_green_zone = [
             [200, 300], [1720, 300], [1850, 1050], [80, 1050]
         ]
-        default_red_zone = [
-            [350, 80], [900, 80], [950, 280], [300, 280]
-        ]
+        default_red_zone = []
 
         created_count = 0
         for idx, (cname, standard_count) in enumerate(classes_info, 1):

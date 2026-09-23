@@ -331,7 +331,7 @@ html, body {
   color: #065f46 !important;
   border: 2px solid #16a34a !important;
   font-weight: 800 !important;
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.22) !important;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.22) !important;
 }
 
 /* Nút Tiện Ích: Bắt 4 góc, Hoàn tác, Xóa vùng */
@@ -385,6 +385,12 @@ html, body {
   background: #ecfdf5 !important;
   color: #065f46 !important;
   border: 1.5px solid #86efac !important;
+}
+
+.zone-neutral {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+  border: 1.5px solid #cbd5e1 !important;
 }
 
 /* =========================================================

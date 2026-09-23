@@ -5,8 +5,8 @@ from typing import List, Tuple, Dict, Any
 class ROIManager:
     """
     Quản lý vùng không gian (Spatial ROI) cho lớp học:
-    - Red Zone: Vùng đa giác bao quanh bàn học sinh (Vùng nhận diện).
-    - Green Zone: Vùng đa giác bao quanh bục giảng giáo viên (Vùng loại trừ).
+    - Green Zone: Vùng đa giác bao quanh bàn học sinh (Khu vực nhận diện).
+    - Mặc định: Mọi khu vực nằm ngoài Green Zone (bục giảng, ngoài phòng...) tự động bị bỏ qua.
     """
 
     @staticmethod
@@ -29,18 +29,18 @@ class ROIManager:
     def create_spatial_mask(
         cls,
         image_shape: Tuple[int, int],
-        red_zone: List[List[int]],
+        red_zone: List[List[int]] = None,
         green_zone: List[List[int]] = None
     ) -> np.ndarray:
         """
         Tạo mặt nạ nhị phân (Binary Mask) kích thước (H, W):
-        - Giá trị 255 (Trắng): Khu vực cần lấy / Bàn học sinh (Green Zone)
-        - Giá trị 0 (Đen): Khu vực loại trừ / bỏ đi (Red Zone) hoặc ngoài vùng
+        - Giá trị 255 (Trắng): Khu vực bên trong Green Zone (Bàn học sinh / Cần đếm).
+        - Giá trị 0 (Đen): Mọi khu vực nằm ngoài Green Zone mặc định bị loại trừ / bỏ qua.
         """
         h, w = image_shape[:2]
         mask = np.zeros((h, w), dtype=np.uint8)
 
-        # 1. Bật vùng Green Zone (Phần LẤY / Bàn học sinh)
+        # 1. Bật vùng Green Zone (Khu vực nhận diện / Bàn học sinh)
         if green_zone and len(green_zone) >= 3:
             green_poly = cls.points_to_np(green_zone)
             cv2.fillPoly(mask, [green_poly], 255)
@@ -48,22 +48,17 @@ class ROIManager:
             # Nếu chưa vẽ Green Zone, mặc định quét toàn bộ ảnh
             mask[:] = 255
 
-        # 2. Bôi đen hoàn toàn vùng Red Zone (Phần BỎ ĐI / Bục giảng / Ngoài vùng) để loại trừ
-        if red_zone and len(red_zone) >= 3:
-            red_poly = cls.points_to_np(red_zone)
-            cv2.fillPoly(mask, [red_poly], 0)
-
         return mask
 
     @classmethod
     def apply_spatial_mask(
         cls,
         image: np.ndarray,
-        red_zone: List[List[int]],
+        red_zone: List[List[int]] = None,
         green_zone: List[List[int]] = None
     ) -> np.ndarray:
         """
-        Bôi đen toàn bộ các khu vực nằm ngoài đa giác Red Zone và bên trong Green Zone.
+        Bôi đen toàn bộ các khu vực nằm ngoài đa giác Green Zone.
         AI sẽ chỉ quét và đếm số lượng xuất hiện trong vùng sáng còn lại.
         """
         mask = cls.create_spatial_mask(image.shape[:2], red_zone, green_zone)
@@ -77,29 +72,22 @@ class ROIManager:
     def is_point_in_roi(
         cls,
         point: Tuple[float, float],
-        red_zone: List[List[int]],
+        red_zone: List[List[int]] = None,
         green_zone: List[List[int]] = None
     ) -> bool:
         """
         Kiểm tra tọa độ tâm điểm (x, y) của đầu người:
-        - Phải nằm TRONG Green Zone (Phần LẤY - có dung sai sát mép viền 12px)
-        - Và phải nằm NGOÀI Red Zone (Phần BỎ ĐI / Loại trừ bục giảng)
+        - Phải nằm TRONG Green Zone (Phần LẤY - có dung sai sát mép viền 10px).
+        - Mọi điểm nằm ngoài Green Zone mặc định bị bỏ qua (False).
         """
         px, py = float(point[0]), float(point[1])
 
-        # 1. Kiểm tra Green Zone (Phần LẤY / Bàn học sinh): Phải nằm bên trong hoặc sát viền mép (dung sai 12px)
+        # Kiểm tra Green Zone (Khu vực nhận diện / Bàn học sinh): Phải nằm bên trong hoặc sát viền mép (dung sai 10px)
         if green_zone and len(green_zone) >= 3:
             green_poly = cls.points_to_np(green_zone)
             dist_green = cv2.pointPolygonTest(green_poly, (px, py), True)
-            if dist_green < -12.0:
-                return False
-
-        # 2. Kiểm tra Red Zone (Phần BỎ ĐI / Bục giảng): Phải nằm bên ngoài (chỉ loại trừ khi lọt sâu vào trong)
-        if red_zone and len(red_zone) >= 3:
-            red_poly = cls.points_to_np(red_zone)
-            dist_red = cv2.pointPolygonTest(red_poly, (px, py), True)
-            if dist_red > 2.0:
-                # Nằm sâu trong vùng đỏ loại trừ -> Bỏ qua
+            if dist_green < -10.0:
+                # Nằm ngoài vùng xanh -> Tự động bỏ qua
                 return False
 
         return True
@@ -108,13 +96,13 @@ class ROIManager:
     def filter_detections(
         cls,
         boxes: List[Dict[str, Any]],
-        red_zone: List[List[int]],
+        red_zone: List[List[int]] = None,
         green_zone: List[List[int]] = None
     ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         """
         Phân loại danh sách bounding boxes:
-        - valid_boxes: Bounding boxes hợp lệ trong vùng bàn học sinh.
-        - ignored_boxes: Bounding boxes bị loại trừ (bục giảng hoặc ngoài vùng).
+        - valid_boxes: Bounding boxes hợp lệ trong vùng bàn học sinh (Green Zone).
+        - ignored_boxes: Bounding boxes nằm ngoài Green Zone (mặc định tự động bỏ qua).
         """
         valid_boxes = []
         ignored_boxes = []
@@ -141,25 +129,19 @@ class ROIManager:
     def draw_roi_overlays(
         cls,
         image: np.ndarray,
-        red_zone: List[List[int]],
+        red_zone: List[List[int]] = None,
         green_zone: List[List[int]] = None,
-        alpha: float = 0.25
+        alpha: float = 0.22
     ) -> np.ndarray:
-        """Vẽ lớp phủ mờ (transparent overlay) trực quan hiển thị vùng Red Zone và Green Zone."""
+        """Vẽ lớp phủ mờ trực quan hiển thị Vùng Xanh (Green Zone) nhận diện bàn học sinh."""
         overlay = image.copy()
         output = image.copy()
 
-        # 1. Vẽ Green Zone (Phần LẤY - Bàn học - Đường viền xanh lá tinh tế + phủ màu mờ nhẹ)
+        # Vẽ Green Zone (Khu vực nhận diện - Bàn học - Đường viền xanh lá tinh tế + phủ màu mờ nhẹ)
         if green_zone and len(green_zone) >= 3:
             green_poly = cls.points_to_np(green_zone)
             cv2.fillPoly(overlay, [green_poly], (40, 180, 40))
             cv2.polylines(output, [green_poly], True, (0, 215, 0), 2, cv2.LINE_AA)
-
-        # 2. Vẽ Red Zone (Phần BỎ ĐI - Bục giảng / Loại trừ - Đường viền đỏ tinh tế + phủ màu mờ nhẹ)
-        if red_zone and len(red_zone) >= 3:
-            red_poly = cls.points_to_np(red_zone)
-            cv2.fillPoly(overlay, [red_poly], (40, 40, 200))
-            cv2.polylines(output, [red_poly], True, (0, 0, 235), 2, cv2.LINE_AA)
 
         # Trộn mờ tinh tế
         cv2.addWeighted(overlay, alpha, output, 1 - alpha, 0, output)

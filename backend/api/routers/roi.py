@@ -97,7 +97,7 @@ async def refresh_classroom_snapshot(classroom_id: int, db: Session = Depends(ge
 
 @router.post("/{classroom_id}")
 async def save_classroom_roi(classroom_id: int, data: ROISaveRequest, db: Session = Depends(get_db)):
-    """Lưu tọa độ Red Zone (bàn học) và Green Zone (bục giảng) cho lớp học, đồng thời tự động chạy lại nhận diện AI và đồng bộ sang giao diện quét."""
+    """Lưu tọa độ Vùng nhận diện (Green Zone) cho lớp học, đồng thời tự động chạy lại nhận diện AI và đồng bộ sang giao diện quét."""
     cls = db.query(Classroom).filter(Classroom.id == classroom_id).first()
     if not cls:
         raise HTTPException(status_code=404, detail="Không tìm thấy lớp học")
@@ -107,16 +107,16 @@ async def save_classroom_roi(classroom_id: int, data: ROISaveRequest, db: Sessio
         roi = ROIPolygon(classroom_id=classroom_id)
         db.add(roi)
 
-    roi.red_zone = data.red_zone
-    roi.green_zone = data.green_zone
+    roi.red_zone = data.red_zone or []
+    roi.green_zone = data.green_zone or []
     roi.image_width = data.image_width
     roi.image_height = data.image_height
 
     db.commit()
-    logger.info(f"Đã lưu tọa độ ROI cho lớp {cls.name}: Red ({len(data.red_zone)} pts), Green ({len(data.green_zone)} pts)")
+    logger.info(f"Đã lưu tọa độ ROI cho lớp {cls.name}: Vùng nhận diện Green Zone ({len(roi.green_zone)} pts)")
 
     # Tự động chạy lại AI và cập nhật kết quả nhận diện
-    return await execute_roi_rescan(cls, data.red_zone, data.green_zone, data.image_width, data.image_height, db)
+    return await execute_roi_rescan(cls, roi.red_zone, roi.green_zone, data.image_width, data.image_height, db)
 
 
 @router.post("/{classroom_id}/rescan")
