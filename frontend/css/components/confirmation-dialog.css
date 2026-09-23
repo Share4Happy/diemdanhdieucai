@@ -147,11 +147,19 @@
 }
 
 .confirmation-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
     min-width: 120px;
     padding: 0.625rem 1.5rem;
     font-weight: 600;
     border-radius: 8px;
     transition: all 0.2s ease;
+}
+
+.confirmation-actions .btn i {
+    font-size: 0.95em;
 }
 
 .confirmation-actions .btn:hover {
@@ -193,6 +201,16 @@
 
 .confirmation-actions .btn-warning:hover {
     background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+}
+
+.confirmation-actions .btn-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+}
+
+.confirmation-actions .btn-success:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
 }
 
 .confirmation-actions .btn-primary {
