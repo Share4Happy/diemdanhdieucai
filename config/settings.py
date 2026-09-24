@@ -68,6 +68,8 @@ class Settings(BaseModel):
     USE_TILED_INFERENCE: bool = True    # Bật thuật toán phân mảnh quét chi tiết đa tầng (SAHI)
 
     # Auth / Login
+    # LƯU Ý: JWT_SECRET phải được đặt trong .env (chuỗi ngẫu nhiên dài >= 32 ký tự).
+    # Giá trị default chỉ là fallback để app khởi động được; không dùng trong production.
     JWT_SECRET: str = os.getenv("JWT_SECRET", "change-me-diemdanh-dieucai")
     JWT_EXPIRE_HOURS: int = int(os.getenv("JWT_EXPIRE_HOURS", "12"))
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("JWT_EXPIRE_HOURS", "12")) * 60

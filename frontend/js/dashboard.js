@@ -37,8 +37,8 @@ function initDashboard() {
     initEventListeners();
     loadDashboardData();
 
-    // Tự động làm mới dữ liệu mỗi 30 giây
-    setInterval(loadDashboardData, 30000);
+    // Tự động làm mới dữ liệu mỗi 30 giây (poll nền KHÔNG được đá user về login khi phiên hết hạn)
+    setInterval(() => loadDashboardData(true), 30000);
 }
 
 if (document.readyState === 'loading') {
@@ -237,9 +237,10 @@ function initEventListeners() {
  * 3. TẢI DỮ LIỆU TỪ SERVER (LOAD DATA)
  * ===================================================================
  */
-async function loadDashboardData() {
+async function loadDashboardData(suppressRedirect = false) {
+    const opts = { suppressAuthRedirect: suppressRedirect };
     try {
-        const latestData = await AttendanceAPI.getLatest().catch(() => null);
+        const latestData = await AttendanceAPI.getLatest(opts).catch(() => null);
 
         if (latestData && latestData.session) {
             currentSession = latestData.session;
@@ -254,7 +255,7 @@ async function loadDashboardData() {
         updateKPIs();
         updateFilterBadgeCounts();
         renderAttendanceTable();
-        loadWeeklyTrendChart();
+        loadWeeklyTrendChart(opts);
 
     } catch (err) {
         console.error('Lỗi khi nạp dữ liệu dashboard:', err);
@@ -654,14 +655,14 @@ async function handleTriggerScan() {
  * Trả lời câu hỏi nghiệp vụ quản lý của Ban Giám Hiệu:
  * "Hôm nay vắng X em là nhiều hay ít so với các ngày trước? Có bất thường không?"
  */
-async function loadWeeklyTrendChart() {
+async function loadWeeklyTrendChart(opts = {}) {
     const canvas = document.getElementById('trendWeeklyCanvas');
     if (!canvas) return;
 
     try {
         let trendData = null;
         try {
-            trendData = await AttendanceAPI.get7DaysTrend();
+            trendData = await AttendanceAPI.get7DaysTrend(opts);
         } catch (e) {
             console.warn('Lỗi kết nối /trend-7days, tự động dùng dữ liệu dự phòng:', e);
         }
@@ -742,7 +743,7 @@ async function loadWeeklyTrendChart() {
         // Kiểm tra thư viện Chart.js đã sẵn sàng
         if (typeof Chart === 'undefined') {
             console.warn('Thư viện Chart.js chưa tải xong, sẽ thử lại sau 300ms.');
-            setTimeout(() => loadWeeklyTrendChart(), 300);
+            setTimeout(() => loadWeeklyTrendChart(opts), 300);
             return;
         }
 

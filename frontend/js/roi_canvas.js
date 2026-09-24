@@ -8,12 +8,7 @@ const API_BASE = (window.location.protocol === 'file:' || (!window.location.orig
     : '';
 
 function getAuthHeaders(extra = {}) {
-    const headers = { 'Accept': 'application/json', ...extra };
-    try {
-        const token = localStorage.getItem('authToken');
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-    } catch (e) {}
-    return headers;
+    return { 'Accept': 'application/json', ...extra };
 }
 
 class ROICanvasEditor {

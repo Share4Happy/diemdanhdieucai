@@ -75,7 +75,6 @@ async function guardApp() {
         if (err && err.status === 401) {
             console.log('[Auth Guard] Phiên làm việc không hợp lệ (401), điều hướng về login');
             try {
-                localStorage.removeItem('authToken');
                 localStorage.removeItem('currentUserRole');
                 localStorage.removeItem('currentUser');
             } catch (e) {}

@@ -22,7 +22,6 @@ function redirectToLogin() {
     window._isRedirectingToLogin = true;
 
     try {
-        localStorage.removeItem('authToken');
         localStorage.removeItem('currentUser');
         localStorage.removeItem('currentUserRole');
     } catch (e) {}
@@ -35,19 +34,11 @@ function redirectToLogin() {
 }
 
 async function fetchAPI(endpoint, options = {}) {
-    const { skipAuthRedirect, ...fetchOptions } = options;
+    const { skipAuthRedirect, suppressAuthRedirect = false, ...fetchOptions } = options;
     const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
     const defaultHeaders = {
         'Accept': 'application/json',
     };
-
-    // Tự động đính kèm Bearer Token dự phòng cho cookie Lax/cross-port
-    try {
-        const storedToken = localStorage.getItem('authToken');
-        if (storedToken) {
-            defaultHeaders['Authorization'] = `Bearer ${storedToken}`;
-        }
-    } catch (e) {}
 
     if (fetchOptions.body && typeof fetchOptions.body === 'object' && !(fetchOptions.body instanceof FormData)) {
         defaultHeaders['Content-Type'] = 'application/json';
@@ -62,7 +53,9 @@ async function fetchAPI(endpoint, options = {}) {
 
     try {
         const response = await fetch(url, fetchOptions);
-        if (response.status === 401 && !skipAuthRedirect) {
+        // Poll nền (suppressAuthRedirect=true) được phép bỏ qua 401 để không đá người dùng
+        // đang xem dashboard sang login giữa chừng; chỉ auth-guard / thao tác chủ động mới redirect.
+        if (response.status === 401 && !skipAuthRedirect && !suppressAuthRedirect) {
             redirectToLogin();
         }
         if (!response.ok) {
@@ -86,9 +79,6 @@ async function fetchAPI(endpoint, options = {}) {
 export const AuthAPI = {
     login: async (data) => {
         const res = await fetchAPI('/api/auth/login', { method: 'POST', body: data, skipAuthRedirect: true });
-        if (res && res.token) {
-            try { localStorage.setItem('authToken', res.token); } catch (e) {}
-        }
         if (res && res.user) {
             try {
                 localStorage.setItem('currentUserRole', res.user.role || 'staff');
@@ -102,7 +92,6 @@ export const AuthAPI = {
             return await fetchAPI('/api/auth/logout', { method: 'POST', skipAuthRedirect: true });
         } finally {
             try {
-                localStorage.removeItem('authToken');
                 localStorage.removeItem('currentUser');
                 localStorage.removeItem('currentUserRole');
             } catch (e) {}
@@ -119,9 +108,9 @@ export const AuthAPI = {
 
 // === ATTENDANCE APIs ===
 export const AttendanceAPI = {
-    getLatest: () => fetchAPI('/api/attendance/latest'),
-    getTodaySessions: () => fetchAPI('/api/attendance/today-sessions'),
-    get7DaysTrend: () => fetchAPI('/api/attendance/trend-7days'),
+    getLatest: (options = {}) => fetchAPI('/api/attendance/latest', options),
+    getTodaySessions: (options = {}) => fetchAPI('/api/attendance/today-sessions', options),
+    get7DaysTrend: (options = {}) => fetchAPI('/api/attendance/trend-7days', options),
     triggerScan: () => fetchAPI('/api/attendance/trigger', { method: 'POST' }),
     getHistory: (limit = 150) => fetchAPI(`/api/attendance/history?limit=${limit}`),
     clearHistory: () => fetchAPI('/api/attendance/clear-history', { method: 'DELETE' }),
