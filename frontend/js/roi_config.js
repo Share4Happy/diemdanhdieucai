@@ -17,7 +17,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const classSelect = document.getElementById('classSelect');
-    const btnModeRed = document.getElementById('btnModeRed');
     const btnModeGreen = document.getElementById('btnModeGreen');
     const btnClearZone = document.getElementById('btnClearZone');
     const btnSaveROI = document.getElementById('btnSaveROI');

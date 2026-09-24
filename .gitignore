@@ -49,6 +49,8 @@ logs/*.log
 # Scratch / Temp
 scratch/
 clone_phat/
+cookies.txt
+*.pytest_bak
 
 # OS specific
 .DS_Store

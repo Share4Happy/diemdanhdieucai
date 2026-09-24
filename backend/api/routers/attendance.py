@@ -12,14 +12,15 @@ from database.db_session import get_db
 from database.models import Classroom, AttendanceSession, AttendanceDetail
 from core.attendance_engine import attendance_engine
 from core.timezone_utils import get_now, get_today, get_today_str, get_current_time_str
+from starlette.concurrency import run_in_threadpool
 from backend.api.deps import get_current_user
 
 router = APIRouter(prefix="/attendance", tags=["Attendance"], dependencies=[Depends(get_current_user)])
 
 @router.post("/trigger")
 async def trigger_attendance_scan():
-    """Kích hoạt quét điểm danh đồng loạt 30 lớp ngay lập tức."""
-    result = attendance_engine.run_daily_attendance(trigger_led=True)
+    """Kích hoạt quét điểm danh đồng loạt các lớp ngay lập tức mà không chặn event loop."""
+    result = await run_in_threadpool(attendance_engine.run_daily_attendance, trigger_led=True)
     return result
 
 @router.get("/latest")

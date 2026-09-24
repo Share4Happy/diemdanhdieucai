@@ -17,11 +17,12 @@ import { ImageZoomViewer } from './shared/image-zoom-viewer.js';
 // Global state
 let currentSession = null;
 let currentDetails = [];
-let activeGrade = '10';     // '10', '11', '12' (mặc định Khối 10)
+let activeGrade = '10';     // 'all', '10', '11', '12' (mặc định Khối 10)
 let activeStatus = 'all';    // 'all', 'absent', 'pending', 'full'
 let searchKeyword = '';
 let isScanning = false;
 let trendChartInstance = null;
+let dashboardZoomViewer = null;
 
 /**
  * Trích xuất chính xác khối học (10, 11, 12) từ tên lớp học (ví dụ: 'Lớp 10A2' -> '10', '12A10' -> '12').
@@ -41,12 +42,6 @@ function initDashboard() {
 
     // Tự động làm mới dữ liệu mỗi 30 giây (poll nền KHÔNG được đá user về login khi phiên hết hạn)
     setInterval(() => loadDashboardData(true), 30000);
-}
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initDashboard);
-} else {
-    initDashboard();
 }
 
 /**
@@ -100,7 +95,7 @@ function initEventListeners() {
     document.getElementById('btnTriggerScan')?.addEventListener('click', handleTriggerScan);
 
     // Bộ điều khiển chuyển Khối / Lớp dạng 1 nút có thể chuyển qua chuyển lại
-    const AVAILABLE_GRADES = ['10', '11', '12'];
+    const AVAILABLE_GRADES = ['all', '10', '11', '12'];
     const btnGradePrev = document.getElementById('btnGradePrev');
     const btnGradeNext = document.getElementById('btnGradeNext');
     const btnGradeCurrent = document.getElementById('btnGradeCurrent');
@@ -113,7 +108,7 @@ function initEventListeners() {
 
         const gradeText = document.getElementById('currentGradeText');
         if (gradeText) {
-            gradeText.textContent = `Khối ${grade}`;
+            gradeText.textContent = grade === 'all' ? 'Tất Cả Lớp' : `Khối ${grade}`;
         }
 
         if (gradeDropdownMenu) {
@@ -237,8 +232,6 @@ function initEventListeners() {
     });
 }
 
-let dashboardZoomViewer = null;
-
 function initZoomModal() {
     const modal = document.getElementById('imgModal');
     const closeBtn = document.getElementById('imgModalCloseBtn');
@@ -334,6 +327,26 @@ async function loadDashboardData(suppressRedirect = false) {
         } else {
             currentSession = null;
             currentDetails = [];
+        }
+
+        // Tự động kiểm tra nếu khối hiện tại không có lớp nào nhưng có lớp trong hệ thống,
+        // tự chuyển sang khối có lớp hoặc 'all' để người dùng không thấy bảng trống
+        if (currentDetails.length > 0 && activeGrade !== 'all') {
+            const hasClassInActiveGrade = currentDetails.some(d => extractGradeFromClassName(d.class_name) === activeGrade);
+            if (!hasClassInActiveGrade) {
+                const foundGrade = ['10', '11', '12'].find(g => currentDetails.some(d => extractGradeFromClassName(d.class_name) === g));
+                activeGrade = foundGrade || 'all';
+                const gradeText = document.getElementById('currentGradeText');
+                if (gradeText) {
+                    gradeText.textContent = activeGrade === 'all' ? 'Tất Cả Lớp' : `Khối ${activeGrade}`;
+                }
+                const gradeDropdownMenu = document.getElementById('gradeDropdownMenu');
+                if (gradeDropdownMenu) {
+                    gradeDropdownMenu.querySelectorAll('.grade-menu-opt, .grade-menu-item').forEach(item => {
+                        item.classList.toggle('active', item.dataset.grade === activeGrade);
+                    });
+                }
+            }
         }
 
         // Cập nhật giao diện
@@ -439,6 +452,7 @@ function updateKPIs() {
  */
 function updateFilterBadgeCounts() {
     const gradeDetails = currentDetails.filter(d => {
+        if (activeGrade === 'all') return true;
         const grade = extractGradeFromClassName(d.class_name);
         return grade === activeGrade;
     });
@@ -480,8 +494,9 @@ function renderAttendanceTable() {
         return;
     }
 
-    // 1. Lọc theo Khối (Chỉ còn Khối 10, 11, 12; mặc định Khối 10)
+    // 1. Lọc theo Khối (all, 10, 11, 12)
     let filtered = currentDetails.filter(d => {
+        if (activeGrade === 'all') return true;
         const grade = extractGradeFromClassName(d.class_name);
         return grade === activeGrade;
     });
@@ -529,11 +544,12 @@ function renderAttendanceTable() {
     });
 
     if (filtered.length === 0) {
+        const gradeMsg = activeGrade === 'all' ? 'nào' : `thuộc Khối ${activeGrade}`;
         tbody.innerHTML = `
             <tr>
                 <td colspan="10" style="text-align: center; padding: 30px; color: var(--text-muted);">
                     <i class="fa-solid fa-filter-circle-xmark" style="font-size: 1.5rem; margin-bottom: 8px; display: block; opacity: 0.5;"></i>
-                    Không có lớp nào thuộc Khối ${activeGrade} phù hợp với bộ lọc hiện tại.
+                    Không có lớp ${gradeMsg} phù hợp với bộ lọc hiện tại.
                 </td>
             </tr>
         `;
@@ -1226,4 +1242,11 @@ function renderTrendLineChart(canvas, trendData) {
             }
         }
     });
+}
+
+// Khởi chạy Dashboard an toàn sau khi toàn bộ script & khai báo biến đã sẵn sàng
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDashboard);
+} else {
+    initDashboard();
 }
