@@ -1,0 +1,10 @@
+# Cấu hình tập dữ liệu thực tế camera trường THPT Điều Cải
+# Nguồn: studenthead1.v1-1.yolo26 (Camera 1 & Camera 2)
+# Định dạng: Ultralytics YOLO
+
+path: ../studenthead1.v1-1.yolo26
+train: train/images
+val: valid/images
+
+names:
+  0: student_head
