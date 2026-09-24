@@ -2,8 +2,13 @@ import pytest
 from fastapi.testclient import TestClient
 from app import app
 from database.db_session import init_db, SessionLocal
-from database.models import Classroom, ROIPolygon
+from database.models import Classroom, ROIPolygon, User
 from config.settings import settings
+from backend.api.deps import get_current_user, require_admin
+
+admin_user = User(id=1, email="admin@truongdieucai.edu.vn", role="admin", is_active=True, full_name="Admin")
+app.dependency_overrides[get_current_user] = lambda: admin_user
+app.dependency_overrides[require_admin] = lambda: admin_user
 
 client = TestClient(app)
 

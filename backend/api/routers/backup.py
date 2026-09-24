@@ -23,7 +23,7 @@ async def list_backups():
     return {"success": True, "backups": backups}
 
 @router.post("/create")
-async def create_backup(req: CreateBackupRequest = None, _admin=Depends(require_admin)):
+async def create_backup(req: Optional[CreateBackupRequest] = None, _admin=Depends(require_admin)):
     """Tạo bản sao lưu mới ngay lập tức (Chỉ Quản trị viên)."""
     note = req.note if req else "Sao lưu thủ công"
     inc_excel = req.include_excel if req else False

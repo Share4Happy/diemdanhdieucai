@@ -17,6 +17,8 @@ weights/
 *.pt
 models/*.pt
 dataset/classroom_data/
+studenthead1*/
+*.yolo*
 
 # Testing & Cache
 .pytest_cache/

@@ -91,21 +91,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnHeaderSnapshot.addEventListener('click', () => editor.refreshSnapshot());
     }
 
-    // Mode Red Zone
-    if (btnModeRed) {
-        btnModeRed.addEventListener('click', () => {
-            editor.setMode('red');
-            btnModeRed.classList.add('active');
-            if (btnModeGreen) btnModeGreen.classList.remove('active');
-        });
-    }
-
-    // Mode Green Zone
+    // Mode Green Zone (Vùng Nhận Diện)
     if (btnModeGreen) {
         btnModeGreen.addEventListener('click', () => {
             editor.setMode('green');
             btnModeGreen.classList.add('active');
-            if (btnModeRed) btnModeRed.classList.remove('active');
         });
     }
 
