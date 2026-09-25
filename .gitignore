@@ -61,3 +61,6 @@ desktop.ini
 
 # Documentation & Private Assets
 docs/
+
+# Secret & OAuth Tokens
+config/gdrive_token.json

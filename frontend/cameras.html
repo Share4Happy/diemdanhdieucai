@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="css/components/header-actions.css">
     <link rel="stylesheet" href="css/components/confirmation-dialog.css">
     <link rel="stylesheet" href="css/components/skeleton-loader.css">
+    <link rel="stylesheet" href="css/components/modal-system.css?v=2.0">
     <link rel="stylesheet" href="css/cameras.css?v=2.2">
     <!-- Global Balance - MUST LOAD LAST -->
     <link rel="stylesheet" href="css/global-table-balance.css?v=3.2">
@@ -779,53 +780,48 @@
         </main>
     </div>
 
+    <!-- MODAL THÊM / SỬA CAMERA LỚP HỌC -->
     <div class="modal-backdrop" id="cameraModal">
-        <div class="modal-content" style="max-width: 650px;">
+        <div class="modal-container modal-lg">
             <div class="modal-header">
-                <div>
-                    <h3 id="modalTitle" style="font-size: 1.2rem; font-weight: 700;">Thêm Camera / Lớp Học Mới</h3>
-                    <p style="font-size: 0.85rem; color: var(--text-muted);">Cấu hình thông tin lớp học và nguồn hình
-                        ảnh cho AI quét</p>
+                <div class="modal-header-content">
+                    <h3 class="modal-title">
+                        <i class="fa-solid fa-video modal-title-icon" id="modalTitleIcon"></i>
+                        <span id="modalTitle">Thêm Camera / Lớp Học Mới</span>
+                    </h3>
+                    <p class="modal-subtitle">Cấu hình thông tin lớp học và nguồn hình ảnh cho AI quét</p>
                 </div>
-                <button class="modal-close" id="modalCloseBtn">&times;</button>
+                <button type="button" class="modal-close-btn" id="modalCloseBtn" aria-label="Đóng">&times;</button>
             </div>
-            <div class="modal-body">
-                <form id="cameraForm" onsubmit="return false;">
+            <form id="cameraForm" onsubmit="return false;" style="display: flex; flex-direction: column; flex: 1; min-height: 0; margin: 0;">
+                <div class="modal-body">
                     <input type="hidden" id="formCamId" value="">
 
                     <div class="form-grid">
                         <div class="form-group">
-                            <label><i class="fa-solid fa-barcode" style="color: var(--primary);"></i> Mã Lớp / Camera
-                                (*):</label>
-                            <input type="text" id="formCode" class="form-control" placeholder="Ví dụ: LOP_10A1"
-                                required>
+                            <label><i class="fa-solid fa-barcode" style="color: var(--primary);"></i> Mã Lớp / Camera (*):</label>
+                            <input type="text" id="formCode" class="form-control" placeholder="Ví dụ: LOP_10A1" required>
                         </div>
                         <div class="form-group">
-                            <label><i class="fa-solid fa-chalkboard-user" style="color: var(--primary);"></i> Tên Lớp
-                                Học (*):</label>
-                            <input type="text" id="formName" class="form-control" placeholder="Ví dụ: Lớp 10A1"
-                                required>
+                            <label><i class="fa-solid fa-chalkboard-user" style="color: var(--primary);"></i> Tên Lớp Học (*):</label>
+                            <input type="text" id="formName" class="form-control" placeholder="Ví dụ: Lớp 10A1" required>
                         </div>
                     </div>
 
                     <div class="form-grid">
                         <div class="form-group">
-                            <label><i class="fa-solid fa-door-open" style="color: var(--primary);"></i> Phòng
-                                Học:</label>
+                            <label><i class="fa-solid fa-door-open" style="color: var(--primary);"></i> Phòng Học:</label>
                             <input type="text" id="formRoom" class="form-control" placeholder="Ví dụ: Phòng 101">
                         </div>
                         <div class="form-group">
-                            <label><i class="fa-solid fa-users" style="color: var(--primary);"></i> Sĩ Số Chuẩn Của Lớp
-                                (*):</label>
-                            <input type="number" id="formStandard" class="form-control" value="40" min="1" max="60"
-                                required>
+                            <label><i class="fa-solid fa-users" style="color: var(--primary);"></i> Sĩ Số Chuẩn Của Lớp (*):</label>
+                            <input type="number" id="formStandard" class="form-control" value="40" min="1" max="60" required>
                         </div>
                     </div>
 
                     <!-- BỘ CHỌN NGUỒN TẬP TRUNG -->
                     <div class="source-type-selector">
-                        <label
-                            style="font-size: 0.88rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                        <label style="font-size: 0.88rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
                             <i class="fa-solid fa-sliders" style="color: var(--primary);"></i> Chọn Loại Nguồn Hình Ảnh:
                         </label>
                         <div class="source-tabs">
@@ -843,13 +839,11 @@
 
                     <!-- PANEL 1: WEBCAM MÁY TÍNH -->
                     <div id="panelWebcam" class="source-panel">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                             <span style="font-size: 0.85rem; font-weight: 700; color: #1e40af;">
                                 <i class="fa-solid fa-desktop"></i> Các Camera Đang Có Trên Máy Tính Của Bạn:
                             </span>
-                            <button type="button" class="btn btn-secondary btn-sm" id="btnRefreshWebcams"
-                                style="padding: 4px 10px; font-size: 0.78rem;">
+                            <button type="button" class="btn btn-secondary btn-sm" id="btnRefreshWebcams" style="padding: 4px 10px; font-size: 0.78rem;">
                                 <i class="fa-solid fa-rotate-right" id="webcamRefreshIcon"></i> Dò Tìm Lại
                             </button>
                         </div>
@@ -871,203 +865,164 @@
                             </div>
                         </div>
 
-                        <div
-                            style="margin-top: 10px; font-size: 0.8rem; color: #64748b; display: flex; justify-content: space-between; align-items: center;">
-                            <span><i class="fa-solid fa-circle-info" style="color: #3b82f6;"></i> Bấm vào camera để chọn
-                                làm nguồn điểm danh.</span>
-                            <a href="javascript:void(0)" id="linkToggleAdvanced"
-                                style="color: #2563eb; font-weight: 600; text-decoration: underline;">Nhập ID tùy
-                                chỉnh</a>
+                        <div style="margin-top: 10px; font-size: 0.8rem; color: #64748b; display: flex; justify-content: space-between; align-items: center;">
+                            <span><i class="fa-solid fa-circle-info" style="color: #3b82f6;"></i> Bấm vào camera để chọn làm nguồn điểm danh.</span>
+                            <a href="javascript:void(0)" id="linkToggleAdvanced" style="color: #2563eb; font-weight: 600; text-decoration: underline;">Nhập ID tùy chỉnh</a>
                         </div>
                     </div>
 
                     <!-- PANEL 2: RTSP NVR TRƯỜNG -->
                     <div id="panelRtsp" class="source-panel" style="display: none;">
                         <div class="preset-badge-group">
-                            <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; align-self: center;">Mẫu
-                                nhanh:</span>
-                            <button type="button" class="preset-btn" data-preset="DAHUA"><i
-                                    class="fa-solid fa-server"></i> Dahua NVR Trường</button>
-                            <button type="button" class="preset-btn" data-preset="HIK"><i class="fa-solid fa-video"></i>
-                                Hikvision RTSP</button>
+                            <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; align-self: center;">Mẫu nhanh:</span>
+                            <button type="button" class="preset-btn" data-preset="DAHUA"><i class="fa-solid fa-server"></i> Dahua NVR Trường</button>
+                            <button type="button" class="preset-btn" data-preset="HIK"><i class="fa-solid fa-video"></i> Hikvision RTSP</button>
                         </div>
                         <div class="form-group" style="margin-top: 8px;">
-                            <label><i class="fa-solid fa-link" style="color: var(--primary);"></i> Đường Dẫn Luồng
-                                RTSP:</label>
-                            <input type="text" id="inputRtsp" class="form-control"
-                                placeholder="rtsp://admin:matkhau@192.168.10.200:554/cam/realmonitor?channel=1&subtype=0">
+                            <label><i class="fa-solid fa-link" style="color: var(--primary);"></i> Đường Dẫn Luồng RTSP:</label>
+                            <input type="text" id="inputRtsp" class="form-control" placeholder="rtsp://admin:matkhau@192.168.10.200:554/cam/realmonitor?channel=1&subtype=0">
                         </div>
                     </div>
 
                     <!-- PANEL 3: FILE VIDEO / ẢNH MẪU -->
                     <div id="panelFile" class="source-panel" style="display: none;">
                         <div class="preset-badge-group">
-                            <button type="button" class="preset-btn" data-preset="FILE_VIDEO"><i
-                                    class="fa-solid fa-film"></i> Video Mẫu (15s MP4)</button>
-                            <button type="button" class="preset-btn" data-preset="FILE_IMG"><i
-                                    class="fa-solid fa-image"></i> Ảnh Lớp Học Mẫu (JPG)</button>
+                            <button type="button" class="preset-btn" data-preset="FILE_VIDEO"><i class="fa-solid fa-film"></i> Video Mẫu (15s MP4)</button>
+                            <button type="button" class="preset-btn" data-preset="FILE_IMG"><i class="fa-solid fa-image"></i> Ảnh Lớp Học Mẫu (JPG)</button>
                         </div>
                         <div class="form-group" style="margin-top: 8px;">
-                            <label><i class="fa-solid fa-folder-open" style="color: var(--primary);"></i> Đường Dẫn File
-                                Cục Bộ:</label>
-                            <input type="text" id="inputFile" class="form-control"
-                                placeholder="dataset/samples/classroom_sample_15s.mp4">
+                            <label><i class="fa-solid fa-folder-open" style="color: var(--primary);"></i> Đường Dẫn File Cục Bộ:</label>
+                            <input type="text" id="inputFile" class="form-control" placeholder="dataset/samples/classroom_sample_15s.mp4">
                         </div>
                     </div>
 
                     <!-- Ô URL ĐƯỢC ĐỒNG BỘ ĐỂ GỬI LÊN SERVER -->
-                    <div id="advancedUrlBox"
-                        style="display: none; margin-bottom: 14px; background: #f1f5f9; padding: 12px; border-radius: 8px; border: 1.5px dashed #cbd5e1;">
-                        <label
-                            style="font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 6px; display: block;">
+                    <div id="advancedUrlBox" style="display: none; margin-bottom: 14px; background: #f1f5f9; padding: 12px; border-radius: 8px; border: 1.5px dashed #cbd5e1;">
+                        <label style="font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 6px; display: block;">
                             <i class="fa-solid fa-code"></i> Đường dẫn nguồn chính thức (Gửi tới hệ thống AI):
                         </label>
-                        <input type="text" id="formRtspUrl" class="form-control"
-                            style="font-family: monospace; font-size: 0.88rem;" required>
+                        <input type="text" id="formRtspUrl" class="form-control" style="font-family: monospace; font-size: 0.88rem;" required>
                     </div>
 
                     <!-- KHỐI ĐIỀU KHIỂN RELAY ĐÈN LED -->
                     <div class="relay-card-box">
                         <div class="relay-header">
                             <div>
-                                <span class="relay-title"><i class="fa-solid fa-lightbulb" style="color: #eab308;"></i>
-                                    Báo Động Relay Đèn LED</span>
-                                <span class="relay-desc">Tự động kích hoạt chuông / đèn LED cảnh báo khi vắng quá
-                                    nhiều</span>
+                                <span class="relay-title"><i class="fa-solid fa-lightbulb" style="color: #eab308;"></i> Báo Động Relay Đèn LED</span>
+                                <span class="relay-desc">Tự động kích hoạt chuông / đèn LED cảnh báo khi vắng quá nhiều</span>
                             </div>
                             <label class="toggle-switch" title="Bật/Tắt kích hoạt camera này">
                                 <input type="checkbox" id="formActive" checked>
                                 <span class="slider"></span>
                             </label>
                         </div>
-                        <div
-                            style="display: flex; gap: 10px; align-items: flex-end; margin-top: 10px; flex-wrap: wrap;">
+                        <div style="display: flex; gap: 10px; align-items: flex-end; margin-top: 10px; flex-wrap: wrap;">
                             <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 200px;">
-                                <label><i class="fa-solid fa-network-wired" style="color: var(--primary);"></i> IP Relay
-                                    / Camera Phụ (Tùy chọn):</label>
-                                <input type="text" id="formRelayIp" class="form-control"
-                                    placeholder="Mặc định theo IP camera (hoặc nhập IP riêng)">
+                                <label><i class="fa-solid fa-network-wired" style="color: var(--primary);"></i> IP Relay / Camera Phụ (Tùy chọn):</label>
+                                <input type="text" id="formRelayIp" class="form-control" placeholder="Mặc định theo IP camera (hoặc nhập IP riêng)">
                             </div>
                             <button type="button" id="btnTestCameraIR" class="btn btn-secondary"
-                                style="font-weight: 600; padding: 9px 15px; white-space: nowrap; height: 42px; border-color: #ef4444; color: #b91c1c;">
+                                style="font-weight: 600; padding: 9px 15px; white-space: nowrap; height: 42px; border-color: #fde68a; background: #fffbeb; color: #b45309;">
                                 <i class="fa-solid fa-bolt"></i> Thử Bật Đèn Hồng Ngoại (4s)
                             </button>
                         </div>
                         <div id="irStatusMsg" style="font-size: 0.8rem; margin-top: 6px; color: #64748b;">
-                            <i class="fa-solid fa-circle-info" style="color: var(--primary);"></i> Đèn hồng ngoại của
-                            camera sẽ bật sáng đỏ trong 4 giây để học sinh nhận biết giờ điểm danh, sau đó tự động
-                            chuyển sang ảnh màu khi chụp.
+                            <i class="fa-solid fa-circle-info" style="color: var(--primary);"></i> Đèn hồng ngoại của camera sẽ bật sáng đỏ trong 4 giây để học sinh nhận biết giờ điểm danh, sau đó tự động chuyển sang ảnh màu khi chụp.
                         </div>
                     </div>
 
                     <!-- Khung Test Kết Nối Live & Chụp Thử Nghiệm -->
                     <div class="test-box">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                             <span style="font-weight: 700; font-size: 0.88rem; color: var(--text-main);">
-                                <i class="fa-solid fa-satellite-dish" style="color: var(--primary);"></i> Kiểm Tra Kết
-                                Nối & Bắt Khung Hình
+                                <i class="fa-solid fa-satellite-dish" style="color: var(--primary);"></i> Kiểm Tra Kết Nối & Bắt Khung Hình
                             </span>
                             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                <button type="button" id="btnTestStream" class="btn btn-secondary btn-sm"
-                                    style="font-weight: 600;">
+                                <button type="button" id="btnTestStream" class="btn btn-secondary btn-sm" style="font-weight: 600;">
                                     <i class="fa-solid fa-play"></i> Bắt Ảnh Xem Trước
                                 </button>
-                                <button type="button" id="btnTestSignalFlow" class="btn btn-primary btn-sm"
-                                    style="font-weight: 600;">
-                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Thử Chu Trình: Bật Đèn Báo -> Bắt
-                                    Ảnh Màu
+                                <button type="button" id="btnTestSignalFlow" class="btn btn-primary btn-sm" style="font-weight: 600;">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Thử Chu Trình: Bật Đèn Báo -> Bắt Ảnh Màu
                                 </button>
                             </div>
                         </div>
                         <div id="testStatusMsg" style="font-size: 0.82rem; margin-top: 6px; color: var(--text-muted);">
-                            Bấm "Bắt Ảnh Xem Trước" hoặc "Thử Chu Trình: Bật Đèn Báo -> Bắt Ảnh Màu" để kiểm chứng ảnh
-                            thu được có đầy đủ màu sắc.
+                            Bấm "Bắt Ảnh Xem Trước" hoặc "Thử Chu Trình: Bật Đèn Báo -> Bắt Ảnh Màu" để kiểm chứng ảnh thu được có đầy đủ màu sắc.
                         </div>
                         <img id="testPreviewImg" class="test-preview-img" alt="Ảnh xem trước từ Camera">
                     </div>
+                </div>
 
-                    <div class="modal-actions">
-                        <button type="button" id="btnCancelModal" class="btn btn-secondary" style="padding: 8px 18px;">
-                            <i class="fa-solid fa-xmark"></i> Hủy
-                        </button>
-                        <button type="button" id="btnSaveCamera" class="btn btn-primary"
-                            style="padding: 8px 22px; font-weight: 700;">
-                            <i class="fa-solid fa-floppy-disk"></i> Lưu Camera
-                        </button>
-                    </div>
-                </form>
-            </div>
+                <div class="modal-footer">
+                    <button type="button" id="btnCancelModal" class="btn btn-secondary modal-btn modal-btn-secondary" style="padding: 9px 20px;">
+                        <i class="fa-solid fa-xmark"></i> Hủy
+                    </button>
+                    <button type="button" id="btnSaveCamera" class="btn btn-primary modal-btn modal-btn-primary" style="padding: 9px 24px; font-weight: 700;">
+                        <i class="fa-solid fa-floppy-disk"></i> Lưu Camera
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
     <!-- MODAL XEM TRỰC TIẾP SNAPSHOT NHANH -->
 
+    <!-- MODAL XÓA CAMERA CHỌN LỌC -->
     <div class="modal-backdrop" id="deleteCameraModal">
-        <div class="modal-content" style="max-width: 580px;">
-            <div class="modal-header" style="border-bottom: 2px solid #fee2e2;">
-                <div>
-                    <h3 style="font-size: 1.2rem; font-weight: 700; color: #dc2626;">
-                        <i class="fa-solid fa-trash-can"></i> Xóa Camera / Lớp Học
+        <div class="modal-container modal-md modal-danger">
+            <div class="modal-header">
+                <div class="modal-header-content">
+                    <h3 class="modal-title" style="color: #dc2626;">
+                        <i class="fa-solid fa-trash-can modal-title-icon" style="color: #dc2626;"></i>
+                        Xóa Camera / Lớp Học
                     </h3>
-                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 2px;">
+                    <p class="modal-subtitle">
                         Chọn camera bạn muốn xóa khỏi hệ thống điểm danh
                     </p>
                 </div>
-                <button class="modal-close" id="deleteModalCloseBtn">&times;</button>
+                <button type="button" class="modal-close-btn" id="deleteModalCloseBtn" aria-label="Đóng">&times;</button>
             </div>
-            <div class="modal-body" style="padding: 1.25rem 1.5rem;">
+            <div class="modal-body">
                 <div class="form-group" style="margin-bottom: 1.15rem;">
-                    <label
-                        style="font-weight: 700; font-size: 0.88rem; color: #1e293b; margin-bottom: 6px; display: block;">
+                    <label style="font-weight: 700; font-size: 0.88rem; color: #1e293b; margin-bottom: 6px; display: block;">
                         <i class="fa-solid fa-video" style="color: var(--primary);"></i> Chọn 1 camera cần xóa nhanh:
                     </label>
-                    <select id="deleteModalSelectQuick" class="form-control"
-                        style="width: 100%; padding: 8px 12px; font-weight: 600; font-size: 0.88rem;">
+                    <select id="deleteModalSelectQuick" class="form-control" style="width: 100%; padding: 8px 12px; font-weight: 600; font-size: 0.88rem;">
                         <option value="">-- Bấm vào đây để chọn camera --</option>
                     </select>
                 </div>
 
                 <div style="margin-bottom: 1.15rem;">
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                         <label style="font-weight: 700; font-size: 0.88rem; color: #1e293b; margin: 0;">
                             <i class="fa-solid fa-list-check" style="color: #64748b;"></i> Hoặc tích chọn nhiều camera:
                         </label>
                         <div style="display: flex; gap: 6px;">
-                            <button type="button" id="btnDeleteCheckAll" class="btn btn-secondary btn-sm"
-                                style="font-size: 0.78rem; padding: 4px 10px;">
+                            <button type="button" id="btnDeleteCheckAll" class="btn btn-secondary btn-sm" style="font-size: 0.78rem; padding: 4px 10px;">
                                 Chọn tất cả
                             </button>
-                            <button type="button" id="btnDeleteUncheckAll" class="btn btn-secondary btn-sm"
-                                style="font-size: 0.78rem; padding: 4px 10px;">
+                            <button type="button" id="btnDeleteUncheckAll" class="btn btn-secondary btn-sm" style="font-size: 0.78rem; padding: 4px 10px;">
                                 Bỏ chọn
                             </button>
                         </div>
                     </div>
-                    <div id="deleteModalChecklist"
-                        style="max-height: 220px; overflow-y: auto; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 8px; background: #f8fafc; display: flex; flex-direction: column; gap: 6px;">
+                    <div id="deleteModalChecklist" style="max-height: 220px; overflow-y: auto; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 8px; background: #f8fafc; display: flex; flex-direction: column; gap: 6px;">
                         <!-- Render danh sách camera kèm checkbox qua JS -->
                     </div>
                 </div>
 
-                <div
-                    style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 14px; display: flex; gap: 10px; align-items: flex-start;">
-                    <i class="fa-solid fa-triangle-exclamation"
-                        style="color: #d97706; font-size: 1.15rem; margin-top: 2px;"></i>
-                    <div style="font-size: 0.82rem; color: #92400e; line-height: 1.45;">
-                        <strong>Cảnh báo:</strong> Việc xóa camera sẽ đồng thời xóa cấu hình vùng nhận diện ROI của lớp
-                        học đó. Thao tác này không thể hoàn tác.
+                <div class="modal-info-box warning" style="padding: 10px 14px; font-size: 0.82rem;">
+                    <i class="fa-solid fa-triangle-exclamation modal-info-box-icon" style="color: #d97706;"></i>
+                    <div style="line-height: 1.45;">
+                        <strong>Cảnh báo:</strong> Việc xóa camera sẽ đồng thời xóa cấu hình vùng nhận diện ROI của lớp học đó. Thao tác này không thể hoàn tác.
                     </div>
                 </div>
             </div>
-            <div class="modal-footer"
-                style="display: flex; justify-content: flex-end; gap: 10px; padding: 1rem 1.5rem; background: #f8fafc; border-top: 1px solid var(--border-color); border-radius: 0 0 var(--radius) var(--radius);">
-                <button type="button" id="btnCancelDeleteModal" class="btn btn-secondary" style="padding: 8px 18px;">
+            <div class="modal-footer">
+                <button type="button" id="btnCancelDeleteModal" class="btn btn-secondary modal-btn modal-btn-secondary" style="padding: 9px 20px;">
                     <i class="fa-solid fa-xmark"></i> Hủy
                 </button>
-                <button type="button" id="btnConfirmDeleteBatch" class="btn btn-danger"
-                    style="padding: 8px 20px; font-weight: 700;">
+                <button type="button" id="btnConfirmDeleteBatch" class="btn btn-danger modal-btn modal-btn-danger" style="padding: 9px 22px; font-weight: 700;">
                     <i class="fa-solid fa-trash-can"></i> Xác Nhận Xóa
                 </button>
             </div>
@@ -1075,51 +1030,45 @@
     </div>
 
     <!-- MODAL THÊM ĐẦU GHI (NVR) TỰ ĐỘNG 30 CAMERA -->
-
     <div class="modal-backdrop" id="nvrModal">
-        <div class="modal-content" style="max-width: 950px; max-height: 90vh; display: flex; flex-direction: column;">
-            <div class="modal-header" style="background: linear-gradient(135deg, #064e3b, #047857); color: #fff;">
-                <div>
-                    <h3
-                        style="font-size: 1.25rem; font-weight: 800; display: flex; align-items: center; gap: 8px; color: #fff;">
-                        <i class="fa-solid fa-network-wired"></i> Thêm Đầu Ghi (NVR) - Quét Tự Động 30 Camera
+        <div class="modal-container modal-xl">
+            <div class="modal-header">
+                <div class="modal-header-content">
+                    <h3 class="modal-title">
+                        <i class="fa-solid fa-network-wired modal-title-icon"></i>
+                        Thêm Đầu Ghi (NVR) - Quét Tự Động 30 Camera
                     </h3>
-                    <p style="font-size: 0.85rem; color: #d1fae5; margin-top: 2px;">
+                    <p class="modal-subtitle">
                         Nhập IP đầu ghi một lần duy nhất, hệ thống tự động nhận diện và nạp toàn bộ 30 camera vào CSDL
                     </p>
                 </div>
-                <button class="modal-close" id="nvrModalCloseBtn" style="color: #fff;">&times;</button>
+                <button type="button" class="modal-close-btn" id="nvrModalCloseBtn" aria-label="Đóng">&times;</button>
             </div>
-            <div class="modal-body" style="overflow-y: auto; padding: 1.25rem; flex: 1;">
+            <div class="modal-body" style="overflow-y: auto; padding: 1.5rem; flex: 1;">
                 <!-- Bước 1: Thông tin kết nối NVR -->
                 <div class="nvr-config-card">
-                    <div
-                        style="font-size: 0.92rem; font-weight: 700; color: #0f172a; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; justify-content: space-between; flex-wrap: wrap;">
+                    <div style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; justify-content: space-between; flex-wrap: wrap;">
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <span class="nvr-step-num">1</span> Thông Số Kết Nối Đầu Ghi (NVR / DVR)
                         </div>
                         <button type="button" class="btn btn-secondary btn-sm" id="btnFillSchoolPreset"
                             title="Điền nhanh cấu hình chuẩn THPT Điều Cải"
-                            style="font-size: 0.8rem; background: #ecfdf5; color: #047857; border-color: #a7f3d0; font-weight: 600;">
+                            style="font-size: 0.82rem; font-weight: 600; color: var(--primary);">
                             <i class="fa-solid fa-wand-magic-sparkles"></i> Mẫu Chuẩn Điều Cải (192.168.10.200)
                         </button>
                     </div>
 
                     <div class="form-grid" style="grid-template-columns: 2fr 1fr 1.5fr 1.5fr;">
                         <div class="form-group">
-                            <label><i class="fa-solid fa-server" style="color: var(--primary);"></i> Địa chỉ IP NVR
-                                (*):</label>
-                            <input type="text" id="nvrIp" class="form-control" value="192.168.10.200"
-                                placeholder="192.168.10.200">
+                            <label><i class="fa-solid fa-server" style="color: var(--primary);"></i> Địa chỉ IP NVR (*):</label>
+                            <input type="text" id="nvrIp" class="form-control" value="192.168.10.200" placeholder="192.168.10.200">
                         </div>
                         <div class="form-group">
-                            <label><i class="fa-solid fa-ethernet" style="color: var(--primary);"></i> Cổng
-                                RTSP:</label>
+                            <label><i class="fa-solid fa-ethernet" style="color: var(--primary);"></i> Cổng RTSP:</label>
                             <input type="number" id="nvrPort" class="form-control" value="554">
                         </div>
                         <div class="form-group">
-                            <label><i class="fa-solid fa-user-lock" style="color: var(--primary);"></i> Tài khoản
-                                (*):</label>
+                            <label><i class="fa-solid fa-user-lock" style="color: var(--primary);"></i> Tài khoản (*):</label>
                             <input type="text" id="nvrUsername" class="form-control" value="admin">
                         </div>
                         <div class="form-group">
@@ -1128,10 +1077,9 @@
                         </div>
                     </div>
 
-                    <div class="form-grid" style="grid-template-columns: 1.5fr 1fr 2fr; margin-top: 8px;">
+                    <div class="form-grid" style="grid-template-columns: 1.5fr 1fr 2fr; margin-top: 10px;">
                         <div class="form-group">
-                            <label><i class="fa-solid fa-microchip" style="color: var(--primary);"></i> Hãng Đầu
-                                Ghi:</label>
+                            <label><i class="fa-solid fa-microchip" style="color: var(--primary);"></i> Hãng Đầu Ghi:</label>
                             <select id="nvrBrand" class="form-control">
                                 <option value="DAHUA" selected>Dahua / KBVision / IMOU</option>
                                 <option value="HIKVISION">Hikvision / Ezviz</option>
@@ -1144,25 +1092,23 @@
                             <input type="number" id="nvrChannelsCount" class="form-control" value="30" min="1" max="64">
                         </div>
                         <div class="form-group">
-                            <label><i class="fa-solid fa-tags" style="color: var(--primary);"></i> Quy Tắc Gán Tên Lớp
-                                Học:</label>
+                            <label><i class="fa-solid fa-tags" style="color: var(--primary);"></i> Quy Tắc Gán Tên Lớp Học:</label>
                             <select id="nvrNamingMode" class="form-control">
-                                <option value="DEFAULT_30_CLASSES" selected>Chuẩn 30 Lớp Điều Cải (10A1 -> 12A10 kèm Sĩ
-                                    Số)</option>
+                                <option value="DEFAULT_30_CLASSES" selected>Chuẩn 30 Lớp Điều Cải (10A1 -> 12A10 kèm Sĩ Số)</option>
                                 <option value="CHANNEL_NUMBER">Theo Số Kênh (Camera Kênh 1 -> Kênh 30)</option>
                             </select>
                         </div>
                     </div>
 
-                    <div class="form-group" id="nvrCustomPatternBox" style="display: none; margin-top: 8px;">
-                        <label><i class="fa-solid fa-link"></i> Mẫu URL RTSP Tùy Chỉnh:</label>
+                    <div class="form-group" id="nvrCustomPatternBox" style="display: none; margin-top: 10px;">
+                        <label><i class="fa-solid fa-link" style="color: var(--primary);"></i> Mẫu URL RTSP Tùy Chỉnh:</label>
                         <input type="text" id="nvrCustomPattern" class="form-control"
                             placeholder="rtsp://{user}:{password}@{ip}:{port}/cam/realmonitor?channel={channel}&subtype={subtype}">
                     </div>
 
-                    <div style="margin-top: 12px; display: flex; justify-content: flex-end;">
+                    <div style="margin-top: 14px; display: flex; justify-content: flex-end;">
                         <button type="button" id="btnProbeNVR" class="btn btn-primary"
-                            style="font-weight: 700; padding: 9px 24px; background: #059669; border-color: #047857; cursor: pointer;">
+                            style="font-weight: 700; padding: 10px 24px; cursor: pointer;">
                             <i class="fa-solid fa-satellite-dish"></i> Quét Kênh Camera & Xem Trước Thumbnail
                         </button>
                     </div>
@@ -1170,66 +1116,52 @@
 
                 <!-- Trạng thái quét / Loading -->
                 <div id="nvrProbeLoading"
-                    style="display: none; text-align: center; padding: 28px; background: #f8fafc; border-radius: 8px; margin-top: 14px; border: 1.5px dashed #cbd5e1;">
-                    <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2.2rem; color: #059669;"></i>
-                    <p style="margin-top: 10px; font-weight: 700; color: #0f172a; font-size: 1rem;">Đang quét song song
-                        30 kênh từ đầu ghi và chụp ảnh xem trước...</p>
-                    <span style="font-size: 0.84rem; color: #64748b;">(Hệ thống dùng đa luồng quét siêu tốc trong 2-4
-                        giây)</span>
+                    style="display: none; text-align: center; padding: 28px; background: #f8fafc; border-radius: 12px; margin-top: 14px; border: 1.5px dashed #cbd5e1;">
+                    <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2.2rem; color: var(--primary);"></i>
+                    <p style="margin-top: 10px; font-weight: 700; color: #0f172a; font-size: 1rem;">Đang quét song song 30 kênh từ đầu ghi và chụp ảnh xem trước...</p>
+                    <span style="font-size: 0.84rem; color: #64748b;">(Hệ thống dùng đa luồng quét siêu tốc trong 2-4 giây)</span>
                 </div>
 
                 <!-- Bước 2: Danh sách xem trước 30 Camera -->
                 <div id="nvrProbeResults" style="display: none; margin-top: 16px;">
                     <div class="nvr-preview-toolbar">
-                        <div
-                            style="font-size: 0.92rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-                            <span class="nvr-step-num">2</span> Kết Quả Dò Kênh: <span id="nvrProbeSummary"
-                                style="color: #059669; font-weight: 800;">30/30 Kênh</span>
+                        <div style="font-size: 0.95rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                            <span class="nvr-step-num">2</span> Kết Quả Dò Kênh: <span id="nvrProbeSummary" class="status-pill status-pill-success" style="font-size: 0.85rem; font-weight: 700;">30/30 Kênh</span>
                         </div>
                         <div style="display: flex; gap: 8px; align-items: center;">
-                            <button type="button" id="btnSelectAllNvr" class="btn btn-secondary btn-sm"
-                                style="font-size: 0.78rem;">Chọn Tất Cả</button>
-                            <button type="button" id="btnUnselectAllNvr" class="btn btn-secondary btn-sm"
-                                style="font-size: 0.78rem;">Bỏ Chọn Hết</button>
+                            <button type="button" id="btnSelectAllNvr" class="btn btn-secondary btn-sm" style="font-size: 0.8rem; font-weight: 600;">Chọn Tất Cả</button>
+                            <button type="button" id="btnUnselectAllNvr" class="btn btn-secondary btn-sm" style="font-size: 0.8rem; font-weight: 600;">Bỏ Chọn Hết</button>
                         </div>
                     </div>
-                    <div
-                        style="font-size: 0.82rem; color: #475569; margin-bottom: 12px; background: #f1f5f9; padding: 8px 12px; border-radius: 6px;">
-                        <i class="fa-solid fa-circle-info" style="color: var(--primary);"></i> Bạn có thể chỉnh sửa trực
-                        tiếp
-                        <strong>Tên Lớp, Số Phòng</strong> hoặc <strong>Sĩ Số</strong> ngay trên từng ô bên dưới trước
-                        khi lưu:
+                    <div class="modal-info-box info" style="margin-bottom: 12px; padding: 10px 14px; font-size: 0.84rem;">
+                        <i class="fa-solid fa-circle-info modal-info-box-icon"></i>
+                        <span>Bạn có thể chỉnh sửa trực tiếp <strong>Tên Lớp, Số Phòng</strong> hoặc <strong>Sĩ Số</strong> ngay trên từng ô bên dưới trước khi lưu:</span>
                     </div>
 
                     <div id="nvrChannelList" class="nvr-channels-grid">
                         <!-- Render 30 kênh xem trước qua JS -->
                     </div>
 
-                    <div
-                        style="margin-top: 16px; padding: 12px 14px; background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 8px;">
-                        <label
-                            style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.88rem; font-weight: 600; color: #166534; margin: 0;">
-                            <input type="checkbox" id="nvrReplaceExisting" checked style="width: 18px; height: 18px;">
-                            <span>Khởi tạo mới: Thay thế toàn bộ danh sách camera cũ
-                                lớp học)</span>
+                    <div style="margin-top: 16px; padding: 12px 16px; background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 10px;">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.88rem; font-weight: 600; color: #166534; margin: 0;">
+                            <input type="checkbox" id="nvrReplaceExisting" checked style="width: 18px; height: 18px; accent-color: var(--primary);">
+                            <span>Khởi tạo mới: Thay thế toàn bộ danh sách camera cũ (đảm bảo đồng bộ chuẩn 30 lớp học)</span>
                         </label>
                     </div>
                 </div>
             </div>
 
-            <div class="modal-footer"
-                style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; background: #f8fafc; border-top: 1px solid var(--border-color);">
-                <div style="font-size: 0.82rem; color: #64748b;">
-                    <i class="fa-solid fa-shield-halved" style="color: #10b981;"></i> Sau khi lưu, bạn hoàn toàn có thể
-                    <strong>Sửa, Đổi tên, Vẽ ROI hoặc Xóa riêng lẻ từng camera</strong> bất kỳ lúc nào.
+            <div class="modal-footer space-between">
+                <div style="font-size: 0.84rem; color: #64748b; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-shield-halved" style="color: #10b981;"></i>
+                    <span>Sau khi lưu, bạn hoàn toàn có thể <strong>Sửa, Đổi tên, Vẽ ROI hoặc Xóa riêng lẻ</strong> bất kỳ lúc nào.</span>
                 </div>
                 <div style="display: flex; gap: 10px;">
-                    <button type="button" id="btnCancelNvrModal" class="btn btn-secondary" style="padding: 8px 18px;">
+                    <button type="button" id="btnCancelNvrModal" class="btn btn-secondary modal-btn modal-btn-secondary" style="padding: 9px 20px;">
                         <i class="fa-solid fa-xmark"></i> Hủy
                     </button>
-                    <button type="button" id="btnSaveNvrImport" class="btn btn-primary"
-                        style="background: #059669; border-color: #047857; font-weight: 700; padding: 8px 24px; cursor: pointer;"
-                        disabled>
+                    <button type="button" id="btnSaveNvrImport" class="btn btn-primary modal-btn modal-btn-primary"
+                        style="font-weight: 700; padding: 9px 24px; cursor: pointer;" disabled>
                         <i class="fa-solid fa-cloud-arrow-down"></i> Lưu & Đồng Bộ 30 Camera Vào Hệ Thống
                     </button>
                 </div>
