@@ -2,9 +2,12 @@
  * reports.js - Reports & Data Management Controller
  * THPT Điều Cải - Attendance System (Database & Excel Archive & Data Retention)
  */
-import { ReportAPI, AttendanceAPI, SystemAPI, BackupAPI, showToast, API_BASE } from './api.js';
+import { ReportAPI, AttendanceAPI, SystemAPI, BackupAPI, showToast, API_BASE, escapeHtml, isAdmin } from './api.js';
 import SkeletonTemplates from './components/skeleton-templates.js';
 import { ImageZoomViewer } from './shared/image-zoom-viewer.js';
+
+// Escape dữ liệu động khi chèn HTML (chống stored XSS)
+const esc = (v) => escapeHtml(v);
 
 // === STATE: CSDL ATTENDANCE RECORDS ===
 let allHistoryRows = [];
@@ -39,18 +42,42 @@ function extractGradeFromClassName(className) {
     return match ? match[1] : '';
 }
 
+// ===================== PHÂN QUYỀN UI =====================
+// Nhân viên (staff) chỉ được XEM dữ liệu & file báo cáo, không thấy tab "Cài Đặt Lưu Trữ & CSDL"
+// và các hành động quản trị (Xuất Excel ngay, Xóa lịch sử, Backup, cấu hình CSDL).
+function applyRoleBasedUI(adminRole) {
+    if (adminRole) return;
+
+    // Xoá tab "Cài Đặt Lưu Trữ & CSDL" (lưu trữ, backup, cấu hình CSDL)
+    document.querySelector('.tabs-nav .tab-btn[data-tab="tab-settings"]')?.remove();
+    document.getElementById('tab-settings')?.remove();
+
+    // Xoá các nút hành động chỉ dành cho quản trị viên
+    ['btnExportExcelNow', 'btnExportExcelTab', 'btnClearAttendanceHistory'].forEach((id) => {
+        document.getElementById(id)?.remove();
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    const adminRole = isAdmin();
+
+    applyRoleBasedUI(adminRole);
+
     loadAttendanceHistory();
     loadExcelFiles();
     loadRetentionSettings();
-    loadDatabaseInfo();
-    loadBackupList();
+    if (adminRole) {
+        loadDatabaseInfo();
+        loadBackupList();
+    }
     initTabsNavigation();
     initImgModalEvents();
     initDbControlsEvents();
     initExcelFilterEvents();
-    initRetentionEvents();
-    initBackupEvents();
+    if (adminRole) {
+        initRetentionEvents();
+        initBackupEvents();
+    }
 
     // Export Excel immediately from Banner or Tab
     const handleExportExcel = async (btn) => {
@@ -173,7 +200,7 @@ export async function loadAttendanceHistory() {
 
         applyDbFilters();
     } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; color: var(--danger); padding: 1.5rem;">Lỗi nạp dữ liệu CSDL: ${err.message || err}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; color: var(--danger); padding: 1.5rem;">Lỗi nạp dữ liệu CSDL: ${esc(err.message || err)}</td></tr>`;
     }
 }
 
@@ -489,21 +516,21 @@ function renderDbTable(rows, startIdx = 0) {
             <tr class="${absent > 0 ? 'row-absent-highlight' : ''}">
                 <td class="cell-stt" style="text-align: center; color: var(--text-muted); font-size: 0.8rem;">${stt}</td>
                 <td class="cell-datetime"><strong>${r.scan_date}</strong> <span style="font-size: 0.78rem; color: var(--text-muted);">${r.scan_time}</span></td>
-                <td class="cell-session"><code class="session-code-pill" title="Mã phiên đầy đủ: ${r.session_code}">${shortSession}</code></td>
-                <td class="cell-class"><strong title="${r.class_name}">${r.class_name}</strong></td>
-                <td class="cell-room"><span style="color: var(--text-secondary); font-size: 0.85rem;">${roomDisplay}</span></td>
+                <td class="cell-session"><code class="session-code-pill" title="Mã phiên đầy đủ: ${esc(r.session_code)}">${esc(shortSession)}</code></td>
+                <td class="cell-class"><strong title="${esc(r.class_name)}">${esc(r.class_name)}</strong></td>
+                <td class="cell-room"><span style="color: var(--text-secondary); font-size: 0.85rem;">${esc(roomDisplay)}</span></td>
                 <td class="cell-standard" style="text-align: center;">${r.standard_count}</td>
                 <td class="cell-present" style="text-align: center; font-weight: 700; color: #16a34a;">${r.present_count}</td>
                 <td class="cell-absent" style="text-align: center; font-weight: 800;">
                     ${absent > 0 ? `<span class="danger-text">${absent}</span>` : '<span style="color: #94a3b8;">0</span>'}
                 </td>
                 <td class="cell-image" style="text-align: center;">
-                    ${rawImgUrl ? `<button type="button" class="btn btn-secondary btn-sm" data-img="${rawImgUrl}" data-title="Ảnh Gốc Camera - ${r.class_name}"><i class="fa-solid fa-image"></i> Xem</button>` : '<span style="color: var(--text-muted);">--</span>'}
+                    ${rawImgUrl ? `<button type="button" class="btn btn-secondary btn-sm" data-img="${rawImgUrl}" data-title="Ảnh Gốc Camera - ${esc(r.class_name)}"><i class="fa-solid fa-image"></i> Xem</button>` : '<span style="color: var(--text-muted);">--</span>'}
                 </td>
                 <td class="cell-image" style="text-align: center;">
-                    ${annoImgUrl ? `<button type="button" class="btn btn-primary btn-sm" data-img="${annoImgUrl}" data-title="Ảnh AI Đối Chứng - ${r.class_name}"><i class="fa-solid fa-brain"></i> Xem</button>` : '<span style="color: var(--text-muted);">--</span>'}
+                    ${annoImgUrl ? `<button type="button" class="btn btn-primary btn-sm" data-img="${annoImgUrl}" data-title="Ảnh AI Đối Chứng - ${esc(r.class_name)}"><i class="fa-solid fa-brain"></i> Xem</button>` : '<span style="color: var(--text-muted);">--</span>'}
                 </td>
-                <td class="cell-status" style="text-align: center;"><span class="status-pill" style="${statusColor}">${statusText}</span></td>
+                <td class="cell-status" style="text-align: center;"><span class="status-pill" style="${statusColor}">${esc(statusText)}</span></td>
             </tr>
         `;
     }).join('');
@@ -539,7 +566,7 @@ export async function loadExcelFiles() {
 
         applyExcelFilters();
     } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--danger); padding: 1.5rem;">Lỗi nạp danh sách file Excel: ${err.message || err}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--danger); padding: 1.5rem;">Lỗi nạp danh sách file Excel: ${esc(err.message || err)}</td></tr>`;
     }
 }
 
@@ -760,7 +787,7 @@ function renderExcelTable(files, startIdx = 0) {
                     <div style="display: flex; align-items: center; gap: 9px;">
                         <i class="fa-solid fa-file-excel" style="color: #16a34a; font-size: 1.15rem; flex-shrink: 0;"></i>
                         <div>
-                            <strong>${f.filename}</strong>
+                            <strong>${esc(f.filename)}</strong>
                             <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Bảng tổng hợp sĩ số 30 lớp học THPT Điều Cải</div>
                         </div>
                     </div>
@@ -1072,7 +1099,7 @@ export function showImgModal(src, title) {
     const zoomPercent = document.getElementById('imgZoomPercent');
 
     if (titleEl) {
-        titleEl.innerHTML = `<i class="fa-solid fa-image" style="color: var(--primary);"></i> ${title}`;
+        titleEl.innerHTML = `<i class="fa-solid fa-image" style="color: var(--primary);"></i> ${esc(title)}`;
     }
 
     if (srcEl) {
@@ -1222,25 +1249,32 @@ function renderBackupTable(backups) {
 
     tbody.innerHTML = backups.map((b, idx) => {
         const downloadUrl = BackupAPI.getDownloadUrl(b.filename);
-        const statsBadge = b.total_sessions !== '--' 
-            ? `<span class="badge badge-info" style="font-size: 0.76rem; margin-left: 6px;">${b.total_sessions} phiên (${b.total_details} lượt)</span>` 
+        const isDrive = b.source === 'gdrive' || !!b.drive_file_id;
+        const sourceBadge = isDrive
+            ? '<span class="badge" style="font-size: 0.74rem; background: #e8f0fe; color: #1a73e8; border: 1px solid #d2e3fc; margin-left: 6px; font-weight: 600;"><i class="fa-brands fa-google-drive"></i> Drive</span>'
+            : '<span class="badge" style="font-size: 0.74rem; background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; margin-left: 6px; font-weight: 600;"><i class="fa-solid fa-server"></i> Máy chủ</span>';
+        const fileIcon = isDrive
+            ? '<i class="fa-brands fa-google-drive" style="color: #4285F4; font-size: 1.1rem;"></i>'
+            : '<i class="fa-solid fa-file-zipper" style="color: #2563eb; font-size: 1.1rem;"></i>';
+        const statsBadge = b.total_sessions !== '--'
+            ? `<span class="badge badge-info" style="font-size: 0.76rem; margin-left: 6px;">${b.total_sessions} phiên (${b.total_details} lượt)</span>`
             : '';
         return `
             <tr>
                 <td style="text-align: center; font-weight: 600; color: var(--text-muted);">${idx + 1}</td>
                 <td>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <i class="fa-solid fa-file-zipper" style="color: #2563eb; font-size: 1.1rem;"></i>
+                        ${fileIcon}
                         <div>
-                            <strong style="color: var(--text-primary); font-size: 0.9rem;">${b.filename}</strong>
-                            <div style="font-size: 0.78rem; color: var(--text-muted);">${b.backup_type === 'AUTO_DAILY' ? '<span style="color: #16a34a; font-weight: 600;">[Tự động 23h]</span> ' : ''}${b.note || 'Bản sao lưu'}</div>
+                            <strong style="color: var(--text-primary); font-size: 0.9rem;">${esc(b.filename)}</strong>${sourceBadge}
+                            <div style="font-size: 0.78rem; color: var(--text-muted);">${b.backup_type === 'AUTO_DAILY' ? '<span style="color: #16a34a; font-weight: 600;">[Tự động 23h]</span> ' : ''}${esc(b.note || 'Bản sao lưu')}</div>
                         </div>
                     </div>
                 </td>
                 <td style="white-space: nowrap; font-size: 0.88rem; color: var(--text-secondary);">${b.created_at || '--'}</td>
                 <td style="text-align: center; font-weight: 600; color: var(--primary);">${b.size_mb} MB</td>
                 <td>
-                    <span style="font-size: 0.84rem; color: var(--text-secondary);">${b.note || 'Bản sao lưu'}</span>
+                    <span style="font-size: 0.84rem; color: var(--text-secondary);">${esc(b.note || 'Bản sao lưu')}</span>
                     ${statsBadge}
                 </td>
                 <td style="text-align: center;">
@@ -1248,10 +1282,10 @@ function renderBackupTable(backups) {
                         <a href="${downloadUrl}" class="btn btn-sm btn-secondary" title="Tải file zip về máy" download>
                             <i class="fa-solid fa-download"></i>
                         </a>
-                        <button type="button" class="btn btn-sm btn-secondary btn-restore-backup" data-filename="${b.filename}" title="Khôi phục lại dữ liệu từ bản sao lưu này" style="color: #b45309; border-color: #fde68a;">
+                        <button type="button" class="btn btn-sm btn-secondary btn-restore-backup" data-filename="${esc(b.filename)}" title="Khôi phục lại dữ liệu từ bản sao lưu này" style="color: #b45309; border-color: #fde68a;">
                             <i class="fa-solid fa-clock-rotate-left"></i>
                         </button>
-                        <button type="button" class="btn btn-sm btn-secondary btn-delete-backup" data-filename="${b.filename}" title="Xóa bản sao lưu" style="color: #dc2626; border-color: #fecaca;">
+                        <button type="button" class="btn btn-sm btn-secondary btn-delete-backup" data-filename="${esc(b.filename)}" title="Xóa bản sao lưu" style="color: #dc2626; border-color: #fecaca;">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
                     </div>
@@ -1385,9 +1419,127 @@ function initBackupEvents() {
     if (inputUpload) {
         inputUpload.addEventListener('change', handleUploadBackupZip);
     }
+
+    initGDriveEvents();
+    loadGDriveStatus();
+}
+
+// ===================================================================
+// GOOGLE DRIVE KẾT NỐI & TRẠNG THÁI
+// ===================================================================
+async function loadGDriveStatus() {
+    const badge = document.getElementById('gdriveStatusBadge');
+    const accountInfo = document.getElementById('gdriveAccountInfo');
+    const btnConnect = document.getElementById('btnGDriveConnect');
+    const btnDisconnect = document.getElementById('btnGDriveDisconnect');
+    if (!badge) return;
+
+    try {
+        const res = await BackupAPI.gdriveStatus();
+        if (res && res.success) {
+            if (!res.configured) {
+                badge.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Chưa cấu hình';
+                badge.style.background = '#fff7ed';
+                badge.style.color = '#c2410c';
+                if (btnConnect) { btnConnect.disabled = true; btnConnect.title = 'Thêm GOOGLE_DRIVE_CLIENT_ID vào file cấu hình.'; }
+                if (accountInfo) accountInfo.textContent = 'Thiếu thông tin cấu hình .env (GOOGLE_DRIVE_CLIENT_ID).';
+            } else if (res.connected) {
+                badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Đã kết nối';
+                badge.style.background = '#dcfce7';
+                badge.style.color = '#15803d';
+                if (accountInfo) accountInfo.innerHTML = '<i class="fa-solid fa-envelope"></i> ' + esc(res.account_email || 'Tài khoản Google');
+            } else {
+                badge.innerHTML = '<i class="fa-solid fa-circle-plus"></i> Chưa kết nối';
+                badge.style.background = '#f1f5f9';
+                badge.style.color = '#64748b';
+                if (accountInfo) accountInfo.textContent = 'Backup hiện chỉ lưu ở máy chủ.';
+            }
+            if (btnDisconnect) btnDisconnect.style.display = res.connected ? '' : 'none';
+        }
+    } catch (err) {
+        console.warn('Lỗi lấy trạng thái Google Drive:', err);
+    }
+}
+
+function initGDriveEvents() {
+    const btnConnect = document.getElementById('btnGDriveConnect');
+    const btnDisconnect = document.getElementById('btnGDriveDisconnect');
+    const btnConfirm = document.getElementById('btnGDriveConfirm');
+    const codeRow = document.getElementById('gdriveCodeRow');
+    const codeInput = document.getElementById('gdriveCodeInput');
+    const feedback = document.getElementById('gdriveFeedbackMsg');
+
+    if (btnConnect) {
+        btnConnect.addEventListener('click', async () => {
+            try {
+                const res = await BackupAPI.gdriveAuthUrl();
+                if (res && res.success && res.url) {
+                    window.open(res.url, '_blank', 'noopener');
+                    if (codeRow) codeRow.style.display = 'block';
+                    showToast('Đã mở tab đăng nhập Google. Hãy dán mã kết nối vào ô bên dưới.', 'info');
+                } else {
+                    showToast(res?.message || 'Không lấy được URL kết nối.', 'danger');
+                }
+            } catch (err) {
+                showToast('Lỗi: ' + (err.message || 'Không thể tạo URL kết nối Google Drive.'), 'danger');
+            }
+        });
+    }
+
+    if (btnConfirm) {
+        btnConfirm.addEventListener('click', async () => {
+            if (!codeInput || !codeInput.value.trim()) {
+                showToast('Vui lòng dán mã kết nối trước.', 'danger');
+                return;
+            }
+            let raw = codeInput.value.trim();
+            const m = raw.match(/[?&]code=([^&]+)/);
+            const code = (m ? decodeURIComponent(m[1]) : raw).trim();
+            btnConfirm.disabled = true;
+            btnConfirm.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang kết nối...';
+            try {
+                const res = await BackupAPI.gdriveConnect(code);
+                if (res && res.success) {
+                    if (feedback) {
+                        feedback.innerHTML = '<div style="color: #15803d; font-size: 0.85rem;"><i class="fa-solid fa-circle-check"></i> Đã kết nối Google Drive thành công!</div>';
+                    }
+                    showToast(res.message || 'Đã kết nối Google Drive!', 'success');
+                    if (codeRow) codeRow.style.display = 'none';
+                    if (codeInput) codeInput.value = '';
+                    await loadGDriveStatus();
+                    await loadBackupList();
+                } else {
+                    if (feedback) {
+                        feedback.innerHTML = `<div style="color: #dc2626; font-size: 0.85rem;"><i class="fa-solid fa-circle-xmark"></i> ${esc(res?.message || 'Kết nối thất bại.')}</div>`;
+                    }
+                    showToast(res?.message || 'Kết nối thất bại!', 'danger');
+                }
+            } catch (err) {
+                showToast('Lỗi kết nối: ' + (err.message || err), 'danger');
+            } finally {
+                btnConfirm.disabled = false;
+                btnConfirm.innerHTML = '<i class="fa-solid fa-check"></i> Xác Nhận Mã';
+            }
+        });
+    }
+
+    if (btnDisconnect) {
+        btnDisconnect.addEventListener('click', async () => {
+            if (!confirm('Bạn có chắc muốn NGẮT KẾT NỐI Google Drive?\n\nCác backup sau đó sẽ chỉ lưu ở máy chủ.')) return;
+            try {
+                const res = await BackupAPI.gdriveDisconnect();
+                showToast(res?.message || 'Đã ngắt kết nối Google Drive.', 'info');
+                await loadGDriveStatus();
+                await loadBackupList();
+            } catch (err) {
+                showToast('Lỗi: ' + (err.message || err), 'danger');
+            }
+        });
+    }
 }
 
 window.showImgModal = showImgModal;
 window.closeImgModal = closeImgModal;
 window.initTabsNavigation = initTabsNavigation;
 window.loadBackupList = loadBackupList;
+window.loadGDriveStatus = loadGDriveStatus;

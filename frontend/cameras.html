@@ -8,7 +8,7 @@
 
     <!-- Design System & Components -->
     <link rel="stylesheet" href="css/design-system.css">
-    <link rel="stylesheet" href="css/layout/app-shell.css?v=2.5">
+    <link rel="stylesheet" href="css/layout/app-shell.css?v=3.1">
     <link rel="stylesheet" href="css/components/buttons-redesign.css">
     <link rel="stylesheet" href="css/components/badges-redesign.css">
     <link rel="stylesheet" href="css/components/cards-redesign.css">
@@ -73,6 +73,58 @@
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
             gap: var(--space-4);
+        }
+
+        @media (max-width: 768px) {
+            .tv-wall-container {
+                padding: var(--space-3);
+                margin-top: var(--space-4);
+            }
+
+            .tv-wall-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .page-title-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+
+            .page-actions {
+                width: 100%;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .page-actions .btn {
+                flex: 1 1 auto;
+                justify-content: center;
+            }
+
+            .batch-action-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .batch-action-buttons {
+                flex-wrap: wrap;
+            }
+
+            .batch-action-buttons button {
+                flex: 1 1 auto;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .matrix-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
         }
 
         .camera-tile {
@@ -403,6 +455,25 @@
 </head>
 
 <body>
+    <!-- Mobile Topbar Navigation (Hiển thị cố định trên điện thoại & tablet <= 1024px) -->
+    <header class="mobile-topbar">
+        <div class="mobile-topbar-left">
+            <button type="button" class="mobile-menu-btn" title="Mở Menu Điều Hướng" aria-label="Mở Menu Điều Hướng">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="mobile-topbar-brand">
+                <div class="mobile-brand-logo">ĐC</div>
+                <div class="mobile-brand-text">
+                    <span class="mobile-brand-title">THPT ĐIỀU CẢI</span>
+                    <span class="mobile-brand-subtitle">AI CAMERA</span>
+                </div>
+            </div>
+        </div>
+        <div class="mobile-topbar-right">
+            <div class="mobile-user-avatar" id="mobileUserAvatar" title="Thông tin tài khoản">A</div>
+        </div>
+    </header>
+
     <!-- App Shell -->
     <div class="app-shell">
         <!-- Sidebar -->
@@ -1215,7 +1286,7 @@
 
     <!-- Scripts -->
     <script type="module" src="js/shared/auth-guard.js?v=2.5"></script>
-    <script src="js/shared/app-shell.js?v=3.0"></script>
+    <script src="js/shared/app-shell.js?v=3.1"></script>
     <script src="js/shared/header-actions.js?v=2.2"></script>
     <script src="js/shared/confirmation-dialog.js?v=1.0"></script>
     <script type="module" src="js/cameras.js?v=3.5"></script>

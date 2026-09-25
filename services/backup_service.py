@@ -10,6 +10,7 @@ from datetime import datetime
 from config.settings import settings
 from config.logging_config import logger
 from core.timezone_utils import get_now, get_app_timezone
+from services.gdrive_service import gdrive_service
 
 class BackupService:
     """
@@ -131,11 +132,39 @@ class BackupService:
             meta["zip_size_bytes"] = zip_size_bytes
             meta["zip_size_mb"] = round(zip_size_bytes / (1024 * 1024), 2)
 
-            logger.info(f"Đã tạo bản sao lưu thành công: {filename} ({meta['zip_size_mb']} MB)")
+            # Upload lên Google Drive (nếu đã kết nối) rồi xoá bản local theo cấu hình REMOTE_ONLY
+            drive_result = self._upload_to_drive(zip_path)
+            if drive_result and drive_result.get("success"):
+                meta["drive_uploaded"] = True
+                meta["drive_file_id"] = drive_result.get("file_id")
+                meta["drive_link"] = drive_result.get("web_view_link", "")
+                if settings.GOOGLE_DRIVE_REMOTE_ONLY:
+                    try:
+                        zip_path.unlink(missing_ok=True)
+                    except Exception:
+                        pass
+
+            logger.info(
+                f"Đã tạo bản sao lưu: {filename} ({meta['zip_size_mb']} MB) - "
+                f"Drive: {'thành công' if meta.get('drive_uploaded') else 'không upload'}"
+            )
+            message = f"Tạo bản sao lưu thành công ({meta['zip_size_mb']} MB)"
+            if meta.get("drive_uploaded"):
+                message += " và đã đẩy lên Google Drive"
+                if settings.GOOGLE_DRIVE_REMOTE_ONLY:
+                    message += " (chỉ lưu Google Drive)"
+            elif gdrive_service.is_configured():
+                message += " — KHÔNG đẩy lên Drive (chưa kết nối hoặc lỗi upload, bản sao giữ ở máy chủ tạm thời)"
             return {
                 "success": True,
-                "message": f"Tạo bản sao lưu thành công ({meta['zip_size_mb']} MB)",
-                "data": meta
+                "message": message,
+                "data": meta,
+                "drive": {
+                    "uploaded": bool(meta.get("drive_uploaded")),
+                    "file_id": meta.get("drive_file_id"),
+                    "web_view_link": meta.get("drive_link"),
+                    "remote_only": settings.GOOGLE_DRIVE_REMOTE_ONLY,
+                },
             }
         except Exception as e:
             logger.error(f"Lỗi khi đóng gói file backup zip: {e}")
@@ -148,6 +177,18 @@ class BackupService:
                     temp_db_copy.unlink(missing_ok=True)
                 except Exception:
                     pass
+
+    def _upload_to_drive(self, zip_path: Path) -> Optional[Dict[str, Any]]:
+        """Upload file zip lên Google Drive. Trả None nếu chưa cấu hình/kết nối, dict kết quả nếu đã thử."""
+        if not gdrive_service.is_configured():
+            return None
+        if not gdrive_service.is_connected():
+            return None
+        result = gdrive_service.upload_file(zip_path)
+        if result.get("success"):
+            return result
+        logger.warning(f"Upload Google Drive thất bại ({zip_path.name}): {result.get('error')}")
+        return result
 
     def list_backups(self) -> List[Dict[str, Any]]:
         """Lấy danh sách tất cả các bản sao lưu hiện có trong storage/backups/."""
@@ -193,18 +234,44 @@ class BackupService:
             except Exception as e:
                 logger.warning(f"Lỗi khi đọc thông tin backup {p.name}: {e}")
 
+        # Đánh dấu nguồn local để giao diện phân biệt với bản Drive
+        for item in results:
+            item.setdefault("source", "local")
+
+        # Gộp thêm bản sao lưu trên Google Drive (nếu đã kết nối)
+        if gdrive_service.is_connected():
+            results.extend(gdrive_service.list_files())
+
         # Sắp xếp mới nhất lên đầu
         results.sort(key=lambda x: x.get("created_timestamp", 0), reverse=True)
         return results
 
-    def restore_backup(self, filename: str) -> Dict[str, Any]:
+    def resolve_backup_zip(self, filename: str) -> Dict[str, Any]:
+        """Tìm file backup .zip: ưu tiên bản local, fallback tải về từ Google Drive (bản tạm)."""
+        clean_name = Path(filename).name
+        local_path = self.backups_dir / clean_name
+        if local_path.exists():
+            return {"success": True, "zip_path": local_path, "source": "local", "cleanup": False}
+
+        if gdrive_service.is_connected():
+            remote = gdrive_service.find_by_name(clean_name)
+            if remote:
+                temp_zip = self.backups_dir / f"_drive_tmp_{clean_name}"
+                if gdrive_service.download_file(remote["file_id"], temp_zip):
+                    return {"success": True, "zip_path": temp_zip, "source": "gdrive", "cleanup": True}
+                return {"success": False, "message": "Không tải được bản sao lưu từ Google Drive."}
+
+        return {"success": False, "message": "Không tìm thấy bản sao lưu (cả local lẫn Google Drive)."}
+
+    def restore_backup(self, filename: str = "", zip_path: Optional[Path] = None) -> Dict[str, Any]:
         """
-        Phục hồi hệ thống từ bản sao lưu đã có trong thư mục storage/backups/:
+        Phục hồi hệ thống từ bản sao lưu:
         1. Kiểm tra tính toàn vẹn của file zip và file CSDL bên trong.
         2. Tự động tạo 1 bản snapshot cứu hộ khẩn cấp của CSDL hiện tại.
         3. Ghi đè file attendance.db và các file cấu hình.
         """
-        zip_path = self.backups_dir / filename
+        if zip_path is None:
+            zip_path = self.backups_dir / Path(filename).name
         if not zip_path.exists():
             return {"success": False, "message": "File bản sao lưu không tồn tại."}
 
@@ -229,6 +296,15 @@ class BackupService:
             temp_extract.mkdir(parents=True, exist_ok=True)
 
             with zipfile.ZipFile(zip_path, "r") as zf:
+                # Chống Zip-Slip: chặn mọi member đường dẫn tuyệt đối hoặc ".../.." thoát ra ngoài thư mục giải nén
+                base_resolved = temp_extract.resolve()
+                for member in zf.infolist():
+                    member_path = Path(member.filename)
+                    if member_path.is_absolute() or ".." in member_path.parts:
+                        raise ValueError(f"Phát hiện đường dẫn bất thường trong bản sao lưu: {member.filename}")
+                    candidate = (base_resolved / member_path).resolve()
+                    if str(base_resolved) != str(candidate) and str(base_resolved) not in str(candidate):
+                        raise ValueError(f"Phát hiện Zip-Slip trong bản sao lưu: {member.filename}")
                 zf.extractall(temp_extract)
 
             extracted_db = temp_extract / "attendance.db"
@@ -275,30 +351,56 @@ class BackupService:
             return {"success": False, "message": f"Lỗi khi khôi phục dữ liệu: {str(e)}"}
 
     def delete_backup(self, filename: str) -> Dict[str, Any]:
-        """Xóa file bản sao lưu."""
+        """Xóa file bản sao lưu ở local (nếu có) và trên Google Drive (nếu kết nối)."""
         # Chặn path traversal
         clean_name = Path(filename).name
         target = self.backups_dir / clean_name
-        if not target.exists():
-            return {"success": False, "message": "File bản sao lưu không tồn tại."}
-        try:
-            target.unlink()
-            return {"success": True, "message": f"Đã xóa bản sao lưu {clean_name}"}
-        except Exception as e:
-            return {"success": False, "message": f"Lỗi xóa file: {str(e)}"}
+        deleted = False
+        messages = []
+
+        if target.exists():
+            try:
+                target.unlink()
+                deleted = True
+                messages.append(f"đã xóa bản local {clean_name}")
+            except Exception as e:
+                return {"success": False, "message": f"Lỗi xóa file: {str(e)}"}
+
+        if gdrive_service.is_connected():
+            remote = gdrive_service.find_by_name(clean_name)
+            if remote:
+                if gdrive_service.delete_file(remote["file_id"]):
+                    deleted = True
+                    messages.append("đã xóa bản trên Google Drive")
+                else:
+                    messages.append("KHÔNG xóa được bản trên Google Drive")
+
+        if deleted:
+            return {"success": True, "message": f"Đã xóa bản sao lưu {clean_name} ({', '.join(messages)})"}
+        return {"success": False, "message": "File bản sao lưu không tồn tại (cả local lẫn Google Drive)."}
 
     def cleanup_old_backups(self, keep_count: int = 15):
-        """Giữ lại tối đa keep_count bản sao lưu gần nhất, dọn các bản cũ hơn để tiết kiệm dung lượng đĩa."""
+        """Giữ lại tối đa keep_count bản sao lưu gần nhất ở local và Google Drive."""
+        # Dọn local
         backups = self.list_backups()
-        if len(backups) > keep_count:
-            to_delete = backups[keep_count:]
-            for b in to_delete:
+        local_backups = [b for b in backups if b.get("source") == "local"]
+        if len(local_backups) > keep_count:
+            for b in local_backups[keep_count:]:
                 try:
                     f = self.backups_dir / b["filename"]
                     if f.exists():
                         f.unlink()
-                        logger.info(f"Tự động dọn dẹp bản sao lưu cũ: {b['filename']}")
+                        logger.info(f"Tự động dọn dẹp bản sao lưu local cũ: {b['filename']}")
                 except Exception:
                     pass
+
+        # Dọn Google Drive
+        if gdrive_service.is_connected():
+            drive_files = gdrive_service.list_files()
+            drive_files.sort(key=lambda x: x.get("created_timestamp", 0), reverse=True)
+            if len(drive_files) > keep_count:
+                for b in drive_files[keep_count:]:
+                    if gdrive_service.delete_file(b["file_id"]):
+                        logger.info(f"Tự động dọn dẹp bản sao lưu Drive cũ: {b['filename']}")
 
 backup_service = BackupService()

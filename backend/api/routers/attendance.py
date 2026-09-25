@@ -2,24 +2,26 @@ import os
 import time
 from datetime import datetime
 from pathlib import Path
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from config.settings import settings
 from config.logging_config import logger
 from database.db_session import get_db
-from database.models import Classroom, AttendanceSession, AttendanceDetail
+from database.models import Classroom, AttendanceSession, AttendanceDetail, User
 from core.attendance_engine import attendance_engine
 from core.timezone_utils import get_now, get_today, get_today_str, get_current_time_str
 from starlette.concurrency import run_in_threadpool
-from backend.api.deps import get_current_user
+from backend.api.deps import get_current_user, require_admin
+from backend.api.security import check_rate_limit, client_ip
 
 router = APIRouter(prefix="/attendance", tags=["Attendance"], dependencies=[Depends(get_current_user)])
 
 @router.post("/trigger")
-async def trigger_attendance_scan():
-    """Kích hoạt quét điểm danh đồng loạt các lớp ngay lập tức mà không chặn event loop."""
+async def trigger_attendance_scan(request: Request, _admin: User = Depends(require_admin)):
+    """Kích hoạt quét điểm danh đồng loạt các lớp ngay lập tức mà không chặn event loop (chỉ admin)."""
+    check_rate_limit("action", f"trigger:{client_ip(request)}", limit=3, window_seconds=120)
     result = await run_in_threadpool(attendance_engine.run_daily_attendance, trigger_led=True)
     return result
 
@@ -165,8 +167,9 @@ async def download_excel(db: Session = Depends(get_db)):
     raise HTTPException(status_code=404, detail="Chưa có file báo cáo Excel nào được xuất.")
 
 @router.get("/history")
-async def get_attendance_history(limit: int = 1000, db: Session = Depends(get_db)):
-    """Lấy toàn bộ lịch sử điểm danh từ CSDL kèm đường dẫn ảnh đối chứng."""
+async def get_attendance_history(limit: int = 500, db: Session = Depends(get_db)):
+    """Lấy lịch sử điểm danh từ CSDL kèm đường dẫn ảnh đối chứng (giới hạn tối đa 500 bản ghi)."""
+    limit = max(1, min(limit, 500))
     details = (
         db.query(AttendanceDetail)
         .join(AttendanceSession)
@@ -346,8 +349,8 @@ async def get_7days_trend(db: Session = Depends(get_db)):
     
 @router.post("/clear-history")
 @router.delete("/clear-history")
-async def clear_attendance_history(db: Session = Depends(get_db)):
-    """Xóa toàn bộ lịch sử các phiên điểm danh để làm mới hệ thống."""
+async def clear_attendance_history(_admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    """Xóa toàn bộ lịch sử các phiên điểm danh để làm mới hệ thống (chỉ admin)."""
     try:
         db.query(AttendanceDetail).delete()
         num_sessions = db.query(AttendanceSession).delete()

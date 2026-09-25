@@ -11,8 +11,11 @@
  * ===================================================================
  */
 
-import { AttendanceAPI, showToast } from './api.js';
+import { AttendanceAPI, showToast, escapeHtml } from './api.js';
 import { ImageZoomViewer } from './shared/image-zoom-viewer.js';
+
+// Escape dữ liệu động khi chèn HTML (chống stored XSS)
+const esc = (v) => escapeHtml(v);
 
 // Global state
 let currentSession = null;
@@ -274,7 +277,7 @@ function showImgModal(src, title) {
     const modal = document.getElementById('imgModal');
     const zoomPercent = document.getElementById('imgZoomPercent');
 
-    if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-image" style="color: var(--primary);"></i> ${title}`;
+    if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-image" style="color: var(--primary);"></i> ${esc(title)}`;
     if (srcEl) srcEl.src = src;
 
     if (dashboardZoomViewer) dashboardZoomViewer.reset(false);
@@ -571,7 +574,7 @@ function renderAttendanceTable() {
         } else if (isPending) {
             statusBadge = `<span class="badge-pill pending"><i class="fa-regular fa-clock"></i> Chưa xử lý</span>`;
         } else if (d.notes && d.notes.includes('Vượt')) {
-            statusBadge = `<span class="badge-pill pending">${d.notes}</span>`;
+            statusBadge = `<span class="badge-pill pending">${esc(d.notes)}</span>`;
         } else {
             statusBadge = `<span class="badge-pill full"><i class="fa-regular fa-circle-check"></i> Đủ sĩ số</span>`;
         }
@@ -584,7 +587,7 @@ function renderAttendanceTable() {
         // Nút xem ảnh đối chứng ở cột Ảnh Đối Chứng
         const hasImages = Boolean(d.raw_image_path || d.annotated_image_path);
         const photoBtn = hasImages
-            ? `<button type="button" class="tbl-action-btn tbl-btn-outline btn-open-modal" data-id="${d.classroom_id}" title="Xem ảnh AI & đối chứng lớp ${d.class_name}">
+            ? `<button type="button" class="tbl-action-btn tbl-btn-outline btn-open-modal" data-id="${d.classroom_id}" title="Xem ảnh AI & đối chứng lớp ${esc(d.class_name)}">
                 <i class="fa-regular fa-image"></i> Ảnh AI
                </button>`
             : `<span class="tbl-text-empty"><i class="fa-regular fa-image"></i> Chưa có</span>`;
@@ -593,10 +596,10 @@ function renderAttendanceTable() {
             <tr class="${isAbsentRow ? 'row-absent-highlight' : ''}">
                 <td class="cell-stt" style="text-align: center; color: var(--text-muted); font-weight: 500;">${index + 1}</td>
                 <td class="cell-classroom">
-                    <strong style="color: var(--text-main); font-size: 0.95rem;">${d.class_name}</strong>
+                    <strong style="color: var(--text-main); font-size: 0.95rem;">${esc(d.class_name)}</strong>
                 </td>
                 <td class="cell-room">
-                    <span style="color: #64748b; font-size: 0.85rem;"><i class="fa-solid fa-door-open" style="margin-right: 4px; font-size: 0.75rem;"></i>${d.room_number || '--'}</span>
+                    <span style="color: #64748b; font-size: 0.85rem;"><i class="fa-solid fa-door-open" style="margin-right: 4px; font-size: 0.75rem;"></i>${esc(d.room_number || '--')}</span>
                 </td>
                 <td class="cell-standard" style="text-align: center; font-weight: 600;">${standard}</td>
                 <td class="cell-present" style="text-align: center; font-weight: 700; color: #16a34a;">${present}</td>
@@ -609,7 +612,7 @@ function renderAttendanceTable() {
                 <td class="cell-status" style="text-align: center;">${statusBadge}</td>
                 <td class="cell-ai-photo" style="text-align: center;">${photoBtn}</td>
                 <td class="cell-actions" style="text-align: center;">
-                    <button type="button" class="tbl-action-btn tbl-btn-primary btn-open-modal" data-id="${d.classroom_id}" title="Xem chi tiết lớp ${d.class_name}">
+                    <button type="button" class="tbl-action-btn tbl-btn-primary btn-open-modal" data-id="${d.classroom_id}" title="Xem chi tiết lớp ${esc(d.class_name)}">
                         <i class="fa-solid fa-arrow-up-right-from-square"></i> Chi tiết
                     </button>
                 </td>
@@ -654,7 +657,7 @@ function openImageModal(classroomId) {
     if (titleEl) titleEl.textContent = `Chi Tiết Điểm Danh & Đối Chứng - ${detail.class_name}`;
     if (subEl) {
         subEl.innerHTML = `
-            Phòng: <strong>${detail.room_number || '--'}</strong>
+            Phòng: <strong>${esc(detail.room_number || '--')}</strong>
             <span style="margin: 0 8px;">•</span>
             Sĩ số: <strong>${detail.standard_count}</strong>
             <span style="margin: 0 8px;">•</span>
@@ -670,9 +673,9 @@ function openImageModal(classroomId) {
     if (rawImgWrap) {
         if (detail.raw_image_path) {
             const rawUrl = `${detail.raw_image_path}&_t=${nowTs}`;
-            rawImgWrap.innerHTML = `<img id="modalRawImg" src="${rawUrl}" alt="Ảnh gốc camera ${detail.class_name}" style="max-height: 420px; width: 100%; object-fit: contain; border-radius: 8px; cursor: zoom-in;" title="Bấm vào ảnh để phóng to và soi bằng con lăn chuột">`;
+            rawImgWrap.innerHTML = `<img id="modalRawImg" src="${rawUrl}" alt="Ảnh gốc camera ${esc(detail.class_name)}" style="max-height: 420px; width: 100%; object-fit: contain; border-radius: 8px; cursor: zoom-in;" title="Bấm vào ảnh để phóng to và soi bằng con lăn chuột">`;
             document.getElementById('modalRawImg')?.addEventListener('click', () => {
-                showImgModal(rawUrl, `Ảnh Gốc Camera - ${detail.class_name}`);
+                showImgModal(rawUrl, `Ảnh Gốc Camera - ${esc(detail.class_name)}`);
             });
         } else {
             rawImgWrap.innerHTML = `
@@ -688,9 +691,9 @@ function openImageModal(classroomId) {
     if (annotatedImgWrap) {
         if (detail.annotated_image_path) {
             const annoUrl = `${detail.annotated_image_path}&_t=${nowTs}`;
-            annotatedImgWrap.innerHTML = `<img id="modalAnnotatedImg" src="${annoUrl}" alt="Ảnh AI khoanh vùng ${detail.class_name}" style="max-height: 420px; width: 100%; object-fit: contain; border-radius: 8px; cursor: zoom-in;" title="Bấm vào ảnh để phóng to và soi bằng con lăn chuột">`;
+            annotatedImgWrap.innerHTML = `<img id="modalAnnotatedImg" src="${annoUrl}" alt="Ảnh AI khoanh vùng ${esc(detail.class_name)}" style="max-height: 420px; width: 100%; object-fit: contain; border-radius: 8px; cursor: zoom-in;" title="Bấm vào ảnh để phóng to và soi bằng con lăn chuột">`;
             document.getElementById('modalAnnotatedImg')?.addEventListener('click', () => {
-                showImgModal(annoUrl, `Ảnh AI Đối Chứng - ${detail.class_name}`);
+                showImgModal(annoUrl, `Ảnh AI Đối Chứng - ${esc(detail.class_name)}`);
             });
         } else {
             annotatedImgWrap.innerHTML = `
@@ -1250,3 +1253,15 @@ if (document.readyState === 'loading') {
 } else {
     initDashboard();
 }
+
+// Tự động resize Chart.js mượt mà khi thu nhỏ hoặc phục hồi kích thước cửa sổ
+let dashboardWindowResizeTimer = null;
+window.addEventListener('resize', () => {
+    if (dashboardWindowResizeTimer) clearTimeout(dashboardWindowResizeTimer);
+    dashboardWindowResizeTimer = setTimeout(() => {
+        if (trendChartInstance) {
+            trendChartInstance.resize();
+        }
+    }, 150);
+});
+

@@ -120,6 +120,7 @@ export const AttendanceAPI = {
 // === CAMERA APIs ===
 export const CameraAPI = {
     getAll: () => fetchAPI('/api/cameras'),
+    getRawRtsp: (id) => fetchAPI(`/api/cameras/${id}/raw`),
     create: (data) => fetchAPI('/api/cameras', { method: 'POST', body: data }),
     update: (id, data) => fetchAPI(`/api/cameras/${id}`, { method: 'PUT', body: data }),
     delete: (id) => fetchAPI(`/api/cameras/${id}`, { method: 'DELETE' }),
@@ -190,6 +191,32 @@ export function getMediaUrl(path) {
     return `${API_BASE}${path}`;
 }
 
+// Kiểm tra xem người dùng hiện tại có phải quản trị viên không
+function currentRole() {
+    const u = window.currentUser;
+    if (u && u.role) return u.role;
+    try {
+        return localStorage.getItem('currentUserRole') || 'staff';
+    } catch (e) {
+        return 'staff';
+    }
+}
+
+export function isAdmin() {
+    return currentRole() === 'admin';
+}
+
+// Escape nội dung chèn vào HTML an toàn (chống stored/reflected XSS)
+export function escapeHtml(value) {
+    if (value === null || value === undefined) return '';
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 // Hiển thị Toast thông báo đẹp mắt
 export function showToast(message, type = 'info') {
     let container = document.getElementById('toast-container');
@@ -234,7 +261,8 @@ export function showToast(message, type = 'info') {
     toast.style.opacity = '0';
     toast.style.transform = 'translateY(-10px)';
 
-    toast.innerHTML = `<i class="fa-solid ${icons[type] || icons.info}"></i> <span>${message}</span>`;
+    toast.innerHTML = `<i class="fa-solid ${icons[type] || icons.info}"></i><span></span>`;
+    toast.querySelector('span').textContent = String(message ?? '');
     container.appendChild(toast);
 
     setTimeout(() => {
@@ -263,7 +291,14 @@ export const BackupAPI = {
             method: 'POST',
             body: formData
         });
-    }
+    },
+    gdriveStatus: () => fetchAPI('/api/backup/gdrive/status'),
+    gdriveAuthUrl: () => fetchAPI('/api/backup/gdrive/auth-url'),
+    gdriveConnect: (code, redirectUri = '') => fetchAPI('/api/backup/gdrive/connect', {
+        method: 'POST',
+        body: { code, redirect_uri: redirectUri }
+    }),
+    gdriveDisconnect: () => fetchAPI('/api/backup/gdrive/disconnect', { method: 'POST' })
 };
 
 // Luôn gắn các API lên window để đảm bảo tương thích toàn diện kể cả khi có cache cũ
@@ -278,5 +313,6 @@ if (typeof window !== 'undefined') {
     window.SystemAPI = SystemAPI;
     window.showToast = showToast;
     window.getMediaUrl = getMediaUrl;
+    window.escapeHtml = escapeHtml;
 }
 

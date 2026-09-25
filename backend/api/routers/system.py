@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends
 from config.settings import settings
-from backend.api.deps import get_current_user
+from backend.api.deps import get_current_user, require_admin
 
 router = APIRouter(tags=["System"])
 
 @router.get("/database/info")
-async def get_database_info(_user=Depends(get_current_user)):
-    """Lấy thông tin cấu hình Cơ Sở Dữ Liệu hiện tại (PostgreSQL / MySQL / SQLite)."""
+async def get_database_info(_admin=Depends(require_admin)):
+    """Lấy thông tin cấu hình Cơ Sở Dữ Liệu hiện tại (PostgreSQL / MySQL / SQLite) — chỉ admin.
+    Không trả về DATABASE_URL chi tiết để tránh lộ chuỗi kết nối chứa mật khẩu."""
     db_type = "SQLite"
     if "postgres" in settings.DATABASE_URL:
         db_type = "PostgreSQL"
@@ -14,7 +15,7 @@ async def get_database_info(_user=Depends(get_current_user)):
         db_type = "MySQL"
 
     return {
-        "database_url": settings.DATABASE_URL,
+        "database_url": None,  # Combo test: admin có thể lấy thật qua biến môi trường; không hiển thị trực tiếp
         "db_type": db_type,
         "status": "Kết nối thành công (Active)",
         "supported_drivers": ["sqlite3", "psycopg2 (PostgreSQL)", "pymysql (MySQL)"]
@@ -59,7 +60,7 @@ async def get_classrooms_media(_user=Depends(get_current_user)):
     return {"success": True, "data": data}
 
 @router.post("/system/bind-sample-media")
-async def bind_sample_media(media_type: str = "video", _user=Depends(get_current_user)):
+async def bind_sample_media(media_type: str = "video", _admin=Depends(require_admin)):
     """
     Tùy chọn tự động gán nguồn rtsp_url của 30 lớp trong CSDL trỏ tới file video 15s hoặc ảnh mẫu
     để người dùng có thể chạy thử nghiệm tính năng điểm danh toàn diện ngay mà không cần camera vật lý.

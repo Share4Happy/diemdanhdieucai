@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta, timezone
 from typing import Dict
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
 from backend.api.deps import get_current_user, require_admin
+from backend.api.security import check_rate_limit, client_ip
 from backend.schemas.auth_schemas import (
     ForgotPasswordRequest,
     LoginRequest,
@@ -22,9 +23,11 @@ from services.auth_service import (
     AUTH_COOKIE_NAME,
     RESET_TOKEN_HOURS,
     create_access_token,
+    decode_access_token_payload,
     generate_reset_token,
     hash_password,
     hash_reset_token,
+    revoke_token_jti,
     verify_password,
 )
 from services.notification import notification_service
@@ -47,10 +50,17 @@ def _set_auth_cookie(response: Response, token: str) -> None:
         value=token,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=settings.COOKIE_SECURE,
         max_age=int(settings.JWT_EXPIRE_HOURS * 3600),
         path="/",
     )
+
+
+def _prune_forgot_tracking() -> None:
+    """Không để dict _forgot_last_sent phình bộ nhớ."""
+    now = datetime.now(timezone.utc)
+    for k in [k for k, t in _forgot_last_sent.items() if now - t > timedelta(hours=1)]:
+        _forgot_last_sent.pop(k, None) if k in _forgot_last_sent else None
 
 
 def _user_public(user: User) -> dict:
@@ -58,8 +68,12 @@ def _user_public(user: User) -> dict:
 
 
 @router.post("/login")
-async def login(req: LoginRequest, response: Response, db: Session = Depends(get_db)):
+async def login(req: LoginRequest, request: Request, response: Response, db: Session = Depends(get_db)):
+    ip = client_ip(request)
+    # Rate-limit chống brute-force: 10 lần/IP trong 5 phút, 15 lần/email+IP trong 15 phút
+    check_rate_limit("login", f"ip:{ip}", limit=10, window_seconds=300)
     email = _normalize_email(req.email)
+    check_rate_limit("login", f"email:{email}:{ip}", limit=15, window_seconds=900)
     user = db.query(User).filter(User.email == email).first()
     if not user or not user.is_active or not verify_password(req.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Email hoặc mật khẩu không đúng")
@@ -69,7 +83,11 @@ async def login(req: LoginRequest, response: Response, db: Session = Depends(get
 
 
 @router.post("/logout")
-async def logout(response: Response, _user: User = Depends(get_current_user)):
+async def logout(request: Request, response: Response, _user: User = Depends(get_current_user)):
+    token = request.cookies.get(AUTH_COOKIE_NAME) or ""
+    payload = decode_access_token_payload(token) if token else None
+    if payload:
+        revoke_token_jti(payload.get("jti"), int(payload.get("exp", 0)))
     response.delete_cookie(key=AUTH_COOKIE_NAME, path="/")
     return {"success": True}
 
@@ -80,8 +98,13 @@ async def me(user: User = Depends(get_current_user)):
 
 
 @router.post("/forgot-password")
-async def forgot_password(req: ForgotPasswordRequest, db: Session = Depends(get_db)):
+async def forgot_password(req: ForgotPasswordRequest, request: Request, db: Session = Depends(get_db)):
     email = _normalize_email(req.email)
+    ip = client_ip(request)
+    # Rate-limit chống spam email đặt lại mật khẩu
+    check_rate_limit("forgot", f"ip:{ip}", limit=8, window_seconds=900)
+    check_rate_limit("forgot", f"email:{email}:{ip}", limit=3, window_seconds=900)
+    _prune_forgot_tracking()
     now = datetime.now(timezone.utc)
     last = _forgot_last_sent.get(email)
     if last and now - last < _FORGOT_COOLDOWN:
@@ -120,7 +143,8 @@ async def forgot_password(req: ForgotPasswordRequest, db: Session = Depends(get_
 
 
 @router.post("/reset-password")
-async def reset_password(req: ResetPasswordRequest, db: Session = Depends(get_db)):
+async def reset_password(req: ResetPasswordRequest, request: Request, db: Session = Depends(get_db)):
+    check_rate_limit("forgot", f"ip:{client_ip(request)}", limit=10, window_seconds=600)
     token_hash = hash_reset_token((req.token or "").strip())
     row = (
         db.query(PasswordResetToken)
