@@ -9,7 +9,11 @@ echo =========================================================================
 echo.
 
 set PYTHON_EXEC=python
-if exist "venv_cuda\Scripts\python.exe" (
+if exist "venv_cuda\Scripts\activate.bat" (
+    call "venv_cuda\Scripts\activate.bat"
+    set PYTHON_EXEC=python
+    echo [*] Phat hien va kich hoat moi truong GPU [venv_cuda] - NVIDIA CUDA RTX 3050!
+) else if exist "venv_cuda\Scripts\python.exe" (
     set PYTHON_EXEC=venv_cuda\Scripts\python.exe
     echo [*] Phat hien moi truong GPU [venv_cuda] - Kich hoat tang toc NVIDIA CUDA!
 )

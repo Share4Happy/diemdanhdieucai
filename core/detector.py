@@ -77,6 +77,23 @@ class StudentDetector:
                 except Exception as e:
                     logger.warning(f"Không thể nạp mô hình đầu học sinh từ {hp}: {e}")
 
+        # Tối ưu thiết bị phần cứng (Tự động kích hoạt GPU NVIDIA CUDA RTX 3050 và FP16 Half Precision)
+        import torch
+        self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        self.half = (self.device != "cpu")
+        logger.info(f"StudentDetector sử dụng thiết bị AI: {self.device} (Tăng tốc FP16 Half: {self.half})")
+
+        try:
+            self.model.to(self.device)
+        except Exception as e:
+            logger.debug(f"Không thể gọi model.to({self.device}): {e}")
+
+        if self.head_model is not None:
+            try:
+                self.head_model.to(self.device)
+            except Exception as e:
+                logger.debug(f"Không thể gọi head_model.to({self.device}): {e}")
+
     def _determine_target_classes_for_model(self, model: Any) -> List[int]:
         """Tự động nhận diện class id tương ứng với học sinh/người/đầu trong mô hình."""
         if not hasattr(model, "names") or not model.names:
@@ -205,6 +222,7 @@ class StudentDetector:
             conf=coco_conf,
             imgsz=imgsz,
             iou=settings.AI_IOU_THRESHOLD,
+            device=self.device,
             verbose=False
         )
         if res_global and len(res_global) > 0:
@@ -223,6 +241,7 @@ class StudentDetector:
                 conf=conf_threshold,
                 imgsz=imgsz,
                 iou=settings.AI_IOU_THRESHOLD,
+                device=self.device,
                 verbose=False
             )
             if res_head and len(res_head) > 0:
@@ -238,6 +257,9 @@ class StudentDetector:
             step_x, step_y = 900, 600
             tile_imgsz = 960
 
+            tile_list = []
+            tile_offsets = []
+
             for y in range(0, h, step_y):
                 for x in range(0, w, step_x):
                     x2 = min(w, x + tile_w)
@@ -246,15 +268,22 @@ class StudentDetector:
                     y1 = max(0, y2 - tile_h)
 
                     tile = image[y1:y2, x1:x2]
-                    res_tile = self.model.predict(
-                        source=tile,
-                        classes=self.target_class_ids,
-                        conf=coco_conf,
-                        imgsz=tile_imgsz,
-                        verbose=False
-                    )
+                    tile_list.append(tile)
+                    tile_offsets.append((x1, y1))
+
+            if tile_list:
+                # Quét hàng loạt (Batch Inference) trên GPU giúp tăng tốc gấp 4-6 lần
+                res_tiles = self.model.predict(
+                    source=tile_list,
+                    classes=self.target_class_ids,
+                    conf=coco_conf,
+                    imgsz=tile_imgsz,
+                    device=self.device,
+                    verbose=False
+                )
+                for res_tile, (x1, y1) in zip(res_tiles, tile_offsets):
                     if res_tile and len(res_tile) > 0:
-                        for b in res_tile[0].boxes:
+                        for b in res_tile.boxes:
                             bx1, by1, bx2, by2 = [int(v) for v in b.xyxy[0].cpu().numpy()]
                             all_boxes.append([bx1 + x1, by1 + y1, bx2 + x1, by2 + y1])
                             all_confs.append(float(b.conf[0].cpu().numpy()))

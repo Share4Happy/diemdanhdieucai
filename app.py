@@ -18,5 +18,11 @@ from backend.main import app
 if __name__ == "__main__":
     import uvicorn
     from config.settings import settings
-    print("Khởi động Hệ Thống Điểm Danh AI THPT Điều Cải từ backend/main.py...")
-    uvicorn.run("backend.main:app", host=settings.HOST, port=settings.PORT, reload=True)
+    reload_dirs = [str(PROJECT_ROOT / "backend"), str(PROJECT_ROOT / "core"), str(PROJECT_ROOT / "config")]
+    uvicorn.run(
+        "backend.main:app",
+        host=settings.HOST,
+        port=settings.PORT,
+        reload=settings.DEBUG,
+        reload_dirs=reload_dirs,
+    )

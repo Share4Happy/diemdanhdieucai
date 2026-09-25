@@ -979,8 +979,8 @@ export function renderMatrixWall() {
 
         card.innerHTML = `
             <div class="matrix-card-screen">
-                <img src="${snapUrl}" class="matrix-thumb-img" alt="${cam.name}" 
-                     onerror="this.onerror=null; this.src='dataset/samples/classroom_sample.jpg';">
+                <img src="${snapUrl}" class="matrix-thumb-img" alt="${cam.name}" loading="lazy" 
+                     onerror="this.onerror=null; this.src='/dataset/samples/classroom_sample.jpg';">
                 
                 <!-- Ô chọn phòng -->
                 <div class="matrix-card-select" title="Chọn phòng này để thao tác">

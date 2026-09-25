@@ -23,6 +23,34 @@ class RelayService:
     3. Trả về tự động: Sau khi hoàn tất phiên điểm danh, đưa camera về chế độ Tự động (Auto).
     """
 
+    _reachability_cache: Dict[str, Tuple[bool, float]] = {}
+
+    @classmethod
+    def is_host_online(cls, host: str, port: int = 80, probe_timeout: float = 0.20) -> bool:
+        """Kiểm tra nhanh kết nối TCP (Fast TCP Socket Probe) với bộ nhớ đệm 10 giây để tránh timeout lâu khi camera ngắt kết nối."""
+        if not host:
+            return False
+        if any(k in host.lower() for k in ["mock", "test", "demo", "example"]):
+            return False
+        
+        now = time.time()
+        cache_key = f"{host}:{port}"
+        if cache_key in cls._reachability_cache:
+            status, ts = cls._reachability_cache[cache_key]
+            if now - ts < 10.0:
+                return status
+
+        import socket
+        is_online = False
+        try:
+            with socket.create_connection((host, int(port)), timeout=probe_timeout):
+                is_online = True
+        except Exception:
+            is_online = False
+
+        cls._reachability_cache[cache_key] = (is_online, now)
+        return is_online
+
     def __init__(self):
         self.relay_type = settings.RELAY_TYPE
         self.default_host = settings.RELAY_HOST
@@ -214,6 +242,10 @@ class RelayService:
         brand = info["brand"]
         http_port = info["http_port"]
 
+        # Kiểm tra nhanh kết nối TCP tới thiết bị, nếu không online thì bỏ qua ngay để không nghẽn timeout
+        if not self.is_host_online(host, port=http_port):
+            return False
+
         # Ánh xạ giá trị ONVIF IrCutFilter theo đặc tả chuẩn quốc tế (ONVIF Imaging Service):
         # "OFF" = Ngắt kính lọc hồng ngoại -> Kính lọc mở cho tia hồng ngoại vào -> BẬT ĐÈN HỒNG NGOẠI (Night Mode / B&W)
         # "ON"  = Bật kính lọc hồng ngoại -> Kính lọc chặn tia hồng ngoại -> CHẾ ĐỘ BAN NGÀY (Day Mode / ẢNH MÀU 100%)
@@ -365,6 +397,22 @@ class RelayService:
         """
         if not classrooms:
             return {"success": True, "count": 0}
+
+        # Kiểm tra nhanh: Nếu toàn bộ camera mạng đều offline (chưa cắm NVR thật) -> Bỏ qua ngay để tiết kiệm ~65s
+        has_any_network_online = False
+        for cls in classrooms:
+            info = self.parse_camera_info(cls)
+            if info.get("is_network_camera") and info.get("host"):
+                if self.is_host_online(info["host"], port=info.get("http_port", 80)):
+                    has_any_network_online = True
+                    break
+
+        if not has_any_network_online:
+            logger.info(
+                f"[CAMERA-SIGNAL]: Toàn bộ {len(classrooms)} camera IP/NVR hiện chưa online (IP không phản hồi TCP). "
+                f"Tự động bỏ qua chu trình đèn để chụp và quét AI ngay lập tức (Tiết kiệm ~65s)!"
+            )
+            return {"success": True, "classes_count": len(classrooms), "skipped_offline": True}
 
         logger.info(
             f"=== [CAMERA-SIGNAL]: BẮT ĐẦU PHÁT TÍN HIỆU ĐÈN HỒNG NGOẠI TRÊN {len(classrooms)} CAMERA "

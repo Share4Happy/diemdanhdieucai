@@ -1,5 +1,6 @@
 import os
 import time
+import asyncio
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict, Any
@@ -51,8 +52,8 @@ router = APIRouter(prefix="/attendance", tags=["Attendance"], dependencies=[Depe
 
 @router.post("/trigger")
 async def trigger_attendance_scan():
-    """Kích hoạt quét điểm danh đồng loạt 30 lớp ngay lập tức."""
-    result = attendance_engine.run_daily_attendance(trigger_led=True)
+    """Kích hoạt quét điểm danh đồng loạt 30 lớp ngay lập tức trong luồng riêng biệt (Worker Thread), không chặn Uvicorn Event Loop."""
+    result = await asyncio.to_thread(attendance_engine.run_daily_attendance, trigger_led=True)
     return result
 
 @router.get("/latest")
