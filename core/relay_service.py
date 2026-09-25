@@ -412,7 +412,13 @@ class RelayService:
                 f"[CAMERA-SIGNAL]: Toàn bộ {len(classrooms)} camera IP/NVR hiện chưa online (IP không phản hồi TCP). "
                 f"Tự động bỏ qua chu trình đèn để chụp và quét AI ngay lập tức (Tiết kiệm ~65s)!"
             )
-            return {"success": True, "classes_count": len(classrooms), "skipped_offline": True}
+            return {
+                "success": True,
+                "classes_count": len(classrooms),
+                "skipped_offline": True,
+                "signal_seconds": 0,
+                "capture_color": capture_color,
+            }
 
         logger.info(
             f"=== [CAMERA-SIGNAL]: BẮT ĐẦU PHÁT TÍN HIỆU ĐÈN HỒNG NGOẠI TRÊN {len(classrooms)} CAMERA "
