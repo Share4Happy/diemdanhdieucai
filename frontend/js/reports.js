@@ -36,7 +36,17 @@ let allBackupsList = [];
 function extractGradeFromClassName(className) {
     if (!className) return '';
     const match = String(className).match(/\b(?:lớp\s*)?(10|11|12)(?=[a-zA-Z\s]|$)/i);
-    return match ? match[1] : '';
+    if (match) return match[1];
+
+    // Ánh xạ Camera 1-30: Camera 1-10 -> Khối 10, Camera 11-20 -> Khối 11, Camera 21-30 -> Khối 12
+    const matchCam = String(className).match(/\b(?:camera|cam)\s*(\d+)\b/i);
+    if (matchCam) {
+        const camNum = parseInt(matchCam[1]);
+        if (camNum >= 1 && camNum <= 10) return '10';
+        if (camNum >= 11 && camNum <= 20) return '11';
+        if (camNum >= 21 && camNum <= 30) return '12';
+    }
+    return '';
 }
 
 document.addEventListener('DOMContentLoaded', () => {

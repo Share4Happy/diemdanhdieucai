@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 > nul
 title FRONTEND UI SERVER - THPT DIEU CAI (PORT 3000)
-cd /d "%~dp0"
+cd /d "%~dp0\.."
 color 0E
 echo =========================================================================
 echo    PHÂN HỆ FRONTEND GIAO DIỆN - HỆ THỐNG ĐIỂM DANH AI THPT ĐIỀU CẢI

@@ -120,6 +120,11 @@ class Settings(BaseModel):
     DATA_AUTO_CLEANUP_ENABLED: bool = True
     DATA_CLEANUP_EXCEL_ENABLED: bool = True
 
+    # Authentication & Security
+    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "truong-thpt-dieu-cai-secret-key-2026-attendance-ai-secured")
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 # 24 giờ
+
 
 settings = Settings()
 

@@ -72,11 +72,18 @@ class CORSStaticFiles(StaticFiles):
         response.headers["Access-Control-Allow-Origin"] = "*"
         response.headers["Access-Control-Allow-Methods"] = "GET, HEAD, OPTIONS"
         response.headers["Access-Control-Allow-Headers"] = "*"
+        if any(path.endswith(ext) for ext in [".js", ".html", ".css"]):
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
         return response
 
 # Mount dữ liệu tĩnh (Lưu trữ ảnh và frame mẫu)
 app.mount("/storage", CORSStaticFiles(directory=str(settings.STORAGE_DIR)), name="storage")
 app.mount("/dataset", CORSStaticFiles(directory=str(settings.BASE_DIR / "dataset")), name="dataset")
+camera_dir = settings.BASE_DIR / "camera"
+if camera_dir.exists():
+    app.mount("/camera", CORSStaticFiles(directory=str(camera_dir)), name="camera")
 
 # Hỗ trợ phục vụ Frontend tĩnh trực tiếp (cho kịch bản 1-click hoặc sản xuất)
 frontend_dir = PROJECT_ROOT / "frontend"

@@ -2,6 +2,7 @@ import os
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
@@ -13,6 +14,38 @@ from database.models import Classroom, AttendanceSession, AttendanceDetail
 from core.attendance_engine import attendance_engine
 from core.timezone_utils import get_now, get_today, get_today_str, get_current_time_str
 from backend.api.deps import get_current_user
+
+def format_storage_url(file_path: Optional[str], add_timestamp: bool = True) -> str:
+    """Chuyển đổi đường dẫn file cục bộ thành URL web /storage/... chuẩn xác, hỗ trợ thư mục đa tầng và chống cache."""
+    if not file_path:
+        return ""
+    s = str(file_path).replace("\\", "/").strip()
+    url = ""
+    if s.startswith("/storage/"):
+        url = s
+    elif s.startswith("storage/"):
+        url = "/" + s
+    else:
+        p = Path(file_path)
+        try:
+            rel = p.relative_to(settings.STORAGE_DIR).as_posix()
+            url = f"/storage/{rel}"
+        except Exception:
+            storage_str = str(settings.STORAGE_DIR).replace("\\", "/").rstrip("/")
+            if s.startswith(storage_str):
+                sub = s[len(storage_str):].lstrip("/")
+                url = f"/storage/{sub}"
+            else:
+                url = s
+
+    if add_timestamp:
+        p = Path(file_path)
+        try:
+            mtime = int(p.stat().st_mtime * 1000) if p.exists() else int(time.time() * 1000)
+            url += f"{'&' if '?' in url else '?'}t={mtime}"
+        except Exception:
+            pass
+    return url
 
 router = APIRouter(prefix="/attendance", tags=["Attendance"], dependencies=[Depends(get_current_user)])
 
@@ -48,17 +81,8 @@ async def get_latest_attendance(db: Session = Depends(get_db)):
             cname = c.name or f"Lớp {c.id}"
             room = c.room_number or ""
 
-            raw_url = ""
-            if d.raw_image_path:
-                p = Path(d.raw_image_path)
-                mtime = int(p.stat().st_mtime * 1000) if p.exists() else now_ts
-                raw_url = f"/storage/captures/{p.parent.name}/{p.name}?t={mtime}"
-
-            annotated_url = ""
-            if d.annotated_image_path:
-                p = Path(d.annotated_image_path)
-                mtime = int(p.stat().st_mtime * 1000) if p.exists() else now_ts
-                annotated_url = f"/storage/annotated/{p.parent.name}/{p.name}?t={mtime}"
+            raw_url = format_storage_url(d.raw_image_path, add_timestamp=True)
+            annotated_url = format_storage_url(d.annotated_image_path, add_timestamp=True)
 
             details_data.append({
                 "classroom_id": c.id,
@@ -180,15 +204,8 @@ async def get_attendance_history(limit: int = 1000, db: Session = Depends(get_db
         s = d.session
         c = d.classroom
 
-        raw_url = ""
-        if d.raw_image_path and os.path.exists(d.raw_image_path):
-            p = Path(d.raw_image_path)
-            raw_url = f"/storage/captures/{p.parent.name}/{p.name}"
-
-        annotated_url = ""
-        if d.annotated_image_path and os.path.exists(d.annotated_image_path):
-            p = Path(d.annotated_image_path)
-            annotated_url = f"/storage/annotated/{p.parent.name}/{p.name}"
+        raw_url = format_storage_url(d.raw_image_path, add_timestamp=True)
+        annotated_url = format_storage_url(d.annotated_image_path, add_timestamp=True)
 
         records.append({
             "id": d.id,

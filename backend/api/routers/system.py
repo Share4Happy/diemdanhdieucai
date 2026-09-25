@@ -77,6 +77,13 @@ async def bind_sample_media(media_type: str = "video", _user=Depends(get_current
             if class_folder.exists():
                 if media_type == "image":
                     target_file = class_folder / "image_1.jpg"
+                elif media_type == "camera":
+                    ch_num = c.channel_number or 1
+                    target_cam = settings.BASE_DIR / "camera" / f"{ch_num}.JPG"
+                    if target_cam.exists():
+                        c.rtsp_url = f"camera/{ch_num}.JPG"
+                        updated_count += 1
+                        continue
                 else:
                     target_file = class_folder / "video_15s.mp4"
                 
@@ -93,6 +100,69 @@ async def bind_sample_media(media_type: str = "video", _user=Depends(get_current
     except Exception as e:
         db.rollback()
         return {"success": False, "message": f"Lỗi khi liên kết nguồn: {str(e)}"}
+    finally:
+        db.close()
+
+
+@router.post("/system/reset-to-camera-photos")
+async def reset_to_camera_photos(_user=Depends(get_current_user)):
+    """Khởi tạo sạch 30 camera từ 1 đến 30 tương ứng 30 ảnh trong thư mục camera/."""
+    import json
+    import shutil
+    from database.db_session import SessionLocal
+    from database.models import Classroom, ROIPolygon, AttendanceDetail
+
+    db = SessionLocal()
+    try:
+        db.query(AttendanceDetail).delete()
+        db.query(ROIPolygon).delete()
+        db.query(Classroom).delete()
+        db.commit()
+
+        standard_counts = [
+            42, 40, 41, 43, 39, 42, 40, 41, 40, 42,
+            44, 43, 42, 40, 41, 42, 39, 41, 40, 43,
+            45, 44, 42, 43, 41, 40, 42, 41, 40, 42
+        ]
+
+        latest_dir = settings.CAPTURES_DIR / "latest"
+        latest_dir.mkdir(parents=True, exist_ok=True)
+        default_green_zone = [[100, 200], [1820, 200], [1870, 1060], [50, 1060]]
+        default_red_zone = []
+
+        for i in range(1, 31):
+            cls = Classroom(
+                code=f"CAM_{i:02d}",
+                name=f"Camera {i}",
+                room_number=f"Phòng {100 + i}",
+                standard_count=standard_counts[i - 1],
+                rtsp_url=f"camera/{i}.JPG",
+                relay_ip="192.168.10.200",
+                is_active=True,
+                channel_number=i
+            )
+            db.add(cls)
+            db.flush()
+
+            roi = ROIPolygon(
+                classroom_id=cls.id,
+                red_zone_json=json.dumps(default_red_zone),
+                green_zone_json=json.dumps(default_green_zone),
+                image_width=1920,
+                image_height=1088
+            )
+            db.add(roi)
+
+            src_img = settings.BASE_DIR / "camera" / f"{i}.JPG"
+            dst_img = latest_dir / f"Lop_{cls.id}.jpg"
+            if src_img.exists():
+                shutil.copy2(src_img, dst_img)
+
+        db.commit()
+        return {"success": True, "message": "Đã thiết lập thành công 30 camera tương ứng 30 ảnh trong thư mục camera!"}
+    except Exception as e:
+        db.rollback()
+        return {"success": False, "message": f"Lỗi: {str(e)}"}
     finally:
         db.close()
 

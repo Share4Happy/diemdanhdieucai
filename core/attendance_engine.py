@@ -73,7 +73,13 @@ class AttendanceEngine:
             db.commit()
             db.refresh(new_session)
 
-            # 2. Chụp ảnh đồng loạt từ các camera (ẢNH MÀU 100%)
+            # 2. Tạo thư mục lưu trữ độc lập cho phiên điểm danh này (chống ghi đè giữa các phiên trong ngày)
+            session_captures_folder = settings.CAPTURES_DIR / date_str / session_code
+            session_captures_folder.mkdir(parents=True, exist_ok=True)
+
+            session_annotated_folder = settings.ANNOTATED_DIR / date_str / session_code
+            session_annotated_folder.mkdir(parents=True, exist_ok=True)
+
             cls_data_list = [
                 {
                     "id": c.id,
@@ -81,15 +87,15 @@ class AttendanceEngine:
                     "rtsp_url": c.rtsp_url
                 } for c in classrooms
             ]
-            capture_results = rtsp_client.capture_all_classrooms(cls_data_list, date_str=date_str)
+            capture_results = rtsp_client.capture_all_classrooms(
+                cls_data_list,
+                date_str=date_str,
+                target_folder=session_captures_folder
+            )
 
             # 3. Tự động trả các camera về chế độ Tự Động (Auto) sau khi đã chụp xong
             if trigger_led:
                 relay_service.restore_classrooms_auto(classrooms)
-
-            # Thư mục lưu ảnh đối chứng
-            annotated_folder = settings.ANNOTATED_DIR / date_str
-            annotated_folder.mkdir(parents=True, exist_ok=True)
 
             total_standard = 0
             total_present = 0
@@ -131,9 +137,9 @@ class AttendanceEngine:
                         roi_dims=roi_dims
                     )
 
-                    # Lưu ảnh đối chứng đã vẽ bounding box
+                    # Lưu ảnh đối chứng đã vẽ bounding box vào thư mục riêng của phiên này
                     annotated_filename = f"Lop_{c_id}_result.jpg"
-                    annotated_filepath = annotated_folder / annotated_filename
+                    annotated_filepath = session_annotated_folder / annotated_filename
                     cv2.imwrite(str(annotated_filepath), annotated_img)
                     annotated_path = str(annotated_filepath)
 

@@ -21,11 +21,16 @@ let selectedCameraIds = new Set();
 function initApp() {
     loadCameras();
     loadAvailableWebcams();
+    loadCameraSourceStatus();
     initImageControls(); // Initialize image viewer controls
+    initSourceManagerEvents();
 
     // Event listeners
     const btnRefresh = document.getElementById('btnRefresh');
-    if (btnRefresh) btnRefresh.addEventListener('click', loadCameras);
+    if (btnRefresh) btnRefresh.addEventListener('click', () => {
+        loadCameras();
+        loadCameraSourceStatus();
+    });
 
     // Quick refresh button in banner
     const btnRefreshQuick = document.getElementById('btnRefreshQuick');
@@ -1598,7 +1603,431 @@ export async function saveNvrImport() {
     }
 }
 
-// Expose to window for inline attributes if needed
+// =========================================================================
+// CHỨC NĂNG: QUẢN LÝ NGUỒN CAMERA & BÀN GIAO ĐẦU GHI NVR
+// =========================================================================
+
+export async function loadCameraSourceStatus(checkFolder = null) {
+    const pill = document.getElementById('cameraSourcePill');
+    const txtMode = document.getElementById('txtSourceMode');
+
+    try {
+        const inputFolder = document.getElementById('mockFolderInput');
+        const folderToInspect = checkFolder !== null ? checkFolder : (inputFolder ? inputFolder.value.trim() : '');
+        const res = await CameraAPI.getSourceStatus(folderToInspect);
+        const mode = res.current_mode;
+        
+        // Cập nhật pill nếu còn tồn tại trên giao diện
+        if (pill && txtMode) {
+            if (mode === 'REAL_NVR') {
+                pill.style.background = '#dcfce7';
+                pill.style.color = '#15803d';
+                pill.style.borderColor = '#86efac';
+                pill.querySelector('.pulse-dot').style.background = '#16a34a';
+                txtMode.textContent = `🟢 NVR Thật (${res.rtsp_cameras_count} Cam)`;
+            } else if (mode === 'MOCK_IMAGE') {
+                pill.style.background = '#fef3c7';
+                pill.style.color = '#b45309';
+                pill.style.borderColor = '#fde68a';
+                pill.querySelector('.pulse-dot').style.background = '#d97706';
+                txtMode.textContent = `🧪 Ảnh Test (${res.mock_cameras_count} Cam)`;
+            } else if (mode === 'WEBCAM') {
+                pill.style.background = '#e0f2fe';
+                pill.style.color = '#0369a1';
+                pill.style.borderColor = '#bae6fd';
+                pill.querySelector('.pulse-dot').style.background = '#0284c7';
+                txtMode.textContent = `📷 Webcam (${res.webcam_cameras_count} Cam)`;
+            } else {
+                pill.style.background = '#f1f5f9';
+                pill.style.color = '#475569';
+                pill.style.borderColor = '#cbd5e1';
+                pill.querySelector('.pulse-dot').style.background = '#64748b';
+                txtMode.textContent = `⚙️ Nguồn: ${res.mode_display}`;
+            }
+        }
+
+        // Cập nhật thông tin trong Modal nếu đang mở
+        const curText = document.getElementById('sourceStatusCurrentText');
+        const badge = document.getElementById('sourceStatusBadge');
+        const total = document.getElementById('sourceStatusTotal');
+        const mockCount = document.getElementById('sourceStatusMockCount');
+        const rtspCount = document.getElementById('sourceStatusRtspCount');
+
+        if (curText) curText.textContent = res.mode_display;
+        if (badge) {
+            badge.textContent = mode;
+            badge.style.background = mode === 'REAL_NVR' ? '#dcfce7' : '#fef3c7';
+            badge.style.color = mode === 'REAL_NVR' ? '#15803d' : '#b45309';
+        }
+        if (total) total.textContent = `${res.total_cameras} camera`;
+        if (mockCount) mockCount.textContent = `${res.folder_details?.images_count || res.mock_cameras_count} ảnh`;
+        if (rtspCount) rtspCount.textContent = `${res.rtsp_cameras_count} kênh`;
+
+        // Điền thư mục đang hoạt động vào ô input nếu ô input đang rỗng
+        if (inputFolder && (!inputFolder.value || inputFolder.value === 'camera') && res.active_mock_folder) {
+            inputFolder.value = res.active_mock_folder;
+        }
+
+        // Render chi tiết thư mục
+        renderMockFolderDetails(res.folder_details);
+
+        // Tự động điền thông số NVR gợi ý
+        if (res.nvr_config) {
+            const inputIp = document.getElementById('deployNvrIp');
+            const inputPort = document.getElementById('deployNvrPort');
+            const inputUser = document.getElementById('deployNvrUser');
+            if (inputIp && res.nvr_config.host) inputIp.value = res.nvr_config.host;
+            if (inputPort && res.nvr_config.port) inputPort.value = res.nvr_config.port;
+            if (inputUser && res.nvr_config.user) inputUser.value = res.nvr_config.user;
+        }
+
+    } catch (err) {
+        console.warn('Lỗi lấy trạng thái nguồn camera:', err);
+    }
+}
+
+function renderMockFolderDetails(details) {
+    const mockDetails = document.getElementById('mockFolderDetails');
+    if (!mockDetails) return;
+
+    if (!details) {
+        mockDetails.innerHTML = `<span style="color: #64748b;">Chưa kiểm tra thư mục.</span>`;
+        return;
+    }
+
+    if (details.exists && details.images_count > 0) {
+        const samplesHtml = (details.sample_files || []).slice(0, 6)
+            .map(f => `<code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 0.76rem; color: #0f172a;">${f}</code>`)
+            .join(' ');
+        mockDetails.innerHTML = `
+            <div style="color: #16a34a; font-weight: 700; margin-bottom: 4px;">
+                <i class="fa-solid fa-circle-check"></i> ${details.message}
+            </div>
+            <div style="font-size: 0.78rem; color: #475569; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                <span>File mẫu tìm thấy:</span> ${samplesHtml} ${details.images_count > 6 ? `<span style="color: #64748b;">(+${details.images_count - 6} file khác)</span>` : ''}
+            </div>
+        `;
+    } else if (details.exists) {
+        mockDetails.innerHTML = `
+            <div style="color: #b45309; font-weight: 700;">
+                <i class="fa-solid fa-triangle-exclamation"></i> ${details.message}
+            </div>
+            <div style="font-size: 0.78rem; color: #78350f; margin-top: 2px;">
+                Vui lòng copy file ảnh camera (.jpg, .png) vào thư mục này để AI nhận diện.
+            </div>
+        `;
+    } else {
+        mockDetails.innerHTML = `
+            <div style="color: #dc2626; font-weight: 700;">
+                <i class="fa-solid fa-circle-xmark"></i> ${details.message}
+            </div>
+            <div style="font-size: 0.78rem; color: #991b1b; margin-top: 2px;">
+                Đường dẫn không tồn tại. Vui lòng kiểm tra lại chính xác tên thư mục.
+            </div>
+        `;
+    }
+}
+
+export async function inspectMockFolder(folderPath = null) {
+    const input = document.getElementById('mockFolderInput');
+    const folder = folderPath !== null ? folderPath : (input ? input.value.trim() : 'camera');
+    const mockDetails = document.getElementById('mockFolderDetails');
+
+    if (mockDetails) {
+        mockDetails.innerHTML = `<span style="color: #64748b;"><i class="fa-solid fa-circle-notch fa-spin"></i> Đang kiểm tra thư mục: <code>${folder}</code>...</span>`;
+    }
+
+    try {
+        const res = await CameraAPI.inspectFolder(folder || 'camera');
+        renderMockFolderDetails(res);
+    } catch (err) {
+        if (mockDetails) {
+            mockDetails.innerHTML = `<span style="color: #dc2626;"><i class="fa-solid fa-triangle-exclamation"></i> Lỗi kiểm tra: ${err.message || err}</span>`;
+        }
+    }
+}
+
+export function openSourceManagerModal() {
+    loadCameraSourceStatus();
+    const modal = document.getElementById('modalSourceManager');
+    if (modal) modal.classList.add('active');
+}
+
+export function closeSourceManagerModal() {
+    const modal = document.getElementById('modalSourceManager');
+    if (modal) modal.classList.remove('active');
+}
+
+// =========================================================================
+// CÁC HÀM XỬ LÝ NGUỒN CAMERA & BÀN GIAO NVR (TOÀN CỤC)
+// =========================================================================
+
+export function switchSourceManagerTab(tab) {
+    const tabNvr = document.getElementById('tabSourceNvr');
+    const tabMock = document.getElementById('tabSourceMock');
+    const panelNvr = document.getElementById('panelSourceNvr');
+    const panelMock = document.getElementById('panelSourceMock');
+
+    if (tab === 'mock') {
+        if (tabMock) tabMock.classList.add('active');
+        if (tabNvr) tabNvr.classList.remove('active');
+        if (panelMock) panelMock.style.display = 'block';
+        if (panelNvr) panelNvr.style.display = 'none';
+        inspectMockFolder();
+    } else {
+        if (tabNvr) tabNvr.classList.add('active');
+        if (tabMock) tabMock.classList.remove('active');
+        if (panelNvr) panelNvr.style.display = 'block';
+        if (panelMock) panelMock.style.display = 'none';
+    }
+}
+
+export function browseMockFolder() {
+    const folderPicker = document.getElementById('folderPickerInput');
+    if (folderPicker) {
+        folderPicker.click();
+    }
+}
+
+export function selectMockPreset(folder) {
+    const inputMockFolder = document.getElementById('mockFolderInput');
+    if (inputMockFolder && folder) {
+        inputMockFolder.value = folder;
+        inspectMockFolder(folder);
+    }
+}
+
+export async function applyMockFolder() {
+    const btnApplyMock = document.getElementById('btnApplyMockDeploy');
+    const inputMock = document.getElementById('mockFolderInput');
+    const folderPath = inputMock ? inputMock.value.trim() : 'camera';
+
+    console.log('[CameraSourceManager]: Đang áp dụng thư mục:', folderPath);
+
+    if (btnApplyMock) {
+        btnApplyMock.disabled = true;
+        btnApplyMock.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Đang áp dụng thư mục ảnh...';
+    }
+
+    try {
+        const res = await CameraAPI.switchSourceMode({
+            mode: 'MOCK_IMAGE',
+            mock_folder: folderPath || 'camera',
+            channel_start: 1
+        });
+
+        if (res && res.success) {
+            showToast(res.message || 'Đã áp dụng thư mục ảnh thành công!', 'success');
+            closeSourceManagerModal();
+            await loadCameras();
+            await loadCameraSourceStatus();
+        } else {
+            alert('Lỗi: ' + (res?.message || res?.detail || 'Không thể áp dụng thư mục'));
+        }
+    } catch (err) {
+        console.error('Lỗi kích hoạt ảnh test:', err);
+        showToast('Lỗi: ' + (err.message || err), 'danger');
+    } finally {
+        if (btnApplyMock) {
+            btnApplyMock.disabled = false;
+            btnApplyMock.innerHTML = '<i class="fa-solid fa-flask"></i> Áp Dụng Thư Mục Này Cho Camera (1 - 30)';
+        }
+    }
+}
+
+export async function deleteMockFolder() {
+    const btnDeleteMock = document.getElementById('btnDeleteMockFolder');
+    const inputMock = document.getElementById('mockFolderInput');
+    const folderPath = inputMock ? inputMock.value.trim() : 'camera';
+
+    let confirmed = false;
+    if (window.ConfirmationDialog && typeof window.ConfirmationDialog.confirm === 'function') {
+        confirmed = await window.ConfirmationDialog.confirm({
+            title: 'Xóa Thư Mục Ảnh Test',
+            message: `Bạn có chắc chắn muốn XÓA BỎ hoàn toàn thư mục '${folderPath}' không?\n\n(Chỉ thực hiện khi đã chuyển sang đầu ghi NVR thật hoặc không cần dùng ảnh test nữa)`,
+            confirmText: 'Xóa Vĩnh Viễn',
+            confirmClass: 'btn-danger'
+        });
+    } else {
+        confirmed = window.confirm(`⚠️ Bạn có chắc chắn muốn XÓA BỎ thư mục '${folderPath}' không?`);
+    }
+
+    if (!confirmed) return;
+
+    if (btnDeleteMock) {
+        btnDeleteMock.disabled = true;
+        btnDeleteMock.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Đang xóa...';
+    }
+
+    try {
+        const res = await CameraAPI.cleanupTestImages(folderPath || 'camera');
+        if (res && res.success) {
+            showToast(res.message || `Đã xóa thư mục ${folderPath}`, 'success');
+            await inspectMockFolder(folderPath);
+            await loadCameraSourceStatus();
+        } else {
+            alert('Lỗi: ' + (res?.message || 'Không thể xóa thư mục'));
+        }
+    } catch (err) {
+        console.error('Lỗi xóa thư mục ảnh:', err);
+        showToast('Lỗi: ' + (err.message || err), 'danger');
+    } finally {
+        if (btnDeleteMock) {
+            btnDeleteMock.disabled = false;
+            btnDeleteMock.innerHTML = '<i class="fa-solid fa-trash-can"></i> Xóa Thư Mục Này';
+        }
+    }
+}
+
+export async function applyNvrDeploy() {
+    const btnApplyNvr = document.getElementById('btnApplyNvrDeploy');
+    const ip = document.getElementById('deployNvrIp')?.value.trim() || '192.168.10.200';
+    const port = parseInt(document.getElementById('deployNvrPort')?.value || '554', 10);
+    const user = document.getElementById('deployNvrUser')?.value.trim() || 'admin';
+    const pass = document.getElementById('deployNvrPass')?.value || '';
+    const brand = document.getElementById('deployNvrBrand')?.value || 'DAHUA';
+    const channelStart = parseInt(document.getElementById('deployNvrChannelStart')?.value || '1', 10);
+    const cleanupMock = Boolean(document.getElementById('deployCleanupMock')?.checked);
+    const mockFolder = document.getElementById('mockFolderInput')?.value.trim() || 'camera';
+
+    if (!ip) {
+        alert('Vui lòng nhập địa chỉ IP Đầu Ghi NVR!');
+        return;
+    }
+
+    const confirmMsg = `Bạn có chắc chắn muốn chuyển đổi toàn bộ 30 camera sang luồng RTSP của Đầu Ghi NVR (${brand} - ${ip}:${port})?` +
+        (cleanupMock ? `\n\n⚠️ Chú ý: Thư mục ảnh test (${mockFolder}) sẽ được XÓA BỎ sau khi chuyển đổi.` : '');
+
+    let confirmed = false;
+    if (window.ConfirmationDialog && typeof window.ConfirmationDialog.confirm === 'function') {
+        confirmed = await window.ConfirmationDialog.confirm({
+            title: 'Bàn Giao Đầu Ghi NVR Thật',
+            message: confirmMsg,
+            confirmText: 'Bàn Giao & Áp Dụng',
+            confirmClass: 'btn-success'
+        });
+    } else {
+        confirmed = window.confirm(confirmMsg);
+    }
+
+    if (!confirmed) return;
+
+    if (btnApplyNvr) {
+        btnApplyNvr.disabled = true;
+        btnApplyNvr.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Đang cấu hình và chuyển đổi...';
+    }
+
+    try {
+        const res = await CameraAPI.switchSourceMode({
+            mode: 'REAL_NVR',
+            nvr_ip: ip,
+            nvr_port: port,
+            nvr_user: user,
+            nvr_pass: pass,
+            nvr_brand: brand,
+            channel_start: channelStart,
+            cleanup_mock_images: cleanupMock,
+            mock_folder: mockFolder
+        });
+
+        if (res && res.success) {
+            showToast(res.message || 'Đã chuyển sang Đầu Ghi NVR thành công!', 'success');
+            closeSourceManagerModal();
+            await loadCameras();
+            await loadCameraSourceStatus();
+        } else {
+            alert('Lỗi: ' + (res?.message || res?.detail || 'Không thể chuyển đổi'));
+        }
+    } catch (err) {
+        console.error('Lỗi chuyển đổi NVR:', err);
+        showToast('Lỗi: ' + (err.message || err), 'danger');
+    } finally {
+        if (btnApplyNvr) {
+            btnApplyNvr.disabled = false;
+            btnApplyNvr.innerHTML = '<i class="fa-solid fa-rocket"></i> ÁP DỤNG ĐẦU GHI NVR & BÀN GIAO TOÀN BỘ 30 CAMERA';
+        }
+    }
+}
+
+function initSourceManagerEvents() {
+    const btnOpen = document.getElementById('btnOpenSourceManager');
+    if (btnOpen) btnOpen.addEventListener('click', openSourceManagerModal);
+
+    const btnClose = document.getElementById('modalSourceCloseBtn');
+    if (btnClose) btnClose.addEventListener('click', closeSourceManagerModal);
+
+    const btnCancel = document.getElementById('btnCancelSourceModal');
+    if (btnCancel) btnCancel.addEventListener('click', closeSourceManagerModal);
+
+    // Switch tabs inside modal
+    const tabNvr = document.getElementById('tabSourceNvr');
+    const tabMock = document.getElementById('tabSourceMock');
+    if (tabNvr) tabNvr.addEventListener('click', () => switchSourceManagerTab('nvr'));
+    if (tabMock) tabMock.addEventListener('click', () => switchSourceManagerTab('mock'));
+
+    // Nút Kiểm Tra Thư Mục Ảnh Test
+    const btnCheck = document.getElementById('btnCheckMockFolder');
+    if (btnCheck) {
+        btnCheck.addEventListener('click', () => inspectMockFolder());
+    }
+
+    // Input đổi thư mục -> Kiểm tra tự động
+    const inputMockFolder = document.getElementById('mockFolderInput');
+    if (inputMockFolder) {
+        let debounceTimer;
+        inputMockFolder.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => inspectMockFolder(), 400);
+        });
+    }
+
+    // Gợi ý thư mục nhanh
+    document.querySelectorAll('.preset-folder-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const folder = btn.dataset.folder;
+            if (folder) selectMockPreset(folder);
+        });
+    });
+
+    // Chọn thư mục qua Folder Picker (HTML5 Directory Picker)
+    const btnBrowse = document.getElementById('btnBrowseMockFolder');
+    const folderPicker = document.getElementById('folderPickerInput');
+    if (btnBrowse && folderPicker) {
+        btnBrowse.addEventListener('click', browseMockFolder);
+        folderPicker.addEventListener('change', (e) => {
+            const files = e.target.files;
+            if (files && files.length > 0) {
+                const relPath = files[0].webkitRelativePath || '';
+                const dirName = relPath.split('/')[0] || '';
+                if (dirName && inputMockFolder) {
+                    inputMockFolder.value = dirName;
+                    inspectMockFolder(dirName);
+                    showToast(`Đã chọn thư mục: ${dirName} (${files.length} tệp)`, 'info');
+                }
+            }
+        });
+    }
+
+    // Nút Bàn Giao Đầu Ghi NVR Thật
+    const btnApplyNvr = document.getElementById('btnApplyNvrDeploy');
+    if (btnApplyNvr) {
+        btnApplyNvr.addEventListener('click', applyNvrDeploy);
+    }
+
+    // Nút Kích Hoạt Chế Độ Ảnh Test
+    const btnApplyMock = document.getElementById('btnApplyMockDeploy');
+    if (btnApplyMock) {
+        btnApplyMock.addEventListener('click', applyMockFolder);
+    }
+
+    // Nút Xóa Thư Mục Ảnh Test
+    const btnDeleteMock = document.getElementById('btnDeleteMockFolder');
+    if (btnDeleteMock) {
+        btnDeleteMock.addEventListener('click', deleteMockFolder);
+    }
+}
+
+// Expose to window for inline attributes
 window.selectWebcam = selectWebcam;
 window.applyPreset = applyPreset;
 window.switchSourceTab = switchSourceTab;
@@ -1613,5 +2042,16 @@ window.saveNvrImport = saveNvrImport;
 window.renderMatrixWall = renderMatrixWall;
 window.deleteSelectedCameras = deleteSelectedCameras;
 window.updateBatchActionBar = updateBatchActionBar;
+window.openSourceManagerModal = openSourceManagerModal;
+window.closeSourceManagerModal = closeSourceManagerModal;
+window.loadCameraSourceStatus = loadCameraSourceStatus;
+window.inspectMockFolder = inspectMockFolder;
+window.switchSourceManagerTab = switchSourceManagerTab;
+window.browseMockFolder = browseMockFolder;
+window.selectMockPreset = selectMockPreset;
+window.applyMockFolder = applyMockFolder;
+window.deleteMockFolder = deleteMockFolder;
+window.applyNvrDeploy = applyNvrDeploy;
+
 
 

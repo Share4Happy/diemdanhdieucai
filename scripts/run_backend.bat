@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 > nul
 title BACKEND API SERVER - THPT DIEU CAI [PORT 8000]
-cd /d "%~dp0"
+cd /d "%~dp0\.."
 color 0B
 echo =========================================================================
 echo    PHAN HE BACKEND REST API - HE THONG DIEM DANH AI THPT DIEU CAI

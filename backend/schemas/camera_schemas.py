@@ -61,3 +61,18 @@ class NVRBatchImportRequest(BaseModel):
     custom_pattern: Optional[str] = ""
     replace_existing: bool = True
     channels: list[NVRChannelItem]
+
+class SwitchCameraSourceModeRequest(BaseModel):
+    mode: str = "REAL_NVR"  # "REAL_NVR" or "MOCK_IMAGE"
+    nvr_ip: str = "192.168.10.200"
+    nvr_port: int = 554
+    nvr_user: str = "admin"
+    nvr_pass: str = "DieuCai@2026"
+    nvr_brand: str = "DAHUA"
+    channel_start: int = 1
+    cleanup_mock_images: bool = False
+    mock_folder: Optional[str] = "camera"
+
+class InspectFolderRequest(BaseModel):
+    folder_path: str = "camera"
+

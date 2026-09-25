@@ -484,7 +484,11 @@
                             <h1 class="page-title">Quản Lý Camera & Lớp Học</h1>
                             <p class="page-description">Quản trị camera IP, cấu hình lớp học và giám sát trực tuyến</p>
                         </div>
-                        <div class="page-actions">
+                        <div class="page-actions" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <button id="btnOpenSourceManager" class="btn btn-warning" type="button" onclick="window.openSourceManagerModal && window.openSourceManagerModal()"
+                                style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-color: #d97706; color: #fff; font-weight: 700;">
+                                <i class="fa-solid fa-sliders"></i> Chế Độ Camera & Bàn Giao
+                            </button>
                             <button id="btnTriggerScan" class="btn btn-primary" type="button"
                                 style="background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); border-color: #4f46e5; font-weight: 600;">
                                 Quét Điểm Danh
@@ -1171,6 +1175,178 @@
     <!-- Toast Container -->
     <div id="toast-container"></div>
 
+    <!-- Modal: Quản Lý Nguồn Camera & Bàn Giao Đầu Ghi NVR -->
+    <div class="modal-backdrop" id="modalSourceManager">
+        <div class="modal-dialog" style="max-width: 680px;">
+            <div class="modal-content">
+                <div class="modal-header" style="background: #f8fafc; border-bottom: 1px solid var(--border-color); padding: 1.2rem 1.5rem;">
+                    <div>
+                        <h3 class="modal-title" style="font-size: 1.15rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 10px;">
+                            <i class="fa-solid fa-sliders" style="color: #f59e0b;"></i> Chế Độ Nguồn Camera & Bàn Giao Khách Hàng
+                        </h3>
+                        <p class="modal-subtitle" style="font-size: 0.84rem; color: #64748b; margin-top: 3px;">
+                            Chuyển đổi linh hoạt giữa Ảnh Mẫu Test (Offline) và Đầu Ghi NVR Thật (Bàn Giao)
+                        </p>
+                    </div>
+                    <button type="button" class="modal-close-btn" id="modalSourceCloseBtn" onclick="window.closeSourceManagerModal && window.closeSourceManagerModal()">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="modal-body" style="padding: 1.5rem;">
+                    <!-- Trạng thái hiện tại -->
+                    <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; margin-bottom: 18px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Chế Độ Đang Hoạt Động:</span>
+                                <h4 id="sourceStatusCurrentText" style="margin: 4px 0 0 0; font-size: 1.05rem; font-weight: 800; color: #1e293b;">
+                                    Đang kiểm tra...
+                                </h4>
+                            </div>
+                            <span id="sourceStatusBadge" class="status-pill" style="font-size: 0.85rem; padding: 6px 14px; font-weight: 700;">---</span>
+                        </div>
+                        <div style="margin-top: 10px; font-size: 0.82rem; color: #475569; display: flex; gap: 16px; border-top: 1px dashed #cbd5e1; padding-top: 8px;">
+                            <span><i class="fa-solid fa-video"></i> Tổng camera: <strong id="sourceStatusTotal">30</strong></span>
+                            <span><i class="fa-solid fa-image"></i> Ảnh test (camera/): <strong id="sourceStatusMockCount">--</strong></span>
+                            <span><i class="fa-solid fa-server"></i> NVR RTSP: <strong id="sourceStatusRtspCount">--</strong></span>
+                        </div>
+                    </div>
+
+                    <!-- Tabs chọn chế độ -->
+                    <div class="source-tabs" style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
+                        <button type="button" class="source-tab active" id="tabSourceNvr" onclick="window.switchSourceManagerTab && window.switchSourceManagerTab('nvr')" style="flex: 1; padding: 10px; border-radius: 8px; font-weight: 700; cursor: pointer;">
+                            <i class="fa-solid fa-server"></i> 1. Bàn Giao Đầu Ghi NVR Thật
+                        </button>
+                        <button type="button" class="source-tab" id="tabSourceMock" onclick="window.switchSourceManagerTab && window.switchSourceManagerTab('mock')" style="flex: 1; padding: 10px; border-radius: 8px; font-weight: 700; cursor: pointer;">
+                            <i class="fa-solid fa-flask"></i> 2. Chế Độ Ảnh Mẫu (Test)
+                        </button>
+                    </div>
+
+                    <!-- Panel 1: Bàn Giao Đầu Ghi Thực Tế -->
+                    <div id="panelSourceNvr">
+                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; font-size: 0.84rem; color: #166534;">
+                            <i class="fa-solid fa-circle-check"></i> <strong>Sẵn sàng bàn giao:</strong> Khi kết nối đầu ghi thực tế tại trường, điền thông số dưới đây. Hệ thống sẽ tự động gán toàn bộ 30 camera sang các luồng RTSP tương ứng chỉ với 1 click!
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px;">
+                            <div class="form-group">
+                                <label style="font-weight: 700; font-size: 0.85rem;"><i class="fa-solid fa-network-wired" style="color: var(--primary);"></i> Địa Chỉ IP Đầu Ghi:</label>
+                                <input type="text" id="deployNvrIp" class="form-control" value="192.168.10.200" placeholder="192.168.10.200">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-weight: 700; font-size: 0.85rem;"><i class="fa-solid fa-door-open" style="color: var(--primary);"></i> Cổng RTSP:</label>
+                                <input type="number" id="deployNvrPort" class="form-control" value="554">
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                            <div class="form-group">
+                                <label style="font-weight: 700; font-size: 0.85rem;"><i class="fa-solid fa-user" style="color: var(--primary);"></i> Tài Khoản NVR:</label>
+                                <input type="text" id="deployNvrUser" class="form-control" value="admin">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-weight: 700; font-size: 0.85rem;"><i class="fa-solid fa-key" style="color: var(--primary);"></i> Mật Khẩu NVR:</label>
+                                <input type="password" id="deployNvrPass" class="form-control" value="DieuCai@2026">
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                            <div class="form-group">
+                                <label style="font-weight: 700; font-size: 0.85rem;"><i class="fa-solid fa-microchip" style="color: var(--primary);"></i> Hãng Đầu Ghi:</label>
+                                <select id="deployNvrBrand" class="form-control">
+                                    <option value="DAHUA" selected>Dahua (Khuyên dùng THPT Điều Cải)</option>
+                                    <option value="HIKVISION">Hikvision</option>
+                                    <option value="KBVISION">KBVision</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label style="font-weight: 700; font-size: 0.85rem;"><i class="fa-solid fa-hashtag" style="color: var(--primary);"></i> Kênh bắt đầu:</label>
+                                <input type="number" id="deployNvrChannelStart" class="form-control" value="1" min="1">
+                            </div>
+                        </div>
+
+                        <div style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px;">
+                            <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; margin: 0; font-size: 0.86rem; color: #92400e; font-weight: 600;">
+                                <input type="checkbox" id="deployCleanupMock" style="width: 18px; height: 18px; margin-top: 2px;">
+                                <span>
+                                    <strong>Xóa sạch thư mục ảnh test giả lập (camera/) sau khi chuyển đổi</strong><br>
+                                    <span style="font-weight: 400; font-size: 0.78rem; color: #78350f;">
+                                        Tùy chọn này giúp giải phóng dung lượng và xóa bỏ toàn bộ dữ liệu mẫu kiểm thử khi bàn giao cho khách hàng. Hệ thống sẽ hoạt động 100% bằng đầu ghi thật.
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+
+                        <button type="button" id="btnApplyNvrDeploy" onclick="window.applyNvrDeploy && window.applyNvrDeploy()" class="btn btn-primary" style="width: 100%; padding: 11px; font-size: 0.95rem; font-weight: 700; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-color: #059669; cursor: pointer;">
+                            <i class="fa-solid fa-rocket"></i> ÁP DỤNG ĐẦU GHI NVR & BÀN GIAO TOÀN BỘ 30 CAMERA
+                        </button>
+                    </div>
+
+                    <!-- Panel 2: Chế Độ Ảnh Mẫu Thử Nghiệm -->
+                    <div id="panelSourceMock" style="display: none;">
+                        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; font-size: 0.84rem; color: #1e40af;">
+                            <i class="fa-solid fa-circle-info"></i> <strong>Chế độ Kiểm thử (Offline):</strong> Khi không có camera thật, bạn có thể chọn bất kỳ thư mục ảnh nào trên máy tính để làm nguồn hình ảnh cho 30 camera. AI sẽ nhận diện như camera thực tế.
+                        </div>
+
+                        <!-- Chọn Thư Mục Chứa Ảnh -->
+                        <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px;">
+                            <div class="form-group" style="margin-bottom: 8px;">
+                                <label style="font-weight: 700; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                    <span><i class="fa-solid fa-folder-open" style="color: #f59e0b;"></i> Thư Mục Chứa Hình Ảnh Camera:</span>
+                                    <span style="font-size: 0.78rem; font-weight: 400; color: #64748b;">(Tương đối hoặc tuyệt đối)</span>
+                                </label>
+                                <div style="display: flex; gap: 8px;">
+                                    <input type="text" id="mockFolderInput" class="form-control" value="camera" placeholder="Nhập đường dẫn, ví dụ: camera hoặc D:\AnhCamera..." style="flex: 1; font-family: monospace; font-size: 0.88rem;">
+                                    <button type="button" id="btnBrowseMockFolder" onclick="window.browseMockFolder && window.browseMockFolder()" class="btn btn-secondary" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; white-space: nowrap; cursor: pointer;">
+                                        <i class="fa-solid fa-folder-tree"></i> Chọn Thư Mục
+                                    </button>
+                                    <button type="button" id="btnCheckMockFolder" onclick="window.inspectMockFolder && window.inspectMockFolder()" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.82rem; font-weight: 600; cursor: pointer;" title="Kiểm tra thư mục này">
+                                        <i class="fa-solid fa-magnifying-glass"></i> Kiểm Tra
+                                    </button>
+                                </div>
+                                <input type="file" id="folderPickerInput" webkitdirectory directory style="display: none;">
+                            </div>
+
+                            <!-- Gợi ý nhanh thư mục -->
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;">
+                                <span style="font-size: 0.76rem; color: #64748b; align-self: center;">Gợi ý nhanh:</span>
+                                <button type="button" class="preset-folder-btn" onclick="window.selectMockPreset && window.selectMockPreset('camera')" data-folder="camera" style="padding: 3px 8px; font-size: 0.75rem; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer;">
+                                    📁 camera/ (Mặc định)
+                                </button>
+                                <button type="button" class="preset-folder-btn" onclick="window.selectMockPreset && window.selectMockPreset('dataset/samples')" data-folder="dataset/samples" style="padding: 3px 8px; font-size: 0.75rem; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer;">
+                                    📁 dataset/samples/
+                                </button>
+                                <button type="button" class="preset-folder-btn" onclick="window.selectMockPreset && window.selectMockPreset('dataset/extracted_frames')" data-folder="dataset/extracted_frames" style="padding: 3px 8px; font-size: 0.75rem; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer;">
+                                    📁 dataset/extracted_frames/
+                                </button>
+                            </div>
+
+                            <!-- Kết quả kiểm tra thư mục -->
+                            <div id="mockFolderDetails" style="font-size: 0.82rem; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 8px;">
+                                Đang tải thông tin thư mục...
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 10px;">
+                            <button type="button" id="btnApplyMockDeploy" onclick="window.applyMockFolder && window.applyMockFolder()" class="btn btn-warning" style="flex: 2; padding: 11px; font-weight: 700; cursor: pointer;">
+                                <i class="fa-solid fa-flask"></i> Áp Dụng Thư Mục Này Cho Camera (1 - 30)
+                            </button>
+                            <button type="button" id="btnDeleteMockFolder" onclick="window.deleteMockFolder && window.deleteMockFolder()" class="btn btn-danger" style="flex: 1; padding: 11px; font-weight: 700; cursor: pointer;" title="Xóa thư mục ảnh này để giải phóng dung lượng">
+                                <i class="fa-solid fa-trash-can"></i> Xóa Thư Mục Này
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer" style="background: #f8fafc; border-top: 1px solid var(--border-color); padding: 0.9rem 1.5rem; display: flex; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" id="btnCancelSourceModal" onclick="window.closeSourceManagerModal && window.closeSourceManagerModal()" style="padding: 7px 18px;">
+                        Đóng
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Live View Modal - Phóng To Camera -->
     <div class="modal-backdrop" id="liveViewModal">
         <div class="modal-dialog modal-fullscreen">
@@ -1218,7 +1394,7 @@
     <script src="js/shared/app-shell.js?v=3.0"></script>
     <script src="js/shared/header-actions.js?v=2.2"></script>
     <script src="js/shared/confirmation-dialog.js?v=1.0"></script>
-    <script type="module" src="js/cameras.js?v=3.5"></script>
+    <script type="module" src="js/cameras.js?v=5.1"></script>
 </body>
 
 </html>

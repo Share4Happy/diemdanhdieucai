@@ -383,9 +383,16 @@ class RTSPCameraClient:
                     frame = cv2.imread(str(sample_path))
 
             if frame is None:
-                # Tạo frame fallback 1920x1080
+                # Tạo frame fallback 1920x1080 chuyên nghiệp (an toàn 100% khi xóa ảnh test hoặc chờ đầu ghi)
                 frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
-                frame[:] = (220, 220, 220)
+                frame[:] = (35, 38, 46)  # Nền tối hiện đại
+                cv2.rectangle(frame, (100, 100), (1820, 980), (60, 65, 80), 3)
+                cv2.putText(frame, f"CAMERA {classroom_id} - {classroom_name.upper()}", (160, 350),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1.8, (240, 240, 240), 3)
+                cv2.putText(frame, "TRANG THAI: CHUA CO NGUON TIN HIEU / DANG CHO DAU GHI NVR", (160, 480),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1.1, (200, 160, 50), 2)
+                cv2.putText(frame, "He thong AI THPT Dieu Cai - Tu dong nhan dien khi co luong RTSP thuc te", (160, 580),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (160, 160, 160), 2)
 
             is_success = True
 
@@ -405,15 +412,17 @@ class RTSPCameraClient:
         self,
         classrooms: List[Dict],
         date_str: Optional[str] = None,
-        max_workers: int = 10
+        max_workers: int = 10,
+        target_folder: Optional[Path] = None
     ) -> Dict[int, Dict]:
         """
         Sử dụng đa luồng (multi-threading) để chụp ảnh từ 30 camera cùng lúc.
+        Hỗ trợ phân tách thư mục theo phiên (session folder) để không bao giờ bị ghi đè giữa các phiên trong ngày.
         """
-        if not date_str:
-            date_str = get_today_str()
-
-        target_folder = settings.CAPTURES_DIR / date_str
+        if target_folder is None:
+            if not date_str:
+                date_str = get_today_str()
+            target_folder = settings.CAPTURES_DIR / date_str
         target_folder.mkdir(parents=True, exist_ok=True)
 
         results = {}

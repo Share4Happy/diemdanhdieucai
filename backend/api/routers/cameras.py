@@ -18,7 +18,9 @@ from backend.schemas.camera_schemas import (
     TestCameraRequest,
     TestCameraIRRequest,
     NVRProbeRequest,
-    NVRBatchImportRequest
+    NVRBatchImportRequest,
+    SwitchCameraSourceModeRequest,
+    InspectFolderRequest
 )
 
 router = APIRouter(prefix="/cameras", tags=["Cameras"], dependencies=[Depends(get_current_user)])
@@ -444,3 +446,45 @@ async def get_matrix_wall(db: Session = Depends(get_db)):
         "total": len(items),
         "cameras": items
     }
+
+@router.get("/source-status")
+async def get_camera_source_status(folder: Optional[str] = None, db: Session = Depends(get_db)):
+    """Kiểm tra trạng thái nguồn của 30 camera: Ảnh mẫu thử nghiệm (Test) hay Đầu ghi NVR (Production)."""
+    from core.camera_source_manager import camera_source_manager
+    return camera_source_manager.get_source_status(db, folder_str=folder)
+
+@router.post("/inspect-folder")
+async def inspect_camera_folder(req: InspectFolderRequest):
+    """Kiểm tra sự tồn tại và số lượng ảnh trong thư mục người dùng nhập."""
+    from core.camera_source_manager import camera_source_manager
+    return camera_source_manager.inspect_folder(req.folder_path)
+
+@router.post("/switch-source-mode")
+async def switch_camera_source_mode(req: SwitchCameraSourceModeRequest, db: Session = Depends(get_db)):
+    """Chuyển đổi đồng loạt 30 camera sang Đầu Ghi NVR thực tế hoặc Ảnh mẫu thử nghiệm (chọn thư mục tùy ý)."""
+    from core.camera_source_manager import camera_source_manager
+    if req.mode.upper() == "REAL_NVR":
+        result = camera_source_manager.switch_to_real_nvr(
+            db=db,
+            nvr_ip=req.nvr_ip,
+            nvr_port=req.nvr_port,
+            nvr_user=req.nvr_user,
+            nvr_pass=req.nvr_pass,
+            nvr_brand=req.nvr_brand,
+            channel_start=req.channel_start,
+            cleanup_mock_images=req.cleanup_mock_images,
+            mock_folder=req.mock_folder or "camera"
+        )
+    else:
+        result = camera_source_manager.switch_to_mock_images(
+            db=db,
+            folder_path=req.mock_folder or "camera",
+            channel_start=req.channel_start
+        )
+    return result
+
+@router.post("/cleanup-test-images")
+async def cleanup_test_images(folder: Optional[str] = "camera", _user=Depends(get_current_user)):
+    """Xóa bỏ thư mục ảnh test giả lập sau khi đã bàn giao đầu ghi thực tế cho khách."""
+    from core.camera_source_manager import camera_source_manager
+    return camera_source_manager.cleanup_mock_folder(folder_path=folder or "camera")
