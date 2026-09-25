@@ -35,10 +35,6 @@ class HeaderActions {
             ? 'http://localhost:8000'
             : '';
         const headers = { 'Accept': 'application/json' };
-        try {
-            const token = localStorage.getItem('authToken');
-            if (token) headers['Authorization'] = `Bearer ${token}`;
-        } catch (e) {}
         return fetch(`${base}${endpoint}`, {
             credentials: 'include',
             headers: headers

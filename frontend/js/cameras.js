@@ -2,8 +2,11 @@
  * cameras.js - Camera Management Page Controller
  * THPT Điều Cải - Attendance System
  */
-import { CameraAPI, AttendanceAPI, showToast, API_BASE } from './api.js';
+import { CameraAPI, AttendanceAPI, showToast, API_BASE, escapeHtml } from './api.js';
 import SkeletonTemplates from './components/skeleton-templates.js';
+
+// Escape dữ liệu động khi chèn HTML (chống stored/reflected XSS)
+const esc = (v) => escapeHtml(v);
 
 if (typeof window !== 'undefined') {
     window.CameraAPI = CameraAPI;
@@ -286,7 +289,7 @@ export async function loadAvailableWebcams(forceRefresh = false) {
                 <div class="webcam-empty-box" style="color: #ef4444; padding: 1.25rem;">
                     <i class="fa-solid fa-circle-exclamation" style="font-size: 1.6rem; margin-bottom: 8px; display: block;"></i>
                     <strong>Không thể dò quét webcam máy tính:</strong><br>
-                    <span style="font-size: 0.85rem; color: #64748b;">${err.message || err}</span>
+                    <span style="font-size: 0.85rem; color: #64748b;">${esc(err.message || err)}</span>
                     <div style="margin-top: 10px;">
                         <button type="button" class="btn btn-secondary btn-sm" onclick="window.loadAvailableWebcams ? window.loadAvailableWebcams(true) : location.reload()">
                             <i class="fa-solid fa-rotate-right"></i> Thử Dò Tìm Lại
@@ -339,19 +342,19 @@ function renderWebcamCards() {
         card.onclick = () => selectWebcam(cam.id);
 
         const thumbHtml = cam.thumbnail
-            ? `<img src="${cam.thumbnail}" class="webcam-thumb-img" alt="${cam.name}">`
+            ? `<img src="${cam.thumbnail}" class="webcam-thumb-img" alt="${esc(cam.name)}">`
             : `<div style="text-align: center; color: #64748b;"><i class="fa-solid fa-camera" style="font-size: 1.8rem;"></i></div>`;
 
         card.innerHTML = `
             <div class="webcam-thumb-box">
                 ${thumbHtml}
                 <span class="webcam-badge-id">Cổng ${cam.id}</span>
-                <span class="webcam-badge-res">${cam.resolution}</span>
+                <span class="webcam-badge-res">${esc(cam.resolution)}</span>
                 <div class="webcam-selected-check"><i class="fa-solid fa-check"></i></div>
             </div>
             <div class="webcam-card-info">
-                <div class="webcam-card-title" title="${cam.name}">${cam.short_name || cam.name}</div>
-                <div class="webcam-card-sub"><i class="fa-solid fa-circle-check"></i> ${cam.quality_label || 'Hoạt động'}</div>
+                <div class="webcam-card-title" title="${esc(cam.name)}">${esc(cam.short_name || cam.name)}</div>
+                <div class="webcam-card-sub"><i class="fa-solid fa-circle-check"></i> ${esc(cam.quality_label || 'Hoạt động')}</div>
             </div>
         `;
         container.appendChild(card);
@@ -376,7 +379,7 @@ export function selectWebcam(id) {
             testImg.style.display = 'inline-block';
         }
         if (testMsg) {
-            testMsg.innerHTML = `<span style="color: #10b981; font-weight: 700;"><i class="fa-solid fa-circle-check"></i> Đã chọn ${cam.name} (${cam.resolution})</span>`;
+            testMsg.innerHTML = `<span style="color: #10b981; font-weight: 700;"><i class="fa-solid fa-circle-check"></i> Đã chọn ${esc(cam.name)} (${esc(cam.resolution)})</span>`;
         }
 
         const nameInput = document.getElementById('formName');
@@ -562,9 +565,21 @@ export function closeModal() {
     document.getElementById('cameraModal')?.classList.remove('active');
 }
 
-export function editCamera(id) {
+export async function editCamera(id) {
     const cam = allCameras.find(c => c.id === id);
-    if (cam) openModal(cam);
+    if (cam) {
+        // Lấy URL gốc (có credential) để hiển thị chỉnh sửa — chỉ admin mới được phép
+        try {
+            const raw = await CameraAPI.getRawRtsp(id);
+            if (raw && raw.success && typeof raw.rtsp_url === 'string' && raw.rtsp_url !== '') {
+                openModal({ ...cam, rtsp_url: raw.rtsp_url });
+                return;
+            }
+        } catch (e) {
+            // Không phải admin / lỗi mạng: dùng URL đã che (không chỉnh sửa credential)
+        }
+        openModal(cam);
+    }
 }
 
 export async function testCurrentInputSource() {
@@ -588,18 +603,18 @@ export async function testCurrentInputSource() {
     try {
         const data = await CameraAPI.testConnection(url);
         if (data.success) {
-            if (msg) msg.innerHTML = `<span style="color: #10b981; font-weight: 700;"><i class="fa-solid fa-circle-check"></i> ${data.message}</span>`;
+            if (msg) msg.innerHTML = `<span style="color: #10b981; font-weight: 700;"><i class="fa-solid fa-circle-check"></i> ${esc(data.message)}</span>`;
             if (data.preview_url && img) {
                 img.src = data.preview_url;
                 img.style.display = 'inline-block';
             }
             showToast('Kết nối thành công', 'success');
         } else {
-            if (msg) msg.innerHTML = `<span style="color: #ef4444; font-weight: 600;"><i class="fa-solid fa-circle-xmark"></i> ${data.message}</span>`;
+            if (msg) msg.innerHTML = `<span style="color: #ef4444; font-weight: 600;"><i class="fa-solid fa-circle-xmark"></i> ${esc(data.message)}</span>`;
             showToast(data.message || 'Kết nối thất bại', 'error');
         }
     } catch (err) {
-        if (msg) msg.innerHTML = `<span style="color: #ef4444;">Lỗi khi gửi yêu cầu kiểm tra: ${err.message || err}</span>`;
+        if (msg) msg.innerHTML = `<span style="color: #ef4444;">Lỗi khi gửi yêu cầu kiểm tra: ${esc(err.message || err)}</span>`;
         showToast('Lỗi kết nối kiểm tra camera', 'error');
     } finally {
         if (btn) {
@@ -638,18 +653,18 @@ export async function testCameraIRNow() {
         
         if (res && res.success) {
             if (msg) {
-                msg.innerHTML = `<span style="color: #10b981; font-weight: 700;"><i class="fa-solid fa-circle-check"></i> ${res.message || 'Đèn hồng ngoại đã kích hoạt thành công (tự động tắt sau 4s)!'}</span>`;
+                msg.innerHTML = `<span style="color: #10b981; font-weight: 700;"><i class="fa-solid fa-circle-check"></i> ${esc(res.message || 'Đèn hồng ngoại đã kích hoạt thành công (tự động tắt sau 4s)!')}</span>`;
             }
             showToast(res.message || 'Đã kích hoạt đèn hồng ngoại camera!', 'success');
         } else {
             const errMsg = (res && res.message) ? res.message : 'Không thể gửi lệnh điều khiển tới camera!';
             if (msg) {
-                msg.innerHTML = `<span style="color: #ef4444; font-weight: 700;"><i class="fa-solid fa-triangle-exclamation"></i> ${errMsg}</span>`;
+                msg.innerHTML = `<span style="color: #ef4444; font-weight: 700;"><i class="fa-solid fa-triangle-exclamation"></i> ${esc(errMsg)}</span>`;
             }
             showToast(errMsg, 'warning');
         }
     } catch (err) {
-        if (msg) msg.innerHTML = `<span style="color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Lỗi: ${err.message || err}</span>`;
+        if (msg) msg.innerHTML = `<span style="color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Lỗi: ${esc(err.message || err)}</span>`;
         showToast('Không thể kích hoạt đèn camera: ' + (err.message || err), 'warning');
     } finally {
         if (btn) {
@@ -688,11 +703,11 @@ export async function testSignalFlowAndCapture() {
             }
             showToast('Chu trình hoàn tất: Thu nhận ảnh màu chuẩn', 'success');
         } else {
-            if (msg) msg.innerHTML = `<span style="color: #ef4444; font-weight: 600;"><i class="fa-solid fa-circle-xmark"></i> ${data.message}</span>`;
+            if (msg) msg.innerHTML = `<span style="color: #ef4444; font-weight: 600;"><i class="fa-solid fa-circle-xmark"></i> ${esc(data.message)}</span>`;
             showToast(data.message || 'Thử chu trình thất bại', 'error');
         }
     } catch (err) {
-        if (msg) msg.innerHTML = `<span style="color: #ef4444;">Lỗi: ${err.message || err}</span>`;
+        if (msg) msg.innerHTML = `<span style="color: #ef4444;">Lỗi: ${esc(err.message || err)}</span>`;
         showToast('Lỗi thử chu trình: ' + (err.message || err), 'error');
     } finally {
         if (btn) {
@@ -795,7 +810,7 @@ export function openDeleteModal() {
     if (selectQuick) {
         selectQuick.innerHTML = '<option value="">-- Bấm vào đây để chọn camera --</option>' +
             allCameras.map(c => `
-                <option value="${c.id}">${c.name} (${c.room_number || 'Phòng ' + c.id}) - Mã: ${c.code}</option>
+                <option value="${c.id}">${esc(c.name)} (${esc(c.room_number || 'Phòng ' + c.id)}) - Mã: ${esc(c.code)}</option>
             `).join('');
     }
 
@@ -808,8 +823,8 @@ export function openDeleteModal() {
                 <label class="delete-cam-item">
                     <input type="checkbox" value="${c.id}" class="cam-del-cb" data-name="${encodeURIComponent(c.name)}">
                     <span style="flex: 1; font-weight: 500;">
-                        <strong style="color: #0f172a;">${c.code}</strong> - ${c.name} 
-                        <span style="color: #64748b; font-size: 0.8rem;">(${c.room_number || '--'})</span>
+                        <strong style="color: #0f172a;">${esc(c.code)}</strong> - ${esc(c.name)} 
+                        <span style="color: #64748b; font-size: 0.8rem;">(${esc(c.room_number || '--')})</span>
                     </span>
                     <span class="badge ${c.source_type === 'WEBCAM' ? 'badge-warning' : (c.source_type === 'FILE' ? 'badge-primary' : 'badge-success')}" style="font-size: 0.72rem;">
                         ${c.source_type || 'RTSP'}
@@ -979,7 +994,7 @@ export function renderMatrixWall() {
 
         card.innerHTML = `
             <div class="matrix-card-screen">
-                <img src="${snapUrl}" class="matrix-thumb-img" alt="${cam.name}" loading="lazy" 
+                <img src="${snapUrl}" class="matrix-thumb-img" alt="${esc(cam.name)}" loading="lazy" 
                      onerror="this.onerror=null; this.src='/dataset/samples/classroom_sample.jpg';">
                 
                 <!-- Ô chọn phòng -->
@@ -995,7 +1010,7 @@ export function renderMatrixWall() {
 
                 <!-- Nút 3 chấm góc phải trên cùng thẻ phòng -->
                 <div class="matrix-card-menu">
-                    <button type="button" class="card-menu-btn" title="Tùy chọn phòng ${cam.name}" data-id="${cam.id}">
+                    <button type="button" class="card-menu-btn" title="Tùy chọn phòng ${esc(cam.name)}" data-id="${cam.id}">
                         <i class="fa-solid fa-ellipsis-vertical"></i>
                     </button>
                     <div class="card-dropdown-menu" id="card_menu_${cam.id}">
@@ -1017,8 +1032,8 @@ export function renderMatrixWall() {
             </div>
             <div class="matrix-card-footer">
                 <div class="matrix-footer-meta">
-                    <div class="matrix-class-title" title="${cam.name}">${cam.name}</div>
-                    <div class="matrix-class-room">${cam.room_number || `Phòng ${100 + chNum}`}</div>
+                    <div class="matrix-class-title" title="${esc(cam.name)}">${esc(cam.name)}</div>
+                    <div class="matrix-class-room">${esc(cam.room_number || `Phòng ${100 + chNum}`)}</div>
                 </div>
                 <span class="matrix-std-pill">${cam.standard_count} HS</span>
             </div>
@@ -1490,9 +1505,9 @@ function renderNvrPreviewCards(channels) {
                 <span class="nvr-ch-badge">CH${String(ch.channel).padStart(2, '0')}</span>
             </div>
             <div class="nvr-ch-fields">
-                <input type="text" class="nvr-ch-name" data-ch="${ch.channel}" value="${ch.name}" placeholder="Tên lớp (VD: Lớp 10A1)" title="Tên lớp học">
+                <input type="text" class="nvr-ch-name" data-ch="${ch.channel}" value="${esc(ch.name)}" placeholder="Tên lớp (VD: Lớp 10A1)" title="Tên lớp học">
                 <div style="display: flex; gap: 6px;">
-                    <input type="text" class="nvr-ch-room" data-ch="${ch.channel}" value="${ch.room_number || ''}" placeholder="Phòng" style="width: 55%;" title="Số phòng học">
+                    <input type="text" class="nvr-ch-room" data-ch="${ch.channel}" value="${esc(ch.room_number || '')}" placeholder="Phòng" style="width: 55%;" title="Số phòng học">
                     <input type="number" class="nvr-ch-std" data-ch="${ch.channel}" value="${ch.standard_count || 40}" min="1" max="60" style="width: 45%; font-weight: 700;" title="Sĩ số chuẩn">
                 </div>
             </div>

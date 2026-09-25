@@ -8,7 +8,7 @@
 
     <!-- Design System & Components -->
     <link rel="stylesheet" href="css/design-system.css">
-    <link rel="stylesheet" href="css/layout/app-shell.css?v=2.5">
+    <link rel="stylesheet" href="css/layout/app-shell.css?v=3.1">
     <link rel="stylesheet" href="css/components/buttons-redesign.css">
     <link rel="stylesheet" href="css/components/badges-redesign.css">
     <link rel="stylesheet" href="css/components/header-actions.css">
@@ -29,6 +29,25 @@
 </head>
 
 <body>
+    <!-- Mobile Topbar Navigation (Hiển thị cố định trên điện thoại & tablet <= 1024px) -->
+    <header class="mobile-topbar">
+        <div class="mobile-topbar-left">
+            <button type="button" class="mobile-menu-btn" title="Mở Menu Điều Hướng" aria-label="Mở Menu Điều Hướng">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="mobile-topbar-brand">
+                <div class="mobile-brand-logo">ĐC</div>
+                <div class="mobile-brand-text">
+                    <span class="mobile-brand-title">THPT ĐIỀU CẢI</span>
+                    <span class="mobile-brand-subtitle">AI CAMERA</span>
+                </div>
+            </div>
+        </div>
+        <div class="mobile-topbar-right">
+            <div class="mobile-user-avatar" id="mobileUserAvatar" title="Thông tin tài khoản">A</div>
+        </div>
+    </header>
+
     <!-- App Shell -->
     <div class="app-shell">
         <!-- Sidebar -->
@@ -306,7 +325,7 @@
                         <div class="retention-notice-bar" style="margin-top: 1.25rem;">
                             <i class="fa-solid fa-clock-rotate-left retention-icon"></i>
                             <span class="retention-text">
-                                <strong>Chính sách lưu trữ:</strong> Dữ liệu điểm danh CSDL sẽ được hệ thống tự động lưu trữ trong <strong id="lblRetentionDaysNotice2">90</strong> ngày theo cấu hình tại tab Cài Đặt Lưu Trữ.
+                                <strong>Chính sách lưu trữ:</strong> Dữ liệu điểm danh CSDL sẽ được hệ thống tự động lưu trữ trong <strong id="lblRetentionDaysNotice2">90</strong> ngày theo chính sách lưu trữ của hệ thống.
                             </span>
                         </div>
                     </div>
@@ -579,8 +598,55 @@
                             <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 14px; margin-bottom: 1rem; display: flex; align-items: center; gap: 10px; font-size: 0.88rem; color: #166534;">
                                 <i class="fa-solid fa-shield-halved" style="font-size: 1.1rem; color: #15803d;"></i>
                                 <span>
-                                    <strong>Bảo vệ dữ liệu tự động:</strong> Hệ thống tự động sao lưu toàn bộ CSDL vào lúc <strong>23:00 hàng ngày</strong> và lưu trữ 15 bản sao lưu gần nhất.
+                                    <strong>Bảo vệ dữ liệu tự động:</strong> Hệ thống tự động sao lưu toàn bộ CSDL vào lúc <strong>23:00 hàng ngày</strong>, đẩy lên Google Drive và lưu giữ 15 bản sao lưu gần nhất.
                                 </span>
+                            </div>
+
+                            <!-- Khung Kết Nối Google Drive -->
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; margin-bottom: 1rem;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 6px;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <i class="fa-brands fa-google-drive" style="font-size: 1.4rem; color: #4285F4;"></i>
+                                        <div>
+                                            <strong style="font-size: 0.95rem; color: var(--text-primary); display: block;">Sao Lưu Google Drive</strong>
+                                            <span style="font-size: 0.8rem; color: var(--text-muted);">Đẩy mỗi bản sao lưu lên Google Drive của Quản Trị</span>
+                                        </div>
+                                    </div>
+                                    <span id="gdriveStatusBadge" class="status-pill" style="background: #f1f5f9; color: #64748b;">
+                                        <i class="fa-solid fa-circle-info"></i> Chưa kết nối
+                                    </span>
+                                </div>
+
+                                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
+                                    <button type="button" id="btnGDriveConnect" class="btn btn-primary" style="font-weight: 600;">
+                                        <i class="fa-brands fa-google-drive"></i> Kết Nối Google Drive
+                                    </button>
+                                    <button type="button" id="btnGDriveDisconnect" class="btn btn-secondary" style="font-weight: 600; color: #dc2626; border-color: #fecaca; display: none;">
+                                        <i class="fa-solid fa-link-slash"></i> Ngắt Kết Nối
+                                    </button>
+                                    <span id="gdriveAccountInfo" style="font-size: 0.85rem; color: var(--text-secondary);"></span>
+                                </div>
+
+                                <div id="gdriveCodeRow" style="display: none; margin-top: 12px; background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 12px 14px;">
+                                    <p style="margin: 0 0 8px 0; font-size: 0.84rem; color: var(--text-secondary); line-height: 1.55;">
+                                        <strong>Bước 1:</strong> Bấm <strong>Kết Nối</strong>, tab Google mở ra → chọn tài khoản → bấm <strong>Cho phép</strong>.
+                                        Trình duyệt sẽ chuyển hướng về một địa chỉ <code>http://localhost/?code=...</code> (không vào được web — bình thường).
+                                        <br>
+                                        <strong>Bước 2:</strong> Copy <strong>toàn bộ URL</strong> trên thanh địa chỉ rồi dán vào ô dưới đây và bấm <strong>Xác Nhận</strong>.
+                                    </p>
+                                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                        <input type="text" id="gdriveCodeInput" class="form-control" style="flex: 1; min-width: 260px; font-family: monospace;"
+                                            placeholder="Dán mã kết nối (hoặc toàn bộ URL http://localhost/?code=...)">
+                                        <button type="button" id="btnGDriveConfirm" class="btn btn-secondary" style="font-weight: 600;">
+                                            <i class="fa-solid fa-check"></i> Xác Nhận Mã
+                                        </button>
+                                    </div>
+                                    <p style="margin: 8px 0 0 0; font-size: 0.78rem; color: #b45309;">
+                                        <i class="fa-solid fa-triangle-exclamation"></i> Toàn bộ backup sau đó sẽ được lưu TRÊN Google Drive (xoá bản local sau khi upload thành công).
+                                    </p>
+                                </div>
+
+                                <div id="gdriveFeedbackMsg" class="zalo-feedback" style="margin-top: 0.75rem;"></div>
                             </div>
 
                             <!-- Bảng danh sách các bản sao lưu -->
@@ -689,7 +755,7 @@
     <div id="toastContainer" class="toast-container"></div>
 
     <script type="module" src="js/shared/auth-guard.js?v=2.5"></script>
-    <script src="js/shared/app-shell.js?v=3.0"></script>
+    <script src="js/shared/app-shell.js?v=3.1"></script>
     <script src="js/shared/header-actions.js?v=2.2"></script>
 
     <!-- Page Script -->

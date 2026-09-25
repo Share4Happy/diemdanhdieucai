@@ -32,11 +32,12 @@ class Settings(BaseModel):
     DATABASE_URL: str = f"sqlite:///{BASE_DIR / 'database' / 'attendance.db'}"
 
     # DVR / NVR Hardware Settings (Đầu ghi camera thực tế trường học)
+    # LƯU Ý: DVR_PASSWORD PHẢI đặt trong .env. Không hardcode mật khẩu vào source.
     DVR_HOST: str = "192.168.10.200"
     DVR_PORT: int = 554
     DVR_HTTP_PORT: int = 80
     DVR_USER: str = "admin"
-    DVR_PASSWORD: str = "Lhu@2025"
+    DVR_PASSWORD: str = os.getenv("DVR_PASSWORD", "")
     DVR_PROTOCOL: str = "DAHUA" # Cấu trúc /cam/realmonitor?channel={ch}&subtype=0
 
     def get_dvr_rtsp_url(self, channel_id: int, subtype: int = 0) -> str:
@@ -68,6 +69,8 @@ class Settings(BaseModel):
     USE_TILED_INFERENCE: bool = True    # Bật thuật toán phân mảnh quét chi tiết đa tầng (SAHI)
 
     # Auth / Login
+    # LƯU Ý: JWT_SECRET phải được đặt trong .env (chuỗi ngẫu nhiên dài >= 32 ký tự).
+    # Giá trị default chỉ là fallback để app khởi động được; không dùng trong production.
     JWT_SECRET: str = os.getenv("JWT_SECRET", "change-me-diemdanh-dieucai")
     JWT_EXPIRE_HOURS: int = int(os.getenv("JWT_EXPIRE_HOURS", "12"))
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("JWT_EXPIRE_HOURS", "12")) * 60
@@ -75,6 +78,9 @@ class Settings(BaseModel):
     ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "Admin@2025")
     ADMIN_FULL_NAME: str = os.getenv("ADMIN_FULL_NAME", "Quản trị hệ thống")
     APP_PUBLIC_URL: str = os.getenv("APP_PUBLIC_URL", "http://localhost:8000")
+    COOKIE_SECURE: bool = os.getenv("COOKIE_SECURE", "false").lower() in ("1", "true", "yes")
+    # Danh sách host ngoài được phép gửi webhook/HTTP (vd: ZALO_BOT_API_BASE_URL). Phân cách bằng dấu phẩy.
+    ZALO_ALLOWED_HOSTS: str = os.getenv("ZALO_ALLOWED_HOSTS", "")
     CORS_ORIGINS: str = os.getenv(
         "CORS_ORIGINS",
         "http://localhost:8000,http://127.0.0.1:8000,http://localhost:3000,http://127.0.0.1:3000",
@@ -123,7 +129,18 @@ class Settings(BaseModel):
     # Authentication & Security
     JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "truong-thpt-dieu-cai-secret-key-2026-attendance-ai-secured")
     JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 # 24 giờ
+
+    # Google Drive Backup (Sao lưu dữ liệu đám mây)
+    # LƯU Ý: tạo OAuth Client kiểu "Desktop App" trên Google Cloud Console rồi đặt 2 thông số dưới vào .env.
+    # Cách lấy: https://console.cloud.google.com/apis/credentials → Create Credentials → OAuth Client ID → Desktop App.
+    GOOGLE_DRIVE_CLIENT_ID: str = os.getenv("GOOGLE_DRIVE_CLIENT_ID", "")
+    GOOGLE_DRIVE_CLIENT_SECRET: str = os.getenv("GOOGLE_DRIVE_CLIENT_SECRET", "")
+    # (Tùy chọn) ID thư mục Google Drive muốn lưu backup. Bỏ trống = lưu vào thư mục gốc "My Drive".
+    GOOGLE_DRIVE_FOLDER_ID: str = os.getenv("GOOGLE_DRIVE_FOLDER_ID", "")
+    # URI nhận mã code sau khi người dùng đồng ý kết nối (Desktop App dùng http://localhost).
+    GOOGLE_DRIVE_REDIRECT_URI: str = os.getenv("GOOGLE_DRIVE_REDIRECT_URI", "http://localhost")
+    # True = Chỉ lưu trên Drive (xoá bản zip local sau khi upload thành công). False = giữ cả 2 nơi.
+    GOOGLE_DRIVE_REMOTE_ONLY: bool = os.getenv("GOOGLE_DRIVE_REMOTE_ONLY", "true").lower() in ("1", "true", "yes")
 
 
 settings = Settings()

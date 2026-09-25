@@ -1,17 +1,25 @@
 import json
 from pathlib import Path
 from typing import Optional, List, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from config.settings import settings
 from config.logging_config import logger
 from database.db_session import get_db, init_db
-from database.models import Classroom, ROIPolygon, AttendanceDetail, NVRDevice
+from database.models import Classroom, ROIPolygon, AttendanceDetail, NVRDevice, User
 from core.rtsp_client import rtsp_client
 from core.relay_service import relay_service
 from services.nvr_service import nvr_service
-from backend.api.deps import get_current_user
+from backend.api.deps import get_current_user, require_admin
+from backend.api.security import (
+    check_rate_limit,
+    client_ip,
+    log_info_redacted,
+    mask_stream_url,
+    validate_relay_ip,
+    validate_stream_source,
+)
 from backend.schemas.camera_schemas import (
     CameraCreateRequest,
     CameraUpdateRequest,
@@ -50,7 +58,9 @@ async def get_all_cameras(db: Session = Depends(get_db)):
             "name": c.name,
             "room_number": c.room_number,
             "standard_count": c.standard_count,
-            "rtsp_url": c.rtsp_url,
+            # Che credential (user:pass) trong URL RTSP — chỉ admin mới lấy lại URL gốc.
+            "rtsp_url": mask_stream_url(c.rtsp_url),
+            "has_password": "@" in (c.rtsp_url or "").split("//", 1)[-1].split("/", 1)[0],
             "relay_ip": c.relay_ip,
             "is_active": c.is_active,
             "nvr_id": c.nvr_id,
@@ -60,11 +70,22 @@ async def get_all_cameras(db: Session = Depends(get_db)):
         })
     return {"cameras": results}
 
+
+@router.get("/{classroom_id}/raw")
+async def get_camera_raw_rtsp(classroom_id: int, _admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    """Trả URL gốc (có credential) cho admin khi cần chỉnh sửa cấu hình camera."""
+    cls = db.query(Classroom).filter(Classroom.id == classroom_id).first()
+    if not cls:
+        raise HTTPException(status_code=404, detail="Không tìm thấy camera/lớp học")
+    return {"success": True, "rtsp_url": cls.rtsp_url}
+
 @router.post("")
 @router.post("/")
-async def create_camera(data: CameraCreateRequest, db: Session = Depends(get_db)):
-    """Thêm mới một camera / lớp học vào hệ thống."""
+async def create_camera(data: CameraCreateRequest, _admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    """Thêm mới một camera / lớp học vào hệ thống (chỉ admin)."""
     clean_code = data.code.strip().upper()
+    validate_relay_ip(data.relay_ip or "")
+    validate_stream_source(data.rtsp_url)
     existing = db.query(Classroom).filter(Classroom.code == clean_code).first()
     if existing:
         raise HTTPException(status_code=400, detail=f"Mã camera/lớp '{clean_code}' đã tồn tại!")
@@ -99,12 +120,14 @@ async def create_camera(data: CameraCreateRequest, db: Session = Depends(get_db)
     return {"success": True, "message": f"Đã thêm thành công camera {cls.name}", "camera_id": cls.id}
 
 @router.put("/{classroom_id}")
-async def update_camera(classroom_id: int, data: CameraUpdateRequest, db: Session = Depends(get_db)):
-    """Cập nhật thông tin camera / lớp học."""
+async def update_camera(classroom_id: int, data: CameraUpdateRequest, _admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    """Cập nhật thông tin camera / lớp học (chỉ admin)."""
     cls = db.query(Classroom).filter(Classroom.id == classroom_id).first()
     if not cls:
         raise HTTPException(status_code=404, detail="Không tìm thấy camera/lớp học")
 
+    if data.relay_ip is not None:
+        validate_relay_ip(data.relay_ip)
     if data.name is not None:
         cls.name = data.name.strip()
     if data.room_number is not None:
@@ -114,7 +137,12 @@ async def update_camera(classroom_id: int, data: CameraUpdateRequest, db: Sessio
     url_changed = False
     if data.rtsp_url is not None:
         new_url = data.rtsp_url.strip()
-        if new_url != cls.rtsp_url:
+        # Nếu frontend gửi lại đúng giá trị đã che → giữ nguyên URL gốc cũ.
+        if new_url == mask_stream_url(cls.rtsp_url or ""):
+            new_url = (cls.rtsp_url or "").strip()
+        elif new_url != (cls.rtsp_url or ""):
+            validate_stream_source(new_url)
+        if new_url != (cls.rtsp_url or ""):
             cls.rtsp_url = new_url
             url_changed = True
     if data.relay_ip is not None:
@@ -139,8 +167,8 @@ async def update_camera(classroom_id: int, data: CameraUpdateRequest, db: Sessio
     return {"success": True, "message": f"Cập nhật camera {cls.name} thành công"}
 
 @router.delete("/{classroom_id}")
-async def delete_camera(classroom_id: int, db: Session = Depends(get_db)):
-    """Xóa camera và các dữ liệu liên quan khỏi hệ thống."""
+async def delete_camera(classroom_id: int, _admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    """Xóa camera và các dữ liệu liên quan khỏi hệ thống (chỉ admin)."""
     cls = db.query(Classroom).filter(Classroom.id == classroom_id).first()
     if not cls:
         raise HTTPException(status_code=404, detail="Không tìm thấy camera/lớp học")
@@ -156,8 +184,8 @@ async def delete_camera(classroom_id: int, db: Session = Depends(get_db)):
     return {"success": True, "message": f"Đã xóa camera {cname} thành công"}
 
 @router.get("/available-webcams")
-async def get_available_webcams_endpoint(refresh: bool = False):
-    """Quét và trả về danh sách tất cả Webcam vật lý và ảo đang kết nối trên máy tính kèm preview thumbnail."""
+async def get_available_webcams_endpoint(refresh: bool = False, _admin: User = Depends(require_admin)):
+    """Quét và trả về danh sách tất cả Webcam vật lý và ảo đang kết nối trên máy tính kèm preview thumbnail (chỉ admin)."""
     webcams = rtsp_client.get_available_webcams(refresh=refresh)
     return {
         "success": True,
@@ -166,8 +194,11 @@ async def get_available_webcams_endpoint(refresh: bool = False):
     }
 
 @router.post("/test-connection")
-async def test_camera_connection(req: TestCameraRequest):
-    """Kiểm tra trực tiếp kết nối tới nguồn camera (RTSP, Webcam, File) và trả về snapshot preview."""
+async def test_camera_connection(req: TestCameraRequest, request: Request, _admin: User = Depends(require_admin)):
+    """Kiểm tra trực tiếp kết nối tới nguồn camera (RTSP, Webcam, File) và trả về snapshot preview (chỉ admin)."""
+    check_rate_limit("action", f"testconn:{client_ip(request)}", limit=10, window_seconds=60)
+    validate_stream_source(req.source_url)
+    validate_relay_ip(req.relay_ip or "")
     res = rtsp_client.test_camera_stream(
         source_url=req.source_url,
         trigger_signal=req.trigger_signal or False,
@@ -176,8 +207,10 @@ async def test_camera_connection(req: TestCameraRequest):
     return res
 
 @router.post("/test-ir-by-url")
-async def test_ir_by_url_endpoint(req: TestCameraRequest):
-    """Thử nghiệm chu trình bật đèn hồng ngoại camera (2.5s) rồi trả về Auto trên URL nhập từ form."""
+async def test_ir_by_url_endpoint(req: TestCameraRequest, _admin: User = Depends(require_admin)):
+    """Thử nghiệm chu trình bật đèn hồng ngoại camera (2.5s) rồi trả về Auto trên URL nhập từ form (chỉ admin)."""
+    validate_stream_source(req.source_url)
+    validate_relay_ip(req.relay_ip or "")
     cam_info = {"rtsp_url": req.source_url, "relay_ip": req.relay_ip or "", "name": "TestURLCamera"}
     ok_on = relay_service.set_camera_day_night(cam_info, "IR_ON")
     import time
@@ -190,8 +223,8 @@ async def test_ir_by_url_endpoint(req: TestCameraRequest):
     }
 
 @router.post("/{classroom_id}/test-ir")
-async def test_classroom_camera_ir_endpoint(classroom_id: int, req: Optional[TestCameraIRRequest] = None, db: Session = Depends(get_db)):
-    """Thử nghiệm bật đèn hồng ngoại trên camera lớp học trong X giây rồi tự động tắt."""
+async def test_classroom_camera_ir_endpoint(classroom_id: int, req: Optional[TestCameraIRRequest] = None, _admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    """Thử nghiệm bật đèn hồng ngoại trên camera lớp học trong X giây rồi tự động tắt (chỉ admin)."""
     cls = db.query(Classroom).filter(Classroom.id == classroom_id).first()
     if not cls:
         raise HTTPException(status_code=404, detail="Không tìm thấy camera/lớp học")
@@ -219,8 +252,8 @@ async def test_classroom_camera_ir_endpoint(classroom_id: int, req: Optional[Tes
     }
 
 @router.post("/test-all-ir")
-async def test_all_cameras_ir_endpoint(req: Optional[TestCameraIRRequest] = None, db: Session = Depends(get_db)):
-    """Thử nghiệm kích hoạt đèn hồng ngoại đồng loạt trên toàn bộ 30 camera lớp học trong 3-4 giây rồi tự động chuyển màu & tắt."""
+async def test_all_cameras_ir_endpoint(req: Optional[TestCameraIRRequest] = None, _admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    """Thử nghiệm kích hoạt đèn hồng ngoại đồng loạt trên toàn bộ 30 camera lớp học (chỉ admin)."""
     classrooms = db.query(Classroom).filter(Classroom.is_active == True).order_by(Classroom.id).all()
     if not classrooms:
         raise HTTPException(status_code=404, detail="Chưa có camera lớp học nào đang kích hoạt trong hệ thống.")
@@ -244,8 +277,8 @@ async def test_all_cameras_ir_endpoint(req: Optional[TestCameraIRRequest] = None
 
 
 @router.post("/reset-defaults")
-async def reset_default_cameras(db: Session = Depends(get_db)):
-    """Khôi phục lại danh sách 30 lớp học chuẩn của trường THPT Điều Cải."""
+async def reset_default_cameras(_admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    """Khôi phục lại danh sách 30 lớp học chuẩn của trường THPT Điều Cải (chỉ admin)."""
     db.query(ROIPolygon).delete()
     db.query(AttendanceDetail).delete()
     db.query(Classroom).delete()
@@ -256,8 +289,10 @@ async def reset_default_cameras(db: Session = Depends(get_db)):
 # ==================== NVR / DVR SMART INTEGRATION ====================
 
 @router.post("/nvr/probe")
-async def probe_nvr_endpoint(req: NVRProbeRequest):
-    """Thăm dò đồng thời toàn bộ các kênh camera của đầu ghi NVR và trả về thumbnail live preview."""
+async def probe_nvr_endpoint(req: NVRProbeRequest, request: Request, _admin: User = Depends(require_admin)):
+    """Thăm dò đồng thời toàn bộ các kênh camera của đầu ghi NVR và trả về thumbnail live preview (chỉ admin)."""
+    check_rate_limit("action", f"nvrprobe:{client_ip(request)}", limit=5, window_seconds=120)
+    validate_relay_ip(req.ip_address)  # NVR phải nằm trong mạng nội bộ
     res = nvr_service.probe_all_nvr_channels(
         ip_address=req.ip_address,
         rtsp_port=req.rtsp_port,
@@ -271,13 +306,14 @@ async def probe_nvr_endpoint(req: NVRProbeRequest):
     return res
 
 @router.post("/nvr/batch-import")
-async def batch_import_nvr_endpoint(req: NVRBatchImportRequest, db: Session = Depends(get_db)):
+async def batch_import_nvr_endpoint(req: NVRBatchImportRequest, _admin: User = Depends(require_admin), db: Session = Depends(get_db)):
     """
-    Nhập đồng loạt toàn bộ 30 camera từ Đầu Ghi NVR vào hệ thống.
+    Nhập đồng loạt toàn bộ 30 camera từ Đầu Ghi NVR vào hệ thống (chỉ admin).
     Tự động khởi tạo cấu hình ROI chuẩn và lưu ảnh snapshot mới nhất.
     """
     import base64
     host = req.ip_address.strip()
+    validate_relay_ip(host)
     
     # 1. Tìm hoặc tạo bản ghi NVRDevice
     nvr = db.query(NVRDevice).filter(NVRDevice.ip_address == host).first()
@@ -322,6 +358,7 @@ async def batch_import_nvr_endpoint(req: NVRBatchImportRequest, db: Session = De
     for item in req.channels:
         if not item.is_selected:
             continue
+        validate_stream_source(item.rtsp_url)
         clean_code = item.code.strip().upper()
         existing = db.query(Classroom).filter(Classroom.code == clean_code).first()
         if existing:
@@ -375,8 +412,8 @@ async def batch_import_nvr_endpoint(req: NVRBatchImportRequest, db: Session = De
     }
 
 @router.get("/nvr/list")
-async def list_nvr_devices(db: Session = Depends(get_db)):
-    """Lấy danh sách các Đầu Ghi NVR đã cấu hình."""
+async def list_nvr_devices(_admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    """Lấy danh sách các Đầu Ghi NVR đã cấu hình (chỉ admin)."""
     nvrs = db.query(NVRDevice).order_by(NVRDevice.id.desc()).all()
     results = []
     for n in nvrs:
@@ -396,8 +433,8 @@ async def list_nvr_devices(db: Session = Depends(get_db)):
     return {"success": True, "nvrs": results}
 
 @router.delete("/nvr/{nvr_id}")
-async def delete_nvr_device(nvr_id: int, delete_cameras: bool = False, db: Session = Depends(get_db)):
-    """Xóa đầu ghi NVR và tùy chọn xóa toàn bộ camera thuộc đầu ghi đó."""
+async def delete_nvr_device(nvr_id: int, delete_cameras: bool = False, _admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    """Xóa đầu ghi NVR và tùy chọn xóa toàn bộ camera thuộc đầu ghi đó (chỉ admin)."""
     nvr = db.query(NVRDevice).filter(NVRDevice.id == nvr_id).first()
     if not nvr:
         raise HTTPException(status_code=404, detail="Không tìm thấy đầu ghi NVR")
@@ -435,7 +472,7 @@ async def get_matrix_wall(db: Session = Depends(get_db)):
             "room_number": c.room_number,
             "channel_number": c.channel_number or c.id,
             "standard_count": c.standard_count,
-            "rtsp_url": c.rtsp_url,
+            "rtsp_url": mask_stream_url(c.rtsp_url),
             "is_active": c.is_active,
             "has_roi": bool(c.roi and c.roi.red_zone),
             "snapshot_url": snap_url,

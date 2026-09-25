@@ -771,39 +771,39 @@
 /* ==================== NVR MODAL WIZARD STYLES ==================== */
 .nvr-config-card {
     background: #f8fafc;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 18px 20px;
 }
 
 .nvr-step-num {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 22px;
-    height: 22px;
-    background: #059669;
+    width: 24px;
+    height: 24px;
+    background: var(--primary, #2563eb);
     color: #fff;
-    font-size: 0.75rem;
+    font-size: 0.78rem;
     font-weight: 800;
     border-radius: 50%;
 }
 
 .nvr-preset-chip {
     margin-left: auto;
-    background: #ecfdf5;
-    color: #047857;
-    border: 1px solid #a7f3d0;
-    padding: 3px 10px;
+    background: #eff6ff;
+    color: var(--primary, #2563eb);
+    border: 1px solid #bfdbfe;
+    padding: 4px 12px;
     border-radius: 20px;
-    font-size: 0.78rem;
+    font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .nvr-preset-chip:hover {
-    background: #d1fae5;
+    background: #dbeafe;
 }
 
 .nvr-preview-toolbar {
@@ -848,8 +848,9 @@
 }
 
 .nvr-ch-card.selected {
-    border-color: #10b981;
-    background: #f0fdf4;
+    border-color: var(--primary, #2563eb);
+    background: #eff6ff;
+    box-shadow: 0 0 0 1px var(--primary, #2563eb);
 }
 
 .nvr-ch-thumb {
@@ -904,7 +905,7 @@
 
 
 /* ==================== LIVE VIEW MODAL - FULLSCREEN IMAGE VIEWER ==================== */
-.modal-backdrop {
+#liveViewModal.modal-backdrop {
     position: fixed;
     inset: 0;
     background: rgba(15, 23, 42, 0.95);
@@ -916,11 +917,11 @@
     animation: fadeIn 0.2s ease;
 }
 
-.modal-backdrop.active {
+#liveViewModal.modal-backdrop.active {
     display: flex;
 }
 
-.modal-dialog {
+#liveViewModal .modal-dialog {
     width: 100%;
     height: 100%;
     display: flex;
@@ -929,11 +930,11 @@
     padding: var(--space-4);
 }
 
-.modal-dialog.modal-fullscreen {
+#liveViewModal .modal-dialog.modal-fullscreen {
     padding: 0;
 }
 
-.modal-dialog.modal-fullscreen .modal-content {
+#liveViewModal .modal-dialog.modal-fullscreen .modal-content {
     width: 100%;
     height: 100%;
     max-width: none;
@@ -941,7 +942,7 @@
     border-radius: 0;
 }
 
-.modal-content {
+#liveViewModal .modal-content {
     background: var(--surface, #ffffff);
     border-radius: var(--radius-xl, 12px);
     box-shadow: var(--shadow-2xl, 0 25px 50px -12px rgba(0, 0, 0, 0.25));
@@ -952,7 +953,7 @@
     overflow: hidden;
 }
 
-.modal-header {
+#liveViewModal .modal-header {
     padding: var(--space-5, 1.25rem) var(--space-6, 1.5rem);
     background: var(--gray-900, #0f172a);
     color: white;
@@ -962,24 +963,24 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.modal-header-info {
+#liveViewModal .modal-header-info {
     flex: 1;
 }
 
-.modal-title {
+#liveViewModal .modal-title {
     font-size: var(--text-xl, 1.25rem);
     font-weight: var(--font-bold, 700);
     margin: 0;
     color: white;
 }
 
-.modal-subtitle {
+#liveViewModal .modal-subtitle {
     font-size: var(--text-sm, 0.875rem);
     color: rgba(255, 255, 255, 0.7);
     margin: var(--space-1, 0.25rem) 0 0 0;
 }
 
-.modal-close-btn {
+#liveViewModal .modal-close-btn {
     width: 40px;
     height: 40px;
     display: flex;
@@ -994,16 +995,21 @@
     transition: all var(--transition-fast, 0.15s);
 }
 
-.modal-close-btn:hover {
+#liveViewModal .modal-close-btn:hover {
     background: rgba(239, 68, 68, 0.2);
     color: #ef4444;
     transform: scale(1.05);
 }
 
-.modal-body {
+#liveViewModal .modal-body {
     flex: 1;
     overflow: auto;
     padding: var(--space-6, 1.5rem);
+}
+
+/* Modal System Safeguards on Cameras Page */
+.modal-backdrop {
+    z-index: 9999;
 }
 
 .modal-body-image {

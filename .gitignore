@@ -42,6 +42,8 @@ storage/*.png
 storage/*.json
 storage/*.log
 storage/*.zip
+storage/*.db
+*.db
 
 # Logs
 logs/*.log
@@ -49,6 +51,8 @@ logs/*.log
 # Scratch / Temp
 scratch/
 clone_phat/
+cookies.txt
+*.pytest_bak
 
 # OS specific
 .DS_Store
@@ -57,3 +61,6 @@ desktop.ini
 
 # Documentation & Private Assets
 docs/
+
+# Secret & OAuth Tokens
+config/gdrive_token.json

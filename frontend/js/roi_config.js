@@ -2,9 +2,11 @@
  * roi_config.js - ROI Polygon Setup Page Controller
  * THPT Điều Cải - Attendance System
  */
-import { CameraAPI, ROIAPI, showToast, API_BASE } from './api.js';
+import { CameraAPI, ROIAPI, showToast, API_BASE, escapeHtml } from './api.js';
 
 let editor = null;
+
+const esc = (v) => escapeHtml(v);
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Instantiate ROI Canvas Editor
@@ -17,7 +19,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const classSelect = document.getElementById('classSelect');
-    const btnModeRed = document.getElementById('btnModeRed');
     const btnModeGreen = document.getElementById('btnModeGreen');
     const btnClearZone = document.getElementById('btnClearZone');
     const btnSaveROI = document.getElementById('btnSaveROI');
@@ -60,7 +61,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (classSelect) {
         classSelect.innerHTML = classrooms.map(c => `
-            <option value="${c.id}">${c.name} (${c.room_number || 'Phòng ' + c.id}) - Chuẩn: ${c.standard_count || 40} HS</option>
+            <option value="${c.id}">${esc(c.name)} (${esc(c.room_number || 'Phòng ' + c.id)}) - Chuẩn: ${c.standard_count || 40} HS</option>
         `).join('');
 
         if (targetClassId) {

@@ -8,12 +8,7 @@ const API_BASE = (window.location.protocol === 'file:' || (!window.location.orig
     : '';
 
 function getAuthHeaders(extra = {}) {
-    const headers = { 'Accept': 'application/json', ...extra };
-    try {
-        const token = localStorage.getItem('authToken');
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-    } catch (e) {}
-    return headers;
+    return { 'Accept': 'application/json', ...extra };
 }
 
 class ROICanvasEditor {
@@ -77,6 +72,12 @@ class ROICanvasEditor {
             });
         }
 
+        // Bắt sự kiện thay đổi kích thước cửa sổ trình duyệt (Responsive auto-realign)
+        window.addEventListener('resize', () => {
+            this.resetContainerScroll();
+            this.render();
+        });
+
         // Bắt phím tắt bàn phím
         window.addEventListener('keydown', (e) => {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
@@ -92,6 +93,14 @@ class ROICanvasEditor {
                 }
             }
         });
+    }
+
+    resetContainerScroll() {
+        const outerWrapper = this.canvas?.closest('.canvas-outer-wrapper');
+        if (outerWrapper) {
+            outerWrapper.scrollLeft = 0;
+            outerWrapper.scrollTop = 0;
+        }
     }
 
     showToast(title, message, isError = false) {
@@ -487,6 +496,7 @@ class ROICanvasEditor {
     }
 
     render() {
+        this.resetContainerScroll();
         const ctx = this.ctx;
         if (!ctx || !this.canvas) return;
         const w = this.canvas.width || 1280;

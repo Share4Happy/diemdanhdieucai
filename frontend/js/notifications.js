@@ -2,7 +2,9 @@
  * notifications.js - Central Notifications & Distribution Controller
  * THPT Điều Cải - Attendance System (Zalo & Email)
  */
-import { ReportAPI, CameraAPI, showToast, API_BASE } from './api.js';
+import { ReportAPI, CameraAPI, showToast, API_BASE, escapeHtml, isAdmin } from './api.js';
+
+const esc = (v) => escapeHtml(v);
 
 let zaloRecipients = [];
 let zaloSaveTimer = null;
@@ -10,13 +12,43 @@ let allClassrooms = [];
 let realReportSummary = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+    applyRoleBasedUI();
     initTabs();
     loadClassrooms();
-    loadZaloConfig();
+    if (isAdmin()) loadZaloConfig();
     loadEmailConfig();
     loadAdjustSettings();
     setupEventListeners();
 });
+
+// ===================== PHÂN QUYỀN UI =====================
+// Nhân viên (staff) chỉ được XEM Lịch Trình Tự Động, không được cấu hình thông số nào.
+function applyRoleBasedUI() {
+    if (isAdmin()) return;
+
+    // Ẩn nút "Gửi Báo Cáo Zalo & Email" ở banner (hành động quản trị)
+    document.getElementById('btnSendAllTest')?.remove();
+
+    // Xoá các tab cấu hình (Zalo, Email, Điều Chỉnh Thông Báo)
+    document.querySelectorAll('.tabs-nav .tab-btn').forEach((btn) => {
+        const t = btn.getAttribute('data-tab');
+        if (t === 'tab-zalo' || t === 'tab-email' || t === 'tab-adjust') btn.remove();
+    });
+    ['tab-zalo', 'tab-email', 'tab-adjust'].forEach((id) => document.getElementById(id)?.remove());
+
+    // Xoá nút chỉnh sửa lịch trình và modal cấu hình giờ quét
+    document.getElementById('btnToggleEditSchedule')?.remove();
+    document.getElementById('scheduleEditModal')?.remove();
+
+    // Chuyển tab hiển thị mặc định sang "Lịch Trình Tự Động" (chỉ xem)
+    const schTab = document.querySelector('.tabs-nav .tab-btn[data-tab="tab-schedule"]');
+    if (schTab) {
+        document.querySelectorAll('.tabs-nav .tab-btn').forEach((b) => b.classList.remove('active'));
+        schTab.classList.add('active');
+    }
+    document.querySelectorAll('.tab-content').forEach((tc) => tc.classList.remove('active'));
+    document.getElementById('tab-schedule')?.classList.add('active');
+}
 
 // ===================== TABS NAVIGATION =====================
 function initTabs() {
@@ -40,10 +72,10 @@ function setupEventListeners() {
     const btnRefresh = document.getElementById('btnRefreshNotifications');
     if (btnRefresh) {
         btnRefresh.addEventListener('click', () => {
-            loadZaloConfig();
+            if (isAdmin()) loadZaloConfig();
             loadEmailConfig();
             loadAdjustSettings();
-            showToast('Đã làm mới thông tin cấu hình', 'success');
+            showToast('Đã làm mới thông tin', 'success');
         });
     }
 
@@ -134,7 +166,7 @@ async function loadClassrooms() {
         const classSelect = document.getElementById('recipientClassSelect');
         if (classSelect) {
             classSelect.innerHTML = '<option value="">-- Chọn lớp chủ nhiệm --</option>' +
-                allClassrooms.map(c => `<option value="${c.id}">${c.name} (${c.room_number || 'Phòng'})</option>`).join('');
+                allClassrooms.map(c => `<option value="${c.id}">${esc(c.name)} (${esc(c.room_number || 'Phòng')})</option>`).join('');
         }
     } catch (err) {
         console.warn('Lỗi nạp danh sách lớp học:', err);
@@ -430,7 +462,7 @@ async function handleSendTestZalo() {
         if (feedbackEl) {
             if (result.success) {
                 feedbackEl.className = 'zalo-feedback zalo-feedback--success';
-                feedbackEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${result.message}`;
+                feedbackEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${esc(result.message)}`;
                 if (typeof window.showSuccess === 'function') {
                     window.showSuccess(result.message, 'Gửi Báo Cáo Zalo Thành Công');
                 } else {
@@ -438,7 +470,7 @@ async function handleSendTestZalo() {
                 }
             } else {
                 feedbackEl.className = 'zalo-feedback zalo-feedback--error';
-                feedbackEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ${result.message}`;
+                feedbackEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ${esc(result.message)}`;
                 if (typeof window.showError === 'function') {
                     window.showError(result.message, 'Lỗi Gửi Zalo');
                 } else {
@@ -450,7 +482,7 @@ async function handleSendTestZalo() {
         const msg = err.message || err;
         if (feedbackEl) {
             feedbackEl.className = 'zalo-feedback zalo-feedback--error';
-            feedbackEl.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Lỗi: ${msg}`;
+            feedbackEl.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Lỗi: ${esc(msg)}`;
         }
         showToast('Lỗi gửi tin Zalo: ' + msg, 'danger');
     } finally {
@@ -891,7 +923,7 @@ async function handleSaveAdjustSettings() {
         showToast('Lỗi lưu cấu hình điều chỉnh', 'error');
         if (feedback) {
             feedback.style.color = '#dc2626';
-            feedback.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Lỗi: ${err.message || err}`;
+            feedback.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Lỗi: ${esc(err.message || err)}`;
         }
     } finally {
         if (btnSave) {

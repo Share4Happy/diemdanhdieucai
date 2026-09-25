@@ -2,13 +2,13 @@
 from datetime import datetime, timedelta
 import os
 from pathlib import Path
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from config.settings import settings
 from config.logging_config import logger
 from database.db_session import get_db
-from database.models import AttendanceSession, AttendanceDetail, Classroom
+from database.models import AttendanceSession, AttendanceDetail, Classroom, User
 from core.attendance_engine import attendance_engine
 from core.timezone_utils import get_now
 from services.excel_exporter import excel_exporter
@@ -26,7 +26,8 @@ from backend.schemas.report_schemas import (
     RetentionSettingsRequest,
     CleanupExpiredRequest
 )
-from backend.api.deps import get_current_user
+from backend.api.deps import get_current_user, require_admin
+from backend.api.security import check_rate_limit, client_ip, validate_external_http_url
 
 router = APIRouter(prefix="/reports", tags=["Reports"], dependencies=[Depends(get_current_user)])
 
@@ -37,8 +38,8 @@ async def list_reports():
     return {"reports": reports}
 
 @router.post("/export-now")
-async def export_excel_now(db: Session = Depends(get_db)):
-    """Xuất file Excel tổng hợp 30 lớp học ngay lập tức bằng pandas & openpyxl."""
+async def export_excel_now(_admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    """Xuất file Excel tổng hợp 30 lớp học ngay lập tức bằng pandas & openpyxl (chỉ admin)."""
     session = db.query(AttendanceSession).order_by(AttendanceSession.id.desc()).first()
     if not session:
         result = attendance_engine.run_daily_attendance(trigger_led=False)
@@ -60,14 +61,15 @@ async def export_excel_now(db: Session = Depends(get_db)):
     }
 
 @router.post("/send-email")
-async def send_report_email(req: SendEmailRequest):
-    """Gửi email báo cáo điểm danh trực tiếp tới Hiệu trưởng."""
+async def send_report_email(req: SendEmailRequest, request: Request, _admin: User = Depends(require_admin)):
+    """Gửi email báo cáo điểm danh trực tiếp tới Hiệu trưởng (chỉ admin)."""
+    check_rate_limit("action", f"sendmail:{client_ip(request)}", limit=5, window_seconds=300)
     res = notification_service.send_test_email(req.email)
     return res
 
 @router.post("/save-email-config")
-async def save_email_config(req: EmailConfigSaveRequest):
-    """Lưu cấu hình email Hiệu Trưởng vào hệ thống."""
+async def save_email_config(req: EmailConfigSaveRequest, _admin: User = Depends(require_admin)):
+    """Lưu cấu hình email Hiệu Trưởng vào hệ thống (chỉ admin)."""
     if req.principal_email:
         settings.PRINCIPAL_EMAIL = req.principal_email.strip()
         payload = {"PRINCIPAL_EMAIL": settings.PRINCIPAL_EMAIL}
@@ -80,8 +82,26 @@ async def get_distribution_status():
     return notification_service.get_status()
 
 @router.post("/send-zalo")
-async def send_zalo_report(req: ZaloTestRequest, db: Session = Depends(get_db)):
-    """Gửi tin nhắn báo cáo điểm danh qua Zalo."""
+async def send_zalo_report(req: ZaloTestRequest, request: Request, _admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    """Gửi tin nhắn báo cáo điểm danh qua Zalo (chỉ admin)."""
+    check_rate_limit("action", f"sendzalo:{client_ip(request)}", limit=10, window_seconds=120)
+    # Allowlist: host từ biến môi trường ZALO_ALLOWED_HOSTS + host tích hợp sẵn trong cấu hình admin đã lưu
+    allowed_hosts = {h.strip().lower() for h in (settings.ZALO_ALLOWED_HOSTS or "").split(",") if h.strip()}
+    for cfg_url in (settings.ZALO_WEBHOOK_URL, settings.ZALO_BOT_API_BASE_URL):
+        try:
+            cfg_host = (cfg_url or "").split("//", 1)[-1].split("/", 1)[0].lower()
+            if cfg_host:
+                allowed_hosts.add(cfg_host)
+        except Exception:
+            pass
+    try:
+        webhook_candidate = req.webhook_url or settings.ZALO_WEBHOOK_URL
+        if webhook_candidate and not validate_external_http_url(webhook_candidate, sorted(allowed_hosts)):
+            raise HTTPException(status_code=400, detail="Webhook URL không nằm trong danh sách ZALO_ALLOWED_HOSTS được cấu hình.")
+    except HTTPException:
+        raise
+    except Exception:
+        pass
     session_id = req.session_id
     if not session_id:
         latest = (
@@ -192,8 +212,8 @@ async def get_zalo_status():
     return zalo_service.get_status()
 
 @router.get("/zalo-config")
-async def get_zalo_config():
-    """Lấy toàn bộ cấu hình Zalo để nạp lên giao diện quản trị."""
+async def get_zalo_config(_admin: User = Depends(require_admin)):
+    """Lấy toàn bộ cấu hình Zalo để nạp lên giao diện quản trị (chỉ admin)."""
     return {
         "success": True,
         "config": {
@@ -211,8 +231,8 @@ async def get_zalo_config():
     }
 
 @router.post("/save-zalo-config")
-async def save_zalo_config(req: ZaloConfigSaveRequest):
-    """Lưu cấu hình Zalo vào bộ nhớ hệ thống và ghi ra file để giữ qua các lần khởi động."""
+async def save_zalo_config(req: ZaloConfigSaveRequest, _admin: User = Depends(require_admin)):
+    """Lưu cấu hình Zalo vào bộ nhớ hệ thống và ghi ra file để giữ qua các lần khởi động (chỉ admin)."""
     settings.ENABLE_ZALO_NOTIFICATION = req.enabled
     settings.ZALO_NOTIFICATION_TYPE = req.notification_type
     if req.webhook_url not in (None, ""):
@@ -255,8 +275,8 @@ async def get_notification_settings():
     }
 
 @router.post("/notification-settings")
-async def update_notification_settings(req: NotificationAdjustRequest):
-    """Cập nhật cấu hình điều chỉnh thông báo (quy tắc, ngưỡng cảnh báo, lịch trình, mẫu tin nhắn)."""
+async def update_notification_settings(req: NotificationAdjustRequest, _admin: User = Depends(require_admin)):
+    """Cập nhật cấu hình điều chỉnh thông báo (quy tắc, ngưỡng cảnh báo, lịch trình, mẫu tin nhắn) (chỉ admin)."""
     schedule_days = req.schedule_days or getattr(settings, "SCHEDULE_DAYS", "mon-sat")
     morning_time = req.scan_time_morning or getattr(settings, "SCAN_TIME_MORNING", "06:45")
     afternoon_time = req.scan_time_afternoon or getattr(settings, "SCAN_TIME_AFTERNOON", "12:45")
@@ -328,8 +348,8 @@ async def get_retention_settings(db: Session = Depends(get_db)):
     }
 
 @router.post("/retention-settings")
-async def save_retention_settings_endpoint(req: RetentionSettingsRequest):
-    """Lưu cấu hình thời gian lưu trữ dữ liệu."""
+async def save_retention_settings_endpoint(req: RetentionSettingsRequest, _admin: User = Depends(require_admin)):
+    """Lưu cấu hình thời gian lưu trữ dữ liệu (chỉ admin)."""
     if req.retention_days < 7:
         raise HTTPException(status_code=400, detail="Thời gian lưu trữ tối thiểu là 7 ngày.")
     if req.retention_days > 1000:
@@ -348,8 +368,8 @@ async def save_retention_settings_endpoint(req: RetentionSettingsRequest):
     }
 
 @router.post("/cleanup-expired")
-async def cleanup_expired_data(req: CleanupExpiredRequest = None, db: Session = Depends(get_db)):
-    """Chủ động dọn dẹp các bản ghi điểm danh và file Excel cũ hơn thời hạn quy định."""
+async def cleanup_expired_data(req: CleanupExpiredRequest = None, _admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    """Chủ động dọn dẹp các bản ghi điểm danh và file Excel cũ hơn thời hạn quy định (chỉ admin)."""
     days = req.days if (req and req.days) else getattr(settings, "DATA_RETENTION_DAYS", 90)
     cutoff_date = (get_now() - timedelta(days=days)).strftime("%Y-%m-%d")
 
@@ -399,9 +419,9 @@ async def cleanup_expired_data(req: CleanupExpiredRequest = None, db: Session = 
 
 @router.post("/clear-history")
 @router.delete("/clear-history")
-async def clear_reports_history(db: Session = Depends(get_db)):
-    """Xóa toàn bộ lịch sử điểm danh để làm mới hệ thống (Endpoint dự phòng cho Reports)."""
+async def clear_reports_history(_admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    """Xóa toàn bộ lịch sử điểm danh để làm mới hệ thống (Endpoint dự phòng cho Reports) (chỉ admin)."""
     from backend.api.routers.attendance import clear_attendance_history
-    return await clear_attendance_history(db)
+    return await clear_attendance_history(_admin, db)
 
 

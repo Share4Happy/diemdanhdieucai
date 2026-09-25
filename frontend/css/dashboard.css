@@ -31,14 +31,17 @@
 .page-title-row {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    gap: 1.5rem;
+    align-items: center;
+    gap: 1.25rem;
     flex-wrap: wrap;
+    min-width: 0;
+    width: 100%;
 }
 
 .page-actions {
     display: flex;
-    gap: 0.75rem;
+    align-items: center;
+    gap: 0.625rem;
     flex-wrap: wrap;
 }
 
@@ -85,10 +88,24 @@
 }
 
 .kpi-grid-optimized {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 1rem;
     margin-bottom: 0;
+    min-width: 0;
+    width: 100%;
+}
+
+@media (max-width: 1500px) {
+    .kpi-grid-optimized {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .kpi-grid-optimized {
+        grid-template-columns: 1fr !important;
+    }
 }
 
 .kpi-card-v2.kpi-highlight {
@@ -102,10 +119,12 @@
     border-radius: var(--radius);
     padding: 1.25rem;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 1rem;
     transition: all 0.2s ease;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    min-width: 0;
+    overflow: hidden;
 }
 
 .kpi-card-v2:hover {
@@ -2211,9 +2230,9 @@
    RESPONSIVE - OPTIMIZED DASHBOARD
    ===================================================== */
 
-@media (max-width: 1200px) {
+@media (max-width: 1500px) {
     .kpi-grid-optimized {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     }
 
     .charts-grid-optimized {
@@ -2225,9 +2244,9 @@
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 640px) {
     .kpi-grid-optimized {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
     }
 
     .status-summary-body {
@@ -2364,12 +2383,50 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     overflow: hidden;
     margin-bottom: 0;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.table-responsive {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+    scrollbar-width: thin;
+}
+
+.table-responsive::-webkit-scrollbar {
+    height: 7px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.dashboard-table {
+    width: 100%;
+    min-width: 980px;
+    border-collapse: collapse;
 }
 
 .table-header-box {
     padding: 1.25rem 1.5rem;
     border-bottom: 1px solid var(--border-color);
     background: #ffffff;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .table-main-title {
@@ -2964,6 +3021,10 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 6px 16px -4px rgba(15, 23, 42, 0.04);
     padding: 1.2rem 1.5rem;
     transition: all 0.2s ease;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 .trend-card:hover {
@@ -3112,11 +3173,60 @@
 .trend-chart-wrapper {
     position: relative;
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
     height: 310px;
     margin-top: 6px;
+    overflow: hidden;
+}
+
+.trend-chart-wrapper canvas {
+    max-width: 100% !important;
+    width: 100% !important;
+}
+
+@media (max-width: 1280px) {
+    .trend-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .trend-header-right {
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .trend-metric-chip {
+        flex: 1 1 auto;
+    }
 }
 
 @media (max-width: 900px) {
+    .page-title-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .page-actions {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .live-clock-container {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .page-actions .btn {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+
     .trend-card-header {
         flex-direction: column;
         align-items: flex-start;
@@ -3162,6 +3272,50 @@
 
     .segmented-tab {
         flex-shrink: 0;
+    }
+}
+
+@media (max-width: 640px) {
+    .page-header-compact {
+        margin-bottom: 1rem;
+    }
+
+    .page-header-compact .page-title {
+        font-size: 1.45rem;
+        line-height: 1.25;
+        margin-bottom: 0.35rem;
+    }
+
+    .page-header-compact .page-description {
+        font-size: 0.825rem;
+        line-height: 1.45;
+    }
+
+    .page-actions {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .live-clock-container {
+        width: 100%;
+        justify-content: center;
+        font-size: 0.85rem;
+        padding: 7px 12px;
+    }
+
+    .page-actions #btnRefreshDashboard,
+    .page-actions #btnDownloadExcel {
+        flex: 1 1 calc(50% - 4px);
+        min-width: 120px;
+        justify-content: center;
+    }
+
+    .page-actions #btnTriggerScan {
+        width: 100%;
+        flex: 1 1 100%;
+        justify-content: center;
     }
 }
 

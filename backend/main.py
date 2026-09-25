@@ -2,8 +2,9 @@ import os
 import sys
 from pathlib import Path
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 
 # Đảm bảo root directory có trong sys.path
@@ -42,8 +43,9 @@ app = FastAPI(
     title=f"{settings.APP_NAME} - REST API",
     version=settings.APP_VERSION,
     lifespan=lifespan,
-    docs_url="/docs",
-    redoc_url="/redoc"
+    # Chỉ mở /docs, /redoc khi DEBUG=True (môi trường development).
+    docs_url="/docs" if settings.DEBUG else None,
+    redoc_url="/redoc" if settings.DEBUG else None,
 )
 
 # Cấu hình CORS cho cookie đăng nhập (không dùng allow_origins="*")
@@ -66,7 +68,7 @@ app.include_router(system_router, prefix="/api")
 app.include_router(backup_router, prefix="/api")
 
 class CORSStaticFiles(StaticFiles):
-    """Phục vụ file tĩnh kèm tiêu đề CORS mở cho phép Frontend port 3000 tải ảnh an toàn."""
+    """Phục vụ file tĩnh kèm tiêu đề CORS mở cho Frontend port 3000 tải ảnh an toàn (chỉ dùng cho frontend)."""
     async def get_response(self, path: str, scope):
         response = await super().get_response(path, scope)
         response.headers["Access-Control-Allow-Origin"] = "*"
@@ -78,12 +80,43 @@ class CORSStaticFiles(StaticFiles):
             response.headers["Expires"] = "0"
         return response
 
-# Mount dữ liệu tĩnh (Lưu trữ ảnh và frame mẫu)
-app.mount("/storage", CORSStaticFiles(directory=str(settings.STORAGE_DIR)), name="storage")
-app.mount("/dataset", CORSStaticFiles(directory=str(settings.BASE_DIR / "dataset")), name="dataset")
+class AuthStaticFiles(StaticFiles):
+    """
+    Mount yêu cầu đăng nhập (cookie access_token) — chống lộ dữ liệu nhạy cảm
+    trong storage/ (ảnh học sinh, báo cáo Excel, backup CSDL, file cấu hình secret).
+    """
+    async def get_response(self, path: str, scope):
+        from services.auth_service import (
+            AUTH_COOKIE_NAME,
+            decode_access_token_payload,
+            is_jti_revoked,
+        )
+
+        request = Request(scope)
+        token = request.cookies.get(AUTH_COOKIE_NAME) or ""
+        payload = decode_access_token_payload(token) if token else None
+        if payload is None or is_jti_revoked(payload.get("jti")):
+            # Trả 401 JSON để trình duyệt không nhầm thành redirect (đặc biệt với <img>).
+            return Response(
+                content='{"detail":"Chưa đăng nhập"}',
+                status_code=401,
+                media_type="application/json",
+                headers={"Cache-Control": "no-store"},
+            )
+        response = await super().get_response(path, scope)
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, HEAD, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        response.headers["Cache-Control"] = "private, no-store"
+        return response
+
+
+# Mount dữ liệu tĩnh (Lưu trữ ảnh và frame mẫu) — BẮT BUỘC đăng nhập
+app.mount("/storage", AuthStaticFiles(directory=str(settings.STORAGE_DIR)), name="storage")
+app.mount("/dataset", AuthStaticFiles(directory=str(settings.BASE_DIR / "dataset")), name="dataset")
 camera_dir = settings.BASE_DIR / "camera"
 if camera_dir.exists():
-    app.mount("/camera", CORSStaticFiles(directory=str(camera_dir)), name="camera")
+    app.mount("/camera", AuthStaticFiles(directory=str(camera_dir)), name="camera")
 
 # Hỗ trợ phục vụ Frontend tĩnh trực tiếp (cho kịch bản 1-click hoặc sản xuất)
 frontend_dir = PROJECT_ROOT / "frontend"

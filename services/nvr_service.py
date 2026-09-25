@@ -204,7 +204,7 @@ class NVRService:
         ip_address: str,
         rtsp_port: int = 554,
         username: str = "admin",
-        password: str = "Lhu@2025",
+        password: str = "",
         brand: str = "DAHUA",
         channels_count: int = 30,
         naming_mode: str = "DEFAULT_30_CLASSES",

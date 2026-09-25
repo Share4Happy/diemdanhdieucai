@@ -8,14 +8,14 @@
 
     <!-- Design System & Components -->
     <link rel="stylesheet" href="css/design-system.css">
-    <link rel="stylesheet" href="css/layout/app-shell.css?v=2.5">
+    <link rel="stylesheet" href="css/layout/app-shell.css?v=3.1">
     <link rel="stylesheet" href="css/components/buttons-redesign.css">
     <link rel="stylesheet" href="css/components/badges-redesign.css">
     <link rel="stylesheet" href="css/components/cards-redesign.css">
     <link rel="stylesheet" href="css/components/header-actions.css">
     <link rel="stylesheet" href="css/components/skeleton-loader.css">
     <link rel="stylesheet" href="css/global-table-balance.css?v=2.5">
-    <link rel="stylesheet" href="css/dashboard.css?v=2.5">
+    <link rel="stylesheet" href="css/dashboard.css?v=3.1">
     <link rel="stylesheet" href="css/components/image-zoom-viewer.css?v=1.0">
     <link rel="stylesheet" href="css/auth.css">
 
@@ -24,6 +24,25 @@
 </head>
 
 <body>
+    <!-- Mobile Topbar Navigation (Hiển thị cố định trên điện thoại & tablet <= 1024px) -->
+    <header class="mobile-topbar">
+        <div class="mobile-topbar-left">
+            <button type="button" class="mobile-menu-btn" title="Mở Menu Điều Hướng" aria-label="Mở Menu Điều Hướng">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="mobile-topbar-brand">
+                <div class="mobile-brand-logo">ĐC</div>
+                <div class="mobile-brand-text">
+                    <span class="mobile-brand-title">THPT ĐIỀU CẢI</span>
+                    <span class="mobile-brand-subtitle">AI CAMERA</span>
+                </div>
+            </div>
+        </div>
+        <div class="mobile-topbar-right">
+            <div class="mobile-user-avatar" id="mobileUserAvatar" title="Thông tin tài khoản">A</div>
+        </div>
+    </header>
+
     <!-- App Shell -->
     <div class="app-shell">
         <!-- Sidebar -->
@@ -287,6 +306,11 @@
 
                                         <!-- Menu thả xuống chọn nhanh -->
                                         <div class="grade-menu-popover" id="gradeDropdownMenu">
+                                            <button type="button" class="grade-menu-opt" data-grade="all">
+                                                <span class="opt-name">Tất Cả Lớp</span>
+                                                <span class="opt-hint">Toàn bộ phòng học</span>
+                                                <i class="fa-solid fa-check opt-check"></i>
+                                            </button>
                                             <button type="button" class="grade-menu-opt active" data-grade="10">
                                                 <span class="opt-name">Khối 10</span>
                                                 <span class="opt-hint">10A1 - 10A10</span>
@@ -450,11 +474,11 @@
     <div id="toast-container"></div>
 
     <script type="module" src="js/shared/auth-guard.js?v=2.5"></script>
-    <script src="js/shared/app-shell.js?v=3.0"></script>
+    <script src="js/shared/app-shell.js?v=3.1"></script>
     <script src="js/shared/header-actions.js?v=2.2"></script>
     <!-- Chart.js Engine (Local + Offline First) -->
     <script src="js/libs/chart.umd.min.js"></script>
-    <script type="module" src="js/dashboard.js?v=2.7"></script>
+    <script type="module" src="js/dashboard.js?v=3.2"></script>
 </body>
 
 </html>

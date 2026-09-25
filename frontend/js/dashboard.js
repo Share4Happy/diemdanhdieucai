@@ -11,13 +11,16 @@
  * ===================================================================
  */
 
-import { AttendanceAPI, showToast } from './api.js';
+import { AttendanceAPI, showToast, escapeHtml } from './api.js';
 import { ImageZoomViewer } from './shared/image-zoom-viewer.js';
+
+// Escape dữ liệu động khi chèn HTML (chống stored XSS)
+const esc = (v) => escapeHtml(v);
 
 // Global state
 let currentSession = null;
 let currentDetails = [];
-let activeGrade = '10';     // '10', '11', '12' (mặc định Khối 10)
+let activeGrade = '10';     // 'all', '10', '11', '12' (mặc định Khối 10)
 let activeStatus = 'all';    // 'all', 'absent', 'pending', 'full'
 let searchKeyword = '';
 let isScanning = false;
@@ -54,8 +57,8 @@ function initDashboard() {
     }
     loadDashboardData();
 
-    // Tự động làm mới dữ liệu mỗi 30 giây
-    setInterval(loadDashboardData, 30000);
+    // Tự động làm mới dữ liệu mỗi 30 giây (poll nền KHÔNG được đá user về login khi phiên hết hạn)
+    setInterval(() => loadDashboardData(true), 30000);
 }
 
 /**
@@ -109,7 +112,7 @@ function initEventListeners() {
     document.getElementById('btnTriggerScan')?.addEventListener('click', handleTriggerScan);
 
     // Bộ điều khiển chuyển Khối / Lớp dạng 1 nút có thể chuyển qua chuyển lại
-    const AVAILABLE_GRADES = ['10', '11', '12'];
+    const AVAILABLE_GRADES = ['all', '10', '11', '12'];
     const btnGradePrev = document.getElementById('btnGradePrev');
     const btnGradeNext = document.getElementById('btnGradeNext');
     const btnGradeCurrent = document.getElementById('btnGradeCurrent');
@@ -122,7 +125,7 @@ function initEventListeners() {
 
         const gradeText = document.getElementById('currentGradeText');
         if (gradeText) {
-            gradeText.textContent = `Khối ${grade}`;
+            gradeText.textContent = grade === 'all' ? 'Tất Cả Lớp' : `Khối ${grade}`;
         }
 
         if (gradeDropdownMenu) {
@@ -288,7 +291,7 @@ function showImgModal(src, title) {
     const modal = document.getElementById('imgModal');
     const zoomPercent = document.getElementById('imgZoomPercent');
 
-    if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-image" style="color: var(--primary);"></i> ${title}`;
+    if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-image" style="color: var(--primary);"></i> ${esc(title)}`;
     if (srcEl) srcEl.src = src;
 
     if (dashboardZoomViewer) dashboardZoomViewer.reset(false);
@@ -330,9 +333,10 @@ window.closeImgModal = closeImgModal;
  * 3. TẢI DỮ LIỆU TỪ SERVER (LOAD DATA)
  * ===================================================================
  */
-async function loadDashboardData() {
+async function loadDashboardData(suppressRedirect = false) {
+    const opts = { suppressAuthRedirect: suppressRedirect };
     try {
-        const latestData = await AttendanceAPI.getLatest().catch(() => null);
+        const latestData = await AttendanceAPI.getLatest(opts).catch(() => null);
 
         if (latestData && latestData.session) {
             currentSession = latestData.session;
@@ -342,12 +346,32 @@ async function loadDashboardData() {
             currentDetails = [];
         }
 
+        // Tự động kiểm tra nếu khối hiện tại không có lớp nào nhưng có lớp trong hệ thống,
+        // tự chuyển sang khối có lớp hoặc 'all' để người dùng không thấy bảng trống
+        if (currentDetails.length > 0 && activeGrade !== 'all') {
+            const hasClassInActiveGrade = currentDetails.some(d => extractGradeFromClassName(d.class_name) === activeGrade);
+            if (!hasClassInActiveGrade) {
+                const foundGrade = ['10', '11', '12'].find(g => currentDetails.some(d => extractGradeFromClassName(d.class_name) === g));
+                activeGrade = foundGrade || 'all';
+                const gradeText = document.getElementById('currentGradeText');
+                if (gradeText) {
+                    gradeText.textContent = activeGrade === 'all' ? 'Tất Cả Lớp' : `Khối ${activeGrade}`;
+                }
+                const gradeDropdownMenu = document.getElementById('gradeDropdownMenu');
+                if (gradeDropdownMenu) {
+                    gradeDropdownMenu.querySelectorAll('.grade-menu-opt, .grade-menu-item').forEach(item => {
+                        item.classList.toggle('active', item.dataset.grade === activeGrade);
+                    });
+                }
+            }
+        }
+
         // Cập nhật giao diện
         updateHeaderInfo();
         updateKPIs();
         updateFilterBadgeCounts();
         renderAttendanceTable();
-        loadWeeklyTrendChart();
+        loadWeeklyTrendChart(opts);
 
     } catch (err) {
         console.error('Lỗi khi nạp dữ liệu dashboard:', err);
@@ -445,6 +469,7 @@ function updateKPIs() {
  */
 function updateFilterBadgeCounts() {
     const gradeDetails = currentDetails.filter(d => {
+        if (activeGrade === 'all') return true;
         const grade = extractGradeFromClassName(d.class_name);
         return grade === activeGrade;
     });
@@ -486,8 +511,9 @@ function renderAttendanceTable() {
         return;
     }
 
-    // 1. Lọc theo Khối (Chỉ còn Khối 10, 11, 12; mặc định Khối 10)
+    // 1. Lọc theo Khối (all, 10, 11, 12)
     let filtered = currentDetails.filter(d => {
+        if (activeGrade === 'all') return true;
         const grade = extractGradeFromClassName(d.class_name);
         return grade === activeGrade;
     });
@@ -535,11 +561,12 @@ function renderAttendanceTable() {
     });
 
     if (filtered.length === 0) {
+        const gradeMsg = activeGrade === 'all' ? 'nào' : `thuộc Khối ${activeGrade}`;
         tbody.innerHTML = `
             <tr>
                 <td colspan="10" style="text-align: center; padding: 30px; color: var(--text-muted);">
                     <i class="fa-solid fa-filter-circle-xmark" style="font-size: 1.5rem; margin-bottom: 8px; display: block; opacity: 0.5;"></i>
-                    Không có lớp nào thuộc Khối ${activeGrade} phù hợp với bộ lọc hiện tại.
+                    Không có lớp ${gradeMsg} phù hợp với bộ lọc hiện tại.
                 </td>
             </tr>
         `;
@@ -561,7 +588,7 @@ function renderAttendanceTable() {
         } else if (isPending) {
             statusBadge = `<span class="badge-pill pending"><i class="fa-regular fa-clock"></i> Chưa xử lý</span>`;
         } else if (d.notes && d.notes.includes('Vượt')) {
-            statusBadge = `<span class="badge-pill pending">${d.notes}</span>`;
+            statusBadge = `<span class="badge-pill pending">${esc(d.notes)}</span>`;
         } else {
             statusBadge = `<span class="badge-pill full"><i class="fa-regular fa-circle-check"></i> Đủ sĩ số</span>`;
         }
@@ -574,7 +601,7 @@ function renderAttendanceTable() {
         // Nút xem ảnh đối chứng ở cột Ảnh Đối Chứng
         const hasImages = Boolean(d.raw_image_path || d.annotated_image_path);
         const photoBtn = hasImages
-            ? `<button type="button" class="tbl-action-btn tbl-btn-outline btn-open-modal" data-id="${d.classroom_id}" title="Xem ảnh AI & đối chứng lớp ${d.class_name}">
+            ? `<button type="button" class="tbl-action-btn tbl-btn-outline btn-open-modal" data-id="${d.classroom_id}" title="Xem ảnh AI & đối chứng lớp ${esc(d.class_name)}">
                 <i class="fa-regular fa-image"></i> Ảnh AI
                </button>`
             : `<span class="tbl-text-empty"><i class="fa-regular fa-image"></i> Chưa có</span>`;
@@ -583,10 +610,10 @@ function renderAttendanceTable() {
             <tr class="${isAbsentRow ? 'row-absent-highlight' : ''}">
                 <td class="cell-stt" style="text-align: center; color: var(--text-muted); font-weight: 500;">${index + 1}</td>
                 <td class="cell-classroom">
-                    <strong style="color: var(--text-main); font-size: 0.95rem;">${d.class_name}</strong>
+                    <strong style="color: var(--text-main); font-size: 0.95rem;">${esc(d.class_name)}</strong>
                 </td>
                 <td class="cell-room">
-                    <span style="color: #64748b; font-size: 0.85rem;"><i class="fa-solid fa-door-open" style="margin-right: 4px; font-size: 0.75rem;"></i>${d.room_number || '--'}</span>
+                    <span style="color: #64748b; font-size: 0.85rem;"><i class="fa-solid fa-door-open" style="margin-right: 4px; font-size: 0.75rem;"></i>${esc(d.room_number || '--')}</span>
                 </td>
                 <td class="cell-standard" style="text-align: center; font-weight: 600;">${standard}</td>
                 <td class="cell-present" style="text-align: center; font-weight: 700; color: #16a34a;">${present}</td>
@@ -599,7 +626,7 @@ function renderAttendanceTable() {
                 <td class="cell-status" style="text-align: center;">${statusBadge}</td>
                 <td class="cell-ai-photo" style="text-align: center;">${photoBtn}</td>
                 <td class="cell-actions" style="text-align: center;">
-                    <button type="button" class="tbl-action-btn tbl-btn-primary btn-open-modal" data-id="${d.classroom_id}" title="Xem chi tiết lớp ${d.class_name}">
+                    <button type="button" class="tbl-action-btn tbl-btn-primary btn-open-modal" data-id="${d.classroom_id}" title="Xem chi tiết lớp ${esc(d.class_name)}">
                         <i class="fa-solid fa-arrow-up-right-from-square"></i> Chi tiết
                     </button>
                 </td>
@@ -644,7 +671,7 @@ function openImageModal(classroomId) {
     if (titleEl) titleEl.textContent = `Chi Tiết Điểm Danh & Đối Chứng - ${detail.class_name}`;
     if (subEl) {
         subEl.innerHTML = `
-            Phòng: <strong>${detail.room_number || '--'}</strong>
+            Phòng: <strong>${esc(detail.room_number || '--')}</strong>
             <span style="margin: 0 8px;">•</span>
             Sĩ số: <strong>${detail.standard_count}</strong>
             <span style="margin: 0 8px;">•</span>
@@ -660,9 +687,9 @@ function openImageModal(classroomId) {
     if (rawImgWrap) {
         if (detail.raw_image_path) {
             const rawUrl = `${detail.raw_image_path}&_t=${nowTs}`;
-            rawImgWrap.innerHTML = `<img id="modalRawImg" src="${rawUrl}" alt="Ảnh gốc camera ${detail.class_name}" style="max-height: 420px; width: 100%; object-fit: contain; border-radius: 8px; cursor: zoom-in;" title="Bấm vào ảnh để phóng to và soi bằng con lăn chuột">`;
+            rawImgWrap.innerHTML = `<img id="modalRawImg" src="${rawUrl}" alt="Ảnh gốc camera ${esc(detail.class_name)}" style="max-height: 420px; width: 100%; object-fit: contain; border-radius: 8px; cursor: zoom-in;" title="Bấm vào ảnh để phóng to và soi bằng con lăn chuột">`;
             document.getElementById('modalRawImg')?.addEventListener('click', () => {
-                showImgModal(rawUrl, `Ảnh Gốc Camera - ${detail.class_name}`);
+                showImgModal(rawUrl, `Ảnh Gốc Camera - ${esc(detail.class_name)}`);
             });
         } else {
             rawImgWrap.innerHTML = `
@@ -678,9 +705,9 @@ function openImageModal(classroomId) {
     if (annotatedImgWrap) {
         if (detail.annotated_image_path) {
             const annoUrl = `${detail.annotated_image_path}&_t=${nowTs}`;
-            annotatedImgWrap.innerHTML = `<img id="modalAnnotatedImg" src="${annoUrl}" alt="Ảnh AI khoanh vùng ${detail.class_name}" style="max-height: 420px; width: 100%; object-fit: contain; border-radius: 8px; cursor: zoom-in;" title="Bấm vào ảnh để phóng to và soi bằng con lăn chuột">`;
+            annotatedImgWrap.innerHTML = `<img id="modalAnnotatedImg" src="${annoUrl}" alt="Ảnh AI khoanh vùng ${esc(detail.class_name)}" style="max-height: 420px; width: 100%; object-fit: contain; border-radius: 8px; cursor: zoom-in;" title="Bấm vào ảnh để phóng to và soi bằng con lăn chuột">`;
             document.getElementById('modalAnnotatedImg')?.addEventListener('click', () => {
-                showImgModal(annoUrl, `Ảnh AI Đối Chứng - ${detail.class_name}`);
+                showImgModal(annoUrl, `Ảnh AI Đối Chứng - ${esc(detail.class_name)}`);
             });
         } else {
             annotatedImgWrap.innerHTML = `
@@ -752,14 +779,14 @@ async function handleTriggerScan() {
  * Trả lời câu hỏi nghiệp vụ quản lý của Ban Giám Hiệu:
  * "Hôm nay vắng X em là nhiều hay ít so với các ngày trước? Có bất thường không?"
  */
-async function loadWeeklyTrendChart() {
+async function loadWeeklyTrendChart(opts = {}) {
     const canvas = document.getElementById('trendWeeklyCanvas');
     if (!canvas) return;
 
     try {
         let trendData = null;
         try {
-            trendData = await AttendanceAPI.get7DaysTrend();
+            trendData = await AttendanceAPI.get7DaysTrend(opts);
         } catch (e) {
             console.warn('Lỗi kết nối /trend-7days, tự động dùng dữ liệu dự phòng:', e);
         }
@@ -840,7 +867,7 @@ async function loadWeeklyTrendChart() {
         // Kiểm tra thư viện Chart.js đã sẵn sàng
         if (typeof Chart === 'undefined') {
             console.warn('Thư viện Chart.js chưa tải xong, sẽ thử lại sau 300ms.');
-            setTimeout(() => loadWeeklyTrendChart(), 300);
+            setTimeout(() => loadWeeklyTrendChart(opts), 300);
             return;
         }
 
@@ -1234,9 +1261,20 @@ function renderTrendLineChart(canvas, trendData) {
     });
 }
 
-// Khởi chạy Dashboard khi tài liệu sẵn sàng
+// Khởi chạy Dashboard an toàn sau khi toàn bộ script & khai báo biến đã sẵn sàng
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initDashboard);
 } else {
     initDashboard();
 }
+
+// Tự động resize Chart.js mượt mà khi thu nhỏ hoặc phục hồi kích thước cửa sổ
+let dashboardWindowResizeTimer = null;
+window.addEventListener('resize', () => {
+    if (dashboardWindowResizeTimer) clearTimeout(dashboardWindowResizeTimer);
+    dashboardWindowResizeTimer = setTimeout(() => {
+        if (trendChartInstance) {
+            trendChartInstance.resize();
+        }
+    }, 150);
+});

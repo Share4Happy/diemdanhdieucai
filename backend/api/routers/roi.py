@@ -9,7 +9,7 @@ from database.db_session import get_db
 from database.models import Classroom, ROIPolygon
 from core.rtsp_client import rtsp_client
 from backend.schemas.roi_schemas import ROISaveRequest
-from backend.api.deps import get_current_user
+from backend.api.deps import get_current_user, require_admin
 
 router = APIRouter(prefix="/roi", tags=["ROI"], dependencies=[Depends(get_current_user)])
 
@@ -67,8 +67,8 @@ async def get_classroom_roi(classroom_id: int, refresh: bool = False, db: Sessio
     }
 
 @router.post("/{classroom_id}/refresh-snapshot")
-async def refresh_classroom_snapshot(classroom_id: int, db: Session = Depends(get_db)):
-    """Chụp ngay khung hình trực tiếp mới nhất từ Camera đang kết nối và trả về URL ảnh cập nhật."""
+async def refresh_classroom_snapshot(classroom_id: int, _admin=Depends(require_admin), db: Session = Depends(get_db)):
+    """Chụp ngay khung hình trực tiếp mới nhất từ Camera đang kết nối và trả về URL ảnh cập nhật (chỉ admin)."""
     cls = db.query(Classroom).filter(Classroom.id == classroom_id).first()
     if not cls:
         raise HTTPException(status_code=404, detail="Không tìm thấy lớp học")
@@ -96,8 +96,8 @@ async def refresh_classroom_snapshot(classroom_id: int, db: Session = Depends(ge
     }
 
 @router.post("/{classroom_id}")
-async def save_classroom_roi(classroom_id: int, data: ROISaveRequest, db: Session = Depends(get_db)):
-    """Lưu tọa độ Vùng nhận diện (Green Zone) cho lớp học, đồng thời tự động chạy lại nhận diện AI và đồng bộ sang giao diện quét."""
+async def save_classroom_roi(classroom_id: int, data: ROISaveRequest, _admin=Depends(require_admin), db: Session = Depends(get_db)):
+    """Lưu tọa độ Vùng nhận diện (Green Zone) cho lớp học, đồng thời tự động chạy lại nhận diện AI và đồng bộ sang giao diện quét (chỉ admin)."""
     cls = db.query(Classroom).filter(Classroom.id == classroom_id).first()
     if not cls:
         raise HTTPException(status_code=404, detail="Không tìm thấy lớp học")
@@ -120,8 +120,8 @@ async def save_classroom_roi(classroom_id: int, data: ROISaveRequest, db: Sessio
 
 
 @router.post("/{classroom_id}/rescan")
-async def rescan_classroom_roi(classroom_id: int, db: Session = Depends(get_db)):
-    """Kích hoạt nhận diện lại ngay lập tức cho 1 lớp học theo ROI hiện hành trong CSDL."""
+async def rescan_classroom_roi(classroom_id: int, _admin=Depends(require_admin), db: Session = Depends(get_db)):
+    """Kích hoạt nhận diện lại ngay lập tức cho 1 lớp học theo ROI hiện hành trong CSDL (chỉ admin)."""
     cls = db.query(Classroom).filter(Classroom.id == classroom_id).first()
     if not cls:
         raise HTTPException(status_code=404, detail="Không tìm thấy lớp học")

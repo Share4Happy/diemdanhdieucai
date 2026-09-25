@@ -29,24 +29,38 @@ class AppShell {
       this.sidebarOverlay = overlay;
     }
 
-    // Auto-inject mobile hamburger button if missing
-    let mobileBtn = document.querySelector('.mobile-menu-btn');
-    if (!mobileBtn) {
-      const headerLeft = document.querySelector('.header-left');
-      mobileBtn = document.createElement('button');
-      mobileBtn.type = 'button';
-      mobileBtn.title = 'Mở Menu Điều Hướng';
-      mobileBtn.setAttribute('aria-label', 'Mở Menu Điều Hướng');
-      mobileBtn.innerHTML = '<i class="fa-solid fa-bars"></i>';
-      if (headerLeft) {
-        mobileBtn.className = 'mobile-menu-btn';
-        headerLeft.prepend(mobileBtn);
-      } else {
-        mobileBtn.className = 'mobile-menu-btn floating-mobile-btn';
-        document.body.appendChild(mobileBtn);
-      }
+    // Tự động tạo thanh điều hướng Mobile Topbar tiêu chuẩn (tránh che tiêu đề nội dung)
+    let mobileTopbar = document.querySelector('.mobile-topbar');
+    if (!mobileTopbar) {
+      mobileTopbar = document.createElement('header');
+      mobileTopbar.className = 'mobile-topbar';
+      mobileTopbar.innerHTML = `
+        <div class="mobile-topbar-left">
+          <button type="button" class="mobile-menu-btn" title="Mở Menu Điều Hướng" aria-label="Mở Menu Điều Hướng">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="mobile-topbar-brand">
+            <div class="mobile-brand-logo">ĐC</div>
+            <div class="mobile-brand-text">
+              <span class="mobile-brand-title">THPT ĐIỀU CẢI</span>
+              <span class="mobile-brand-subtitle">AI CAMERA</span>
+            </div>
+          </div>
+        </div>
+        <div class="mobile-topbar-right">
+          <div class="mobile-user-avatar" id="mobileUserAvatar" title="Thông tin tài khoản">A</div>
+        </div>
+      `;
+      document.body.prepend(mobileTopbar);
     }
-    this.mobileMenuBtn = mobileBtn;
+    this.mobileTopbar = mobileTopbar;
+    this.mobileMenuBtn = mobileTopbar.querySelector('.mobile-menu-btn');
+
+    // Chạm vào avatar trên mobile topbar để mở nhanh menu điều hướng
+    const mobileAvatar = mobileTopbar.querySelector('#mobileUserAvatar');
+    if (mobileAvatar) {
+      mobileAvatar.addEventListener('click', () => this.toggleMobileSidebar());
+    }
 
     if (!this.sidebar) return;
 
@@ -169,7 +183,7 @@ class AppShell {
 
       const nameEls = document.querySelectorAll('#sidebarUserName, #headerUserName');
       const roleEls = document.querySelectorAll('#sidebarUserRole, #headerUserRole');
-      const avatarEls = document.querySelectorAll('#sidebarUserAvatar, #headerUserAvatar');
+      const avatarEls = document.querySelectorAll('#sidebarUserAvatar, #headerUserAvatar, #mobileUserAvatar');
 
       const displayName = user.full_name || user.email || (user.role === 'admin' ? 'Admin' : 'Nhân Viên');
       const displayRole = user.role === 'admin' ? 'Quản Trị Viên' : 'Nhân Viên';
