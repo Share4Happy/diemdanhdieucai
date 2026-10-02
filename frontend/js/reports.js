@@ -1435,67 +1435,169 @@ function initBackupEvents() {
 }
 
 // ===================================================================
-// GOOGLE DRIVE KẾT NỐI & TRẠNG THÁI
+// GOOGLE DRIVE KẾT NỐI & TRẠNG THÁI (1-CLICK CONNECT)
 // ===================================================================
+let gdrivePopupRef = null;
+let gdrivePollTimer = null;
+
 async function loadGDriveStatus() {
     const badge = document.getElementById('gdriveStatusBadge');
-    const accountInfo = document.getElementById('gdriveAccountInfo');
+    const notConnectedCard = document.getElementById('gdriveNotConnectedCard');
+    const connectedCard = document.getElementById('gdriveConnectedCard');
+    const connectedEmail = document.getElementById('gdriveConnectedEmail');
+    const folderInfo = document.getElementById('gdriveFolderInfo');
     const btnConnect = document.getElementById('btnGDriveConnect');
-    const btnDisconnect = document.getElementById('btnGDriveDisconnect');
     if (!badge) return;
 
     try {
         const res = await BackupAPI.gdriveStatus();
         if (res && res.success) {
             if (!res.configured) {
-                badge.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Chưa cấu hình';
+                badge.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Chưa cấu hình .env';
                 badge.style.background = '#fff7ed';
                 badge.style.color = '#c2410c';
-                if (btnConnect) { btnConnect.disabled = true; btnConnect.title = 'Thêm GOOGLE_DRIVE_CLIENT_ID vào file cấu hình.'; }
-                if (accountInfo) accountInfo.textContent = 'Thiếu thông tin cấu hình .env (GOOGLE_DRIVE_CLIENT_ID).';
+                if (notConnectedCard) notConnectedCard.style.display = 'block';
+                if (connectedCard) connectedCard.style.display = 'none';
+                if (btnConnect) {
+                    btnConnect.disabled = true;
+                    btnConnect.title = 'Vui lòng thêm GOOGLE_DRIVE_CLIENT_ID & SECRET vào file .env.';
+                }
             } else if (res.connected) {
-                badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Đã kết nối';
+                badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Đang hoạt động';
                 badge.style.background = '#dcfce7';
                 badge.style.color = '#15803d';
-                if (accountInfo) accountInfo.innerHTML = '<i class="fa-solid fa-envelope"></i> ' + esc(res.account_email || 'Tài khoản Google');
+
+                if (notConnectedCard) notConnectedCard.style.display = 'none';
+                if (connectedCard) connectedCard.style.display = 'block';
+                if (connectedEmail) {
+                    connectedEmail.textContent = res.account_email || 'Tài khoản Google';
+                }
+                if (folderInfo) {
+                    const fText = res.folder_id ? `Thư mục ID: ${res.folder_id}` : 'Thư mục: My Drive (Gốc)';
+                    folderInfo.innerHTML = `<i class="fa-solid fa-folder-tree"></i> ${esc(fText)}`;
+                }
             } else {
-                badge.innerHTML = '<i class="fa-solid fa-circle-plus"></i> Chưa kết nối';
+                badge.innerHTML = '<i class="fa-solid fa-circle-pause"></i> Chưa kết nối';
                 badge.style.background = '#f1f5f9';
                 badge.style.color = '#64748b';
-                if (accountInfo) accountInfo.textContent = 'Backup hiện chỉ lưu ở máy chủ.';
+
+                if (notConnectedCard) notConnectedCard.style.display = 'block';
+                if (connectedCard) connectedCard.style.display = 'none';
+                if (btnConnect) {
+                    btnConnect.disabled = false;
+                    btnConnect.title = 'Bấm để kết nối Google Drive';
+                }
             }
-            if (btnDisconnect) btnDisconnect.style.display = res.connected ? '' : 'none';
         }
     } catch (err) {
         console.warn('Lỗi lấy trạng thái Google Drive:', err);
     }
 }
 
+async function startGDriveAuthFlow(triggerBtn) {
+    const originalHtml = triggerBtn ? triggerBtn.innerHTML : '';
+    if (triggerBtn) {
+        triggerBtn.disabled = true;
+        triggerBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang mở Google...';
+    }
+
+    try {
+        const redirectUri = `${window.location.origin}/api/backup/gdrive/callback`;
+        const res = await BackupAPI.gdriveAuthUrl(redirectUri);
+
+        if (!res || !res.success || !res.url) {
+            showToast(res?.message || 'Không thể tạo URL kết nối Google Drive.', 'danger');
+            if (triggerBtn) {
+                triggerBtn.disabled = false;
+                triggerBtn.innerHTML = originalHtml;
+            }
+            return;
+        }
+
+        const width = 560;
+        const height = 680;
+        const left = Math.max(0, Math.round((window.screen.width - width) / 2));
+        const top = Math.max(0, Math.round((window.screen.height - height) / 2));
+
+        // Mở popup đăng nhập Google ở chính giữa màn hình
+        gdrivePopupRef = window.open(
+            res.url,
+            'GDriveOAuthPopup',
+            `width=${width},height=${height},left=${left},top=${top},status=no,toolbar=no,menubar=no,location=yes,resizable=yes`
+        );
+
+        if (!gdrivePopupRef || gdrivePopupRef.closed || typeof gdrivePopupRef.closed === 'undefined') {
+            // Trường hợp trình duyệt chặn popup hoàn toàn -> chuyển hướng trực tiếp
+            showToast('Đang chuyển hướng sang trang đăng nhập Google...', 'info');
+            window.location.href = res.url;
+            return;
+        }
+
+        showToast('Đã mở cửa sổ Google. Hãy chọn tài khoản và bấm "Cho phép" để kết nối.', 'info');
+
+        // Giám sát popup để tự động làm mới giao diện khi đóng
+        if (gdrivePollTimer) clearInterval(gdrivePollTimer);
+        gdrivePollTimer = setInterval(async () => {
+            if (!gdrivePopupRef || gdrivePopupRef.closed) {
+                clearInterval(gdrivePollTimer);
+                gdrivePollTimer = null;
+                if (triggerBtn) {
+                    triggerBtn.disabled = false;
+                    triggerBtn.innerHTML = originalHtml;
+                }
+                await loadGDriveStatus();
+                await loadBackupList();
+            }
+        }, 1500);
+
+    } catch (err) {
+        showToast('Lỗi kết nối Google Drive: ' + (err.message || err), 'danger');
+        if (triggerBtn) {
+            triggerBtn.disabled = false;
+            triggerBtn.innerHTML = originalHtml;
+        }
+    }
+}
+
 function initGDriveEvents() {
     const btnConnect = document.getElementById('btnGDriveConnect');
+    const btnReconnect = document.getElementById('btnGDriveReconnect');
+    const btnCreateNow = document.getElementById('btnGDriveCreateNow');
     const btnDisconnect = document.getElementById('btnGDriveDisconnect');
-    const btnConfirm = document.getElementById('btnGDriveConfirm');
+    const btnToggleManual = document.getElementById('btnToggleManualCode');
+    const iconToggleManual = document.getElementById('iconToggleManual');
     const codeRow = document.getElementById('gdriveCodeRow');
     const codeInput = document.getElementById('gdriveCodeInput');
+    const btnConfirm = document.getElementById('btnGDriveConfirm');
     const feedback = document.getElementById('gdriveFeedbackMsg');
 
+    // Nút kết nối 1 nhấn (Popup thân thiện)
     if (btnConnect) {
-        btnConnect.addEventListener('click', async () => {
-            try {
-                const res = await BackupAPI.gdriveAuthUrl();
-                if (res && res.success && res.url) {
-                    window.open(res.url, '_blank', 'noopener');
-                    if (codeRow) codeRow.style.display = 'block';
-                    showToast('Đã mở tab đăng nhập Google. Hãy dán mã kết nối vào ô bên dưới.', 'info');
-                } else {
-                    showToast(res?.message || 'Không lấy được URL kết nối.', 'danger');
-                }
-            } catch (err) {
-                showToast('Lỗi: ' + (err.message || 'Không thể tạo URL kết nối Google Drive.'), 'danger');
+        btnConnect.addEventListener('click', () => startGDriveAuthFlow(btnConnect));
+    }
+
+    // Nút đổi tài khoản (Kết nối lại với tài khoản khác)
+    if (btnReconnect) {
+        btnReconnect.addEventListener('click', () => startGDriveAuthFlow(btnReconnect));
+    }
+
+    // Nút sao lưu nhanh lên Google Drive
+    if (btnCreateNow) {
+        btnCreateNow.addEventListener('click', handleCreateBackup);
+    }
+
+    // Toggle khung nhập mã thủ công
+    if (btnToggleManual && codeRow) {
+        btnToggleManual.addEventListener('click', () => {
+            const isHidden = codeRow.style.display === 'none';
+            codeRow.style.display = isHidden ? 'block' : 'none';
+            if (iconToggleManual) {
+                iconToggleManual.style.transform = isHidden ? 'rotate(90deg)' : 'rotate(0deg)';
             }
         });
     }
 
+    // Xác nhận mã thủ công dự phòng
     if (btnConfirm) {
         btnConfirm.addEventListener('click', async () => {
             if (!codeInput || !codeInput.value.trim()) {
@@ -1510,18 +1612,12 @@ function initGDriveEvents() {
             try {
                 const res = await BackupAPI.gdriveConnect(code);
                 if (res && res.success) {
-                    if (feedback) {
-                        feedback.innerHTML = '<div style="color: #15803d; font-size: 0.85rem;"><i class="fa-solid fa-circle-check"></i> Đã kết nối Google Drive thành công!</div>';
-                    }
-                    showToast(res.message || 'Đã kết nối Google Drive!', 'success');
+                    showToast(res.message || 'Đã kết nối Google Drive thành công!', 'success');
                     if (codeRow) codeRow.style.display = 'none';
                     if (codeInput) codeInput.value = '';
                     await loadGDriveStatus();
                     await loadBackupList();
                 } else {
-                    if (feedback) {
-                        feedback.innerHTML = `<div style="color: #dc2626; font-size: 0.85rem;"><i class="fa-solid fa-circle-xmark"></i> ${esc(res?.message || 'Kết nối thất bại.')}</div>`;
-                    }
                     showToast(res?.message || 'Kết nối thất bại!', 'danger');
                 }
             } catch (err) {
@@ -1533,9 +1629,10 @@ function initGDriveEvents() {
         });
     }
 
+    // Ngắt kết nối
     if (btnDisconnect) {
         btnDisconnect.addEventListener('click', async () => {
-            if (!confirm('Bạn có chắc muốn NGẮT KẾT NỐI Google Drive?\n\nCác backup sau đó sẽ chỉ lưu ở máy chủ.')) return;
+            if (!confirm('Bạn có chắc muốn NGẮT KẾT NỐI Google Drive?\n\nCác bản sao lưu tiếp theo sẽ chỉ lưu ở máy chủ nội bộ.')) return;
             try {
                 const res = await BackupAPI.gdriveDisconnect();
                 showToast(res?.message || 'Đã ngắt kết nối Google Drive.', 'info');
@@ -1545,6 +1642,32 @@ function initGDriveEvents() {
                 showToast('Lỗi: ' + (err.message || err), 'danger');
             }
         });
+    }
+
+    // Lắng nghe tín hiệu postMessage từ popup callback
+    window.addEventListener('message', async (event) => {
+        if (event.data && event.data.type === 'gdrive_oauth_result') {
+            if (event.data.success) {
+                const emailInfo = event.data.account_email ? ` (${event.data.account_email})` : '';
+                showToast(`Đã kết nối Google Drive thành công${emailInfo}!`, 'success');
+                if (gdrivePopupRef && !gdrivePopupRef.closed) {
+                    try { gdrivePopupRef.close(); } catch (_) {}
+                }
+                await loadGDriveStatus();
+                await loadBackupList();
+            } else {
+                showToast(event.data.message || 'Kết nối Google Drive không thành công.', 'warning');
+            }
+        }
+    });
+
+    // Tự động kiểm tra param khi chuyển hướng quay lại trang
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('gdrive_connected') === '1') {
+        showToast('Đã kết nối Google Drive thành công!', 'success');
+        urlParams.delete('gdrive_connected');
+        const cleanSearch = urlParams.toString() ? '?' + urlParams.toString() : '';
+        window.history.replaceState({}, '', window.location.pathname + cleanSearch);
     }
 }
 

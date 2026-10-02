@@ -296,7 +296,10 @@ export const BackupAPI = {
         });
     },
     gdriveStatus: () => fetchAPI('/api/backup/gdrive/status'),
-    gdriveAuthUrl: () => fetchAPI('/api/backup/gdrive/auth-url'),
+    gdriveAuthUrl: (redirectUri = '') => {
+        const q = redirectUri ? `?redirect_uri=${encodeURIComponent(redirectUri)}` : '';
+        return fetchAPI(`/api/backup/gdrive/auth-url${q}`);
+    },
     gdriveConnect: (code, redirectUri = '') => fetchAPI('/api/backup/gdrive/connect', {
         method: 'POST',
         body: { code, redirect_uri: redirectUri }

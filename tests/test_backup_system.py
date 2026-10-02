@@ -6,6 +6,7 @@ from backend.main import app
 from database.db_session import init_db
 from database.models import User
 from backend.api.deps import get_current_user, require_admin
+from unittest.mock import patch
 from services.backup_service import backup_service
 from config.settings import settings
 
@@ -17,9 +18,10 @@ client = TestClient(app)
 
 def test_backup_service_create_list_delete():
     init_db()
-    
-    # 1. Tạo bản sao lưu
-    res = backup_service.create_backup(note="Test unit backup", include_excel=False)
+    with patch.object(settings, "GOOGLE_DRIVE_REMOTE_ONLY", False), \
+         patch.object(backup_service, "_upload_to_drive", return_value=None):
+        # 1. Tạo bản sao lưu
+        res = backup_service.create_backup(note="Test unit backup", include_excel=False)
     assert res["success"] is True
     assert "data" in res
     backup_file = res["data"]["backup_name"]
@@ -46,27 +48,28 @@ def test_backup_service_create_list_delete():
 
 def test_backup_api_endpoints():
     init_db()
-    
-    # 1. API tạo backup
-    res = client.post("/api/backup/create", json={"note": "API test backup", "include_excel": False})
-    assert res.status_code == 200
-    data = res.json()
-    assert data["success"] is True
-    backup_name = data["data"]["backup_name"]
-    
-    # 2. API list backup
-    list_res = client.get("/api/backup/list")
-    assert list_res.status_code == 200
-    list_data = list_res.json()
-    assert list_data["success"] is True
-    assert any(b["filename"] == backup_name for b in list_data["backups"])
-    
-    # 3. API download backup
-    dl_res = client.get(f"/api/backup/download/{backup_name}")
-    assert dl_res.status_code == 200
-    assert dl_res.headers["content-type"] == "application/zip"
-    
-    # 4. API delete backup
-    del_res = client.delete(f"/api/backup/{backup_name}")
-    assert del_res.status_code == 200
-    assert del_res.json()["success"] is True
+    with patch.object(settings, "GOOGLE_DRIVE_REMOTE_ONLY", False), \
+         patch.object(backup_service, "_upload_to_drive", return_value=None):
+        # 1. API tạo backup
+        res = client.post("/api/backup/create", json={"note": "API test backup", "include_excel": False})
+        assert res.status_code == 200
+        data = res.json()
+        assert data["success"] is True
+        backup_name = data["data"]["backup_name"]
+        
+        # 2. API list backup
+        list_res = client.get("/api/backup/list")
+        assert list_res.status_code == 200
+        list_data = list_res.json()
+        assert list_data["success"] is True
+        assert any(b["filename"] == backup_name for b in list_data["backups"])
+        
+        # 3. API download backup
+        dl_res = client.get(f"/api/backup/download/{backup_name}")
+        assert dl_res.status_code == 200
+        assert dl_res.headers["content-type"] == "application/zip"
+        
+        # 4. API delete backup
+        del_res = client.delete(f"/api/backup/{backup_name}")
+        assert del_res.status_code == 200
+        assert del_res.json()["success"] is True

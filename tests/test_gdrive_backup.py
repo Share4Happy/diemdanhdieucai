@@ -169,3 +169,69 @@ def test_gdrive_download_and_delete(mock_gdrive_env, tmp_path):
     with patch("requests.delete", return_value=mock_del_resp):
         ok = service.delete_file("drive-file-id-999")
         assert ok is True
+
+
+def test_gdrive_consent_url_with_custom_redirect(mock_gdrive_env):
+    service = mock_gdrive_env
+    custom_uri = "http://localhost:8000/api/backup/gdrive/callback"
+    url = service.get_consent_url(state="signed-jwt-state", redirect_uri=custom_uri)
+    assert "redirect_uri=http%3A//localhost%3A8000/api/backup/gdrive/callback" in url
+    assert "state=signed-jwt-state" in url
+
+
+def test_gdrive_callback_flow(mock_gdrive_env):
+    from fastapi.testclient import TestClient
+    from backend.main import app
+    from database.models import User
+    import jwt
+
+    client = TestClient(app)
+
+    # 1. Test callback khi người dùng hủy (error=access_denied)
+    resp_cancel = client.get("/api/backup/gdrive/callback?error=access_denied")
+    assert resp_cancel.status_code == 200
+    assert "Đã Hủy Kết Nối" in resp_cancel.text
+    assert "gdrive_oauth_result" in resp_cancel.text
+
+    # 2. Test callback thiếu mã code
+    resp_no_code = client.get("/api/backup/gdrive/callback")
+    assert resp_no_code.status_code == 400
+    assert "Thiếu Mã Xác Thực" in resp_no_code.text
+
+    # 3. Tạo signed state hợp lệ
+    valid_state = jwt.encode(
+        {
+            "admin_id": 1,
+            "role": "admin",
+            "purpose": "gdrive_oauth",
+            "redirect_uri": "http://localhost:8000/api/backup/gdrive/callback",
+            "exp": int(time.time()) + 900,
+        },
+        settings.JWT_SECRET_KEY,
+        algorithm=settings.JWT_ALGORITHM,
+    )
+
+    # Giả lập exchange_code thành công
+    mock_token_resp = MagicMock()
+    mock_token_resp.status_code = 200
+    mock_token_resp.json.return_value = {
+        "access_token": "token-xyz",
+        "refresh_token": "refresh-xyz",
+        "expires_in": 3600,
+    }
+    mock_about_resp = MagicMock()
+    mock_about_resp.status_code = 200
+    mock_about_resp.json.return_value = {
+        "user": {"emailAddress": "thptdieucai.backup@gmail.com"}
+    }
+
+    with patch("requests.post", return_value=mock_token_resp), \
+         patch("requests.get", return_value=mock_about_resp):
+        resp_success = client.get(
+            f"/api/backup/gdrive/callback?code=mock_auth_code_123&state={valid_state}"
+        )
+        assert resp_success.status_code == 200
+        assert "Kết Nối Google Drive Thành Công!" in resp_success.text
+        assert "thptdieucai.backup@gmail.com" in resp_success.text
+        assert "gdrive_oauth_result" in resp_success.text
+

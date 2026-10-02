@@ -602,48 +602,94 @@
                                 </span>
                             </div>
 
-                            <!-- Khung Kết Nối Google Drive -->
-                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; margin-bottom: 1rem;">
-                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 6px;">
-                                    <div style="display: flex; align-items: center; gap: 10px;">
-                                        <i class="fa-brands fa-google-drive" style="font-size: 1.4rem; color: #4285F4;"></i>
+                            <!-- Khung Kết Nối Google Drive Thân Thiện (1-Click Connect) -->
+                            <div class="gdrive-integration-card" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; margin-bottom: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9;">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div style="width: 44px; height: 44px; border-radius: 10px; background: #e8f0fe; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fa-brands fa-google-drive" style="font-size: 1.6rem; color: #1a73e8;"></i>
+                                        </div>
                                         <div>
-                                            <strong style="font-size: 0.95rem; color: var(--text-primary); display: block;">Sao Lưu Google Drive</strong>
-                                            <span style="font-size: 0.8rem; color: var(--text-muted);">Đẩy mỗi bản sao lưu lên Google Drive của Quản Trị</span>
+                                            <strong style="font-size: 1rem; color: var(--text-primary); display: block;">Sao Lưu Đám Mây Google Drive</strong>
+                                            <span style="font-size: 0.82rem; color: var(--text-muted);">Tự động lưu trữ CSDL và báo cáo lên Google Drive an toàn</span>
                                         </div>
                                     </div>
-                                    <span id="gdriveStatusBadge" class="status-pill" style="background: #f1f5f9; color: #64748b;">
-                                        <i class="fa-solid fa-circle-info"></i> Chưa kết nối
+                                    <span id="gdriveStatusBadge" class="status-pill" style="background: #f1f5f9; color: #64748b; font-weight: 600; padding: 6px 12px; border-radius: 20px;">
+                                        <i class="fa-solid fa-spinner fa-spin"></i> Đang kiểm tra...
                                     </span>
                                 </div>
 
-                                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
-                                    <button type="button" id="btnGDriveConnect" class="btn btn-primary" style="font-weight: 600;">
-                                        <i class="fa-brands fa-google-drive"></i> Kết Nối Google Drive
-                                    </button>
-                                    <button type="button" id="btnGDriveDisconnect" class="btn btn-secondary" style="font-weight: 600; color: #dc2626; border-color: #fecaca; display: none;">
-                                        <i class="fa-solid fa-link-slash"></i> Ngắt Kết Nối
-                                    </button>
-                                    <span id="gdriveAccountInfo" style="font-size: 0.85rem; color: var(--text-secondary);"></span>
-                                </div>
+                                <!-- TRƯỜNG HỢP 1: CHƯA KẾT NỐI -->
+                                <div id="gdriveNotConnectedCard" style="display: none;">
+                                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 12px;">
+                                        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+                                            <div style="flex: 1; min-width: 260px;">
+                                                <h5 style="margin: 0 0 6px 0; font-size: 0.95rem; font-weight: 700; color: #1e293b;">
+                                                    <i class="fa-solid fa-cloud-arrow-up text-primary"></i> Kết nối Google Drive để kích hoạt sao lưu tự động
+                                                </h5>
+                                                <p style="margin: 0; font-size: 0.86rem; color: #64748b; line-height: 1.5;">
+                                                    Chỉ cần <strong>nhấn 1 lần</strong> vào nút bên cạnh, chọn tài khoản Google của bạn và bấm <strong>Cho phép</strong>. Hệ thống sẽ tự động liên kết mà không cần cấu hình phức tạp.
+                                                </p>
+                                            </div>
+                                            <button type="button" id="btnGDriveConnect" class="btn btn-primary"
+                                                style="background: #1a73e8; border-color: #1a73e8; font-weight: 700; padding: 11px 22px; font-size: 0.95rem; box-shadow: 0 2px 8px rgba(26,115,232,0.25); display: inline-flex; align-items: center; gap: 10px; white-space: nowrap;">
+                                                <i class="fa-brands fa-google" style="font-size: 1.1rem;"></i> Kết Nối Google Drive
+                                            </button>
+                                        </div>
+                                    </div>
 
-                                <div id="gdriveCodeRow" style="display: none; margin-top: 12px; background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 12px 14px;">
-                                    <p style="margin: 0 0 8px 0; font-size: 0.84rem; color: var(--text-secondary); line-height: 1.55;">
-                                        <strong>Bước 1:</strong> Bấm <strong>Kết Nối</strong>, tab Google mở ra → chọn tài khoản → bấm <strong>Cho phép</strong>.
-                                        Trình duyệt sẽ chuyển hướng về một địa chỉ <code>http://localhost/?code=...</code> (không vào được web — bình thường).
-                                        <br>
-                                        <strong>Bước 2:</strong> Copy <strong>toàn bộ URL</strong> trên thanh địa chỉ rồi dán vào ô dưới đây và bấm <strong>Xác Nhận</strong>.
-                                    </p>
-                                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                        <input type="text" id="gdriveCodeInput" class="form-control" style="flex: 1; min-width: 260px; font-family: monospace;"
-                                            placeholder="Dán mã kết nối (hoặc toàn bộ URL http://localhost/?code=...)">
-                                        <button type="button" id="btnGDriveConfirm" class="btn btn-secondary" style="font-weight: 600;">
-                                            <i class="fa-solid fa-check"></i> Xác Nhận Mã
+                                    <!-- Tùy chọn nhập mã thủ công cho người dùng nâng cao / sự cố -->
+                                    <div style="margin-top: 6px;">
+                                        <button type="button" id="btnToggleManualCode" style="background: none; border: none; padding: 0; color: #64748b; font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                            <i class="fa-solid fa-chevron-right" id="iconToggleManual" style="font-size: 0.75rem; transition: transform 0.2s;"></i> Bạn gặp sự cố cửa sổ popup? Nhập mã thủ công
                                         </button>
                                     </div>
-                                    <p style="margin: 8px 0 0 0; font-size: 0.78rem; color: #b45309;">
-                                        <i class="fa-solid fa-triangle-exclamation"></i> Toàn bộ backup sau đó sẽ được lưu TRÊN Google Drive (xoá bản local sau khi upload thành công).
-                                    </p>
+
+                                    <div id="gdriveCodeRow" style="display: none; margin-top: 10px; background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 12px 14px;">
+                                        <p style="margin: 0 0 8px 0; font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5;">
+                                            Nếu trình duyệt chặn popup, hãy copy URL sau khi đăng nhập Google rồi dán vào ô bên dưới:
+                                        </p>
+                                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                            <input type="text" id="gdriveCodeInput" class="form-control" style="flex: 1; min-width: 240px; font-family: monospace; font-size: 0.85rem;"
+                                                placeholder="Dán mã code hoặc toàn bộ URL callback...">
+                                            <button type="button" id="btnGDriveConfirm" class="btn btn-secondary" style="font-weight: 600;">
+                                                <i class="fa-solid fa-check"></i> Xác Nhận Mã
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- TRƯỜNG HỢP 2: ĐÃ KẾT NỐI THÀNH CÔNG -->
+                                <div id="gdriveConnectedCard" style="display: none;">
+                                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+                                        <div style="display: flex; align-items: center; gap: 14px;">
+                                            <div style="width: 40px; height: 40px; border-radius: 50%; background: #dcfce7; color: #15803d; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                                                <i class="fa-solid fa-check"></i>
+                                            </div>
+                                            <div>
+                                                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                                    <span style="font-size: 0.82rem; color: #166534; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Tài khoản liên kết</span>
+                                                    <strong id="gdriveConnectedEmail" style="font-size: 0.98rem; color: #14532d;">admin@gmail.com</strong>
+                                                </div>
+                                                <div style="font-size: 0.82rem; color: #15803d; margin-top: 3px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                                                    <span id="gdriveFolderInfo"><i class="fa-solid fa-folder-tree"></i> Thư mục: My Drive (Thư mục gốc)</span>
+                                                    <span><i class="fa-solid fa-clock"></i> Tự động đồng bộ lúc 23:00 hàng ngày</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                            <button type="button" id="btnGDriveCreateNow" class="btn btn-primary btn-sm" style="font-weight: 600; background: #16a34a; border-color: #16a34a;">
+                                                <i class="fa-solid fa-cloud-arrow-up"></i> Sao Lưu Lên Drive Ngay
+                                            </button>
+                                            <button type="button" id="btnGDriveReconnect" class="btn btn-secondary btn-sm" style="font-weight: 600;" title="Đăng nhập tài khoản Google khác">
+                                                <i class="fa-solid fa-arrows-rotate"></i> Đổi Tài Khoản
+                                            </button>
+                                            <button type="button" id="btnGDriveDisconnect" class="btn btn-secondary btn-sm" style="font-weight: 600; color: #dc2626; border-color: #fecaca;" title="Ngắt kết nối với tài khoản Google Drive hiện tại">
+                                                <i class="fa-solid fa-link-slash"></i> Ngắt Kết Nối
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div id="gdriveFeedbackMsg" class="zalo-feedback" style="margin-top: 0.75rem;"></div>
