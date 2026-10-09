@@ -171,6 +171,129 @@ html, body {
   padding: 6px;
 }
 
+/* =========================================================
+   NÚT CHUYỂN PHÒNG NỔI TRÊN ẢNH CAMERA (CANVAS OVERLAY BUTTONS)
+   - Mờ nhẹ khi không dùng (không che khuất ảnh)
+   - Hiện rõ khi rê chuột vào khung ảnh hoặc nút
+   ========================================================= */
+.canvas-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 15;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  background: rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: rgba(255, 255, 255, 0.9);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  cursor: pointer;
+  opacity: 0.25;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  user-select: none;
+  outline: none;
+}
+
+/* Nằm ở 2 mép biên trái & phải của khung ảnh */
+.canvas-nav-btn.prev {
+  left: 14px;
+}
+
+.canvas-nav-btn.next {
+  right: 14px;
+}
+
+/* Khi rê chuột vào toàn bộ khung ảnh: nút hiện rõ hơn */
+.canvas-container:hover .canvas-nav-btn {
+  opacity: 0.7;
+  background: rgba(15, 23, 42, 0.55);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Khi rê chuột trực tiếp vào nút: sáng 100%, hiệu ứng xanh nổi bật */
+.canvas-nav-btn:hover {
+  opacity: 1 !important;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+  border-color: #ffffff !important;
+  color: #ffffff !important;
+  transform: translateY(-50%) scale(1.15);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5), 0 0 0 3px rgba(37, 99, 235, 0.25);
+}
+
+.canvas-nav-btn:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+/* Tooltip tên phòng bay ra khi hover vào nút */
+.canvas-nav-tooltip {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.canvas-nav-btn.prev .canvas-nav-tooltip {
+  left: calc(100% + 10px);
+}
+
+.canvas-nav-btn.next .canvas-nav-tooltip {
+  right: calc(100% + 10px);
+}
+
+.canvas-nav-btn:hover .canvas-nav-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Huy hiệu mờ nổi góc ảnh báo tên phòng hiện tại */
+.canvas-floating-badge {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  z-index: 14;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 4px 12px;
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.35;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+  user-select: none;
+}
+
+.canvas-container:hover .canvas-floating-badge {
+  opacity: 0.85;
+}
+
 /* Đường phân cách thanh thoát */
 .banner-sep {
   width: 1px;
@@ -544,6 +667,13 @@ html, body {
   #classSelect {
     min-width: 0 !important;
     width: 100% !important;
+  }
+
+  .canvas-nav-btn {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 1rem !important;
+    opacity: 0.5 !important;
   }
 
   .banner-sep {

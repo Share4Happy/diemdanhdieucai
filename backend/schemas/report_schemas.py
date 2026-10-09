@@ -55,6 +55,8 @@ class RetentionSettingsRequest(BaseModel):
     retention_days: int = 90
     auto_cleanup_enabled: Optional[bool] = True
     cleanup_excel_enabled: Optional[bool] = True
+    auto_backup_time: Optional[str] = "23:00"
+    auto_backup_enabled: Optional[bool] = True
 
 class CleanupExpiredRequest(BaseModel):
     days: Optional[int] = None

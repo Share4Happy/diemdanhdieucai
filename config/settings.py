@@ -28,8 +28,8 @@ class Settings(BaseModel):
     CLASSROOMS_MEDIA_DIR: Path = BASE_DIR / "dataset" / "classrooms_media"
     MODELS_DIR: Path = BASE_DIR / "models"
 
-    # Database
-    DATABASE_URL: str = f"sqlite:///{BASE_DIR / 'database' / 'attendance.db'}"
+    # Database (Mặc định SQLite, hỗ trợ ghi đè qua biến môi trường DATABASE_URL cho Docker / PostgreSQL)
+    DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR / 'database' / 'attendance.db'}")
 
     # DVR / NVR Hardware Settings (Đầu ghi camera thực tế trường học)
     # LƯU Ý: DVR_PASSWORD PHẢI đặt trong .env. Không hardcode mật khẩu vào source.
@@ -121,10 +121,12 @@ class Settings(BaseModel):
     EMAIL_SUBJECT_TEMPLATE: str = ""
     EMAIL_BODY_TEMPLATE: str = ""
 
-    # Data Retention Settings
+    # Data Retention & Auto Backup Settings
     DATA_RETENTION_DAYS: int = 90
     DATA_AUTO_CLEANUP_ENABLED: bool = True
     DATA_CLEANUP_EXCEL_ENABLED: bool = True
+    AUTO_BACKUP_TIME: str = "23:00"
+    AUTO_BACKUP_ENABLED: bool = True
 
     # Authentication & Security
     JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "truong-thpt-dieu-cai-secret-key-2026-attendance-ai-secured")

@@ -3,9 +3,12 @@
  * Tự động nhận diện môi trường (Port 8000 hay độc lập qua CORS / Live Server)
  */
 
-export const API_BASE = (window.location.protocol === 'file:' || (!window.location.origin.includes(':8000') && !window.location.origin.includes(':80')))
-    ? 'http://localhost:8000'
-    : '';
+export const API_BASE = (function() {
+    if (window.location.protocol === 'file:') return 'http://localhost:8000';
+    if (window.location.origin.includes(':8000') || window.location.origin.includes(':80')) return '';
+    const host = window.location.hostname || 'localhost';
+    return `${window.location.protocol}//${host}:8000`;
+})();
 
 /**
  * Hàm gửi request chuẩn hóa

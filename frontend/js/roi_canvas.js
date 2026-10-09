@@ -3,9 +3,12 @@
  * Hỗ trợ kéo thả các điểm neo, hút nam châm mép ảnh, undo (Ctrl+Z), đổi độ phân giải.
  */
 
-const API_BASE = (window.location.protocol === 'file:' || (!window.location.origin.includes(':8000') && !window.location.origin.includes(':80')))
-    ? 'http://localhost:8000'
-    : '';
+const API_BASE = (function() {
+    if (window.location.protocol === 'file:') return 'http://localhost:8000';
+    if (window.location.origin.includes(':8000') || window.location.origin.includes(':80')) return '';
+    const host = window.location.hostname || 'localhost';
+    return `${window.location.protocol}//${host}:8000`;
+})();
 
 function getAuthHeaders(extra = {}) {
     return { 'Accept': 'application/json', ...extra };

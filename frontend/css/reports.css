@@ -1197,123 +1197,618 @@
 /* =====================================================
    TAB 3: RETENTION SETTINGS CARD
    ===================================================== */
-.retention-settings-card {
-    background: #ffffff;
-    border: 1px solid var(--border-color);
-    border-radius: 10px;
-    padding: 1.25rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-
-.retention-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.retention-presets-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.retention-preset-btn {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 8px 16px;
-    border: 1px solid #cbd5e1;
-    background: #f8fafc;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    min-width: 90px;
-}
-
-.retention-preset-btn .preset-val {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: #0f172a;
-}
-
-.retention-preset-btn .preset-label {
-    font-size: 0.72rem;
-    color: #64748b;
-}
-
-.retention-preset-btn:hover {
-    background: #eff6ff;
-    border-color: #93c5fd;
-}
-
-.retention-preset-btn.active {
-    background: #eff6ff;
-    border-color: var(--primary, #2563eb);
-    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
-}
-
-.retention-preset-btn.active .preset-val {
-    color: var(--primary, #2563eb);
-}
-
-.retention-preset-btn.active .preset-label {
-    color: #1d4ed8;
-    font-weight: 600;
-}
-
-.custom-days-box {
-    padding: 6px 12px;
-    border: 1px solid #cbd5e1;
-    background: #f8fafc;
-    border-radius: 8px;
-}
-
-.retention-stats-card {
-    padding: 1rem;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-}
-
-.retention-stats-grid {
+/* =====================================================
+   TAB 4: UNIFIED RETENTION SETTINGS & BACKUP SCHEDULE
+   Clean 2-Column Dashboard Grid matching System Design System
+   ===================================================== */
+.settings-two-col-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+    align-items: stretch;
 }
 
-.stat-mini-box {
+@media (max-width: 1024px) {
+    .settings-two-col-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.settings-card {
     background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 10px 14px;
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.stat-mini-label {
-    font-size: 0.78rem;
-    color: var(--text-muted);
-    font-weight: 500;
-    margin-bottom: 4px;
+.settings-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.stat-mini-val {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: var(--primary, #2563eb);
-}
-
-.retention-toggles-box .toggle-switch-row {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 10px 14px;
+.settings-card-header {
+    padding: 1.1rem 1.35rem;
+    border-bottom: 1px solid #f1f5f9;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+    background: #ffffff;
+}
+
+.settings-card-title-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.settings-card-icon-wrap {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    flex-shrink: 0;
+}
+
+.settings-card-icon-wrap.primary {
+    background: #eff6ff;
+    color: var(--primary, #2563eb);
+    border: 1px solid #dbeafe;
+}
+
+.settings-card-icon-wrap.secondary {
+    background: #f8fafc;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+.settings-card-title {
+    margin: 0;
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--text-primary, #0f172a);
+    letter-spacing: -0.2px;
+}
+
+.settings-card-subtitle {
+    margin: 2px 0 0 0;
+    font-size: 0.78rem;
+    color: var(--text-muted, #64748b);
+}
+
+.retention-badge-pill {
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: #eff6ff;
+    color: var(--primary, #2563eb);
+    border: 1px solid #bfdbfe;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.08);
+}
+
+.settings-card-body {
+    padding: 1.2rem 1.35rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.15rem;
+    flex: 1;
+}
+
+.setting-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.setting-field-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.setting-field-label {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #334155;
+    margin: 0;
+}
+
+.setting-field-hint {
+    font-size: 0.74rem;
+    color: #64748b;
+}
+
+/* Presets chọn ngày & giờ dạng Segmented Control */
+.retention-presets-group,
+.backup-time-selector-row {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.retention-preset-btn,
+.backup-time-preset-btn {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 11px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 58px;
+    user-select: none;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.retention-preset-btn .preset-val,
+.backup-time-preset-btn .preset-val {
+    font-size: 0.96rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.2;
+    font-family: 'JetBrains Mono', 'Segoe UI', monospace;
+}
+
+.retention-preset-btn .preset-label,
+.backup-time-preset-btn .preset-label {
+    font-size: 0.67rem;
+    color: #64748b;
+    margin-top: 1px;
+    font-weight: 500;
+}
+
+.retention-preset-btn:hover,
+.backup-time-preset-btn:hover {
+    background: #eff6ff;
+    border-color: #93c5fd;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.1);
+}
+
+.retention-preset-btn.active,
+.backup-time-preset-btn.active {
+    background: #eff6ff;
+    border-color: var(--primary, #2563eb);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
+}
+
+.retention-preset-btn.active .preset-val,
+.backup-time-preset-btn.active .preset-val {
+    color: var(--primary, #2563eb);
+}
+
+.retention-preset-btn.active .preset-label,
+.backup-time-preset-btn.active .preset-label {
+    color: #1d4ed8;
+    font-weight: 600;
+}
+
+/* Custom Days Box */
+.custom-days-box {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 5px 9px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    border-radius: 8px;
+    transition: border-color 0.2s;
+}
+
+.custom-days-box:focus-within {
+    border-color: var(--primary, #2563eb);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.custom-days-label {
+    font-size: 0.67rem;
+    color: #64748b;
+    margin-bottom: 2px;
+    font-weight: 600;
+}
+
+.custom-days-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.custom-days-input-wrap input {
+    width: 54px;
+    height: 24px;
+    padding: 1px 4px;
+    font-size: 0.84rem;
+    font-weight: 700;
+    text-align: center;
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+    background: #ffffff;
+    color: #0f172a;
+    outline: none;
+}
+
+.custom-days-unit {
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: #64748b;
+}
+
+/* Custom Time Picker Card */
+.custom-time-picker-card {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 5px 9px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    border-radius: 8px;
+    min-width: 105px;
+    transition: all 0.2s ease;
+}
+
+.custom-time-picker-card:focus-within {
+    border-color: var(--primary, #2563eb);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.custom-time-label {
+    font-size: 0.67rem;
+    color: #64748b;
+    margin-bottom: 2px;
+    font-weight: 600;
+}
+
+.custom-time-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.time-picker-icon {
+    color: var(--primary, #2563eb);
+    font-size: 0.85rem;
+}
+
+.time-picker-input {
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+    background: #ffffff;
+    padding: 1px 4px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #0f172a;
+    font-family: 'JetBrains Mono', 'Segoe UI', monospace;
+    outline: none;
+    cursor: pointer;
+}
+
+/* Toggles Dọn Dẹp Dữ Liệu */
+.settings-toggle-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.settings-toggle-item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    padding: 9px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    transition: all 0.2s ease;
+}
+
+.settings-toggle-item:hover {
+    border-color: #cbd5e1;
+    background: #f1f5f9;
+}
+
+.settings-toggle-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+}
+
+.settings-toggle-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+.settings-toggle-icon.db {
+    background: #eff6ff;
+    color: var(--primary, #2563eb);
+    border: 1px solid #dbeafe;
+}
+
+.settings-toggle-icon.excel {
+    background: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #dcfce7;
+}
+
+.settings-toggle-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.toggle-name {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--text-primary, #0f172a);
+    line-height: 1.3;
+}
+
+.toggle-desc {
+    font-size: 0.73rem;
+    color: var(--text-muted, #64748b);
+    line-height: 1.35;
+    margin-top: 1px;
+}
+
+/* Switch UI Chuẩn Mực */
+.switch-ui {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.switch-ui input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+.slider-round {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #cbd5e1;
+    transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 30px;
+}
+
+.slider-round:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: #ffffff;
+    transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 50%;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.switch-ui:hover .slider-round {
+    background-color: #94a3b8;
+}
+
+.switch-ui input:checked + .slider-round {
+    background: linear-gradient(135deg, var(--primary, #2563eb), #1d4ed8);
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+}
+
+.switch-ui input:checked + .slider-round:before {
+    transform: translateX(20px);
+}
+
+/* Header Switch & Trạng Thái Backup */
+.backup-switch-header-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.backup-status-tag {
+    font-size: 0.76rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: #dcfce7;
+    color: #16a34a;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid #bbf7d0;
+    user-select: none;
+}
+
+.backup-status-tag.off {
+    background: #f1f5f9;
+    color: #64748b;
+    border-color: #e2e8f0;
+}
+
+/* Cloud Note Box */
+.backup-cloud-note-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 9px 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    margin-top: auto;
+}
+
+.cloud-note-icon {
+    color: var(--primary, #2563eb);
+    font-size: 0.95rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.cloud-note-content {
+    font-size: 0.77rem;
+    color: #475569;
+    line-height: 1.45;
+}
+
+/* =====================================================
+   METRICS BAR: THỐNG KÊ DUNG LƯỢNG & CSDL
+   ===================================================== */
+.settings-metrics-card {
+    background: #ffffff;
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 12px;
+    padding: 1.15rem 1.35rem;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.metrics-title {
+    margin: 0 0 0.85rem 0;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text-primary, #0f172a);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.metrics-title i {
+    color: var(--primary, #2563eb);
+}
+
+.retention-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+}
+
+@media (max-width: 900px) {
+    .retention-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .stat-mini-box-wide {
+        grid-column: span 2;
+    }
+}
+
+.stat-mini-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 9px 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    transition: all 0.18s ease;
+}
+
+.stat-mini-box:hover {
+    border-color: #cbd5e1;
+    background: #ffffff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
+}
+
+.stat-mini-label {
+    font-size: 0.73rem;
+    color: var(--text-muted, #64748b);
+    font-weight: 600;
+    margin-bottom: 3px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.stat-mini-val {
+    font-size: 1.12rem;
+    font-weight: 700;
+    color: var(--primary, #2563eb);
+    font-family: 'JetBrains Mono', 'Segoe UI', monospace;
+    letter-spacing: -0.3px;
+}
+
+.stat-range {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary, #334155);
+    line-height: 1.3;
+}
+
+/* =====================================================
+   ACTION BUTTONS & FEEDBACK
+   ===================================================== */
+.settings-action-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+
+.btn-save-settings {
+    padding: 8px 18px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
+}
+
+.btn-danger-subtle {
+    background: #ffffff;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.86rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-danger-subtle:hover {
+    background: #fef2f2;
+    border-color: #ef4444;
+    color: #b91c1c;
+}
+
+/* Database Connection URI Box */
+.db-connection-card .db-uri-input {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.88rem;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    color: #0f172a;
 }
 
 /* =====================================================

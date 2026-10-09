@@ -337,6 +337,8 @@ async def get_retention_settings(db: Session = Depends(get_db)):
         "retention_days": getattr(settings, "DATA_RETENTION_DAYS", 90),
         "auto_cleanup_enabled": getattr(settings, "DATA_AUTO_CLEANUP_ENABLED", True),
         "cleanup_excel_enabled": getattr(settings, "DATA_CLEANUP_EXCEL_ENABLED", True),
+        "auto_backup_time": getattr(settings, "AUTO_BACKUP_TIME", "23:00"),
+        "auto_backup_enabled": getattr(settings, "AUTO_BACKUP_ENABLED", True),
         "stats": {
             "total_sessions": total_sessions,
             "total_details": total_details,
@@ -349,21 +351,32 @@ async def get_retention_settings(db: Session = Depends(get_db)):
 
 @router.post("/retention-settings")
 async def save_retention_settings_endpoint(req: RetentionSettingsRequest, _admin: User = Depends(require_admin)):
-    """Lưu cấu hình thời gian lưu trữ dữ liệu (chỉ admin)."""
+    """Lưu cấu hình thời gian lưu trữ dữ liệu và lịch sao lưu tự động (chỉ admin)."""
     if req.retention_days < 7:
         raise HTTPException(status_code=400, detail="Thời gian lưu trữ tối thiểu là 7 ngày.")
     if req.retention_days > 1000:
         raise HTTPException(status_code=400, detail="Thời gian lưu trữ tối đa là 1000 ngày.")
 
+    backup_time = req.auto_backup_time or "23:00"
     payload = {
         "DATA_RETENTION_DAYS": int(req.retention_days),
         "DATA_AUTO_CLEANUP_ENABLED": bool(req.auto_cleanup_enabled),
         "DATA_CLEANUP_EXCEL_ENABLED": bool(req.cleanup_excel_enabled),
+        "AUTO_BACKUP_TIME": backup_time,
+        "AUTO_BACKUP_ENABLED": bool(req.auto_backup_enabled),
     }
     save_notification_settings(settings, payload)
+
+    # Cập nhật ngay scheduler
+    try:
+        from services.scheduler import attendance_scheduler
+        attendance_scheduler.update_backup_schedule(backup_time=backup_time, enabled=bool(req.auto_backup_enabled))
+    except Exception as e:
+        logger.warning(f"Lỗi cập nhật lịch sao lưu scheduler: {e}")
+
     return {
         "success": True,
-        "message": f"Đã cập nhật thời gian lưu trữ dữ liệu thành {req.retention_days} ngày.",
+        "message": f"Đã lưu cài đặt lưu trữ ({req.retention_days} ngày) và lịch sao lưu ({backup_time}).",
         "config": payload
     }
 

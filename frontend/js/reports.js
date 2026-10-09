@@ -58,6 +58,10 @@ function extractGradeFromClassName(className) {
 function applyRoleBasedUI(adminRole) {
     if (adminRole) return;
 
+    // Xoá tab "Sao Lưu & Google Drive"
+    document.querySelector('.tabs-nav .tab-btn[data-tab="tab-backup"]')?.remove();
+    document.getElementById('tab-backup')?.remove();
+
     // Xoá tab "Cài Đặt Lưu Trữ & CSDL" (lưu trữ, backup, cấu hình CSDL)
     document.querySelector('.tabs-nav .tab-btn[data-tab="tab-settings"]')?.remove();
     document.getElementById('tab-settings')?.remove();
@@ -848,7 +852,7 @@ function updateRetentionUI(data) {
     const daysInput = document.getElementById('retentionDaysInput');
     if (daysInput) daysInput.value = days;
 
-    // Presets
+    // Presets ngày lưu trữ
     const presetsGroup = document.getElementById('retentionPresetsGroup');
     if (presetsGroup) {
         presetsGroup.querySelectorAll('.retention-preset-btn').forEach(btn => {
@@ -857,7 +861,7 @@ function updateRetentionUI(data) {
         });
     }
 
-    // Toggles
+    // Toggles dọn dẹp
     const autoDb = document.getElementById('ruleAutoCleanupDb');
     if (autoDb && typeof data.auto_cleanup_enabled !== 'undefined') {
         autoDb.checked = Boolean(data.auto_cleanup_enabled);
@@ -866,6 +870,39 @@ function updateRetentionUI(data) {
     const autoExcel = document.getElementById('ruleAutoCleanupExcel');
     if (autoExcel && typeof data.cleanup_excel_enabled !== 'undefined') {
         autoExcel.checked = Boolean(data.cleanup_excel_enabled);
+    }
+
+    // Lập lịch tự động sao lưu & Google Drive (Mới)
+    const autoBackup = document.getElementById('ruleAutoBackupEnabled');
+    if (autoBackup && typeof data.auto_backup_enabled !== 'undefined') {
+        autoBackup.checked = Boolean(data.auto_backup_enabled);
+    }
+
+    const updateStatusTag = (isEnabled) => {
+        const tag = document.getElementById('backupStatusTag');
+        if (tag) {
+            if (isEnabled) {
+                tag.className = 'backup-status-tag';
+                tag.innerHTML = '<i class="fa-solid fa-circle-check"></i> Đang Bật';
+            } else {
+                tag.className = 'backup-status-tag off';
+                tag.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Đã Tắt';
+            }
+        }
+    };
+    updateStatusTag(autoBackup ? autoBackup.checked : true);
+
+    const backupTime = data.auto_backup_time || '23:00';
+    const backupTimeInput = document.getElementById('backupScheduleTimeInput');
+    if (backupTimeInput) {
+        backupTimeInput.value = backupTime;
+    }
+
+    const backupTimePresetsGroup = document.getElementById('backupTimePresetsGroup');
+    if (backupTimePresetsGroup) {
+        backupTimePresetsGroup.querySelectorAll('.backup-time-preset-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.time === backupTime);
+        });
     }
 
     // Stats
@@ -922,7 +959,49 @@ function initRetentionEvents() {
         });
     }
 
-    // Nút Lưu Cài Đặt Lưu Trữ
+    // Toggle trạng thái Bật/Tắt tự động sao lưu
+    const autoBackupToggle = document.getElementById('ruleAutoBackupEnabled');
+    if (autoBackupToggle) {
+        autoBackupToggle.addEventListener('change', () => {
+            const tag = document.getElementById('backupStatusTag');
+            if (tag) {
+                if (autoBackupToggle.checked) {
+                    tag.className = 'backup-status-tag';
+                    tag.innerHTML = '<i class="fa-solid fa-circle-check"></i> Đang Bật';
+                } else {
+                    tag.className = 'backup-status-tag off';
+                    tag.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Đã Tắt';
+                }
+            }
+        });
+    }
+
+    // Bắt sự kiện chọn preset & input giờ sao lưu định kỳ Google Drive
+    const backupTimePresetsGroup = document.getElementById('backupTimePresetsGroup');
+    const backupTimeInput = document.getElementById('backupScheduleTimeInput');
+
+    if (backupTimePresetsGroup && backupTimeInput) {
+        backupTimePresetsGroup.querySelectorAll('.backup-time-preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                backupTimePresetsGroup.querySelectorAll('.backup-time-preset-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                if (btn.dataset.time) {
+                    backupTimeInput.value = btn.dataset.time;
+                }
+            });
+        });
+
+        backupTimeInput.addEventListener('input', (e) => {
+            const timeVal = e.target.value;
+            if (timeVal && backupTimePresetsGroup) {
+                backupTimePresetsGroup.querySelectorAll('.backup-time-preset-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.time === timeVal);
+                });
+            }
+        });
+    }
+
+    // Nút Lưu Cài Đặt Lưu Trữ & Lập Lịch Sao Lưu
     const btnSave = document.getElementById('btnSaveRetentionConfig');
     const msgBox = document.getElementById('retentionFeedbackMsg');
 
@@ -936,6 +1015,8 @@ function initRetentionEvents() {
 
             const autoDb = document.getElementById('ruleAutoCleanupDb')?.checked ?? true;
             const autoExcel = document.getElementById('ruleAutoCleanupExcel')?.checked ?? true;
+            const autoBackup = document.getElementById('ruleAutoBackupEnabled')?.checked ?? true;
+            const backupTime = document.getElementById('backupScheduleTimeInput')?.value || '23:00';
 
             btnSave.disabled = true;
             btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
@@ -944,14 +1025,17 @@ function initRetentionEvents() {
                 const res = await ReportAPI.saveRetentionSettings({
                     retention_days: days,
                     auto_cleanup_enabled: autoDb,
-                    cleanup_excel_enabled: autoExcel
+                    cleanup_excel_enabled: autoExcel,
+                    auto_backup_enabled: autoBackup,
+                    auto_backup_time: backupTime
                 });
 
                 if (res && res.success) {
-                    showToast(res.message || `Đã lưu cài đặt: Lưu trữ ${days} ngày`, 'success');
+                    const backupSummary = autoBackup ? `, tự động sao lưu lúc ${backupTime}` : ', tắt tự động sao lưu';
+                    showToast(res.message || `Đã lưu cài đặt: Lưu trữ ${days} ngày${backupSummary}`, 'success');
                     if (msgBox) {
                         msgBox.className = 'zalo-feedback success';
-                        msgBox.innerHTML = `<i class="fa-solid fa-circle-check"></i> Đã lưu thành công: Dữ liệu điểm danh được bảo lưu <strong>${days} ngày</strong>.`;
+                        msgBox.innerHTML = `<i class="fa-solid fa-circle-check"></i> Đã lưu thành công: Lưu trữ <strong>${days} ngày</strong>${backupSummary}.`;
                     }
                     await loadRetentionSettings();
                 } else {
@@ -961,7 +1045,7 @@ function initRetentionEvents() {
                 alert('Lỗi kết nối máy chủ: ' + (err.message || err));
             } finally {
                 btnSave.disabled = false;
-                btnSave.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Lưu Cài Đặt Lưu Trữ';
+                btnSave.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Lưu Cài Đặt Lưu Trữ & Lịch Sao Lưu';
             }
         });
     }

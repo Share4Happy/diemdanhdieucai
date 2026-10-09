@@ -32,20 +32,10 @@ class AttendanceScheduler:
         logger.info("Đã khởi động bộ lập lịch điểm danh tự động.")
         self.update_schedule(morning_time=m_time, afternoon_time=a_time, days=days, enabled=is_enabled)
 
-        # Lập lịch tự động sao lưu dữ liệu toàn hệ thống hàng ngày lúc 23:00
-        try:
-            tz = get_app_timezone()
-            trigger_backup = CronTrigger(hour=23, minute=0, timezone=tz)
-            self.scheduler.add_job(
-                func=self.run_daily_backup_job,
-                trigger=trigger_backup,
-                id="daily_system_backup_job",
-                name="Tự Động Sao Lưu Dữ Liệu Hàng Ngày",
-                replace_existing=True
-            )
-            logger.info("Đã đăng ký tiến trình tự động sao lưu CSDL hàng ngày lúc 23:00.")
-        except Exception as e:
-            logger.warning(f"Lỗi đăng ký lịch sao lưu tự động: {e}")
+        # Lập lịch tự động sao lưu dữ liệu toàn hệ thống và Google Drive
+        b_time = getattr(settings, "AUTO_BACKUP_TIME", "23:00")
+        b_enabled = getattr(settings, "AUTO_BACKUP_ENABLED", True)
+        self.update_backup_schedule(backup_time=b_time, enabled=b_enabled)
 
     def run_scheduled_job(self):
         logger.info("=== [CRON] TỰ ĐỘNG KÍCH HOẠT CHU TRÌNH ĐIỂM DANH ===")
@@ -119,6 +109,35 @@ class AttendanceScheduler:
             logger.info(f"Đã cập nhật lịch quét ca chiều: {a_h:02d}:{a_m:02d} ({schedule_days}) [Timezone: {tz.key}]")
         except Exception as e:
             logger.warning(f"Lỗi cập nhật lịch ca chiều: {e}")
+
+    def update_backup_schedule(self, backup_time: str = "23:00", enabled: bool = True):
+        """Cập nhật giờ tự động sao lưu dữ liệu toàn hệ thống và đồng bộ Google Drive."""
+        if not self.is_running:
+            return
+
+        if not enabled:
+            try:
+                self.scheduler.remove_job("daily_system_backup_job")
+                logger.info("Đã tạm dừng tiến trình tự động sao lưu định kỳ.")
+            except Exception:
+                pass
+            return
+
+        try:
+            tz = get_app_timezone()
+            b_parts = (backup_time or "23:00").split(":")
+            b_h, b_m = int(b_parts[0]), int(b_parts[1])
+            trigger_backup = CronTrigger(hour=b_h, minute=b_m, timezone=tz)
+            self.scheduler.add_job(
+                func=self.run_daily_backup_job,
+                trigger=trigger_backup,
+                id="daily_system_backup_job",
+                name="Tự Động Sao Lưu Dữ Liệu Hàng Ngày",
+                replace_existing=True
+            )
+            logger.info(f"Đã cập nhật lịch tự động sao lưu hệ thống: {b_h:02d}:{b_m:02d} [Timezone: {tz.key}].")
+        except Exception as e:
+            logger.warning(f"Lỗi cập nhật lịch sao lưu tự động: {e}")
 
     def shutdown(self):
         if self.is_running:
