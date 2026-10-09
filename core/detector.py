@@ -24,8 +24,10 @@ class StudentDetector:
         self.model_name = str(model_name)
         logger.info(f"Đang tải mô hình phát hiện đối tượng AI: {self.model_name}...")
         
-        # Kiểm tra đường dẫn trọng số
+        # Kiểm tra đường dẫn trọng số - Ưu tiên mô hình classroom_best.pt camera thực tế
         candidate_paths = [
+            settings.MODELS_DIR / "classroom_best.pt",
+            settings.BASE_DIR / "models" / "classroom_best.pt",
             Path(self.model_name),
             settings.MODELS_DIR / Path(self.model_name).name,
             settings.BASE_DIR / self.model_name,
@@ -41,7 +43,7 @@ class StudentDetector:
                     self.model = YOLO(str(p))
                     self.model_name = str(p)
                     loaded = True
-                    logger.info(f"Đã nạp thành công mô hình {settings.YOLO_FAMILY} ({p.name})!")
+                    logger.info(f"Đã nạp thành công mô hình phát hiện chính: {p.name}!")
                     break
                 except Exception as e:
                     logger.warning(f"Không thể nạp checkpoint từ {p}: {e}")
@@ -57,25 +59,37 @@ class StudentDetector:
                 self.model_name = "yolo26s.pt"
 
         self.target_class_ids = self._determine_target_classes_for_model(self.model)
-        logger.info(f"AI Target Classes cho điểm danh: {self.target_class_ids} (Tên: {[self.model.names.get(i, 'unknown') for i in self.target_class_ids]})")
+        self.is_head_model = "classroom" in Path(self.model_name).name.lower() or "head" in Path(self.model_name).name.lower()
+        logger.info(f"AI Target Classes cho điểm danh: {self.target_class_ids} (Mô hình chuyên biệt đầu: {self.is_head_model})")
 
-        # Nạp mô hình bổ trợ chuyên nhận diện đầu học sinh (chống sót góc xa & cúi gục đầu)
+        # Nạp mô hình bổ trợ: Chỉ kích hoạt nếu mô hình chính KHÔNG PHẢI là mô hình chuyên nhận diện đầu
         self.head_model = None
         self.head_target_class_ids = [0]
-        head_candidates = [
-            Path(getattr(settings, "HEAD_MODEL_NAME", "models/classroom_best.pt")),
-            settings.MODELS_DIR / "classroom_best.pt",
-            settings.BASE_DIR / "models" / "classroom_best.pt",
-        ]
-        for hp in head_candidates:
-            if hp.exists() and str(hp) != str(self.model_name):
-                try:
-                    self.head_model = YOLO(str(hp))
-                    self.head_target_class_ids = self._determine_target_classes_for_model(self.head_model)
-                    logger.info(f"Đã nạp mô hình bổ trợ chuyên nhận diện đầu học sinh: {hp.name} (Classes: {self.head_target_class_ids})")
-                    break
-                except Exception as e:
-                    logger.warning(f"Không thể nạp mô hình đầu học sinh từ {hp}: {e}")
+        if not self.is_head_model:
+            head_candidates = [
+                Path(getattr(settings, "HEAD_MODEL_NAME", "models/classroom_best.pt")),
+                settings.MODELS_DIR / "classroom_best.pt",
+                settings.BASE_DIR / "models" / "classroom_best.pt",
+            ]
+            for hp in head_candidates:
+                if hp.exists() and str(hp) != str(self.model_name):
+                    try:
+                        self.head_model = YOLO(str(hp))
+                        self.head_target_class_ids = self._determine_target_classes_for_model(self.head_model)
+                        logger.info(f"Đã nạp mô hình bổ trợ chuyên nhận diện đầu học sinh: {hp.name} (Classes: {self.head_target_class_ids})")
+                        break
+                    except Exception as e:
+                        logger.warning(f"Không thể nạp mô hình đầu học sinh từ {hp}: {e}")
+
+        # Nạp mô hình người COCO yolo26m.pt để xác thực thân người, giải cứu cúi đầu và lọc ba lô ghế trống
+        self.coco_person_model = None
+        coco_candidate = settings.MODELS_DIR / "yolo26m.pt"
+        if coco_candidate.exists() and str(coco_candidate.resolve()) != str(Path(self.model_name).resolve()):
+            try:
+                self.coco_person_model = YOLO(str(coco_candidate))
+                logger.info("Đã nạp mô hình COCO Person yolo26m.pt phục vụ xác thực thân người & giải cứu cúi đầu!")
+            except Exception as e:
+                logger.warning(f"Không thể nạp mô hình COCO Person: {e}")
 
         # Tối ưu thiết bị phần cứng (Tự động kích hoạt GPU NVIDIA CUDA RTX 3050 và FP16 Half Precision)
         import torch
@@ -93,6 +107,12 @@ class StudentDetector:
                 self.head_model.to(self.device)
             except Exception as e:
                 logger.debug(f"Không thể gọi head_model.to({self.device}): {e}")
+
+        if self.coco_person_model is not None:
+            try:
+                self.coco_person_model.to(self.device)
+            except Exception as e:
+                logger.debug(f"Không thể gọi coco_person_model.to({self.device}): {e}")
 
     def _determine_target_classes_for_model(self, model: Any) -> List[int]:
         """Tự động nhận diện class id tương ứng với học sinh/người/đầu trong mô hình."""
@@ -135,15 +155,19 @@ class StudentDetector:
     def deduplicate_boxes(
         boxes: List[List[int]],
         confs: List[float],
-        iou_thresh: float = 0.45,
-        ios_thresh: float = 0.50
+        iou_thresh: float = 0.35,
+        ios_thresh: float = 0.50,
+        min_dist_px: float = 20.0
     ) -> Tuple[List[List[int]], List[float]]:
         """
-        Hợp nhất các bounding boxes đa tỷ lệ (Global + Tiled + Head Model):
-        - Nếu IoU >= iou_thresh: trùng lặp đối tượng.
-        - Nếu 1 box lọt trong box kia (IoS >= ios_thresh):
-          hợp nhất thông minh giữa box toàn thân (COCO) và box đầu (Head Specialist).
-        - Đảm bảo KHÔNG gộp 2 người khác nhau khi 1 người đứng trước che 1 người ngồi sau.
+        Khử trùng lặp đa tầng thông minh:
+        1. Aspect Ratio Filtering: Đầu học sinh có tỷ lệ 0.42 <= h/w <= 1.68.
+        2. Centroid Distance Suppression: Nếu khoảng cách tâm < 18px hoặc < 50% min_dim -> Trùng lặp.
+        3. Vertical Stacking Suppression (Đã sửa lỗi nuốt học sinh bàn trước):
+           Chỉ coi là chẻ đôi 1 đầu (tóc + mặt) nếu 2 box THẬT SỰ CHỒNG LẤN SÂU THEO PHƯƠNG DỌC
+           (x_overlap > 50% min_w và y_overlap > 38% min_h).
+           Tuyệt đối KHÔNG xóa nếu 2 đầu tách rời nhau (y_overlap <= 0 hoặc chỉ chạm mép).
+        4. Standard IoU / IoS Containment: Nếu iou >= 0.35 hoặc ios >= 0.50 -> Trùng lặp.
         """
         if not boxes:
             return [], []
@@ -154,40 +178,53 @@ class StudentDetector:
         for i in indices:
             b1 = boxes[i]
             x1_a, y1_a, x2_a, y2_a = b1
-            area_a = max(1, (x2_a - x1_a) * (y2_a - y1_a))
+            w_a = x2_a - x1_a
+            h_a = y2_a - y1_a
+            area_a = max(1, w_a * h_a)
+            c1 = ((x1_a + x2_a) / 2.0, (y1_a + y2_a) / 2.0)
+
+            aspect_a = h_a / max(1.0, float(w_a))
+            if aspect_a < 0.25 or aspect_a > 2.50:
+                continue
 
             duplicate = False
             for j in kept:
                 b2 = boxes[j]
                 x1_b, y1_b, x2_b, y2_b = b2
-                area_b = max(1, (x2_b - x1_b) * (y2_b - y1_b))
+                w_b = x2_b - x1_b
+                h_b = y2_b - y1_b
+                area_b = max(1, w_b * h_b)
+                c2 = ((x1_b + x2_b) / 2.0, (y1_b + y2_b) / 2.0)
 
-                # Giao điểm
-                ix1 = max(x1_a, x1_b)
-                iy1 = max(y1_a, y1_b)
-                ix2 = min(x2_a, x2_b)
-                iy2 = min(y2_a, y2_b)
+                # Kiểm tra Row Occlusion (Học sinh hàng trước bị box người/thân học sinh hàng sau bao bọc):
+                # Box nhỏ hơn nằm ở nửa dưới của box lớn hơn -> 2 học sinh ngồi trước-sau riêng biệt
+                is_row_occlusion = False
+                if area_a < area_b * 0.45:
+                    if c1[1] > c2[1] + h_b * 0.15 and y1_a > y1_b + h_b * 0.30:
+                        is_row_occlusion = True
+                elif area_b < area_a * 0.45:
+                    if c2[1] > c1[1] + h_a * 0.15 and y1_b > y1_a + h_a * 0.30:
+                        is_row_occlusion = True
 
-                if ix2 > ix1 and iy2 > iy1:
-                    inter = (ix2 - ix1) * (iy2 - iy1)
+                # 1. Khoảng cách tâm (chỉ triệt tiêu nếu gần như trùng khít tâm hoàn toàn)
+                dist = np.hypot(c1[0] - c2[0], c1[1] - c2[1])
+                if not is_row_occlusion and dist < 8.0:
+                    duplicate = True
+                    break
+
+                # 2. Giao điểm & Kiểm tra IoU + IoS
+                y_overlap = min(y2_a, y2_b) - max(y1_a, y1_b)
+                x_overlap = min(x2_a, x2_b) - max(x1_a, x1_b)
+                if x_overlap > 0 and y_overlap > 0:
+                    inter = x_overlap * y_overlap
                     iou = inter / float(area_a + area_b - inter)
                     ios = inter / float(min(area_a, area_b))
-
-                    if iou >= iou_thresh:
-                        duplicate = True
-                        break
-
-                    # Một box nằm trong box kia (Head nằm trong Upper-body/Person hoặc ngược lại)
-                    if ios >= ios_thresh:
-                        big_b = b2 if area_b > area_a else b1
-                        small_b = b1 if area_b > area_a else b2
-                        bx1, by1, bx2, by2 = big_b
-                        sx1, sy1, sx2, sy2 = small_b
-                        scx = (sx1 + sx2) / 2.0
-                        scy = (sy1 + sy2) / 2.0
-
-                        # Nếu tâm box nhỏ nằm trong box lớn và ở nửa trên (75% trên) -> Cùng 1 học sinh
-                        if (bx1 - 10 <= scx <= bx2 + 10) and (by1 - 10 <= scy <= by1 + (by2 - by1) * 0.75):
+                    if not is_row_occlusion:
+                        if iou >= iou_thresh or ios >= ios_thresh:
+                            duplicate = True
+                            break
+                        min_dim = min(w_a, h_a, w_b, h_b)
+                        if dist < max(14.0, min_dim * 0.45) and ios >= 0.25:
                             duplicate = True
                             break
 
@@ -196,30 +233,202 @@ class StudentDetector:
 
         return [boxes[k] for k in kept], [confs[k] for k in kept]
 
+    @staticmethod
+    def fuse_head_and_person(
+        head_boxes: List[List[int]],
+        head_confs: List[float],
+        person_boxes: List[List[int]],
+        person_confs: List[float],
+        img_shape: Tuple[int, int]
+    ) -> Tuple[List[List[int]], List[float]]:
+        """
+        Kết hợp đa tầng mô hình chuyên biệt đầu và mô hình COCO Person:
+        1. Anatomy Constraint: Mỗi học sinh đã xác định đầu thì các vật thể con ở ngực/bàn (ba lô),
+           vùng đùi/quần đùi, chân dưới gầm bàn của chính học sinh đó sẽ BỊ TRIỆT TIÊU.
+        2. Lọc bỏ vật thể cô lập không có thân người (cây cảnh ngoài cửa sổ, nan hoa sắt) nếu conf < 0.45.
+        3. Giải cứu học sinh cúi gập đầu/nằm bàn với cửa sổ tọa độ hẹp chống bị bạn ngồi cùng bàn nuốt chửng.
+        4. Khử trùng lặp an toàn không xóa mất học sinh bàn trước / bàn sau.
+        """
+        candidates = []
+        for b, c in zip(head_boxes, head_confs):
+            w = b[2] - b[0]
+            h = b[3] - b[1]
+            if w < 12 or h < 12 or (b[1] <= 5 and b[3] <= 55):
+                continue
+            aspect = h / max(1.0, float(w))
+            # Lọc bỏ các vật thể có tỷ lệ bất thường (cánh tay, ống tay áo, chân bàn có aspect > 1.58).
+            # Đầu học sinh nhìn từ camera lớp học luôn có aspect từ 0.30 (cúi đầu nằm bàn) đến 1.55 (quay nghiêng/buộc tóc).
+            if aspect < 0.25 or aspect > 1.58:
+                continue
+            candidates.append({
+                "bbox": b,
+                "conf": c,
+                "cx": (b[0] + b[2]) / 2.0,
+                "cy": (b[1] + b[3]) / 2.0,
+                "w": w,
+                "h": h
+            })
+
+        candidates.sort(key=lambda x: x["conf"], reverse=True)
+
+        verified = []
+        suppressed_indices = set()
+
+        for i, c1 in enumerate(candidates):
+            if i in suppressed_indices:
+                continue
+
+            has_person = False
+            is_sub_body_artifact = False
+            for pb, pc in zip(person_boxes, person_confs):
+                px1, py1, px2, py2 = pb
+                pw = px2 - px1
+                ph = py2 - py1
+                # Kiểm tra c1 có nằm trong phạm vi thân người pb không
+                if px1 - 15 <= c1["cx"] <= px2 + 15 and py1 - 20 <= c1["cy"] <= py2 + 10:
+                    # Tâm đầu c1 nằm trong nửa trên của Person box
+                    if c1["cy"] <= py1 + ph * 0.42:
+                        has_person = True
+                        break
+                    else:
+                        # Rơi vào vùng ngực dưới / bụng / đùi / cánh tay đặt trên bàn
+                        is_sub_body_artifact = True
+
+            # Triệt tiêu cánh tay / vật thể trên bàn nằm ở nửa dưới thân người của một học sinh
+            if is_sub_body_artifact and not has_person:
+                continue
+
+            # Khi học sinh ngồi sau bàn gỗ, thân người thường bị che khuất nên has_person có thể False.
+            if not has_person:
+                aspect = c1["h"] / max(1.0, float(c1["w"]))
+                if c1["conf"] < 0.18 or aspect < 0.25 or aspect > 1.58:
+                    continue
+
+            verified.append(c1)
+
+            # Anatomy Suppression: Triệt tiêu chồng lấn sâu và cánh tay phụ bên dưới đầu chính c1
+            b1 = c1["bbox"]
+            for j in range(i + 1, len(candidates)):
+                if j in suppressed_indices:
+                    continue
+                c2 = candidates[j]
+                b2 = c2["bbox"]
+                x_inter = min(b1[2], b2[2]) - max(b1[0], b2[0])
+                y_inter = min(b1[3], b2[3]) - max(b1[1], b2[1])
+                # 1. Chồng lấn diện tích sâu
+                if x_inter > min(c1["w"], c2["w"]) * 0.65 and y_inter > min(c1["h"], c2["h"]) * 0.45:
+                    suppressed_indices.add(j)
+                    continue
+
+                # 2. Triệt tiêu cánh tay / ống tay áo đặt trên bàn kề cận dưới đầu c1
+                dx = abs(c2["cx"] - c1["cx"])
+                dy = c2["cy"] - c1["cy"]
+                c2_aspect = c2["h"] / max(1.0, float(c2["w"]))
+                if 10 <= dy <= max(75.0, c1["h"] * 1.35) and dx <= max(70.0, c1["w"] * 1.25):
+                    if c2_aspect >= 1.40 or (c2["w"] < c1["w"] * 0.65 and c2["conf"] < c1["conf"] * 0.80):
+                        suppressed_indices.add(j)
+
+        # Giải cứu học sinh cúi gập đầu (Bowing Student Rescue)
+        for pb, pc in zip(person_boxes, person_confs):
+            if pc < 0.25:
+                continue
+            px1, py1, px2, py2 = pb
+            pw = px2 - px1
+            ph = py2 - py1
+            if pw < 20 or ph < 30:
+                continue
+
+            est_cx = px1 + pw * 0.50
+            est_cy = py1 + min(pw * 0.45, ph * 0.25)
+            est_w = max(18, int(pw * 0.55))
+            est_h = max(20, int(pw * 0.65))
+
+            # Dùng cửa sổ hẹp theo trục X (35% pw) để bạn ngồi cùng bàn KHÔNG nuốt chửng bạn cúi đầu
+            has_assigned_head = False
+            for v in verified:
+                if abs(v["cx"] - est_cx) < max(16.0, pw * 0.35) and abs(v["cy"] - est_cy) < max(20.0, ph * 0.35):
+                    has_assigned_head = True
+                    break
+
+            if not has_assigned_head:
+                verified.append({
+                    "bbox": [int(est_cx - est_w/2), int(est_cy - est_h/2), int(est_cx + est_w/2), int(est_cy + est_h/2)],
+                    "conf": pc * 0.85,
+                    "cx": est_cx,
+                    "cy": est_cy,
+                    "w": est_w,
+                    "h": est_h
+                })
+
+        # Khử trùng lặp an toàn (bảo toàn học sinh bàn trước/bàn sau & ngồi cạnh nhau)
+        verified.sort(key=lambda x: x["conf"], reverse=True)
+        final_kept = []
+
+        for c1 in verified:
+            b1 = c1["bbox"]
+            c1_pt = (c1["cx"], c1["cy"])
+            w1, h1 = c1["w"], c1["h"]
+            area1 = max(1, w1 * h1)
+
+            is_dup = False
+            for c2 in final_kept:
+                b2 = c2["bbox"]
+                c2_pt = (c2["cx"], c2["cy"])
+                w2, h2 = c2["w"], c2["h"]
+                area2 = max(1, w2 * h2)
+
+                dist = np.hypot(c1_pt[0] - c2_pt[0], c1_pt[1] - c2_pt[1])
+                if dist < 8.0:
+                    is_dup = True
+                    break
+
+                y_overlap = min(b1[3], b2[3]) - max(b1[1], b2[1])
+                x_overlap = min(b1[2], b2[2]) - max(b1[0], b2[0])
+                if x_overlap > 0 and y_overlap > 0:
+                    inter = x_overlap * y_overlap
+                    iou = inter / float(area1 + area2 - inter)
+                    ios = inter / float(min(area1, area2))
+                    if iou >= 0.35 or ios >= 0.48:
+                        is_dup = True
+                        break
+                    if dist < max(14.0, min(w1, h1, w2, h2) * 0.45) and ios >= 0.25:
+                        is_dup = True
+                        break
+
+            if not is_dup:
+                final_kept.append(c1)
+
+        fused_b = [item["bbox"] for item in final_kept]
+        fused_c = [item["conf"] for item in final_kept]
+        return fused_b, fused_c
+
     def run_multiscale_tiled_inference(
         self,
         image: np.ndarray,
-        conf_threshold: float,
+        conf_threshold: float = None,
         imgsz: int = None
     ) -> Tuple[List[List[int]], List[float]]:
         """
-        Chạy phát hiện người theo cơ chế đa tầng (Global + Head Specialist + Sliced Tiles)
-        giúp phát hiện rõ nét học sinh ngồi ở xa và học sinh cúi đầu bị che khuất một phần.
+        Chạy phát hiện người theo cơ chế tối ưu đa tầng không trùng lặp:
+        - Nếu self.model là mô hình chuyên biệt đầu (classroom_best.pt), quét trực tiếp.
+        - Nếu ảnh nét cao và bật USE_TILED_INFERENCE, quét thêm phân mảnh để bắt học sinh góc xa.
+        - Áp dụng thuật toán khử trùng lặp đa tầng triệt để.
         """
         h, w = image.shape[:2]
         if imgsz is None:
             imgsz = settings.YOLO_IMGSZ
+        if conf_threshold is None:
+            conf_threshold = settings.AI_CONFIDENCE_THRESHOLD
 
         all_boxes = []
         all_confs = []
 
-        # 1. Quét toàn cục với mô hình chính (YOLO person detector)
-        # Sử dụng ngưỡng conf 0.25 để loại trừ hoàn toàn nhiễu mặt bàn/ghế gỗ
-        coco_conf = max(0.25, conf_threshold)
+        # 1. Quét toàn cục với mô hình chính
+        eff_conf = conf_threshold if conf_threshold is not None else settings.AI_CONFIDENCE_THRESHOLD
         res_global = self.model.predict(
             source=image,
             classes=self.target_class_ids,
-            conf=coco_conf,
+            conf=eff_conf,
             imgsz=imgsz,
             iou=settings.AI_IOU_THRESHOLD,
             device=self.device,
@@ -232,13 +441,34 @@ class StudentDetector:
                 all_boxes.append(xyxy)
                 all_confs.append(conf)
 
-        # 2. Quét toàn cục bổ trợ bằng mô hình chuyên phát hiện đầu (Head Specialist)
-        # Chạy ở ngưỡng nhạy cao (conf_threshold = 0.18) để bắt trọn học sinh cúi đầu / góc xa
-        if self.head_model is not None:
+        # 1.1 Quét mô hình thân người COCO Person để làm căn cứ bảo chứng và giải cứu cúi đầu
+        person_boxes = []
+        person_confs = []
+        active_coco = self.coco_person_model if self.coco_person_model is not None else (self.model if not self.is_head_model else None)
+        if active_coco is not None:
+            try:
+                res_person = active_coco.predict(
+                    source=image,
+                    classes=[0],
+                    conf=max(0.18, eff_conf),
+                    imgsz=imgsz,
+                    iou=0.45,
+                    device=self.device,
+                    verbose=False
+                )
+                if res_person and len(res_person) > 0:
+                    for b in res_person[0].boxes:
+                        person_boxes.append([int(v) for v in b.xyxy[0].cpu().numpy()])
+                        person_confs.append(float(b.conf[0].cpu().numpy()))
+            except Exception as e:
+                logger.debug(f"Lỗi quét person pass: {e}")
+
+        # 2. Quét toàn cục bổ trợ bằng mô hình đầu (chỉ khi mô hình chính không phải là mô hình đầu)
+        if not self.is_head_model and self.head_model is not None:
             res_head = self.head_model.predict(
                 source=image,
                 classes=self.head_target_class_ids,
-                conf=conf_threshold,
+                conf=eff_conf,
                 imgsz=imgsz,
                 iou=settings.AI_IOU_THRESHOLD,
                 device=self.device,
@@ -251,7 +481,7 @@ class StudentDetector:
                     all_boxes.append(xyxy)
                     all_confs.append(conf)
 
-        # 3. Quét chi tiết phân mảnh đa tỷ lệ (Sliced Tiled Pass - SAHI) khi ảnh độ nét cao (>= 720p)
+        # 3. Quét chi tiết phân mảnh đa tỷ lệ (Sliced Tiled Pass - SAHI) khi ảnh nét cao (>= 720p)
         if settings.USE_TILED_INFERENCE and (w >= 1280 or h >= 720):
             tile_w, tile_h = 1200, 800
             step_x, step_y = 900, 600
@@ -272,11 +502,14 @@ class StudentDetector:
                     tile_offsets.append((x1, y1))
 
             if tile_list:
-                # Quét hàng loạt (Batch Inference) trên GPU giúp tăng tốc gấp 4-6 lần
-                res_tiles = self.model.predict(
+                active_tiled_model = self.head_model if (not self.is_head_model and self.head_model is not None) else self.model
+                active_tiled_classes = self.head_target_class_ids if (not self.is_head_model and self.head_model is not None) else self.target_class_ids
+                tile_conf = min(0.20, eff_conf)
+
+                res_tiles = active_tiled_model.predict(
                     source=tile_list,
-                    classes=self.target_class_ids,
-                    conf=coco_conf,
+                    classes=active_tiled_classes,
+                    conf=tile_conf,
                     imgsz=tile_imgsz,
                     device=self.device,
                     verbose=False
@@ -285,13 +518,33 @@ class StudentDetector:
                     if res_tile and len(res_tile) > 0:
                         for b in res_tile.boxes:
                             bx1, by1, bx2, by2 = [int(v) for v in b.xyxy[0].cpu().numpy()]
-                            all_boxes.append([bx1 + x1, by1 + y1, bx2 + x1, by2 + y1])
-                            all_confs.append(float(b.conf[0].cpu().numpy()))
+                            bconf = float(b.conf[0].cpu().numpy())
+                            bw = bx2 - bx1
+                            bh = by2 - by1
+                            baspect = bh / max(1.0, float(bw))
 
-        # 4. Khử trùng lặp đa tầng thông minh
-        fused_boxes, fused_confs = self.deduplicate_boxes(
-            all_boxes, all_confs, iou_thresh=settings.AI_IOU_THRESHOLD, ios_thresh=0.60
-        )
+                            # Lọc bỏ các mảnh cắt mép nối nhân tạo giữa các tiles (Tile Seam Truncation Artifacts):
+                            touches_internal_x = (bx1 <= 3 and x1 > 0) or (bx2 >= tile_w - 3 and x1 + tile_w < w)
+                            touches_internal_y = (by1 <= 3 and y1 > 0) or (by2 >= tile_h - 3 and y1 + tile_h < h)
+                            if (touches_internal_x or touches_internal_y) and (baspect > 1.45 or baspect < 0.40 or bconf < 0.55):
+                                continue
+
+                            # Lọc aspect ratio bất thường ngay từ tầng tile (loại trừ cánh tay, ống tay áo chém dọc)
+                            if baspect > 1.58:
+                                continue
+
+                            all_boxes.append([bx1 + x1, by1 + y1, bx2 + x1, by2 + y1])
+                            all_confs.append(bconf)
+
+        # 4. Hợp nhất đa tầng thông minh: Kết hợp Head Model + COCO Person Model
+        if person_boxes:
+            fused_boxes, fused_confs = self.fuse_head_and_person(
+                all_boxes, all_confs, person_boxes, person_confs, image.shape
+            )
+        else:
+            fused_boxes, fused_confs = self.deduplicate_boxes(
+                all_boxes, all_confs, iou_thresh=settings.AI_IOU_THRESHOLD, ios_thresh=0.50, min_dist_px=20.0
+            )
         return fused_boxes, fused_confs
 
     def detect_students_in_classroom(
@@ -311,7 +564,8 @@ class StudentDetector:
         2. Chạy suy luận đa tầng phân mảnh (Tiled Multi-Scale Inference) chống sót học sinh bị che khuất.
         3. Tinh chỉnh bounding box đầu/thân trên thích ứng (Adaptive Head/Upper-body).
         4. Lọc tọa độ theo Red Zone (bàn học) & Green Zone (bục giảng giáo viên).
-        5. Vẽ bounding box và khung chú thích đối chứng trực quan.
+        5. Khử trùng lặp an toàn bảo đảm không bao giờ vẽ 2 số thứ tự / 2 chấm xanh lên cùng 1 học sinh.
+        6. Vẽ bounding box và khung chú thích đối chứng trực quan.
         """
         if image is None:
             return 0, [], None
@@ -344,22 +598,23 @@ class StudentDetector:
             box_w = x2 - x1
             box_h = y2 - y1
 
-            # Loại bỏ các box nhiễu cực nhỏ (< 8px)
-            if box_w < 8 or box_h < 10:
+            # Loại bỏ các box nhiễu cực nhỏ (< 12px) hoặc box nhiễu sát mép trần camera (đèn tuýp/quạt trần)
+            if box_w < 12 or box_h < 12 or (y1 <= 5 and y2 <= 55):
                 continue
 
-            # Tinh chỉnh box thích ứng cho đầu & thân trên
-            aspect = box_h / max(1, box_w)
-            if aspect >= 1.8:
-                head_y2 = int(y1 + box_h * 0.45)
-            elif aspect >= 1.2:
-                head_y2 = int(y1 + box_h * 0.70)
+            # Tinh chỉnh box thích ứng: Nếu là mô hình chuyên biệt đầu, bbox chính là head_bbox
+            if self.is_head_model:
+                head_bbox = [x1, y1, x2, y2]
             else:
-                head_y2 = y2
+                aspect = box_h / max(1, box_w)
+                if aspect >= 1.6:
+                    head_y2 = int(y1 + box_h * 0.50)
+                else:
+                    head_y2 = y2
+                head_bbox = [x1, y1, x2, max(y1 + 10, head_y2)]
 
-            head_bbox = [x1, y1, x2, max(y1 + 10, head_y2)]
-            cx = (x1 + x2) / 2.0
-            cy = y1 + (head_bbox[3] - y1) * 0.35
+            cx = (head_bbox[0] + head_bbox[2]) / 2.0
+            cy = (head_bbox[1] + head_bbox[3]) / 2.0
 
             detected_boxes.append({
                 "bbox": [x1, y1, x2, y2],
@@ -370,7 +625,6 @@ class StudentDetector:
             })
 
         # Cơ chế dự phòng bổ trợ bằng HoughCircles (chỉ kích hoạt nếu không tìm thấy người nào)
-        # Kiểm soát chặt chẽ ngưỡng param2 và khoảng cách tối thiểu để không phát hiện texture tóc thành 73 người
         if len(detected_boxes) == 0:
             masked_img = ROIManager.apply_spatial_mask(processed_img, red_zone, green_zone)
             gray = cv2.cvtColor(masked_img, cv2.COLOR_BGR2GRAY)
@@ -381,7 +635,6 @@ class StudentDetector:
             )
             if circles is not None:
                 circles = np.uint16(np.around(circles))
-                # Giới hạn tối đa không bao giờ tạo quá 3 vòng tròn nếu ở cự ly webcam gần
                 for c in circles[0, :min(len(circles[0]), 3)]:
                     cx, cy, r = int(c[0]), int(c[1]), int(c[2])
                     x1, y1 = max(0, cx - r), max(0, cy - r)
@@ -399,6 +652,57 @@ class StudentDetector:
             detected_boxes, red_zone, green_zone
         )
 
+        # 4. Khử trùng lặp an toàn cấp 2 trên valid_students (Đảm bảo 100% không bao giờ có 2 số thứ tự / 2 chấm xanh trên 1 học sinh)
+        final_valid = []
+        final_indices = sorted(range(len(valid_students)), key=lambda k: valid_students[k]["confidence"], reverse=True)
+        for idx in final_indices:
+            st = valid_students[idx]
+            scx, scy = st["centroid"]
+            sb = st["head_bbox"]
+            sw, sh = sb[2] - sb[0], sb[3] - sb[1]
+
+            aspect = sh / max(1.0, float(sw))
+            if aspect < 0.25 or aspect > 1.58:
+                continue
+
+            dup = False
+            for existing in final_valid:
+                ecx, ecy = existing["centroid"]
+                eb = existing["head_bbox"]
+                ew, eh = eb[2] - eb[0], eb[3] - eb[1]
+
+                # 1. Centroid Distance Suppression (chỉ khi gần như trùng khít)
+                dist = np.hypot(scx - ecx, scy - ecy)
+                if dist < 8.0:
+                    dup = True
+                    break
+
+                # 2. IoU & IoS Containment
+                y_overlap = min(sb[3], eb[3]) - max(sb[1], eb[1])
+                x_overlap = min(sb[2], eb[2]) - max(sb[0], eb[0])
+                if x_overlap > 0 and y_overlap > 0:
+                    inter = x_overlap * y_overlap
+                    ios = inter / float(min(sw * sh, ew * eh))
+                    iou = inter / float(sw * sh + ew * eh - inter)
+                    if ios >= 0.48 or iou >= 0.35:
+                        dup = True
+                        break
+                    if dist < max(14.0, min(sw, sh, ew, eh) * 0.45) and ios >= 0.25:
+                        dup = True
+                        break
+
+                # 3. Triệt tiêu cánh tay / ống tay áo đặt trên bàn kề cận dưới đầu đã xác nhận
+                dy = scy - ecy
+                dx = abs(scx - ecx)
+                if 10 <= dy <= max(75.0, eh * 1.35) and dx <= max(70.0, ew * 1.25):
+                    if aspect >= 1.40 or (sw < ew * 0.65 and st["confidence"] < existing["confidence"] * 0.80):
+                        dup = True
+                        break
+
+            if not dup:
+                final_valid.append(st)
+
+        valid_students = final_valid
         present_count = len(valid_students)
         absent_count = max(0, standard_count - present_count)
 

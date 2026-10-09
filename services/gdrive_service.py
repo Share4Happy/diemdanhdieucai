@@ -40,6 +40,8 @@ class GoogleDriveService:
         return bool(settings.GOOGLE_DRIVE_CLIENT_ID and settings.GOOGLE_DRIVE_CLIENT_SECRET)
 
     def is_connected(self) -> bool:
+        if not self.is_configured():
+            return False
         data = self._load_store()
         return bool(data.get("refresh_token"))
 
@@ -57,14 +59,15 @@ class GoogleDriveService:
     # ------------------------------------------------------------------
     # Vòng đời kết nối OAuth
     # ------------------------------------------------------------------
-    def get_consent_url(self, state: str = "") -> str:
-        """Tạo URL xác nhận Google. Người dùng mở, đồng ý, rồi dán mã code vào giao diện."""
+    def get_consent_url(self, state: str = "", redirect_uri: Optional[str] = None) -> str:
+        """Tạo URL xác nhận Google. Hỗ trợ xác nhận 1 nhấn tự động hoặc lấy mã code."""
         if not self.is_configured():
             raise ValueError("Chưa cấu hình GOOGLE_DRIVE_CLIENT_ID / GOOGLE_DRIVE_CLIENT_SECRET trong .env")
 
+        chosen_redirect = (redirect_uri or settings.GOOGLE_DRIVE_REDIRECT_URI or "http://localhost").strip()
         params = {
             "client_id": settings.GOOGLE_DRIVE_CLIENT_ID,
-            "redirect_uri": settings.GOOGLE_DRIVE_REDIRECT_URI,
+            "redirect_uri": chosen_redirect,
             "response_type": "code",
             "scope": DRIVE_SCOPE,
             "access_type": "offline",

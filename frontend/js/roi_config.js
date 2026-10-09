@@ -19,6 +19,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const classSelect = document.getElementById('classSelect');
+    const btnCanvasPrevClass = document.getElementById('btnCanvasPrevClass');
+    const btnCanvasNextClass = document.getElementById('btnCanvasNextClass');
+    const canvasNavPrevTooltip = document.getElementById('canvasNavPrevTooltip');
+    const canvasNavNextTooltip = document.getElementById('canvasNavNextTooltip');
+    const canvasFloatingClassName = document.getElementById('canvasFloatingClassName');
     const btnModeGreen = document.getElementById('btnModeGreen');
     const btnClearZone = document.getElementById('btnClearZone');
     const btnSaveROI = document.getElementById('btnSaveROI');
@@ -59,6 +64,54 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    // Helper: Cập nhật giao diện Stepper (tooltips & huy hiệu nổi góc ảnh)
+    const updateClassStepperUI = () => {
+        if (!classrooms || classrooms.length === 0 || !classSelect) return;
+        const currentId = String(classSelect.value);
+        const currentIndex = classrooms.findIndex(c => String(c.id) === currentId);
+        const currentClass = classrooms[currentIndex] || classrooms[0];
+        const displayIdx = currentIndex >= 0 ? currentIndex + 1 : 1;
+
+        if (canvasFloatingClassName && currentClass) {
+            canvasFloatingClassName.textContent = `${currentClass.name} (${currentClass.room_number || 'Phòng ' + currentClass.id}) • ${displayIdx}/${classrooms.length}`;
+        }
+
+        const prevIdx = (currentIndex - 1 + classrooms.length) % classrooms.length;
+        const prevClass = classrooms[prevIdx];
+        if (btnCanvasPrevClass && prevClass) {
+            btnCanvasPrevClass.title = `Chuyển về phòng trước: ${prevClass.name} (Phím tắt: ← hoặc [)`;
+        }
+        if (canvasNavPrevTooltip && prevClass) {
+            canvasNavPrevTooltip.textContent = `← ${prevClass.name}`;
+        }
+
+        const nextIdx = (currentIndex + 1) % classrooms.length;
+        const nextClass = classrooms[nextIdx];
+        if (btnCanvasNextClass && nextClass) {
+            btnCanvasNextClass.title = `Chuyển sang phòng tiếp: ${nextClass.name} (Phím tắt: → hoặc ])`;
+        }
+        if (canvasNavNextTooltip && nextClass) {
+            canvasNavNextTooltip.textContent = `${nextClass.name} →`;
+        }
+    };
+
+    // Helper: Chuyển tiến / lùi một lớp học
+    const stepClassroom = (delta) => {
+        if (!classrooms || classrooms.length === 0 || !classSelect) return;
+        const currentId = String(classSelect.value);
+        let currentIndex = classrooms.findIndex(c => String(c.id) === currentId);
+        if (currentIndex === -1) currentIndex = 0;
+
+        const newIndex = (currentIndex + delta + classrooms.length) % classrooms.length;
+        const targetClass = classrooms[newIndex];
+        if (targetClass) {
+            classSelect.value = String(targetClass.id);
+            editor.loadClassroomROI(targetClass.id, false);
+            updateClassStepperUI();
+            showToast(`Đã chuyển: ${targetClass.name} (${targetClass.room_number || 'Phòng ' + targetClass.id})`, 'info');
+        }
+    };
+
     if (classSelect) {
         classSelect.innerHTML = classrooms.map(c => `
             <option value="${c.id}">${esc(c.name)} (${esc(c.room_number || 'Phòng ' + c.id)}) - Chuẩn: ${c.standard_count || 40} HS</option>
@@ -68,11 +121,40 @@ document.addEventListener('DOMContentLoaded', async () => {
             classSelect.value = targetClassId;
         }
 
-        // Change classroom
+        // Change classroom via dropdown
         classSelect.addEventListener('change', (e) => {
             editor.loadClassroomROI(e.target.value, false);
+            updateClassStepperUI();
         });
     }
+
+    // Sự kiện 2 nút chuyển phòng nổi trên ảnh
+    if (btnCanvasPrevClass) {
+        btnCanvasPrevClass.addEventListener('click', (e) => {
+            e.stopPropagation();
+            stepClassroom(-1);
+        });
+    }
+    if (btnCanvasNextClass) {
+        btnCanvasNextClass.addEventListener('click', (e) => {
+            e.stopPropagation();
+            stepClassroom(1);
+        });
+    }
+
+    // Phím tắt bàn phím: ← / → hoặc [ / ] để duyệt phòng siêu nhanh
+    document.addEventListener('keydown', (e) => {
+        const tag = (e.target.tagName || '').toLowerCase();
+        if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+
+        if (e.key === 'ArrowLeft' || e.key === '[') {
+            e.preventDefault();
+            stepClassroom(-1);
+        } else if (e.key === 'ArrowRight' || e.key === ']') {
+            e.preventDefault();
+            stepClassroom(1);
+        }
+    });
 
     // Initial load
     if (classrooms.length > 0) {
@@ -82,6 +164,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         if (btnModeGreen) btnModeGreen.click();
         editor.loadClassroomROI(initialId, forceRefresh);
+        updateClassStepperUI();
     }
 
     // Refresh snapshot

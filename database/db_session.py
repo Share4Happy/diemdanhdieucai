@@ -90,25 +90,26 @@ def init_db(force_seed_classes: bool = False):
     Base.metadata.create_all(bind=engine)
     
     # Safe migration for existing SQLite database
-    try:
-        with engine.connect() as conn:
-            columns_res = conn.execute(text("PRAGMA table_info(classrooms)")).fetchall()
-            existing_cols = [row[1] for row in columns_res]
-            if "nvr_id" not in existing_cols:
-                conn.execute(text("ALTER TABLE classrooms ADD COLUMN nvr_id INTEGER"))
-            if "channel_number" not in existing_cols:
-                conn.execute(text("ALTER TABLE classrooms ADD COLUMN channel_number INTEGER"))
-            
-            # Migration an toàn bảng users nếu có phiên bản cũ dùng username/hashed_password
-            user_cols_res = conn.execute(text("PRAGMA table_info(users)")).fetchall()
-            user_existing_cols = [row[1] for row in user_cols_res]
-            if user_cols_res and "password_hash" not in user_existing_cols:
-                logger.info("Phát hiện bảng users cũ, tự động di trú sang bảng users chuẩn JWT bcrypt...")
-                conn.execute(text("DROP TABLE IF EXISTS password_reset_tokens"))
-                conn.execute(text("DROP TABLE IF EXISTS users"))
-            conn.commit()
-    except Exception as e:
-        logger.debug(f"SQLite migration notice: {e}")
+    if "sqlite" in settings.DATABASE_URL:
+        try:
+            with engine.connect() as conn:
+                columns_res = conn.execute(text("PRAGMA table_info(classrooms)")).fetchall()
+                existing_cols = [row[1] for row in columns_res]
+                if "nvr_id" not in existing_cols:
+                    conn.execute(text("ALTER TABLE classrooms ADD COLUMN nvr_id INTEGER"))
+                if "channel_number" not in existing_cols:
+                    conn.execute(text("ALTER TABLE classrooms ADD COLUMN channel_number INTEGER"))
+                
+                # Migration an toàn bảng users nếu có phiên bản cũ dùng username/hashed_password
+                user_cols_res = conn.execute(text("PRAGMA table_info(users)")).fetchall()
+                user_existing_cols = [row[1] for row in user_cols_res]
+                if user_cols_res and "password_hash" not in user_existing_cols:
+                    logger.info("Phát hiện bảng users cũ, tự động di trú sang bảng users chuẩn JWT bcrypt...")
+                    conn.execute(text("DROP TABLE IF EXISTS password_reset_tokens"))
+                    conn.execute(text("DROP TABLE IF EXISTS users"))
+                conn.commit()
+        except Exception as e:
+            logger.debug(f"SQLite migration notice: {e}")
 
     Base.metadata.create_all(bind=engine)
 

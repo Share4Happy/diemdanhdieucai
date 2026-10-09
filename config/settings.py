@@ -28,8 +28,8 @@ class Settings(BaseModel):
     CLASSROOMS_MEDIA_DIR: Path = BASE_DIR / "dataset" / "classrooms_media"
     MODELS_DIR: Path = BASE_DIR / "models"
 
-    # Database
-    DATABASE_URL: str = f"sqlite:///{BASE_DIR / 'database' / 'attendance.db'}"
+    # Database (Mặc định SQLite, hỗ trợ ghi đè qua biến môi trường DATABASE_URL cho Docker / PostgreSQL)
+    DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR / 'database' / 'attendance.db'}")
 
     # DVR / NVR Hardware Settings (Đầu ghi camera thực tế trường học)
     # LƯU Ý: DVR_PASSWORD PHẢI đặt trong .env. Không hardcode mật khẩu vào source.
@@ -60,11 +60,11 @@ class Settings(BaseModel):
     # AI Model Settings (Ultralytics YOLO26m + Classroom Head Specialized Model)
     YOLO_FAMILY: str = "YOLO26"
     YOLO_VARIANT: str = "26m"
-    YOLO_MODEL_NAME: str = os.getenv("YOLO_MODEL_NAME", str(BASE_DIR / "models" / "yolo26m.pt"))  # Mô hình thế hệ mới YOLO26m
+    YOLO_MODEL_NAME: str = os.getenv("YOLO_MODEL_NAME", str(BASE_DIR / "models" / "classroom_best.pt" if (BASE_DIR / "models" / "classroom_best.pt").exists() else BASE_DIR / "models" / "yolo26m.pt"))
     HEAD_MODEL_NAME: str = os.getenv("HEAD_MODEL_NAME", str(BASE_DIR / "models" / "classroom_best.pt")) # Mô hình chuyên biệt nhận diện đầu lớp học
     YOLO_IMGSZ: int = int(os.getenv("YOLO_IMGSZ", "1280"))               # Kích thước phân giải AI quét 1280px chống mờ ảnh 2K
-    AI_CONFIDENCE_THRESHOLD: float = float(os.getenv("AI_CONFIDENCE_THRESHOLD", "0.24")) # Ngưỡng tin cậy tối ưu phát hiện học sinh cúi đầu & ngồi xa
-    AI_IOU_THRESHOLD: float = float(os.getenv("AI_IOU_THRESHOLD", "0.48"))       # Ngưỡng IoU cho deduplication
+    AI_CONFIDENCE_THRESHOLD: float = float(os.getenv("AI_CONFIDENCE_THRESHOLD", "0.20")) # Ngưỡng tin cậy tối ưu phát hiện học sinh cúi đầu & ngồi xa
+    AI_IOU_THRESHOLD: float = float(os.getenv("AI_IOU_THRESHOLD", "0.35"))       # Ngưỡng IoU cho deduplication chặt chẽ chống box kép
     USE_IMAGE_ENHANCEMENT: bool = True  # Áp dụng CLAHE chống ngược sáng cửa sổ
     USE_TILED_INFERENCE: bool = True    # Bật thuật toán phân mảnh quét chi tiết đa tầng (SAHI)
 
@@ -121,10 +121,12 @@ class Settings(BaseModel):
     EMAIL_SUBJECT_TEMPLATE: str = ""
     EMAIL_BODY_TEMPLATE: str = ""
 
-    # Data Retention Settings
+    # Data Retention & Auto Backup Settings
     DATA_RETENTION_DAYS: int = 90
     DATA_AUTO_CLEANUP_ENABLED: bool = True
     DATA_CLEANUP_EXCEL_ENABLED: bool = True
+    AUTO_BACKUP_TIME: str = "23:00"
+    AUTO_BACKUP_ENABLED: bool = True
 
     # Authentication & Security
     JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "truong-thpt-dieu-cai-secret-key-2026-attendance-ai-secured")
@@ -151,8 +153,6 @@ for folder in [
     settings.CAPTURES_DIR,
     settings.ANNOTATED_DIR,
     settings.REPORTS_DIR,
-    settings.SAMPLES_DIR,
-    settings.CLASSROOMS_MEDIA_DIR,
     settings.MODELS_DIR,
     BASE_DIR / "database"
 ]:

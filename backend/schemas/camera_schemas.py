@@ -76,3 +76,7 @@ class SwitchCameraSourceModeRequest(BaseModel):
 class InspectFolderRequest(BaseModel):
     folder_path: str = "camera"
 
+class BatchStatusRequest(BaseModel):
+    camera_ids: Optional[list[int]] = None
+    is_active: bool = True
+

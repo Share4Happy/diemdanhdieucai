@@ -114,6 +114,16 @@ function initApp() {
         btnBatchDelete.addEventListener('click', deleteSelectedCameras);
     }
 
+    const btnBatchActivate = document.getElementById('btnBatchActivate');
+    if (btnBatchActivate) {
+        btnBatchActivate.addEventListener('click', () => batchToggleCameraStatus(true));
+    }
+
+    const btnBatchDeactivate = document.getElementById('btnBatchDeactivate');
+    if (btnBatchDeactivate) {
+        btnBatchDeactivate.addEventListener('click', () => batchToggleCameraStatus(false));
+    }
+
     // Đóng 3-dots dropdown menu khi bấm ra ngoài bất kỳ đâu
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.matrix-card-menu')) {
@@ -1232,6 +1242,35 @@ export async function deleteSelectedCameras() {
         showToast(`Đã xóa thành công ${successCount} phòng học đã chọn!`, 'info');
     } else {
         showToast(`Đã xóa ${successCount} phòng, thất bại ${failCount} phòng.`, 'warning');
+    }
+}
+
+/**
+ * Bật hoặc tắt kích hoạt hàng loạt các camera đã chọn
+ */
+export async function batchToggleCameraStatus(isActive) {
+    const ids = Array.from(selectedCameraIds);
+    if (ids.length === 0) {
+        showToast('Vui lòng chọn ít nhất 1 phòng học để thay đổi trạng thái.', 'warning');
+        return;
+    }
+
+    const actionText = isActive ? 'Kích hoạt' : 'Tạm ngưng';
+    try {
+        const res = await fetchAPI('/api/cameras/batch-status', {
+            method: 'POST',
+            body: { camera_ids: ids, is_active: isActive }
+        });
+        if (res && res.success) {
+            showToast(res.message || `Đã ${actionText.toLowerCase()} thành công!`, 'success');
+            await loadCameras();
+            updateBatchActionBar();
+        } else {
+            showToast((res && res.message) || `Không thể ${actionText.toLowerCase()} camera`, 'danger');
+        }
+    } catch (err) {
+        console.error('Lỗi batch toggle status:', err);
+        showToast(`Lỗi khi ${actionText.toLowerCase()}: ` + (err.message || err), 'danger');
     }
 }
 

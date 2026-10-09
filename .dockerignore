@@ -1,0 +1,36 @@
+# Git
+.git
+.gitignore
+
+# Python caches and virtual environments
+venv/
+venv_*/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs & Temporary files
+logs/*.log
+storage/backups/*.zip
+storage/captures/*
+storage/annotated/*
+!storage/captures/.gitkeep
+!storage/annotated/.gitkeep
+!storage/reports/.gitkeep
+!storage/backups/.gitkeep
+
+# Large manual documents
+*.docx
+*.pptx
+*.pdf
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

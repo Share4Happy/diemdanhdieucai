@@ -3,9 +3,12 @@
  * Hỗ trợ kéo thả các điểm neo, hút nam châm mép ảnh, undo (Ctrl+Z), đổi độ phân giải.
  */
 
-const API_BASE = (window.location.protocol === 'file:' || (!window.location.origin.includes(':8000') && !window.location.origin.includes(':80')))
-    ? 'http://localhost:8000'
-    : '';
+const API_BASE = (function() {
+    if (window.location.protocol === 'file:') return 'http://localhost:8000';
+    if (window.location.origin.includes(':8000') || window.location.origin.includes(':80')) return '';
+    const host = window.location.hostname || 'localhost';
+    return `${window.location.protocol}//${host}:8000`;
+})();
 
 function getAuthHeaders(extra = {}) {
     return { 'Accept': 'application/json', ...extra };
@@ -47,7 +50,11 @@ class ROICanvasEditor {
         this.boundWindowMouseUp = (e) => this.onWindowMouseUp(e);
 
         this.initEvents();
-        setTimeout(() => this.render(), 50);
+        this.setupResizeObserver();
+        setTimeout(() => {
+            this.fitCanvasToWrapper();
+            this.render();
+        }, 50);
     }
 
     initEvents() {
@@ -75,6 +82,7 @@ class ROICanvasEditor {
         // Bắt sự kiện thay đổi kích thước cửa sổ trình duyệt (Responsive auto-realign)
         window.addEventListener('resize', () => {
             this.resetContainerScroll();
+            this.fitCanvasToWrapper();
             this.render();
         });
 
@@ -93,6 +101,53 @@ class ROICanvasEditor {
                 }
             }
         });
+    }
+
+    setupResizeObserver() {
+        const wrapper = this.canvas?.closest('.canvas-outer-wrapper');
+        if (!wrapper || typeof ResizeObserver === 'undefined') return;
+
+        this.resizeObserver = new ResizeObserver(() => {
+            this.fitCanvasToWrapper();
+            this.render();
+        });
+        this.resizeObserver.observe(wrapper);
+    }
+
+    fitCanvasToWrapper() {
+        if (!this.canvas) return;
+        const wrapper = this.canvas.closest('.canvas-outer-wrapper');
+        if (!wrapper) return;
+
+        // Trừ đi padding của wrapper (6px mỗi bên = 12px) và viền (4px)
+        const padX = 16;
+        const padY = 16;
+        const maxW = Math.max(100, wrapper.clientWidth - padX);
+        const maxH = Math.max(100, wrapper.clientHeight - padY);
+
+        const canvasW = this.canvas.width || 1920;
+        const canvasH = this.canvas.height || 1080;
+        if (canvasW <= 0 || canvasH <= 0) return;
+
+        const aspect = canvasW / canvasH;
+
+        let displayW, displayH;
+        if (maxW / maxH > aspect) {
+            // Khung rộng hơn tỉ lệ ảnh -> Chiều cao là yếu tố quyết định để ảnh không bị cắt trên/dưới
+            displayH = maxH;
+            displayW = Math.round(maxH * aspect);
+        } else {
+            // Khung cao hơn tỉ lệ ảnh -> Chiều rộng là yếu tố quyết định để ảnh không bị cắt trái/phải
+            displayW = maxW;
+            displayH = Math.round(maxW / aspect);
+        }
+
+        this.canvas.style.width = `${displayW}px`;
+        this.canvas.style.height = `${displayH}px`;
+        if (this.container) {
+            this.container.style.width = `${displayW}px`;
+            this.container.style.height = `${displayH}px`;
+        }
     }
 
     resetContainerScroll() {
@@ -279,6 +334,7 @@ class ROICanvasEditor {
 
             this.canvas.width = targetW;
             this.canvas.height = targetH;
+            this.fitCanvasToWrapper();
             this.render();
             this.updateStatsBar();
             this.updateResolutionDisplay();
@@ -497,6 +553,7 @@ class ROICanvasEditor {
 
     render() {
         this.resetContainerScroll();
+        this.fitCanvasToWrapper();
         const ctx = this.ctx;
         if (!ctx || !this.canvas) return;
         const w = this.canvas.width || 1280;

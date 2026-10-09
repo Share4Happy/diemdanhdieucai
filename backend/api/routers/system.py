@@ -80,8 +80,13 @@ async def bind_sample_media(media_type: str = "video", _admin=Depends(require_ad
                     target_file = class_folder / "image_1.jpg"
                 elif media_type == "camera":
                     ch_num = c.channel_number or 1
+                    target_vid = settings.BASE_DIR / "camera" / f"{ch_num}.MP4"
                     target_cam = settings.BASE_DIR / "camera" / f"{ch_num}.JPG"
-                    if target_cam.exists():
+                    if target_vid.exists():
+                        c.rtsp_url = f"camera/{ch_num}.MP4"
+                        updated_count += 1
+                        continue
+                    elif target_cam.exists():
                         c.rtsp_url = f"camera/{ch_num}.JPG"
                         updated_count += 1
                         continue
@@ -130,14 +135,18 @@ async def reset_to_camera_photos(_user=Depends(get_current_user)):
         latest_dir.mkdir(parents=True, exist_ok=True)
         default_green_zone = [[100, 200], [1820, 200], [1870, 1060], [50, 1060]]
         default_red_zone = []
-
         for i in range(1, 31):
+            # Ưu tiên video MP4 nếu có
+            vid_file = settings.BASE_DIR / "camera" / f"{i}.MP4"
+            src_img = settings.BASE_DIR / "camera" / f"{i}.JPG"
+            rtsp_url = f"camera/{i}.MP4" if vid_file.exists() else f"camera/{i}.JPG"
+
             cls = Classroom(
                 code=f"CAM_{i:02d}",
                 name=f"Camera {i}",
                 room_number=f"Phòng {100 + i}",
                 standard_count=standard_counts[i - 1],
-                rtsp_url=f"camera/{i}.JPG",
+                rtsp_url=rtsp_url,
                 relay_ip="192.168.10.200",
                 is_active=True,
                 channel_number=i
@@ -154,13 +163,24 @@ async def reset_to_camera_photos(_user=Depends(get_current_user)):
             )
             db.add(roi)
 
-            src_img = settings.BASE_DIR / "camera" / f"{i}.JPG"
             dst_img = latest_dir / f"Lop_{cls.id}.jpg"
-            if src_img.exists():
+            if vid_file.exists():
+                import cv2
+                cap = cv2.VideoCapture(str(vid_file))
+                if cap.isOpened():
+                    cap.set(cv2.CAP_PROP_POS_FRAMES, 75)
+                    ret_th, f_th = cap.read()
+                    if not ret_th or f_th is None:
+                        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                        ret_th, f_th = cap.read()
+                    if ret_th and f_th is not None:
+                        cv2.imwrite(str(dst_img), f_th, [cv2.IMWRITE_JPEG_QUALITY, 95])
+                    cap.release()
+            elif src_img.exists():
                 shutil.copy2(src_img, dst_img)
 
         db.commit()
-        return {"success": True, "message": "Đã thiết lập thành công 30 camera tương ứng 30 ảnh trong thư mục camera!"}
+        return {"success": True, "message": "Đã thiết lập thành công 30 camera tương ứng 30 nguồn video/ảnh trong thư mục camera!"}
     except Exception as e:
         db.rollback()
         return {"success": False, "message": f"Lỗi: {str(e)}"}

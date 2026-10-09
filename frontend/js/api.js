@@ -3,9 +3,12 @@
  * Tự động nhận diện môi trường (Port 8000 hay độc lập qua CORS / Live Server)
  */
 
-export const API_BASE = (window.location.protocol === 'file:' || (!window.location.origin.includes(':8000') && !window.location.origin.includes(':80')))
-    ? 'http://localhost:8000'
-    : '';
+export const API_BASE = (function() {
+    if (window.location.protocol === 'file:') return 'http://localhost:8000';
+    if (window.location.origin.includes(':8000') || window.location.origin.includes(':80')) return '';
+    const host = window.location.hostname || 'localhost';
+    return `${window.location.protocol}//${host}:8000`;
+})();
 
 /**
  * Hàm gửi request chuẩn hóa
@@ -296,7 +299,10 @@ export const BackupAPI = {
         });
     },
     gdriveStatus: () => fetchAPI('/api/backup/gdrive/status'),
-    gdriveAuthUrl: () => fetchAPI('/api/backup/gdrive/auth-url'),
+    gdriveAuthUrl: (redirectUri = '') => {
+        const q = redirectUri ? `?redirect_uri=${encodeURIComponent(redirectUri)}` : '';
+        return fetchAPI(`/api/backup/gdrive/auth-url${q}`);
+    },
     gdriveConnect: (code, redirectUri = '') => fetchAPI('/api/backup/gdrive/connect', {
         method: 'POST',
         body: { code, redirect_uri: redirectUri }

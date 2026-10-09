@@ -14,15 +14,13 @@
     <link rel="stylesheet" href="css/components/header-actions.css">
     <link rel="stylesheet" href="css/components/confirmation-dialog.css">
     <link rel="stylesheet" href="css/components/skeleton-loader.css">
-    <link rel="stylesheet" href="css/reports.css">
-    <!-- Global Balance - MUST LOAD LAST -->
-    <link rel="stylesheet" href="css/global-table-balance.css?v=3.5">
-
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Page Specific -->
-    <link rel="stylesheet" href="css/reports.css?v=3.3">
+    <link rel="stylesheet" href="css/reports.css?v=4.0">
+    <!-- Global Balance - MUST LOAD LAST -->
+    <link rel="stylesheet" href="css/global-table-balance.css?v=3.5">
     <link rel="stylesheet" href="css/components/modal-system.css?v=2.0">
     <link rel="stylesheet" href="css/components/image-zoom-viewer.css?v=1.0">
     <script src="js/components/modal-notifications.js?v=2.0"></script>
@@ -149,6 +147,9 @@
                         </button>
                         <button class="tab-btn" data-tab="tab-excel">
                             <i class="fa-solid fa-file-excel"></i> Xuất Excel
+                        </button>
+                        <button class="tab-btn" data-tab="tab-backup">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Sao Lưu & Google Drive
                         </button>
                         <button class="tab-btn" data-tab="tab-settings">
                             <i class="fa-solid fa-sliders"></i> Cài Đặt Lưu Trữ & CSDL
@@ -432,157 +433,24 @@
                     </div>
                 </div>
 
-                <!-- TAB 3: CÀI ĐẶT LƯU TRỮ & CSDL -->
-                <div id="tab-settings" class="tab-content">
+                <!-- TAB 3: SAO LƯU & GOOGLE DRIVE -->
+                <div id="tab-backup" class="tab-content">
                     <div class="report-section">
-                        <div class="section-title">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <h3 style="margin: 0;">
-                                    <i class="fa-solid fa-sliders text-primary"></i> Cài Đặt Thời Gian Lưu Trữ & Cơ Sở Dữ Liệu
-                                </h3>
-                            </div>
-                            <span id="dbTypeBadge" class="status-pill" style="background: #eff6ff; color: var(--primary);">
-                                SQLite (Local Active)
-                            </span>
-                        </div>
-                        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.5rem;">
-                            Tùy biến thời hạn lưu trữ nhật ký điểm danh, tự động dọn dẹp dữ liệu cũ để tối ưu bộ nhớ máy chủ và cấu hình chuỗi kết nối CSDL nâng cao.
-                        </p>
-
-                        <!-- Khung Cài Đặt Lưu Trữ (Data Retention Policy) -->
-                        <div class="retention-settings-card">
-                            <div class="retention-card-header">
-                                <div>
-                                    <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-                                        <i class="fa-solid fa-clock-rotate-left" style="color: var(--primary);"></i>
-                                        Quy Định Thời Hạn Lưu Trữ Dữ Liệu Điểm Danh
-                                    </h4>
-                                    <p style="margin: 4px 0 0 0; font-size: 0.82rem; color: var(--text-muted);">
-                                        Hệ thống sẽ bảo lưu dữ liệu trong khoảng thời gian này. Dữ liệu quá hạn có thể được dọn dẹp tự động hoặc thủ công.
-                                    </p>
-                                </div>
-                                <span class="badge badge-primary" id="badgeCurrentRetention" style="font-size: 0.88rem; padding: 6px 14px;">90 ngày</span>
-                            </div>
-
-                            <!-- Tùy Chọn Số Ngày Lưu Trữ -->
-                            <div style="margin: 1.25rem 0;">
-                                <label style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary); display: block; margin-bottom: 0.5rem;">
-                                    Chọn thời gian lưu trữ dữ liệu (Khuyến nghị: 90 ngày cho 1 học kỳ):
-                                </label>
-                                <div class="retention-presets-group" id="retentionPresetsGroup">
-                                    <button type="button" class="retention-preset-btn" data-days="30">
-                                        <span class="preset-val">30</span>
-                                        <span class="preset-label">Ngày (1 tháng)</span>
-                                    </button>
-                                    <button type="button" class="retention-preset-btn" data-days="60">
-                                        <span class="preset-val">60</span>
-                                        <span class="preset-label">Ngày (2 tháng)</span>
-                                    </button>
-                                    <button type="button" class="retention-preset-btn active" data-days="90">
-                                        <span class="preset-val">90</span>
-                                        <span class="preset-label">Ngày (Khuyến nghị)</span>
-                                    </button>
-                                    <button type="button" class="retention-preset-btn" data-days="180">
-                                        <span class="preset-val">180</span>
-                                        <span class="preset-label">Ngày (1 học kỳ)</span>
-                                    </button>
-                                    <button type="button" class="retention-preset-btn" data-days="365">
-                                        <span class="preset-val">365</span>
-                                        <span class="preset-label">Ngày (1 năm học)</span>
-                                    </button>
-                                    <div class="custom-days-box">
-                                        <label for="retentionDaysInput" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 2px; display: block;">Tùy chỉnh:</label>
-                                        <div style="display: flex; align-items: center; gap: 6px;">
-                                            <input type="number" id="retentionDaysInput" min="7" max="1000" value="90" class="form-control" style="width: 90px; padding: 6px 10px; font-weight: 700; text-align: center;">
-                                            <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">ngày</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Quy tắc dọn dẹp tự động (Toggles) -->
-                            <div class="retention-toggles-box">
-                                <div class="toggle-switch-row" style="margin-bottom: 0.75rem;">
-                                    <div class="toggle-switch-info">
-                                        <span class="toggle-switch-title">Tự động xóa CSDL điểm danh & ảnh đối chứng camera quá hạn</span>
-                                        <span class="toggle-switch-desc">Tiến trình nền tự động dọn dẹp các phiên quét cũ hơn số ngày quy định để giải phóng ổ cứng</span>
-                                    </div>
-                                    <label class="switch-ui">
-                                        <input type="checkbox" id="ruleAutoCleanupDb" checked>
-                                        <span class="slider-round"></span>
-                                    </label>
-                                </div>
-
-                                <div class="toggle-switch-row" style="margin-bottom: 0.75rem;">
-                                    <div class="toggle-switch-info">
-                                        <span class="toggle-switch-title">Tự động xóa các file Excel xuất báo cáo quá hạn</span>
-                                        <span class="toggle-switch-desc">Xóa các file .xlsx đã sinh tự động trong thư mục lưu trữ cũ hơn thời hạn</span>
-                                    </div>
-                                    <label class="switch-ui">
-                                        <input type="checkbox" id="ruleAutoCleanupExcel" checked>
-                                        <span class="slider-round"></span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <!-- Thống Kê Lưu Trữ Hiện Tại -->
-                            <div class="retention-stats-card" style="margin: 1.25rem 0;">
-                                <h5 style="margin: 0 0 0.75rem 0; font-size: 0.88rem; font-weight: 700; color: var(--text-primary);">
-                                    <i class="fa-solid fa-chart-pie" style="color: var(--primary);"></i> Thống Kê Dung Lượng & Dữ Liệu Hiện Tại:
-                                </h5>
-                                <div class="retention-stats-grid">
-                                    <div class="stat-mini-box">
-                                        <div class="stat-mini-label">Phiên Điểm Danh CSDL</div>
-                                        <div class="stat-mini-val" id="statTotalSessions">--</div>
-                                    </div>
-                                    <div class="stat-mini-box">
-                                        <div class="stat-mini-label">Bản Ghi Chi Tiết Lớp</div>
-                                        <div class="stat-mini-val" id="statTotalDetails">--</div>
-                                    </div>
-                                    <div class="stat-mini-box">
-                                        <div class="stat-mini-label">File Excel Báo Cáo</div>
-                                        <div class="stat-mini-val" id="statTotalExcel">--</div>
-                                    </div>
-                                    <div class="stat-mini-box">
-                                        <div class="stat-mini-label">Dung Lượng File CSDL</div>
-                                        <div class="stat-mini-val" id="statDbSizeMb">-- MB</div>
-                                    </div>
-                                    <div class="stat-mini-box" style="grid-column: span 2;">
-                                        <div class="stat-mini-label">Khoảng Thời Gian Dữ Liệu</div>
-                                        <div class="stat-mini-val" style="font-size: 0.92rem;" id="statDateRange">Đang nạp...</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Action Buttons -->
-                            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 1.25rem;">
-                                <button type="button" id="btnSaveRetentionConfig" class="btn btn-primary" style="font-weight: 600;">
-                                    <i class="fa-solid fa-floppy-disk"></i> Lưu Cài Đặt Lưu Trữ
-                                </button>
-                                <button type="button" id="btnCleanupExpiredNow" class="btn btn-secondary" style="font-weight: 600; color: #b91c1c; border-color: #fecaca;" title="Chủ động dọn dẹp các bản ghi và file Excel cũ hơn thời hạn quy định">
-                                    <i class="fa-solid fa-broom"></i> Dọn Dẹp Dữ Liệu Quá Hạn Ngay
-                                </button>
-                            </div>
-                            <div id="retentionFeedbackMsg" class="zalo-feedback" style="margin-top: 0.75rem;"></div>
-                        </div>
-
-                        <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border-color);">
-
                         <!-- Khung Quản Lý Sao Lưu & Phục Hồi Dữ Liệu (Backup & Restore) -->
                         <div id="backupManagementSection">
-                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 0.75rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 1rem;">
                                 <div>
-                                    <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-                                        <i class="fa-solid fa-box-archive" style="color: #2563eb;"></i>
-                                        Trung Tâm Sao Lưu & Phục Hồi Dữ Liệu (Backup & Restore)
-                                    </h4>
+                                    <h3 class="reports-db-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                                        <i class="fa-solid fa-cloud-arrow-up text-primary"></i>
+                                        Trung Tâm Sao Lưu & Đồng Bộ Google Drive
+                                    </h3>
                                     <p style="font-size: 0.88rem; color: var(--text-muted); margin: 4px 0 0 0;">
-                                        Tự động đóng gói an toàn CSDL, cấu hình hệ thống và file báo cáo Excel vào gói nén .ZIP. Hỗ trợ tải về máy hoặc tải lên để khôi phục.
+                                        Tự động đóng gói an toàn CSDL, cấu hình hệ thống và file báo cáo Excel vào gói nén .ZIP. Hỗ trợ lưu trữ đám mây Google Drive an toàn.
                                     </p>
                                 </div>
                                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                                     <button type="button" id="btnCreateBackupNow" class="btn btn-primary" style="font-weight: 600;">
-                                        <i class="fa-solid fa-cloud-arrow-up"></i> Tạo Bản Sao Lưu Ngay
+                                        <i class="fa-solid fa-box-archive"></i> Tạo Bản Sao Lưu Ngay
                                     </button>
                                     <label class="btn btn-secondary" style="font-weight: 600; cursor: pointer; margin: 0;" title="Tải file backup .zip từ máy tính để phục hồi">
                                         <i class="fa-solid fa-file-import"></i> Tải Lên & Khôi Phục
@@ -595,62 +463,108 @@
                             </div>
 
                             <!-- Thẻ ghi chú thông tin tự động sao lưu -->
-                            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 14px; margin-bottom: 1rem; display: flex; align-items: center; gap: 10px; font-size: 0.88rem; color: #166534;">
-                                <i class="fa-solid fa-shield-halved" style="font-size: 1.1rem; color: #15803d;"></i>
+                            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 14px; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 10px; font-size: 0.88rem; color: #166534;">
+                                <i class="fa-solid fa-shield-halved" style="font-size: 1.2rem; color: #15803d;"></i>
                                 <span>
-                                    <strong>Bảo vệ dữ liệu tự động:</strong> Hệ thống tự động sao lưu toàn bộ CSDL vào lúc <strong>23:00 hàng ngày</strong>, đẩy lên Google Drive và lưu giữ 15 bản sao lưu gần nhất.
+                                    <strong>Bảo vệ dữ liệu tự động:</strong> Hệ thống tự động sao lưu toàn bộ CSDL hàng ngày theo lịch cài đặt, tự động đẩy lên Google Drive và bảo lưu 15 bản gần nhất.
                                 </span>
                             </div>
 
-                            <!-- Khung Kết Nối Google Drive -->
-                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; margin-bottom: 1rem;">
-                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 6px;">
-                                    <div style="display: flex; align-items: center; gap: 10px;">
-                                        <i class="fa-brands fa-google-drive" style="font-size: 1.4rem; color: #4285F4;"></i>
+                            <!-- Khung Kết Nối Google Drive Thân Thiện (1-Click Connect) -->
+                            <div class="gdrive-integration-card" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; margin-bottom: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9;">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div style="width: 44px; height: 44px; border-radius: 10px; background: #e8f0fe; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fa-brands fa-google-drive" style="font-size: 1.6rem; color: #1a73e8;"></i>
+                                        </div>
                                         <div>
-                                            <strong style="font-size: 0.95rem; color: var(--text-primary); display: block;">Sao Lưu Google Drive</strong>
-                                            <span style="font-size: 0.8rem; color: var(--text-muted);">Đẩy mỗi bản sao lưu lên Google Drive của Quản Trị</span>
+                                            <strong style="font-size: 1rem; color: var(--text-primary); display: block;">Sao Lưu Đám Mây Google Drive</strong>
+                                            <span style="font-size: 0.82rem; color: var(--text-muted);">Tự động lưu trữ CSDL và báo cáo lên Google Drive an toàn</span>
                                         </div>
                                     </div>
-                                    <span id="gdriveStatusBadge" class="status-pill" style="background: #f1f5f9; color: #64748b;">
-                                        <i class="fa-solid fa-circle-info"></i> Chưa kết nối
+                                    <span id="gdriveStatusBadge" class="status-pill" style="background: #f1f5f9; color: #64748b; font-weight: 600; padding: 6px 12px; border-radius: 20px;">
+                                        <i class="fa-solid fa-spinner fa-spin"></i> Đang kiểm tra...
                                     </span>
                                 </div>
 
-                                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
-                                    <button type="button" id="btnGDriveConnect" class="btn btn-primary" style="font-weight: 600;">
-                                        <i class="fa-brands fa-google-drive"></i> Kết Nối Google Drive
-                                    </button>
-                                    <button type="button" id="btnGDriveDisconnect" class="btn btn-secondary" style="font-weight: 600; color: #dc2626; border-color: #fecaca; display: none;">
-                                        <i class="fa-solid fa-link-slash"></i> Ngắt Kết Nối
-                                    </button>
-                                    <span id="gdriveAccountInfo" style="font-size: 0.85rem; color: var(--text-secondary);"></span>
-                                </div>
+                                <!-- TRƯỜNG HỢP 1: CHƯA KẾT NỐI -->
+                                <div id="gdriveNotConnectedCard" style="display: none;">
+                                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 12px;">
+                                        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+                                            <div style="flex: 1; min-width: 260px;">
+                                                <h5 style="margin: 0 0 6px 0; font-size: 0.95rem; font-weight: 700; color: #1e293b;">
+                                                    <i class="fa-solid fa-cloud-arrow-up text-primary"></i> Kết nối Google Drive để kích hoạt sao lưu tự động
+                                                </h5>
+                                                <p style="margin: 0; font-size: 0.86rem; color: #64748b; line-height: 1.5;">
+                                                    Chỉ cần <strong>nhấn 1 lần</strong> vào nút bên cạnh, chọn tài khoản Google của bạn và bấm <strong>Cho phép</strong>. Hệ thống sẽ tự động liên kết mà không cần cấu hình phức tạp.
+                                                </p>
+                                            </div>
+                                            <button type="button" id="btnGDriveConnect" class="btn btn-primary"
+                                                style="background: #1a73e8; border-color: #1a73e8; font-weight: 700; padding: 11px 22px; font-size: 0.95rem; box-shadow: 0 2px 8px rgba(26,115,232,0.25); display: inline-flex; align-items: center; gap: 10px; white-space: nowrap;">
+                                                <i class="fa-brands fa-google" style="font-size: 1.1rem;"></i> Kết Nối Google Drive
+                                            </button>
+                                        </div>
+                                    </div>
 
-                                <div id="gdriveCodeRow" style="display: none; margin-top: 12px; background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 12px 14px;">
-                                    <p style="margin: 0 0 8px 0; font-size: 0.84rem; color: var(--text-secondary); line-height: 1.55;">
-                                        <strong>Bước 1:</strong> Bấm <strong>Kết Nối</strong>, tab Google mở ra → chọn tài khoản → bấm <strong>Cho phép</strong>.
-                                        Trình duyệt sẽ chuyển hướng về một địa chỉ <code>http://localhost/?code=...</code> (không vào được web — bình thường).
-                                        <br>
-                                        <strong>Bước 2:</strong> Copy <strong>toàn bộ URL</strong> trên thanh địa chỉ rồi dán vào ô dưới đây và bấm <strong>Xác Nhận</strong>.
-                                    </p>
-                                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                        <input type="text" id="gdriveCodeInput" class="form-control" style="flex: 1; min-width: 260px; font-family: monospace;"
-                                            placeholder="Dán mã kết nối (hoặc toàn bộ URL http://localhost/?code=...)">
-                                        <button type="button" id="btnGDriveConfirm" class="btn btn-secondary" style="font-weight: 600;">
-                                            <i class="fa-solid fa-check"></i> Xác Nhận Mã
+                                    <!-- Tùy chọn nhập mã thủ công cho người dùng nâng cao / sự cố -->
+                                    <div style="margin-top: 6px;">
+                                        <button type="button" id="btnToggleManualCode" style="background: none; border: none; padding: 0; color: #64748b; font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                            <i class="fa-solid fa-chevron-right" id="iconToggleManual" style="font-size: 0.75rem; transition: transform 0.2s;"></i> Bạn gặp sự cố cửa sổ popup? Nhập mã thủ công
                                         </button>
                                     </div>
-                                    <p style="margin: 8px 0 0 0; font-size: 0.78rem; color: #b45309;">
-                                        <i class="fa-solid fa-triangle-exclamation"></i> Toàn bộ backup sau đó sẽ được lưu TRÊN Google Drive (xoá bản local sau khi upload thành công).
-                                    </p>
+
+                                    <div id="gdriveCodeRow" style="display: none; margin-top: 10px; background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 12px 14px;">
+                                        <p style="margin: 0 0 8px 0; font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5;">
+                                            Nếu trình duyệt chặn popup, hãy copy URL sau khi đăng nhập Google rồi dán vào ô bên dưới:
+                                        </p>
+                                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                            <input type="text" id="gdriveCodeInput" class="form-control" style="flex: 1; min-width: 240px; font-family: monospace; font-size: 0.85rem;"
+                                                placeholder="Dán mã code hoặc toàn bộ URL callback...">
+                                            <button type="button" id="btnGDriveConfirm" class="btn btn-secondary" style="font-weight: 600;">
+                                                <i class="fa-solid fa-check"></i> Xác Nhận Mã
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- TRƯỜNG HỢP 2: ĐÃ KẾT NỐI THÀNH CÔNG -->
+                                <div id="gdriveConnectedCard" style="display: none;">
+                                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+                                        <div style="display: flex; align-items: center; gap: 14px;">
+                                            <div style="width: 40px; height: 40px; border-radius: 50%; background: #dcfce7; color: #15803d; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                                                <i class="fa-solid fa-check"></i>
+                                            </div>
+                                            <div>
+                                                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                                    <span style="font-size: 0.82rem; color: #166534; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Tài khoản liên kết</span>
+                                                    <strong id="gdriveConnectedEmail" style="font-size: 0.98rem; color: #14532d;">admin@gmail.com</strong>
+                                                </div>
+                                                <div style="font-size: 0.82rem; color: #15803d; margin-top: 3px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                                                    <span id="gdriveFolderInfo"><i class="fa-solid fa-folder-tree"></i> Thư mục: My Drive (Thư mục gốc)</span>
+                                                    <span><i class="fa-solid fa-clock"></i> Tự động đồng bộ theo lịch hẹn hàng ngày</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                            <button type="button" id="btnGDriveCreateNow" class="btn btn-primary btn-sm" style="font-weight: 600; background: #16a34a; border-color: #16a34a;">
+                                                <i class="fa-solid fa-cloud-arrow-up"></i> Sao Lưu Lên Drive Ngay
+                                            </button>
+                                            <button type="button" id="btnGDriveReconnect" class="btn btn-secondary btn-sm" style="font-weight: 600;" title="Đăng nhập tài khoản Google khác">
+                                                <i class="fa-solid fa-arrows-rotate"></i> Đổi Tài Khoản
+                                            </button>
+                                            <button type="button" id="btnGDriveDisconnect" class="btn btn-secondary btn-sm" style="font-weight: 600; color: #dc2626; border-color: #fecaca;" title="Ngắt kết nối với tài khoản Google Drive hiện tại">
+                                                <i class="fa-solid fa-link-slash"></i> Ngắt Kết Nối
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div id="gdriveFeedbackMsg" class="zalo-feedback" style="margin-top: 0.75rem;"></div>
                             </div>
 
                             <!-- Bảng danh sách các bản sao lưu -->
-                            <div class="table-wrapper" style="border: 1px solid var(--border-color); border-radius: 8px; max-height: 280px; overflow-y: auto;">
+                            <div class="table-wrapper" style="border: 1px solid var(--border-color); border-radius: 8px; max-height: 380px; overflow-y: auto;">
                                 <table class="table" style="margin: 0;">
                                     <thead>
                                         <tr>
@@ -673,31 +587,262 @@
                             </div>
                             <div id="backupFeedbackMsg" class="zalo-feedback" style="margin-top: 0.75rem;"></div>
                         </div>
+                    </div>
+                </div>
 
-                        <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border-color);">
-
-                        <!-- Khung Cấu Hình Kết Nối CSDL (Database Driver & String) -->
-                        <div>
-                            <h4 style="margin: 0 0 0.5rem 0; font-size: 1.05rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-                                <i class="fa-solid fa-server" style="color: var(--primary);"></i>
-                                Cấu Hình Cơ Sở Dữ Liệu (PostgreSQL / MySQL / SQLite)
-                            </h4>
-                            <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
-                                Hệ thống hỗ trợ lưu trữ dữ liệu đa năm học trên <strong>PostgreSQL</strong> hoặc <strong>MySQL</strong> của trường học thông qua thư viện SQLAlchemy & psycopg2/pymysql.
-                            </p>
-                            <div class="form-group" style="margin-bottom: 1rem;">
-                                <label>Chuỗi Kết Nối Cơ Sở Dữ Liệu (Database Connection String):</label>
-                                <input type="text" id="dbUriInput" class="form-control"
-                                    value="sqlite:///database/attendance.db"
-                                    placeholder="Ví dụ: postgresql+psycopg2://admin:pass@192.168.10.10:5432/diemdanh_dieucai">
+                <!-- TAB 4: CÀI ĐẶT LƯU TRỮ & CSDL -->
+                <div id="tab-settings" class="tab-content">
+                    <div class="report-section">
+                        <div class="section-title">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <h3 style="margin: 0;">
+                                    <i class="fa-solid fa-sliders text-primary"></i> Cài Đặt Thời Gian Lưu Trữ & Cơ Sở Dữ Liệu
+                                </h3>
                             </div>
-                            <div style="display: flex; gap: 10px;">
-                                <button id="btnSaveDbConfig" class="btn btn-secondary" style="font-weight: 600;">
-                                    <i class="fa-solid fa-floppy-disk"></i> Lưu Cấu Hình CSDL
-                                </button>
-                                <button id="btnTestDbConnection" class="btn btn-secondary" style="font-weight: 600;">
-                                    <i class="fa-solid fa-plug-circle-check"></i> Kiểm Tra Kết Nối CSDL
-                                </button>
+                            <span id="dbTypeBadge" class="status-pill" style="background: #eff6ff; color: var(--primary);">
+                                SQLite (Local Active)
+                            </span>
+                        </div>
+                        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+                            Tùy biến thời hạn lưu trữ nhật ký điểm danh, tự động dọn dẹp dữ liệu cũ để tối ưu bộ nhớ máy chủ và cấu hình chuỗi kết nối CSDL nâng cao.
+                        </p>
+
+                        <!-- Khung Cài Đặt Lưu Trữ & Lập Lịch Sao Lưu (Bố Cục 2 Cột Chuẩn Design System) -->
+                        <div class="settings-two-col-grid">
+                            <!-- Cột 1: Quy Định Lưu Trữ & Dọn Dẹp Dữ Liệu -->
+                            <div class="settings-card">
+                                <div class="settings-card-header">
+                                    <div class="settings-card-title-group">
+                                        <div class="settings-card-icon-wrap primary">
+                                            <i class="fa-solid fa-clock-rotate-left"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="settings-card-title">Thời Hạn Lưu Trữ Dữ Liệu</h4>
+                                            <p class="settings-card-subtitle">Quy định số ngày lưu trữ & tự động dọn dẹp</p>
+                                        </div>
+                                    </div>
+                                    <span class="badge badge-primary retention-badge-pill" id="badgeCurrentRetention">90 ngày</span>
+                                </div>
+
+                                <div class="settings-card-body">
+                                    <!-- Chọn ngày lưu trữ -->
+                                    <div class="setting-field-group">
+                                        <div class="setting-field-label-row">
+                                            <label class="setting-field-label">Thời gian bảo lưu nhật ký:</label>
+                                            <span class="setting-field-hint">Khuyến nghị 90 ngày (1 học kỳ)</span>
+                                        </div>
+                                        <div class="retention-presets-group" id="retentionPresetsGroup">
+                                            <button type="button" class="retention-preset-btn" data-days="30">
+                                                <span class="preset-val">30</span>
+                                                <span class="preset-label">1 tháng</span>
+                                            </button>
+                                            <button type="button" class="retention-preset-btn" data-days="60">
+                                                <span class="preset-val">60</span>
+                                                <span class="preset-label">2 tháng</span>
+                                            </button>
+                                            <button type="button" class="retention-preset-btn active" data-days="90">
+                                                <span class="preset-val">90</span>
+                                                <span class="preset-label">Khuyến nghị</span>
+                                            </button>
+                                            <button type="button" class="retention-preset-btn" data-days="180">
+                                                <span class="preset-val">180</span>
+                                                <span class="preset-label">1 học kỳ</span>
+                                            </button>
+                                            <button type="button" class="retention-preset-btn" data-days="365">
+                                                <span class="preset-val">365</span>
+                                                <span class="preset-label">1 năm</span>
+                                            </button>
+                                            <div class="custom-days-box">
+                                                <span class="custom-days-label">Tùy chỉnh:</span>
+                                                <div class="custom-days-input-wrap">
+                                                    <input type="number" id="retentionDaysInput" min="7" max="1000" value="90" class="form-control" title="Nhập số ngày tùy ý">
+                                                    <span class="custom-days-unit">ngày</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Toggles dọn dẹp tự động -->
+                                    <div class="settings-toggle-list">
+                                        <div class="settings-toggle-item">
+                                            <div class="settings-toggle-content">
+                                                <div class="settings-toggle-icon db">
+                                                    <i class="fa-solid fa-database"></i>
+                                                </div>
+                                                <div class="settings-toggle-text">
+                                                    <div class="toggle-name">Tự động xóa CSDL & ảnh đối chứng cũ</div>
+                                                    <div class="toggle-desc">Dọn phiên quét cũ hơn thời hạn quy định để giải phóng ổ cứng</div>
+                                                </div>
+                                            </div>
+                                            <label class="switch-ui" title="Bật / Tắt tự động xóa CSDL quá hạn">
+                                                <input type="checkbox" id="ruleAutoCleanupDb" checked>
+                                                <span class="slider-round"></span>
+                                            </label>
+                                        </div>
+
+                                        <div class="settings-toggle-item">
+                                            <div class="settings-toggle-content">
+                                                <div class="settings-toggle-icon excel">
+                                                    <i class="fa-solid fa-file-excel"></i>
+                                                </div>
+                                                <div class="settings-toggle-text">
+                                                    <div class="toggle-name">Tự động xóa file Excel xuất báo cáo cũ</div>
+                                                    <div class="toggle-desc">Xóa các file .xlsx đã sinh tự động cũ hơn thời hạn</div>
+                                                </div>
+                                            </div>
+                                            <label class="switch-ui" title="Bật / Tắt tự động xóa file Excel quá hạn">
+                                                <input type="checkbox" id="ruleAutoCleanupExcel" checked>
+                                                <span class="slider-round"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Cột 2: Lập Lịch Tự Động Sao Lưu (Google Drive & Snapshot) -->
+                            <div class="settings-card">
+                                <div class="settings-card-header">
+                                    <div class="settings-card-title-group">
+                                        <div class="settings-card-icon-wrap primary">
+                                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="settings-card-title">Sao Lưu Tự Động & Cloud</h4>
+                                            <p class="settings-card-subtitle">Nén snapshot CSDL & đồng bộ Google Drive</p>
+                                        </div>
+                                    </div>
+                                    <div class="backup-switch-header-wrap">
+                                        <span class="backup-status-tag" id="backupStatusTag">
+                                            <i class="fa-solid fa-circle-check"></i> Đang Bật
+                                        </span>
+                                        <label class="switch-ui" title="Bật / Tắt tự động sao lưu hàng ngày">
+                                            <input type="checkbox" id="ruleAutoBackupEnabled" checked>
+                                            <span class="slider-round"></span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="settings-card-body">
+                                    <!-- Chọn giờ sao lưu -->
+                                    <div class="setting-field-group">
+                                        <div class="setting-field-label-row">
+                                            <label class="setting-field-label">Khung giờ sao lưu hàng ngày:</label>
+                                            <span class="setting-field-hint">Khuyến nghị: 23:00 đêm</span>
+                                        </div>
+                                        <div class="backup-time-selector-row" id="backupTimePresetsGroup">
+                                            <button type="button" class="backup-time-preset-btn" data-time="18:00">
+                                                <span class="preset-val">18:00</span>
+                                                <span class="preset-label">Tan học chiều</span>
+                                            </button>
+                                            <button type="button" class="backup-time-preset-btn" data-time="21:00">
+                                                <span class="preset-val">21:00</span>
+                                                <span class="preset-label">Buổi tối</span>
+                                            </button>
+                                            <button type="button" class="backup-time-preset-btn" data-time="22:00">
+                                                <span class="preset-val">22:00</span>
+                                                <span class="preset-label">Đêm sớm</span>
+                                            </button>
+                                            <button type="button" class="backup-time-preset-btn active" data-time="23:00">
+                                                <span class="preset-val">23:00</span>
+                                                <span class="preset-label">Mặc định</span>
+                                            </button>
+                                            <button type="button" class="backup-time-preset-btn" data-time="00:00">
+                                                <span class="preset-val">00:00</span>
+                                                <span class="preset-label">Nửa đêm</span>
+                                            </button>
+                                            <div class="custom-time-picker-card">
+                                                <span class="custom-time-label">Tùy chọn giờ:</span>
+                                                <div class="custom-time-input-wrap">
+                                                    <i class="fa-regular fa-clock time-picker-icon"></i>
+                                                    <input type="time" id="backupScheduleTimeInput" value="23:00" class="time-picker-input" title="Bấm để chỉnh giờ tùy ý">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Hộp ghi chú Cloud -->
+                                    <div class="backup-cloud-note-box">
+                                        <div class="cloud-note-icon">
+                                            <i class="fa-solid fa-shield-halved"></i>
+                                        </div>
+                                        <div class="cloud-note-content">
+                                            <strong>Cơ chế bảo vệ:</strong> Đến giờ hẹn, hệ thống tự động chụp snapshot SQLite, nén ZIP an toàn và đồng bộ lên Google Drive (kết nối tài khoản ở tab <strong>Sao Lưu & Google Drive</strong>).
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Thống Kê Dung Lượng & Dữ Liệu Hiện Tại (Metrics Status Bar) -->
+                        <div class="settings-metrics-card">
+                            <div class="metrics-card-header">
+                                <h5 class="metrics-title">
+                                    <i class="fa-solid fa-chart-pie"></i> Thống Kê Dung Lượng & Dữ Liệu Hiện Tại:
+                                </h5>
+                            </div>
+                            <div class="retention-stats-grid">
+                                <div class="stat-mini-box">
+                                    <div class="stat-mini-label"><i class="fa-regular fa-calendar-check"></i> Phiên Điểm Danh</div>
+                                    <div class="stat-mini-val" id="statTotalSessions">--</div>
+                                </div>
+                                <div class="stat-mini-box">
+                                    <div class="stat-mini-label"><i class="fa-solid fa-users"></i> Bản Ghi Chi Tiết</div>
+                                    <div class="stat-mini-val" id="statTotalDetails">--</div>
+                                </div>
+                                <div class="stat-mini-box">
+                                    <div class="stat-mini-label"><i class="fa-solid fa-file-excel"></i> File Báo Cáo Excel</div>
+                                    <div class="stat-mini-val" id="statTotalExcel">--</div>
+                                </div>
+                                <div class="stat-mini-box">
+                                    <div class="stat-mini-label"><i class="fa-solid fa-hard-drive"></i> Dung Lượng CSDL</div>
+                                    <div class="stat-mini-val" id="statDbSizeMb">-- MB</div>
+                                </div>
+                                <div class="stat-mini-box stat-mini-box-wide">
+                                    <div class="stat-mini-label"><i class="fa-regular fa-clock"></i> Khoảng Thời Gian Dữ Liệu</div>
+                                    <div class="stat-mini-val stat-range" id="statDateRange">Đang nạp...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="settings-action-bar">
+                            <button type="button" id="btnSaveRetentionConfig" class="btn btn-primary btn-save-settings">
+                                <i class="fa-solid fa-floppy-disk"></i> Lưu Cài Đặt Lưu Trữ & Lịch Sao Lưu
+                            </button>
+                            <button type="button" id="btnCleanupExpiredNow" class="btn btn-danger-subtle" title="Chủ động dọn dẹp các bản ghi và file Excel cũ hơn thời hạn quy định">
+                                <i class="fa-solid fa-broom"></i> Dọn Dẹp Dữ Liệu Quá Hạn Ngay
+                            </button>
+                            <div id="retentionFeedbackMsg" class="zalo-feedback"></div>
+                        </div>
+
+                        <!-- Khung Cấu Hình Kết Nối CSDL (Database Driver & String Card) -->
+                        <div class="settings-card db-connection-card">
+                            <div class="settings-card-header">
+                                <div class="settings-card-title-group">
+                                    <div class="settings-card-icon-wrap secondary">
+                                        <i class="fa-solid fa-server"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="settings-card-title">Cấu Hình Cơ Sở Dữ Liệu (PostgreSQL / MySQL / SQLite)</h4>
+                                        <p class="settings-card-subtitle">Hỗ trợ lưu trữ đa năm học trên máy chủ trường học thông qua SQLAlchemy</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="form-group" style="margin-bottom: 1.15rem;">
+                                    <label class="setting-field-label">Chuỗi Kết Nối Cơ Sở Dữ Liệu (Database Connection String):</label>
+                                    <input type="text" id="dbUriInput" class="form-control db-uri-input"
+                                        value="sqlite:///database/attendance.db"
+                                        placeholder="Ví dụ: postgresql+psycopg2://admin:pass@192.168.10.10:5432/diemdanh_dieucai">
+                                </div>
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                    <button id="btnSaveDbConfig" class="btn btn-primary" style="font-weight: 600;">
+                                        <i class="fa-solid fa-floppy-disk"></i> Lưu Cấu Hình CSDL
+                                    </button>
+                                    <button id="btnTestDbConnection" class="btn btn-secondary" style="font-weight: 600;">
+                                        <i class="fa-solid fa-plug-circle-check"></i> Kiểm Tra Kết Nối CSDL
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -759,7 +904,7 @@
     <script src="js/shared/header-actions.js?v=2.2"></script>
 
     <!-- Page Script -->
-    <script type="module" src="js/reports.js?v=3.8"></script>
+    <script type="module" src="js/reports.js?v=4.0"></script>
 </body>
 
 </html>

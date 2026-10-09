@@ -1,0 +1,114 @@
+# =============================================================================
+# HỆ THỐNG ĐIỂM DANH HỌC SINH TỰ ĐỘNG BẰNG AI CAMERA - THPT ĐIỀU CẢI
+# Kiến trúc Container tách biệt Frontend (Nginx) & Backend (FastAPI + YOLO AI)
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # 1. BACKEND SERVICE: FastAPI, AI Engine (YOLO26m), RTSP Ingestion, SQLite
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    container_name: diemdanh_dieucai_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+      - PYTHONUNBUFFERED=1
+      # Mặc định sử dụng SQLite cục bộ (an toàn, nhẹ, tương thích hoàn toàn backup Google Drive):
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///database/attendance.db}
+      - JWT_SECRET=${JWT_SECRET:-change-me-diemdanh-dieucai-random-secret-key}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@truongdieucai.edu.vn}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-Admin@2025}
+      - APP_PUBLIC_URL=${APP_PUBLIC_URL:-http://localhost:8000}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:8000,http://127.0.0.1:8000,http://localhost:3000,http://127.0.0.1:3000}
+    env_file:
+      - .env
+    volumes:
+      # Mã nguồn và dịch vụ (đồng bộ trực tiếp khi chỉnh sửa)
+      - ./backend:/app/backend
+      - ./services:/app/services
+      - ./config:/app/config
+      # Dữ liệu CSDL SQLite bền vững (giữ nguyên khi cập nhật hoặc restart container)
+      - ./database:/app/database
+      # Ảnh chụp camera, ảnh vẽ box phát hiện học sinh, báo cáo Excel, bản backup zip
+      - ./storage:/app/storage
+      # Trọng số mô hình AI (yolo26m.pt, classroom_best.pt)
+      - ./models:/app/models
+      # Nhật ký hệ thống
+      - ./logs:/app/logs
+      # Dữ liệu mẫu lớp học
+      - ./dataset:/app/dataset
+    networks:
+      - attendance-network
+
+    # (Tùy chọn) Kích hoạt GPU NVIDIA: Nếu máy chủ có card NVIDIA và đã cài NVIDIA Container Toolkit,
+    # hãy bỏ dấu '#' ở khối deploy bên dưới:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  # ---------------------------------------------------------------------------
+  # 2. FRONTEND SERVICE: Nginx Alpine phục vụ giao diện tĩnh & Reverse Proxy API
+  # ---------------------------------------------------------------------------
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+    container_name: diemdanh_dieucai_frontend
+    restart: unless-stopped
+    ports:
+      # Ánh xạ ra cổng 3000 của máy chủ (truy cập: http://localhost:3000)
+      - "3000:80"
+    volumes:
+      # Giao diện tĩnh (đồng bộ trực tiếp khi cập nhật mã nguồn HTML/CSS/JS)
+      - ./frontend:/usr/share/nginx/html:ro
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      - attendance-network
+
+  # ---------------------------------------------------------------------------
+  # 3. DATABASE SERVICE (TÙY CHỌN NÂNG CAO): PostgreSQL 16 Alpine
+  # Chỉ khởi động khi thêm cờ profile: docker compose --profile postgres up -d
+  # Mặc định hệ thống dùng SQLite siêu nhẹ, không cần kích hoạt service này.
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: diemdanh_dieucai_postgres
+    restart: unless-stopped
+    profiles:
+      - postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-attendance_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dieucai_secure_pass_2026}
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - attendance-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-attendance_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  attendance-network:
+    name: diemdanh_dieucai_network
+    driver: bridge
+
+volumes:
+  pgdata:
+    name: diemdanh_dieucai_pgdata

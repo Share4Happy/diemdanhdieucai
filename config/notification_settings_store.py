@@ -18,6 +18,8 @@ DEFAULT_SETTINGS: Dict[str, Any] = {
     "DATA_RETENTION_DAYS": 90,
     "DATA_AUTO_CLEANUP_ENABLED": True,
     "DATA_CLEANUP_EXCEL_ENABLED": True,
+    "AUTO_BACKUP_TIME": "23:00",
+    "AUTO_BACKUP_ENABLED": True,
     "ZALO_SCHOOL_TEMPLATE": """🔔 [THPT ĐIỀU CẢI] BÁO CÁO ĐIỂM DANH SĨ SỐ ĐẦU GIỜ
 📅 Ngày quét: {ngay} | Giờ: {gio}
 🏫 Tổng số lớp: {tong_lop} lớp

@@ -76,9 +76,8 @@ def test_create_and_delete_camera():
     assert cls_after is None
     db.close()
 
-def test_camera_connection_with_mock_file():
-    # Kiểm tra test connection với 1 file ảnh có sẵn trong dataset
-    sample_file = settings.SAMPLES_DIR / "classroom_sample_1.jpg"
+    # Kiểm tra test connection với 1 file ảnh có sẵn trong thư mục camera
+    sample_file = settings.BASE_DIR / "camera" / "JPG" / "1.JPG"
     test_res = client.post("/api/cameras/test-connection", json={
         "source_url": str(sample_file)
     })
