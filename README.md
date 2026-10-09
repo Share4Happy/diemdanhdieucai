@@ -229,6 +229,16 @@ xem_tien_do.bat
 ```
 Hiển thị tức thì: Trạng thái 4 phân hệ, CSDL 30 lớp, bộ dữ liệu hình ảnh/video, GPU và kết quả kiểm thử.
 
+#### 🐳 Phương thức 5: Khởi chạy bằng Docker & Docker Compose (Khuyên dùng khi triển khai)
+Đóng gói hoàn chỉnh độc lập 2 container Frontend (Nginx) và Backend (FastAPI Python):
+- **Windows 1-Click:** Nhấp đúp vào [scripts/docker_start.bat](scripts/docker_start.bat) (dừng bằng [scripts/docker_stop.bat](scripts/docker_stop.bat)).
+- **Lệnh dòng lệnh:**
+  ```bash
+  docker compose up -d --build
+  ```
+- **Truy cập:** Frontend tại [http://localhost:3000](http://localhost:3000) | Backend tại [http://localhost:8000](http://localhost:8000).  
+*(Chi tiết kiến trúc và tùy chọn PostgreSQL xem tại: [docker/README_DOCKER.md](docker/README_DOCKER.md)).*
+
 ### 4. Thông Tin Đăng Nhập Mặc Định:
 
 | Thuộc tính | Giá trị cấu hình | Mô tả |
@@ -315,6 +325,7 @@ Danh mục các bộ kiểm thử:
 - 🗄️ **Sổ tay phát triển Cơ sở dữ liệu:** [database/README_DATABASE.md](database/README_DATABASE.md)
 - 🧠 **Sổ tay huấn luyện mô hình AI YOLOv8:** [training/HUONG_DAN_TRAINING_AI.md](training/HUONG_DAN_TRAINING_AI.md)
 - 📁 **Thuyết minh bộ dữ liệu 30 lớp học:** [dataset/classrooms_media/README.md](dataset/classrooms_media/README.md)
+- 🐳 **Hướng dẫn triển khai Docker & Containerization:** [docker/README_DOCKER.md](docker/README_DOCKER.md)
 
 ---
 
