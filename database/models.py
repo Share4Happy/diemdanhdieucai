@@ -1,7 +1,11 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text, Boolean
 from sqlalchemy.orm import declarative_base, relationship
+
+def utc_now():
+    """Tạo đối tượng datetime chuẩn UTC (naive) không gây deprecation warning trong Python 3.12+ và tương thích SQLite."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 Base = declarative_base()
 
@@ -18,7 +22,7 @@ class NVRDevice(Base):
     brand = Column(String(50), default="DAHUA")                    # "DAHUA", "HIKVISION", "UNIVIEW", "CUSTOM"
     channels_count = Column(Integer, default=30)
     custom_url_pattern = Column(String(255), default="")
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     classrooms = relationship("Classroom", back_populates="nvr")
 
@@ -50,7 +54,7 @@ class ROIPolygon(Base):
     green_zone_json = Column(Text, default="[]") # Bục giảng giáo viên (Bỏ qua)
     image_width = Column(Integer, default=1920)
     image_height = Column(Integer, default=1080)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
     classroom = relationship("Classroom", back_populates="roi")
 
@@ -89,7 +93,7 @@ class AttendanceSession(Base):
     total_absent = Column(Integer, default=0)
     excel_report_path = Column(String(255), default="")
     status = Column(String(50), default="COMPLETED")           # "PROCESSING", "COMPLETED", "FAILED"
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     details = relationship("AttendanceDetail", back_populates="session", cascade="all, delete-orphan")
 
@@ -106,7 +110,7 @@ class AttendanceDetail(Base):
     annotated_image_path = Column(String(255), default="")
     confidence_avg = Column(Float, default=0.0)
     notes = Column(String(255), default="")
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     session = relationship("AttendanceSession", back_populates="details")
     classroom = relationship("Classroom", back_populates="attendance_details")
@@ -120,7 +124,7 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     role = Column(String(20), default="staff", nullable=False)  # "admin" | "staff"
     is_active = Column(Boolean, default=True, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     reset_tokens = relationship("PasswordResetToken", back_populates="user", cascade="all, delete-orphan")
 
@@ -133,6 +137,6 @@ class PasswordResetToken(Base):
     token_hash = Column(String(64), unique=True, index=True, nullable=False)
     expires_at = Column(DateTime, nullable=False)
     used_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     user = relationship("User", back_populates="reset_tokens")

@@ -15,7 +15,7 @@ echo.
 echo Dang khoi dong server...
 echo.
 
-cd /d "%~dp0"
+cd /d "%~dp0\.."
 python app.py
 
 pause

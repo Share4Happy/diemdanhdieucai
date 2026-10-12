@@ -30,6 +30,7 @@ services:
     volumes:
       # Mã nguồn và dịch vụ (đồng bộ trực tiếp khi chỉnh sửa)
       - ./backend:/app/backend
+      - ./core:/app/core
       - ./services:/app/services
       - ./config:/app/config
       # Dữ liệu CSDL SQLite bền vững (giữ nguyên khi cập nhật hoặc restart container)

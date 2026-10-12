@@ -119,7 +119,7 @@ async def forgot_password(req: ForgotPasswordRequest, request: Request, db: Sess
     token_row = PasswordResetToken(
         user_id=user.id,
         token_hash=hash_reset_token(raw_token),
-        expires_at=datetime.utcnow() + timedelta(hours=RESET_TOKEN_HOURS),
+        expires_at=datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=RESET_TOKEN_HOURS),
     )
     db.add(token_row)
     db.commit()
@@ -151,8 +151,9 @@ async def reset_password(req: ResetPasswordRequest, request: Request, db: Sessio
         .filter(PasswordResetToken.token_hash == token_hash)
         .first()
     )
-    now = datetime.utcnow()
-    if not row or row.used_at is not None or row.expires_at < now:
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    row_expires = row.expires_at.replace(tzinfo=None) if (row and row.expires_at) else None
+    if not row or row.used_at is not None or (row_expires and row_expires < now):
         raise HTTPException(status_code=400, detail="Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn")
     user = db.query(User).filter(User.id == row.user_id).first()
     if not user or not user.is_active:
