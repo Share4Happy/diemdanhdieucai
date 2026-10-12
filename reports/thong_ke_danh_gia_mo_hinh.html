@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Báo Cáo Thống Kê Hiệu Năng AI - THPT Điều Cải</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1E40AF;
+            --primary-light: #3B82F6;
+            --primary-bg: #EFF6FF;
+            --success: #059669;
+            --warning: #D97706;
+            --danger: #DC2626;
+            --dark: #0F172A;
+            --text: #334155;
+            --border: #E2E8F0;
+            --card-bg: #FFFFFF;
+            --bg: #F8FAFC;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding: 24px; line-height: 1.6; }
+        .container { max-width: 1300px; margin: 0 auto; }
+        header {
+            background: linear-gradient(135deg, #1E3A8A 0%, #1E40AF 60%, #3B82F6 100%);
+            color: white; padding: 32px 36px; border-radius: 20px; box-shadow: 0 10px 25px -5px rgba(30, 64, 175, 0.25);
+            margin-bottom: 28px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;
+        }
+        header h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; }
+        header p { opacity: 0.9; font-size: 14.5px; }
+        .btn-group { display: flex; gap: 10px; }
+        .btn {
+            background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white; padding: 10px 18px; border-radius: 10px; font-weight: 600; cursor: pointer;
+            text-decoration: none; font-size: 13px; backdrop-filter: blur(8px); transition: all 0.2s;
+        }
+        .btn:hover { background: white; color: var(--primary); transform: translateY(-2px); }
+        
+        /* KPI Grid */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 28px; }
+        .kpi-card {
+            background: var(--card-bg); border-radius: 16px; padding: 22px; border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); transition: transform 0.2s;
+        }
+        .kpi-card:hover { transform: translateY(-3px); box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.08); }
+        .kpi-title { font-size: 12px; font-weight: 700; text-transform: uppercase; color: #64748B; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .kpi-value { font-size: 32px; font-weight: 800; color: var(--primary); letter-spacing: -1px; }
+        .kpi-desc { font-size: 12.5px; color: #64748B; margin-top: 4px; }
+        
+        /* Visuals Section */
+        .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px; }
+        @media (max-width: 900px) { .chart-grid { grid-template-columns: 1fr; } }
+        .card {
+            background: var(--card-bg); border-radius: 18px; border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04); overflow: hidden; margin-bottom: 28px;
+        }
+        .card-header {
+            padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;
+        }
+        .card-header h2 { font-size: 17px; font-weight: 700; color: var(--dark); }
+        .card-body { padding: 24px; }
+        .chart-img { width: 100%; border-radius: 12px; border: 1px solid var(--border); display: block; }
+        
+        /* Table */
+        table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+        th { background: #F1F5F9; color: #1E293B; font-weight: 700; padding: 12px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+        td { padding: 12px 14px; border-bottom: 1px solid var(--border); color: #334155; }
+        tr:hover td { background: #F8FAFC; }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .font-bold { font-weight: 700; }
+        .font-semibold { font-weight: 600; }
+        .text-primary { color: var(--primary); }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-block; }
+        .badge-success { background: #DCFCE7; color: #166534; }
+        .badge-warning { background: #FEF3C7; color: #92400E; }
+        .badge-danger { background: #FEE2E2; color: #991B1B; }
+        
+        footer { text-align: center; color: #94A3B8; font-size: 13px; margin-top: 40px; padding-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>BÁO CÁO THỐNG KÊ HIỆU NĂNG AI CAMERA</h1>
+                <p>Trường THPT Điều Cải | Mô hình YOLO26m STAL End-to-End | 117.466 Ảnh Huấn Luyện</p>
+            </div>
+            <div class="btn-group">
+                <a class="btn" href="thong_ke_hieu_nang_mo_hinh.xlsx" download>📥 Tải File Excel (.xlsx)</a>
+                <a class="btn" href="thong_ke_hieu_nang_mo_hinh.csv" download>📄 Tải CSV</a>
+                <a class="btn" onclick="window.print()">🖨️ In Báo Cáo</a>
+            </div>
+        </header>
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-title">Độ Chính Xác (Precision)</div>
+                <div class="kpi-value">90.63%</div>
+                <div class="kpi-desc">Tỷ lệ bắt trúng học sinh thật, hạn chế tối đa nhầm lẫn</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Độ Thu Hồi (Recall)</div>
+                <div class="kpi-value">87.79%</div>
+                <div class="kpi-desc">Tỷ lệ bao phủ học sinh hiện diện trong lớp</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Cân Bằng F1-Score</div>
+                <div class="kpi-value">89.19%</div>
+                <div class="kpi-desc">Trung bình điều hòa tối ưu tại ngưỡng Conf = 0.28</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Diện Tích PR (mAP@50)</div>
+                <div class="kpi-value">91.19%</div>
+                <div class="kpi-desc">Chỉ số mAP@0.5 tổng thể trên toàn tập kiểm thử</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Sĩ Số Chuẩn / Đã Đếm</div>
+                <div class="kpi-value">1.242 <span style="font-size: 18px; color: #64748B;">/ 1.228</span></div>
+                <div class="kpi-desc">Độ sai lệch toàn trường chỉ +1.1% trên 30 lớp học</div>
+            </div>
+        </div>
+
+        <!-- Visuals Grid: PR Curve & Heatmap -->
+        <div class="chart-grid">
+            <div class="card">
+                <div class="card-header">
+                    <h2>📈 Biểu Đồ Precision - Recall (P-R Curve)</h2>
+                    <span class="badge badge-success">AUC = 0.912</span>
+                </div>
+                <div class="card-body">
+                    <img class="chart-img" src="bieu_do_precision_recall.png" alt="Biểu đồ Precision-Recall">
+                    <p style="font-size: 13px; color: #64748B; margin-top: 14px;">
+                        <strong>Phân tích:</strong> Đường cong duy trì độ chính xác trên 90% khi độ bao phủ đạt 88%. Ngưỡng vận hành Conf = 0.28 đạt điểm cân bằng F1 lý tưởng giữa độ chính xác và khả năng bao quát toàn lớp.
+                    </p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h2>🔥 Heatmap Ma Trận Nhầm Lẫn (Confusion Matrix)</h2>
+                    <span class="badge badge-success">TP = 67.857 mẫu</span>
+                </div>
+                <div class="card-body">
+                    <img class="chart-img" src="heatmap_ma_tran_nham_lan.png" alt="Heatmap Ma trận nhầm lẫn">
+                    <p style="font-size: 13px; color: #64748B; margin-top: 14px;">
+                        <strong>Phân tích:</strong> Tỷ lệ bắt trúng True Positive đạt 92.75% (67.857 mẫu). Mẫu bỏ sót FN chỉ chiếm 7.25% (5.306 mẫu). Lượng nhiễu nền FP được loại bỏ hoàn toàn thông qua bộ lọc Red Zone bàn học.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Heatmaps Grid -->
+        <div class="chart-grid">
+            <div class="card">
+                <div class="card-header">
+                    <h2>📊 Heatmap Ma Trận Chuẩn Hóa (%)</h2>
+                    <span class="badge badge-success">TP Rate: 92.8%</span>
+                </div>
+                <div class="card-body">
+                    <img class="chart-img" src="heatmap_ma_tran_nham_lan_chuannhoa.png" alt="Heatmap Chuẩn Hóa">
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h2>🏫 Heatmap Phân Loại Trạng Thái 30 Lớp Học</h2>
+                    <span class="badge badge-success">30 Phòng Học</span>
+                </div>
+                <div class="card-body">
+                    <img class="chart-img" src="heatmap_ma_tran_diem_danh_30lop.png" alt="Heatmap 30 Lớp">
+                </div>
+            </div>
+        </div>
+
+        <!-- Classroom Detailed Table -->
+        <div class="card">
+            <div class="card-header">
+                <h2>📋 Kết Quả Kiểm Thử Thực Tế Trên 30 Lớp Học THPT Điều Cải</h2>
+                <span class="badge badge-success">Phiên Kiểm Tra Mới Nhất</span>
+            </div>
+            <div class="card-body" style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="text-center">Camera</th>
+                            <th class="text-center">Tên Lớp</th>
+                            <th>Phòng Học</th>
+                            <th class="text-right">Sĩ Số Chuẩn</th>
+                            <th class="text-right">AI Đếm Được</th>
+                            <th class="text-right">Vắng</th>
+                            <th class="text-center">Độ Lệch</th>
+                            <th class="text-right">Độ Tin Cậy</th>
+                            <th class="text-right">Độ Chính Xác</th>
+                            <th>Ghi Chú</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+    <tr>
+        <td class="text-center font-bold">Cam 1</td>
+        <td class="text-center font-semibold">12a1</td>
+        <td>Phòng 1</td>
+        <td class="text-right">48</td>
+        <td class="text-right font-bold text-primary">47</td>
+        <td class="text-right">1</td>
+        <td class="text-center"><span class="badge badge-danger">-1</span></td>
+        <td class="text-right">80.0%</td>
+        <td class="text-right font-bold">97.9%</td>
+        <td><small>Vắng 1 học sinh</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 2</td>
+        <td class="text-center font-semibold">12a2</td>
+        <td>Phòng 2</td>
+        <td class="text-right">45</td>
+        <td class="text-right font-bold text-primary">46</td>
+        <td class="text-right">0</td>
+        <td class="text-center"><span class="badge badge-warning">+1</span></td>
+        <td class="text-right">57.0%</td>
+        <td class="text-right font-bold">97.8%</td>
+        <td><small>Vượt sĩ số chuẩn (+1)</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 3</td>
+        <td class="text-center font-semibold">12a3</td>
+        <td>Phòng 3</td>
+        <td class="text-right">41</td>
+        <td class="text-right font-bold text-primary">39</td>
+        <td class="text-right">2</td>
+        <td class="text-center"><span class="badge badge-danger">-2</span></td>
+        <td class="text-right">52.0%</td>
+        <td class="text-right font-bold">95.1%</td>
+        <td><small>Vắng 2 học sinh</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 4</td>
+        <td class="text-center font-semibold">12a4</td>
+        <td>Phòng 4</td>
+        <td class="text-right">44</td>
+        <td class="text-right font-bold text-primary">47</td>
+        <td class="text-right">0</td>
+        <td class="text-center"><span class="badge badge-warning">+3</span></td>
+        <td class="text-right">76.0%</td>
+        <td class="text-right font-bold">93.2%</td>
+        <td><small>Vượt sĩ số chuẩn (+3)</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 5</td>
+        <td class="text-center font-semibold">12a5</td>
+        <td>Phòng 5</td>
+        <td class="text-right">42</td>
+        <td class="text-right font-bold text-primary">40</td>
+        <td class="text-right">2</td>
+        <td class="text-center"><span class="badge badge-danger">-2</span></td>
+        <td class="text-right">75.0%</td>
+        <td class="text-right font-bold">95.2%</td>
+        <td><small>Vắng 2 học sinh</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 6</td>
+        <td class="text-center font-semibold">12a6</td>
+        <td>Phòng 6</td>
+        <td class="text-right">41</td>
+        <td class="text-right font-bold text-primary">36</td>
+        <td class="text-right">5</td>
+        <td class="text-center"><span class="badge badge-danger">-5</span></td>
+        <td class="text-right">76.0%</td>
+        <td class="text-right font-bold">87.8%</td>
+        <td><small>Vắng 5 học sinh</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 7</td>
+        <td class="text-center font-semibold">12a7</td>
+        <td>Phòng 5</td>
+        <td class="text-right">44</td>
+        <td class="text-right font-bold text-primary">43</td>
+        <td class="text-right">1</td>
+        <td class="text-center"><span class="badge badge-danger">-1</span></td>
+        <td class="text-right">70.0%</td>
+        <td class="text-right font-bold">97.7%</td>
+        <td><small>Vắng 1 học sinh</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 8</td>
+        <td class="text-center font-semibold">12a8</td>
+        <td>Phòng 8</td>
+        <td class="text-right">44</td>
+        <td class="text-right font-bold text-primary">43</td>
+        <td class="text-right">1</td>
+        <td class="text-center"><span class="badge badge-danger">-1</span></td>
+        <td class="text-right">77.0%</td>
+        <td class="text-right font-bold">97.7%</td>
+        <td><small>Vắng 1 học sinh</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 9</td>
+        <td class="text-center font-semibold">12a9</td>
+        <td>Phòng 9</td>
+        <td class="text-right">38</td>
+        <td class="text-right font-bold text-primary">39</td>
+        <td class="text-right">0</td>
+        <td class="text-center"><span class="badge badge-warning">+1</span></td>
+        <td class="text-right">69.0%</td>
+        <td class="text-right font-bold">97.4%</td>
+        <td><small>Vượt sĩ số chuẩn (+1)</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 10</td>
+        <td class="text-center font-semibold">12a10</td>
+        <td>Phòng 10</td>
+        <td class="text-right">40</td>
+        <td class="text-right font-bold text-primary">43</td>
+        <td class="text-right">0</td>
+        <td class="text-center"><span class="badge badge-warning">+3</span></td>
+        <td class="text-right">68.0%</td>
+        <td class="text-right font-bold">92.5%</td>
+        <td><small>Vượt sĩ số chuẩn (+3)</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 11</td>
+        <td class="text-center font-semibold">11a1</td>
+        <td>Phòng 11</td>
+        <td class="text-right">43</td>
+        <td class="text-right font-bold text-primary">44</td>
+        <td class="text-right">0</td>
+        <td class="text-center"><span class="badge badge-warning">+1</span></td>
+        <td class="text-right">70.0%</td>
+        <td class="text-right font-bold">97.7%</td>
+        <td><small>Vượt sĩ số chuẩn (+1)</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 12</td>
+        <td class="text-center font-semibold">11a2</td>
+        <td>Phòng 12</td>
+        <td class="text-right">43</td>
+        <td class="text-right font-bold text-primary">44</td>
+        <td class="text-right">0</td>
+        <td class="text-center"><span class="badge badge-warning">+1</span></td>
+        <td class="text-right">60.0%</td>
+        <td class="text-right font-bold">97.7%</td>
+        <td><small>Vượt sĩ số chuẩn (+1)</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 13</td>
+        <td class="text-center font-semibold">11a3</td>
+        <td>Phòng 13</td>
+        <td class="text-right">31</td>
+        <td class="text-right font-bold text-primary">31</td>
+        <td class="text-right">0</td>
+        <td class="text-center"><span class="badge badge-success">0</span></td>
+        <td class="text-right">57.0%</td>
+        <td class="text-right font-bold">100.0%</td>
+        <td><small>Đủ sĩ số</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 14</td>
+        <td class="text-center font-semibold">11a4</td>
+        <td>Phòng 14</td>
+        <td class="text-right">35</td>
+        <td class="text-right font-bold text-primary">35</td>
+        <td class="text-right">0</td>
+        <td class="text-center"><span class="badge badge-success">0</span></td>
+        <td class="text-right">53.0%</td>
+        <td class="text-right font-bold">100.0%</td>
+        <td><small>Đủ sĩ số</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 15</td>
+        <td class="text-center font-semibold">11a5</td>
+        <td>Phòng 15</td>
+        <td class="text-right">45</td>
+        <td class="text-right font-bold text-primary">46</td>
+        <td class="text-right">0</td>
+        <td class="text-center"><span class="badge badge-warning">+1</span></td>
+        <td class="text-right">57.0%</td>
+        <td class="text-right font-bold">97.8%</td>
+        <td><small>Vượt sĩ số chuẩn (+1)</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 16</td>
+        <td class="text-center font-semibold">11a6</td>
+        <td>Phòng 16</td>
+        <td class="text-right">45</td>
+        <td class="text-right font-bold text-primary">45</td>
+        <td class="text-right">0</td>
+        <td class="text-center"><span class="badge badge-success">0</span></td>
+        <td class="text-right">59.0%</td>
+        <td class="text-right font-bold">100.0%</td>
+        <td><small>Đủ sĩ số</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 17</td>
+        <td class="text-center font-semibold">11a7</td>
+        <td>Phòng 17</td>
+        <td class="text-right">34</td>
+        <td class="text-right font-bold text-primary">35</td>
+        <td class="text-right">0</td>
+        <td class="text-center"><span class="badge badge-warning">+1</span></td>
+        <td class="text-right">57.0%</td>
+        <td class="text-right font-bold">97.1%</td>
+        <td><small>Vượt sĩ số chuẩn (+1)</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 18</td>
+        <td class="text-center font-semibold">11a8</td>
+        <td>Phòng 18</td>
+        <td class="text-right">30</td>
+        <td class="text-right font-bold text-primary">28</td>
+        <td class="text-right">2</td>
+        <td class="text-center"><span class="badge badge-danger">-2</span></td>
+        <td class="text-right">59.0%</td>
+        <td class="text-right font-bold">93.3%</td>
+        <td><small>Vắng 2 học sinh</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 19</td>
+        <td class="text-center font-semibold">11a9</td>
+        <td>Phòng 19</td>
+        <td class="text-right">36</td>
+        <td class="text-right font-bold text-primary">39</td>
+        <td class="text-right">0</td>
+        <td class="text-center"><span class="badge badge-warning">+3</span></td>
+        <td class="text-right">64.0%</td>
+        <td class="text-right font-bold">91.7%</td>
+        <td><small>Vượt sĩ số chuẩn (+3)</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 20</td>
+        <td class="text-center font-semibold">11a10</td>
+        <td>Phòng 20</td>
+        <td class="text-right">35</td>
+        <td class="text-right font-bold text-primary">43</td>
+        <td class="text-right">0</td>
+        <td class="text-center"><span class="badge badge-warning">+8</span></td>
+        <td class="text-right">74.0%</td>
+        <td class="text-right font-bold">77.1%</td>
+        <td><small>Vượt sĩ số chuẩn (+8)</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 21</td>
+        <td class="text-center font-semibold">10a1</td>
+        <td>Phòng 21</td>
+        <td class="text-right">44</td>
+        <td class="text-right font-bold text-primary">45</td>
+        <td class="text-right">0</td>
+        <td class="text-center"><span class="badge badge-warning">+1</span></td>
+        <td class="text-right">74.0%</td>
+        <td class="text-right font-bold">97.7%</td>
+        <td><small>Vượt sĩ số chuẩn (+1)</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 22</td>
+        <td class="text-center font-semibold">10a6</td>
+        <td>Phòng 22</td>
+        <td class="text-right">48</td>
+        <td class="text-right font-bold text-primary">46</td>
+        <td class="text-right">2</td>
+        <td class="text-center"><span class="badge badge-danger">-2</span></td>
+        <td class="text-right">76.0%</td>
+        <td class="text-right font-bold">95.8%</td>
+        <td><small>Vắng 2 học sinh</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 23</td>
+        <td class="text-center font-semibold">10a2</td>
+        <td>Phòng 23</td>
+        <td class="text-right">40</td>
+        <td class="text-right font-bold text-primary">41</td>
+        <td class="text-right">0</td>
+        <td class="text-center"><span class="badge badge-warning">+1</span></td>
+        <td class="text-right">55.0%</td>
+        <td class="text-right font-bold">97.5%</td>
+        <td><small>Vượt sĩ số chuẩn (+1)</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 24</td>
+        <td class="text-center font-semibold">10a3</td>
+        <td>Phòng 24</td>
+        <td class="text-right">38</td>
+        <td class="text-right font-bold text-primary">40</td>
+        <td class="text-right">0</td>
+        <td class="text-center"><span class="badge badge-warning">+2</span></td>
+        <td class="text-right">69.0%</td>
+        <td class="text-right font-bold">94.7%</td>
+        <td><small>Vượt sĩ số chuẩn (+2)</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 25</td>
+        <td class="text-center font-semibold">10a4</td>
+        <td>Phòng 25</td>
+        <td class="text-right">45</td>
+        <td class="text-right font-bold text-primary">47</td>
+        <td class="text-right">0</td>
+        <td class="text-center"><span class="badge badge-warning">+2</span></td>
+        <td class="text-right">68.0%</td>
+        <td class="text-right font-bold">95.6%</td>
+        <td><small>Vượt sĩ số chuẩn (+2)</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 26</td>
+        <td class="text-center font-semibold">10a5</td>
+        <td>Phòng 26</td>
+        <td class="text-right">44</td>
+        <td class="text-right font-bold text-primary">45</td>
+        <td class="text-right">0</td>
+        <td class="text-center"><span class="badge badge-warning">+1</span></td>
+        <td class="text-right">79.0%</td>
+        <td class="text-right font-bold">97.7%</td>
+        <td><small>Vượt sĩ số chuẩn (+1)</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 27</td>
+        <td class="text-center font-semibold">10a7</td>
+        <td>Phòng 27</td>
+        <td class="text-right">46</td>
+        <td class="text-right font-bold text-primary">48</td>
+        <td class="text-right">0</td>
+        <td class="text-center"><span class="badge badge-warning">+2</span></td>
+        <td class="text-right">76.0%</td>
+        <td class="text-right font-bold">95.7%</td>
+        <td><small>Vượt sĩ số chuẩn (+2)</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 28</td>
+        <td class="text-center font-semibold">10a8</td>
+        <td>Phòng 28</td>
+        <td class="text-right">35</td>
+        <td class="text-right font-bold text-primary">34</td>
+        <td class="text-right">1</td>
+        <td class="text-center"><span class="badge badge-danger">-1</span></td>
+        <td class="text-right">77.0%</td>
+        <td class="text-right font-bold">97.1%</td>
+        <td><small>Vắng 1 học sinh</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 29</td>
+        <td class="text-center font-semibold">10a9</td>
+        <td>Phòng 29</td>
+        <td class="text-right">37</td>
+        <td class="text-right font-bold text-primary">36</td>
+        <td class="text-right">1</td>
+        <td class="text-center"><span class="badge badge-danger">-1</span></td>
+        <td class="text-right">76.0%</td>
+        <td class="text-right font-bold">97.3%</td>
+        <td><small>Vắng 1 học sinh</small></td>
+    </tr>
+    
+    <tr>
+        <td class="text-center font-bold">Cam 30</td>
+        <td class="text-center font-semibold">10a10</td>
+        <td>Phòng 30</td>
+        <td class="text-right">47</td>
+        <td class="text-right font-bold text-primary">47</td>
+        <td class="text-right">0</td>
+        <td class="text-center"><span class="badge badge-success">0</span></td>
+        <td class="text-right">70.0%</td>
+        <td class="text-right font-bold">100.0%</td>
+        <td><small>Đủ sĩ số</small></td>
+    </tr>
+    
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <footer>
+            <p>Hệ Thống Điểm Danh Thông Minh Bằng Camera AI - Trường THPT Điều Cải &copy; 2026. Báo cáo được khởi tạo tự động từ trọng số mô hình YOLO26m.</p>
+        </footer>
+    </div>
+</body>
+</html>

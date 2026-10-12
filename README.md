@@ -3,233 +3,185 @@
 
 ![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.110%2B-009688?logo=fastapi)
-![YOLO26m](https://img.shields.io/badge/Ultralytics-YOLO26m-FF7F00?logo=yolo)
-![PyTorch CUDA](https://img.shields.io/badge/PyTorch-CUDA%20Accelerated-EE4C2C?logo=pytorch)
+![Ultralytics YOLO](https://img.shields.io/badge/Ultralytics-YOLO26%20%2F%20v8-FF7F00?logo=yolo)
+![PyTorch CUDA](https://img.shields.io/badge/PyTorch-CUDA%2012.1%20%2F%20RTX%203050-EE4C2C?logo=pytorch)
 ![OpenCV](https://img.shields.io/badge/OpenCV-Computer%20Vision-5C3EE8?logo=opencv)
-![Tests](https://img.shields.io/badge/Tests-25%20Passed-brightgreen)
+![Tests](https://img.shields.io/badge/Tests-47%20Passed%20(100%25)-brightgreen)
 ![Auth](https://img.shields.io/badge/Auth-JWT%20%2B%20Bcrypt-orange)
 ![License](https://img.shields.io/badge/License-THPT%20Điều%20Cải-green)
 
-Hệ thống điểm danh tự động toàn diện cho **30 lớp học** (tổng quy mô **1.246 học sinh**) tại **Trường THPT Điều Cải** ứng dụng thị giác máy tính AI thế hệ mới (**Ultralytics YOLO26m Native NMS-Free & STAL**), thuật toán phân vùng không gian đa giác ROI (**Green Zone** - khu vực bàn học sinh tính sĩ số / **Red Zone** - khu vực bục giảng giáo viên loại trừ), kiến trúc phân tầng độc lập (**Frontend Glassmorphism + FastAPI RESTful Backend + SQLite/PostgreSQL Database + AI Training Subsystem**), **hệ thống xác thực bảo mật JWT + Bcrypt**, tích hợp điều khiển Relay đèn LED báo hiệu phần cứng, lập lịch quét tự động lúc **06:45 AM** hàng ngày, tự động xuất báo cáo Excel chuẩn mẫu GD&ĐT và thông báo Zalo tức thời.
+Hệ thống điểm danh tự động thông minh phục vụ **30 phòng học** (**1.246 học sinh**) tại **Trường THPT Điều Cải**, tích hợp thị giác máy tính AI chuyên biệt nhận diện đầu học sinh (`student_head`), thuật toán phân vùng không gian đa giác ROI (**Green Zone** - khu vực bàn học tính sĩ số / **Red Zone** - khu vực bục giảng loại trừ giáo viên), kiến trúc phân tầng độc lập (**Clean Layered Architecture**), hệ thống bảo mật **JWT + Bcrypt**, lập lịch tự động lúc **06:45 AM**, xuất báo cáo Excel chuẩn Sở GD&ĐT và thông báo Zalo tức thời.
 
 ---
 
 ## 🌟 TÍNH NĂNG NỔI BẬT
 
-1. **🔐 Hệ Thống Xác Thực & Quản Lý Tài Khoản (JWT + Bcrypt):**
-   - Đăng nhập bắt buộc cho tất cả người dùng với JWT token trong HTTP-only cookie.
-   - Phân quyền: **Admin** (quản lý tài khoản) và **Staff** (sử dụng hệ thống).
-   - Tài khoản admin tự động seed từ biến môi trường khi khởi động lần đầu.
-   - Quên mật khẩu qua email SMTP với token có thời hạn 1 giờ.
-   - Chỉ admin có thể tạo tài khoản mới - không có đăng ký công khai.
+1. **AI Đếm Sĩ Số Lớp Học Chuyên Biệt (`student_head` Specialist):**
+   - Huấn luyện trực tiếp trên tập dữ liệu ảnh camera thực tế của trường THPT Điều Cải ([`dataset/studenthead1.v1-1.yolo26`](dataset/studenthead1.v1-1.yolo26)), giải quyết triệt để vấn đề xung đột nhãn giữa người toàn thân (COCO) và đầu học sinh.
+   - Nhận diện cực kỳ sắc nét học sinh ở các dãy bàn xa góc camera và học sinh cúi gằm mặt đọc/viết bài.
+   - Thuật toán khử trùng lặp đa mô hình (NMS + Anatomical IoS) tối ưu: không bao giờ gộp nhầm 2 học sinh ngồi trước-sau trên cùng một hàng dọc.
 
-2. **AI Đếm Sĩ Số Lớp Học Độ Chính Xác Cao (YOLO26m Native NMS-Free & STAL):**
-   - Ứng dụng mô hình **YOLO26m** với cơ chế loại bỏ NMS (NMS-free End-to-End) giải quyết triệt để vấn đề gộp nhầm hoặc bỏ sót học sinh khi hai em ngồi sát nhau hoặc che khuất nhau.
-   - Cơ chế **STAL** (Small Target Adaptive Labeling) giúp nhận diện cực kỳ sắc nét học sinh ở các dãy bàn xa góc camera với độ tự tin cao (0.80 - 0.90+).
-   - Tích hợp thuật toán **SAHI** (cắt lát ảnh đa tỷ lệ) và cân bằng sáng thích ứng cục bộ **CLAHE** (loại bỏ hoàn toàn hiện tượng ngược sáng và chói lóa từ dãy cửa sổ lớp học).
-
-3. **Phân Vùng Không Gian Đa Giác Độc Lập (Spatial ROI Masking):**
-   - **Green Zone (Khu vực bàn học sinh - Phần LẤY):** AI chỉ đếm và đánh số thứ tự `#01, #02, #03...` cho học sinh ngồi trong khu vực bàn học (Binary Mask = 255).
-   - **Red Zone (Khu vực bục giảng - Phần BỎ ĐI):** Tự động loại trừ 100% người đứng hoặc ngồi tại bục giảng/bàn giáo viên, đảm bảo không bao giờ tính nhầm thầy/cô vào sĩ số học sinh (Binary Mask = 0).
+2. **Phân Vùng Không Gian Đa Giác Độc Lập (Spatial ROI Masking):**
+   - **Green Zone (Khu vực bàn học sinh - Phần LẤY):** AI chỉ đếm và đánh số thứ tự `#01, #02, #03...` cho người nằm trong ranh giới bàn học sinh (dung sai mép viền thích ứng 25px).
+   - **Red Zone (Khu vực bục giảng - Phần BỎ ĐI):** Tự động loại trừ 100% giáo viên đứng hoặc ngồi tại bục giảng/bàn giáo viên, không tính nhầm vào sĩ số học sinh.
    - Công cụ vẽ Canvas trực quan trên Web, hỗ trợ kéo thả đỉnh đa giác và lưu tọa độ riêng biệt cho từng phòng học.
 
-4. **Kiến Trúc Tách Biệt 4 Phân Hệ Độc Lập:**
-   - Phân chia module rõ ràng: `frontend/`, `backend/`, `database/`, `training/`.
-   - Mỗi phân hệ có tài liệu quy chuẩn riêng, cho phép phân chia lập trình viên làm việc song song mà không gây xung đột mã nguồn.
+3. **Kiến Trúc Backend Phân Tầng Dễ Bảo Trì (Clean Layered Architecture):**
+   - Phân tách rõ ràng 4 tầng: **Routers API** $\rightarrow$ **Core AI/Hardware** $\rightarrow$ **Services (Zalo/Email/Excel)** $\rightarrow$ **Database ORM**.
+   - Thiết kế khớp nối lỏng (Loose Coupling): khi nâng cấp AI Detector, đổi giao thức camera hay đổi tài khoản Zalo, các tầng khác **hoàn toàn không bị ảnh hưởng**.
+
+4. **Quản Lý Camera Toàn Diện & Live Snapshot:**
+   - Hỗ trợ đa dạng nguồn cấp: Camera IP RTSP (Dahua NVR, Hikvision, Uniview), Webcam máy tính, File video/ảnh mô phỏng.
+   - Tự động kích hoạt tín hiệu đèn hồng ngoại camera báo hiệu 3 giây trước giờ chụp ảnh.
+   - Kiểm tra kết nối TCP nhanh và xem trước ảnh trực tiếp (*Live Snapshot*) tức thì trước khi lưu cấu hình.
 
 5. **Trình Soi Chi Tiết AI Tracking (Interactive Lightbox Zoom & Pan):**
    - Bấm vào ảnh lớp học để mở trình xem ảnh toàn màn hình với hiệu ứng kính mờ (*Glassmorphism*).
-   - Hỗ trợ cuộn chuột zoom từ 60% đến 500%, kéo chuột rê ảnh (*Pan*) để soi rõ từng vị trí học sinh.
-   - Nút chuyển đổi nhanh đối chứng trực tiếp giữa **Ảnh AI phân tích** và **Ảnh gốc Camera**.
+   - Hỗ trợ cuộn chuột zoom từ 60% đến 500%, kéo chuột rê ảnh (*Pan*) để soi rõ từng vị trí học sinh kèm huy hiệu số thứ tự neon tương phản cao.
 
-6. **Quản Lý Camera Toàn Diện & Live Snapshot / Webcam:**
-   - Hỗ trợ đa dạng nguồn cấp: Camera IP RTSP (Hikvision, Dahua, Uniview,...), Webcam máy tính (DirectShow), File video/ảnh mô phỏng.
-   - Kiểm tra kết nối mạng TCP nhanh và xem trước ảnh trực tiếp (*Live Snapshot*) tức thì trước khi lưu cấu hình.
-
-7. **Tự Động Hóa Vận Hành & Báo Cáo Thông Minh:**
+6. **Tự Động Hóa Vận Hành & Báo Cáo Thông Minh:**
    - Lập lịch tự động quét lúc **06:45 AM** hàng ngày (Thứ 2 đến Thứ 7) qua **APScheduler**.
-   - Tích hợp điều khiển mạch **Relay** đóng/ngắt đèn LED báo hiệu khi chu trình quét diễn ra.
    - Tự động xuất file báo cáo **Excel (.xlsx)** định dạng chuẩn của Sở GD&ĐT.
-   - Gửi thông báo kết quả tức thời qua **Zalo Bot Gateway** (khuyến nghị) hoặc Zalo Official Account.
+   - Gửi tin nhắn tóm tắt sĩ số tức thời qua **Zalo Bot Gateway** hoặc Zalo Official Account.
+   - Sao lưu dữ liệu đám mây **Google Drive** tự động theo ngày.
 
 ---
 
-## 📂 CẤU TRÚC DỰ ÁN & PHÂN HỆ ĐỘC LẬP
+## 🏛️ KIẾN TRÚC HỆ THỐNG & CẤU TRÚC THƯ MỤC
 
-Mã nguồn được cấu trúc khoa học theo mô hình đa tầng, thư mục gốc được tinh gọn tối đa chỉ còn **9 tệp tin điều khiển cốt lõi**:
+### 1. Sơ Đồ Kiến Trúc 4 Tầng Backend (Clean Architecture)
+
+```mermaid
+graph TD
+    Client["🌐 Frontend Web Dashboard (HTML5 / Vanilla CSS / JS)"] -->|REST API Requests / JWT| Routers["⚙️ TẦNG 1: API ROUTERS<br/>backend/api/routers/<br/>(attendance, cameras, roi, reports, backup, auth, system)"]
+    
+    Routers -->|Gọi Điều Phối| Core["🧠 TẦNG 2: DOMAIN CORE & AI ENGINES<br/>core/<br/>• detector.py (AI YOLO Head Specialist)<br/>• attendance_engine.py (Điều phối 30 camera)<br/>• rtsp_client.py (Thu nhận luồng RTSP)<br/>• roi_manager.py (Thuật toán đa giác ROI)"]
+    
+    Routers -->|Gọi Dịch Vụ| Services["🔌 TẦNG 3: EXTERNAL SERVICES<br/>services/<br/>• zalo_service.py (Zalo Bot Gateway / OA)<br/>• excel_service.py (Xuất Excel chuẩn Sở)<br/>• email_service.py (SMTP Email BGH)<br/>• gdrive_service.py (Backup Google Drive)"]
+    
+    Core -->|Đọc / Ghi Dữ Liệu| DB["🗄️ TẦNG 4: DATA PERSISTENCE<br/>database/<br/>• models.py (Classroom, AttendanceSession, User...)<br/>• db_session.py (SQLAlchemy Session Local)"]
+    Services --> DB
+    
+    subgraph Config["⚙️ CONFIGURATION & SETTINGS (Tập Trung)"]
+        config["config/settings.py (.env, Pydantic BaseSettings, Thresholds)"]
+    end
+    Config -.-> Routers
+    Config -.-> Core
+    Config -.-> Services
+```
+
+### 2. Cấu Trúc Thư Mục Chuẩn Hóa
 
 ```text
 hethongdiemdanh Dieu Cai/
 │
-├── 🎨 frontend/                     # [PHÂN HỆ FRONTEND] Giao diện người dùng Web Dashboard
+├── 🎨 frontend/                     # [GIAO DIỆN NGƯỜI DÙNG] Web Dashboard Glassmorphism
 │   ├── index.html                  # Dashboard giám sát điểm danh thời gian thực 30 lớp
 │   ├── login.html                  # Trang đăng nhập (JWT + HTTP-only cookie)
-│   ├── forgot-password.html        # Quên mật khẩu (gửi email SMTP)
-│   ├── reset-password.html         # Đặt lại mật khẩu mới
-│   ├── users.html                  # Quản lý tài khoản (chỉ admin)
 │   ├── cameras.html                # Quản lý danh sách & kiểm tra kết nối Camera/Webcam
 │   ├── roi-config.html             # Công cụ vẽ phân vùng đa giác ROI (HTML5 Canvas)
 │   ├── reports.html                # Bảng tra cứu lịch sử & xuất báo cáo Excel, gửi Zalo
-│   ├── notifications.html          # Cấu hình kênh thông báo Zalo Bot Gateway & SMTP Email
+│   ├── notifications.html          # Cấu hình kênh thông báo Zalo & SMTP Email
 │   ├── css/                        # Hệ thống CSS Glassmorphism & Responsive layout
-│   ├── js/                         # API Client trung tâm (api.js) và logic các màn hình
-│   │   └── shared/auth-guard.js    # Bảo vệ trang app, yêu cầu đăng nhập
-│   ├── README.md                   # Sổ tay chi tiết kiến trúc phân hệ Frontend
-│   └── README_FRONTEND.md          # Sổ tay quy chuẩn dành cho lập trình viên Frontend
+│   └── js/                         # API Client trung tâm (api.js) và logic các màn hình
 │
-├── ⚙️ backend/                      # [PHÂN HỆ BACKEND] Máy chủ REST API & Xử lý nghiệp vụ
-│   ├── main.py                     # Khởi động FastAPI, cấu hình CORS, mount Static files
-│   ├── system_check.py             # Script kiểm tra sức khỏe và tiến độ toàn hệ thống
-│   ├── api/routers/                # Bộ định tuyến RESTful API:
-│   │   ├── auth.py                 # /api/auth: Đăng nhập, quên mật khẩu, quản lý user
-│   │   ├── attendance.py           # /api/attendance: Quét điểm danh & phiên làm việc
-│   │   ├── cameras.py              # /api/cameras: Quản lý Camera, snapshot live test
-│   │   ├── roi.py                  # /api/roi: Tọa độ ROI đa giác, test nhận diện tức thì
-│   │   ├── reports.py              # /api/reports: Lịch sử điểm danh, xuất báo cáo Excel
-│   │   └── system.py               # /api/system: CSDL, HealthCheck, sample media
-│   ├── schemas/                    # Pydantic Schemas xác thực dữ liệu đầu vào/ra
-│   └── README_BACKEND.md           # Hướng dẫn phát triển API & Swagger Interactive Docs
-│
-├── 🗄️ database/                     # [PHÂN HỆ DATABASE] Cơ sở dữ liệu quan hệ
-│   ├── models.py                   # SQLAlchemy ORM Models (Classroom, User, PasswordResetToken,...)
-│   ├── db_session.py               # Quản lý kết nối Session & Seed admin khởi tạo
-│   ├── attendance.db               # Tệp tin CSDL SQLite chính thức
-│   └── README_DATABASE.md          # Sơ đồ thực thể quan hệ (ERD) & Quy chuẩn CSDL
-│
-├── 🧠 training/                     # [PHÂN HỆ AI TRAINING] Huấn luyện mô hình YOLO26m
-│   ├── train_yolo.py               # Script huấn luyện YOLO26m (GPU CUDA / CPU PyTorch)
-│   ├── prepare_dataset.py          # Chuẩn hóa nhãn & phân bổ tập train/val
-│   ├── sample_extractor.py         # Trích xuất khung hình từ video phục vụ gán nhãn
-│   ├── generate_classrooms_media.py# Bộ sinh dữ liệu ảnh Full HD và video 15s cho 30 lớp
-│   ├── train_gpu.bat               # Kịch bản 1-click huấn luyện GPU NVIDIA RTX 3050
-│   └── HUONG_DAN_TRAINING_AI.md    # Hướng dẫn chi tiết quy trình gán nhãn & huấn luyện AI YOLO26m
+├── ⚙️ backend/                      # [MÁY CHỦ REST API] FastAPI Framework
+│   ├── main.py                     # Khởi động FastAPI, CORS, Middleware, Lifespan
+│   ├── api/
+│   │   ├── deps.py                 # Dependency Injection: Cung cấp DB Session, Auth Current User
+│   │   ├── security.py             # Bảo mật: JWT Token, băm mật khẩu bcrypt
+│   │   └── routers/                # Bộ định tuyến RESTful API phân theo chức năng:
+│   │       ├── attendance.py       # /api/attendance: Quét điểm danh & phiên làm việc
+│   │       ├── cameras.py          # /api/cameras: Quản lý Camera, snapshot live test
+│   │       ├── roi.py              # /api/roi: Tọa độ ROI đa giác, test nhận diện tức thì
+│   │       ├── reports.py          # /api/reports: Lịch sử điểm danh, xuất báo cáo Excel
+│   │       ├── backup.py           # /api/backup: Sao lưu CSDL local & Google Drive
+│   │       ├── auth.py             # /api/auth: Đăng nhập, quên mật khẩu, phân quyền
+│   │       └── system.py           # /api/system: Giám sát tài nguyên CPU, GPU RTX, RAM
+│   └── schemas/                    # Pydantic Schemas xác thực dữ liệu đầu vào/ra
 │
 ├── 🧱 core/                         # [CỐT LÕI HỆ THỐNG] Động cơ AI & Giao tiếp thiết bị
-│   ├── detector.py                 # AI YOLO26m nhận diện học sinh + SAHI + CLAHE
+│   ├── detector.py                 # AI YOLO nhận diện đầu học sinh + NMS + Anatomical IoS
 │   ├── attendance_engine.py        # Điều phối quét điểm danh đồng loạt 30 lớp học
 │   ├── rtsp_client.py              # Thu nhận luồng hình ảnh đa luồng (RTSP/Webcam/File)
-│   ├── roi_manager.py              # Thuật toán Point-in-Polygon lọc khu vực Green (Lấy) / Red (Bỏ đi)
-│   ├── relay_service.py            # Điều khiển phần cứng Relay đèn LED báo hiệu
-│   └── image_enhancer.py           # Bộ cân bằng sáng cục bộ CLAHE
+│   ├── roi_manager.py              # Thuật toán Point-in-Polygon lọc khu vực Green / Red Zone
+│   ├── relay_service.py            # Giao thức điều khiển tín hiệu đèn camera
+│   └── image_enhancer.py           # Bộ cân bằng sáng thích ứng cục bộ CLAHE
 │
-├── 🔌 services/                     # [DỊCH VỤ NGOẠI VI] Tự động hóa & Báo cáo
-│   ├── auth_service.py             # JWT, Bcrypt, seed admin tự động
-│   ├── scheduler.py                # Lập lịch điểm danh tự động 06:45 AM (APScheduler)
-│   ├── excel_exporter.py           # Xuất báo cáo Excel chuẩn hóa theo mẫu GD&ĐT
-│   ├── zalo_service.py             # Tích hợp gửi tin nhắn Zalo Bot Gateway / OA (khuyến nghị Bot Gateway)
-│   └── notification.py             # Quản lý kênh thông báo Email (gửi mail reset password)
+├── 🔌 services/                     # [DỊCH VỤ TÍCH HỢP NGOẠI VI]
+│   ├── zalo_service.py             # Tích hợp gửi tin nhắn Zalo Bot Gateway / OA
+│   ├── email_service.py            # Tích hợp SMTP gửi báo cáo Ban Giám Hiệu
+│   ├── excel_service.py            # Xuất file báo cáo Excel chuẩn mẫu GD&ĐT
+│   └── gdrive_service.py           # Tích hợp OAuth 2.0 sao lưu đám mây
 │
-├── 📁 dataset/                      # Kho dữ liệu hình ảnh, video & cấu hình huấn luyện
-│   ├── classroom.yaml              # Cấu hình dataset cho YOLO26
-│   ├── classroom_data/             # Dữ liệu ảnh & nhãn YOLO phục vụ huấn luyện
-│   └── classrooms_media/           # Bộ dữ liệu 30 lớp học (5 ảnh 1080p + 1 video 15s/lớp)
-│       ├── danh_sach_si_so_toan_truong.xlsx # Bảng Excel tổng hợp sĩ số 30 lớp
-│       ├── danh_sach_si_so_toan_truong.json # Dữ liệu JSON sĩ số toàn trường
-│       ├── README.md               # Tài liệu chi tiết về bộ dữ liệu đa phương tiện
-│       ├── Lop_10A1/ ... Lop_12A10/# 30 thư mục tương ứng 30 lớp học
+├── 🗄️ database/                     # [CƠ SỞ DỮ LIỆU] SQLAlchemy ORM & SQLite
+│   ├── models.py                   # ORM Models (Classroom, AttendanceSession, User,...)
+│   ├── db_session.py               # Quản lý kết nối Session & Seed admin khởi tạo
+│   └── attendance.db               # Tệp tin CSDL SQLite chính thức
 │
-├── 📦 models/                       # Trọng số mô hình AI
-│   ├── yolo26m.pt                  # Trọng số nền tảng YOLO26m (Ultralytics)
-│   ├── classroom_yolo26m_best.pt   # Model YOLO26m Custom tinh chỉnh cho THPT Điều Cải
-│   └── classroom_best.pt           # Checkpoint tương thích ngược
+├── 📁 dataset/                      # [KHO DỮ LIỆU MÁY HỌC THỰC TẾ]
+│   ├── classroom.yaml              # Cấu hình dataset YOLO chuẩn cho THPT Điều Cải
+│   ├── studenthead_real.yaml       # Cấu hình bộ dữ liệu camera thực tế
+│   └── studenthead1.v1-1.yolo26/   # Bộ dữ liệu 182 ảnh camera thực tế (train/valid)
+│
+├── 📦 models/                       # [TRỌNG SỐ MÔ HÌNH AI]
+│   ├── classroom_best.pt           # Model chuyên biệt nhận diện đầu học sinh THPT Điều Cải
+│   └── yolo26m.pt                  # Trọng số nền tảng Ultralytics
 │
 ├── ⚙️ config/                       # Cấu hình tập trung (settings.py, logging_config.py)
-├── 🧪 tests/                        # Bộ kiểm thử tự động Pytest (13 test cases passed)
+├── 🧪 tests/                        # Bộ kiểm thử tự động Pytest (47/47 test cases PASSED)
 │
-├── 🚀 9 TỆP TIN ĐIỀU KHIỂN CỐT LÕI TẠI THƯ MỤC GỐC:
-│   ├── run.bat                     # [Khởi động toàn diện] 1-click chạy cả Backend + Frontend
-│   ├── run_backend.bat             # [Backend Dev] Khởi động riêng FastAPI Server (Cổng 8000)
-│   ├── run_frontend.bat            # [Frontend Dev] Khởi động riêng Frontend độc lập (Cổng 3000)
-│   ├── xem_tien_do.bat             # [Quản trị viên] Xem nhanh tiến độ & sức khỏe toàn hệ thống
-│   ├── app.py                      # File thực thi Python trọn gói
+├── 🚀 TỆP TIN THỰC THI CHÍNH:
+│   ├── run.bat                     # 1-click khởi động toàn diện hệ thống trên Windows
+│   ├── train_real_camera.bat       # 1-click huấn luyện AI trên GPU NVIDIA RTX 3050
 │   ├── requirements.txt            # Danh sách thư viện phụ thuộc Python
-│   ├── KIEN_TRUC_HE_THONG.md       # Tài liệu kiến trúc hệ thống & quy chuẩn phối hợp nhóm
-│   ├── README.md                   # Tài liệu tổng quan dự án (Tệp này)
-│   └── .gitignore                  # Cấu hình loại trừ Git chuẩn mực
+│   └── .gitignore                  # Cấu hình loại trừ Git chuẩn (chặn video lớn, file nhạy cảm)
 ```
 
 ---
 
-## 👥 PHÂN CHIA VAI TRÒ & KỊCH BẢN CHẠY RIÊNG
+## 🚀 HƯỚNG DẪN CÀI ĐẶT VÀ CHẠY THỬ NGHIỆM LOCAL
 
-Dự án được thiết kế giúp các thành viên trong nhóm làm việc độc lập:
+### 1. Yêu Cầu Phần Cứng & Môi Trường
+- **Hệ điều hành:** Windows 10 / 11 (hoặc Linux Ubuntu 22.04+).
+- **Python:** Python 3.10 hoặc Python 3.11 (khuyến nghị).
+- **GPU (tùy chọn):** NVIDIA GeForce RTX 3050 hoặc tương đương hỗ trợ CUDA 12.x giúp tăng tốc độ quét 30 camera lên gấp 5 lần.
 
-| Vai Trò | Thư Mục Phụ Trách | Trách Nhiệm Chính | Lệnh Chạy Riêng |
-| :--- | :--- | :--- | :--- |
-| **Frontend Dev** | `frontend/` | Thiết kế giao diện Glassmorphism, đồ thị Chart.js, công cụ vẽ Canvas ROI, gọi REST API qua `api.js`. | `run_frontend.bat` (Cổng 3000) |
-| **Backend Dev** | `backend/`, `core/`, `services/` | Xây dựng REST API FastAPI, tích hợp AI YOLOv8, Relay, Excel, Zalo Bot Gateway, APScheduler, viết Pytest. | `run_backend.bat` (Cổng 8000, Swagger `/docs`) |
-| **Database Dev** | `database/` | Thiết kế mô hình ORM `models.py`, quản lý session `db_session.py`, nạp sẵn 30 lớp học và sao lưu. | `python -c "from database.db_session import init_db; init_db()"` |
-| **AI Engineer** | `training/`, `dataset/` | Tiền xử lý dữ liệu, gán nhãn, fine-tuning YOLOv8 trên GPU RTX, đánh giá mAP và xuất mô hình. | `training\train_gpu.bat` |
-| **Project Manager** | Toàn bộ dự án | Kiểm tra tiến độ phân hệ, tính toàn vẹn CSDL, trạng thái GPU và các kịch bản kiểm thử. | `xem_tien_do.bat` |
-
----
-
-## 📊 BỘ DỮ LIỆU ĐA PHƯƠNG TIỆN 30 LỚP HỌC (`dataset/classrooms_media/`)
-
-Dự án cung cấp sẵn bộ dữ liệu chuẩn mực cho toàn bộ **30 lớp học** của Trường THPT Điều Cải:
-- **150 hình ảnh Full HD (1920x1080):** 5 ảnh/lớp thể hiện đầy đủ các tình huống: Đủ sĩ số 100%, Vắng 1 học sinh, Góc nhìn thực tế trong giờ học, Vắng 2 học sinh, Ảnh kiểm tra chốt buổi.
-- **30 video chuẩn 15 giây (15fps, 225 frames/video):** Tỷ lệ khung hình chuẩn Full HD, có thể dùng trực tiếp làm nguồn cấp RTSP hoặc video mô phỏng camera thực tế.
-- **Hồ sơ thông tin từng lớp:** Mỗi thư mục lớp có sẵn file siêu dữ liệu `info.json` và `thong_tin_lop.txt`.
-- **Báo cáo sĩ số toàn trường:**
-  - File Excel: `dataset/classrooms_media/danh_sach_si_so_toan_truong.xlsx`
-  - File JSON: `dataset/classrooms_media/danh_sach_si_so_toan_truong.json`
-
-### Bảng Thống Kê Sĩ Số 30 Lớp Học (Tổng: 1.246 Học Sinh)
-
-| Khối | Số Lớp | Danh Sách Lớp Học | Phòng Học | Sĩ Số Mỗi Lớp | Tổng Học Sinh |
-| :---: | :---: | :---| :---: | :---: | :---: |
-| **Khối 10** | 10 lớp | 10A1 đến 10A10 | P.101 - P.110 | 39 - 43 HS/lớp | **410 học sinh** |
-| **Khối 11** | 10 lớp | 11A1 đến 11A10 | P.111 - P.120 | 39 - 44 HS/lớp | **416 học sinh** |
-| **Khối 12** | 10 lớp | 12A1 đến 12A10 | P.121 - P.130 | 40 - 45 HS/lớp | **420 học sinh** |
-| **TOÀN TRƯỜNG** | **30 lớp** | **10A1 - 12A10** | **30 phòng** | **Trung bình 41.5** | **1.246 học sinh** |
-
-*Xem tài liệu chi tiết tại: [dataset/classrooms_media/README.md](dataset/classrooms_media/README.md).*
-
----
-
-## 🚀 HƯỚNG DẪN CÀI ĐẶT VÀ KHỞI CHẠY
-
-### 1. Yêu Cầu Hệ Thống:
-- Hệ điều hành: Windows 10/11 hoặc Linux / macOS.
-- Python: **Python 3.10** hoặc **Python 3.11** (khuyến nghị).
-- GPU (tùy chọn): NVIDIA RTX series hỗ trợ CUDA 12.x giúp tăng tốc độ nhận diện lên đến 60+ FPS.
-
-### 2. Cài Đặt Thư Viện:
+### 2. Cài Đặt Thư Viện
+Mở PowerShell tại thư mục dự án và chạy:
 ```powershell
 pip install -r requirements.txt
 ```
-*(Nếu dùng GPU NVIDIA, cài PyTorch hỗ trợ CUDA tương ứng: `pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121`).*
+*(Nếu máy tính có GPU NVIDIA, cài đặt PyTorch hỗ trợ CUDA: `pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121`).*
 
-### 3. Các Phương Thức Khởi Chạy:
+### 3. Thiết Lập Biến Môi Trường (`.env`)
+Tạo tệp `.env` từ `.env.example` hoặc chỉnh sửa trực tiếp các thông số kết nối:
+```env
+# Mật khẩu quản trị hệ thống
+ADMIN_EMAIL=admin@truongdieucai.edu.vn
+ADMIN_PASSWORD=Admin@2025
 
-#### 🟢 Phương thức 1: Khởi động trọn gói 1-Click (Khuyến nghị)
-Nhấp đúp vào tệp **`run.bat`**. Kịch bản sẽ tự động:
-1. Phát hiện môi trường GPU NVIDIA (`venv_cuda`) để kích hoạt phần cứng.
-2. Tự động kiểm tra và khởi tạo CSDL SQLite với đầy đủ 30 lớp học nếu chưa có.
-3. Khởi động Web Server tại cổng `8000` và kích hoạt bộ lập lịch 06:45 AM.
+# Cấu hình đầu ghi camera trường học (Dahua / Hikvision)
+DVR_HOST=192.168.10.200
+DVR_PORT=554
+DVR_USER=admin
+DVR_PASSWORD=mat_khau_camera_cua_truong
 
-#### 🔵 Phương thức 2: Khởi động riêng Backend REST API
-Phù hợp cho lập trình viên Backend:
-```powershell
-run_backend.bat
+# Khóa bảo mật JWT
+JWT_SECRET=chuoi-ngau-nhien-bao-mat-dai-hon-32-ky-tu
 ```
-Server sẽ chạy tại `http://localhost:8000`, cung cấp đầy đủ tài liệu API tương tác tại `http://localhost:8000/docs`.
 
-#### 🟣 Phương thức 3: Khởi động riêng Frontend độc lập
-Phù hợp cho lập trình viên Frontend muốn chỉnh sửa giao diện:
-```powershell
-run_frontend.bat
+### 4. Khởi Chạy 1-Click
+Nhấp đúp chuột vào file:
+```cmd
+.\run.bat
 ```
-Giao diện chạy độc lập tại cổng `3000` (`http://localhost:3000`) và tự động kết nối tới API Backend ở cổng `8000`.
+Hệ thống sẽ tự động:
+1. Phát hiện GPU CUDA (nếu có `venv_cuda`).
+2. Tự động kiểm tra và khởi tạo CSDL SQLite với đầy đủ 30 phòng học chuẩn.
+3. Bật máy chủ Web FastAPI tại địa chỉ: `http://localhost:8000`.
 
-#### 🟡 Phương thức 4: Bảng kiểm tra tiến độ toàn hệ thống
-Dành cho quản trị viên và trưởng dự án:
-```powershell
-xem_tien_do.bat
-```
-Hiển thị tức thì: Trạng thái 4 phân hệ, CSDL 30 lớp, bộ dữ liệu hình ảnh/video, GPU và kết quả kiểm thử.
-
-#### 🐳 Phương thức 5: Khởi chạy bằng Docker & Docker Compose (Khuyên dùng khi triển khai)
+### 5. Khởi Chạy Bằng Docker & Docker Compose (Container Deployment)
 Đóng gói hoàn chỉnh độc lập 2 container Frontend (Nginx) và Backend (FastAPI Python):
 - **Windows 1-Click:** Nhấp đúp vào [scripts/docker_start.bat](scripts/docker_start.bat) (dừng bằng [scripts/docker_stop.bat](scripts/docker_stop.bat)).
 - **Lệnh dòng lệnh:**
@@ -239,7 +191,7 @@ Hiển thị tức thì: Trạng thái 4 phân hệ, CSDL 30 lớp, bộ dữ li
 - **Truy cập:** Frontend tại [http://localhost:3000](http://localhost:3000) | Backend tại [http://localhost:8000](http://localhost:8000).  
 *(Chi tiết kiến trúc và tùy chọn PostgreSQL xem tại: [docker/README_DOCKER.md](docker/README_DOCKER.md)).*
 
-### 4. Thông Tin Đăng Nhập Mặc Định:
+### 6. Thông Tin Đăng Nhập Mặc Định:
 
 | Thuộc tính | Giá trị cấu hình | Mô tả |
 | :--- | :--- | :--- |
@@ -249,69 +201,38 @@ Hiển thị tức thì: Trạng thái 4 phân hệ, CSDL 30 lớp, bộ dữ li
 
 ---
 
-## 🌐 DANH MỤC ĐỊA CHỈ TRUY CẬP
+## 🌐 DANH MỤC TRUY CẬP HỆ THỐNG
 
-Sau khi khởi chạy hệ thống, mở trình duyệt tại:
+Sau khi chạy `run.bat`, mở trình duyệt truy cập:
 
 | Giao diện / Chức năng | Địa chỉ (URL) | Mô tả chi tiết |
 | :--- | :--- | :--- |
-| **🔐 Đăng Nhập Hệ Thống** | [http://localhost:8000/login](http://localhost:8000/login) | Màn hình đăng nhập xác thực JWT & quản lý phiên làm việc |
-| **📊 Dashboard Điểm Danh** | [http://localhost:8000](http://localhost:8000) | Giám sát sĩ số thời gian thực 30 lớp, xem ảnh AI đối chứng, kích hoạt quét thủ công |
-| **📷 Quản Lý Camera** | [http://localhost:8000/cameras](http://localhost:8000/cameras) | Thêm, sửa, kiểm tra kết nối RTSP/Webcam, xem trước Live Snapshot trực tiếp |
-| **📐 Cấu Hình Vùng ROI** | [http://localhost:8000/roi-config](http://localhost:8000/roi-config) | Công cụ vẽ Canvas Green Zone (Bàn học sinh - LẤY) và Red Zone (Bục giảng - BỎ ĐI) |
-| **📑 Báo Cáo & Dữ Liệu** | [http://localhost:8000/reports](http://localhost:8000/reports) | Tra cứu lịch sử theo ngày/lớp, xem Lightbox phóng to ảnh, tải file Excel, gửi tin Zalo |
-| **👥 Quản Lý Tài Khoản** | [http://localhost:8000/users](http://localhost:8000/users) | Danh sách tài khoản người dùng, phân quyền Admin/Staff (chỉ dành cho Quản trị viên) |
-| **🔔 Cấu Hình Thông Báo** | [http://localhost:8000/notifications](http://localhost:8000/notifications) | Cấu hình gửi cảnh báo tự động qua Zalo Bot Gateway và Email SMTP |
-| **📖 Swagger API Docs** | [http://localhost:8000/docs](http://localhost:8000/docs) | Tài liệu kỹ thuật OpenAPI/Swagger thử nghiệm trực tiếp các API RESTful |
+| **🔐 Đăng Nhập** | [http://localhost:8000/login](http://localhost:8000/login) | Xác thực JWT & phân quyền Admin / Staff |
+| **📊 Dashboard Điểm Danh** | [http://localhost:8000](http://localhost:8000) | Giám sát sĩ số 30 lớp thời gian thực, xem ảnh đối chứng AI |
+| **📷 Quản Lý Camera** | [http://localhost:8000/cameras](http://localhost:8000/cameras) | Thêm, sửa, test kết nối RTSP/NVR, xem trước Live Snapshot |
+| **📐 Cấu Hình Vùng ROI** | [http://localhost:8000/roi-config](http://localhost:8000/roi-config) | Công cụ vẽ Canvas Green Zone (Bàn học sinh) & Red Zone (Bục giảng) |
+| **📑 Báo Cáo & Dữ Liệu** | [http://localhost:8000/reports](http://localhost:8000/reports) | Tra cứu lịch sử điểm danh, xem Lightbox phóng to, xuất Excel |
+| **🔔 Cấu Hình Thông Báo** | [http://localhost:8000/notifications](http://localhost:8000/notifications) | Cấu hình Zalo Bot Gateway, Zalo OA và Email SMTP |
+| **📖 Swagger API Docs** | [http://localhost:8000/docs](http://localhost:8000/docs) | Tài liệu kỹ thuật OpenAPI/Swagger thử nghiệm trực tiếp các API |
 
 ---
 
-## 🧠 QUY TRÌNH HUẤN LUYỆN MÔ HÌNH AI YOLO26m (TRAINING PIPELINE)
+## 🧪 BỘ KIỂM THỬ TỰ ĐỘNG (AUTOMATED TEST SUITE)
 
-Toàn bộ công cụ phục vụ huấn luyện mô hình YOLO26m được bố trí gọn gàng trong thư mục `training/`:
-
-1. **Trích xuất khung hình từ video mẫu:**
-   ```powershell
-   python training/sample_extractor.py
-   ```
-2. **Chuẩn hóa nhãn & phân bổ tập train/val:**
-   ```powershell
-   python training/prepare_dataset.py
-   ```
-3. **Sinh lại bộ dữ liệu đa phương tiện cho 30 lớp học:**
-   ```powershell
-   python training/generate_classrooms_media.py
-   ```
-4. **Kích hoạt huấn luyện trên GPU NVIDIA RTX 3050 (1-Click):**
-   ```powershell
-   training\train_gpu.bat
-   ```
-   *Hoặc chạy trực tiếp qua CLI với các tham số tùy biến:*
-   ```powershell
-   venv_cuda\Scripts\python training/train_yolo.py --model models/yolo26m.pt --epochs 25 --imgsz 640 --batch 4 --device 0
-   ```
-   Sau khi huấn luyện hoàn tất, trọng số tối ưu nhất sẽ được tự động xuất bản vào `models/classroom_yolo26m_best.pt`.
-
-*Xem sổ tay chi tiết tại: [training/HUONG_DAN_TRAINING_AI.md](training/HUONG_DAN_TRAINING_AI.md).*
-
----
-
-## 🧪 KIỂM THỬ TỰ ĐỘNG (AUTOMATED TESTS)
-
-Hệ thống đi kèm bộ kiểm thử tự động toàn diện đạt tỷ lệ vượt qua **25/25 test cases**:
+Hệ thống tích hợp bộ kiểm thử tự động toàn diện đạt tỷ lệ **47/47 test cases PASSED (100%)**:
 ```powershell
 python -m pytest tests/ -v
 ```
 
-Danh mục các bộ kiểm thử:
-- `tests/test_attendance_engine.py`: Quy trình điều phối quét sĩ số học sinh và tính toán tỷ lệ vắng.
-- `tests/test_camera_management.py`: Kiểm tra CRUD camera, phân loại RTSP/Webcam/File.
-- `tests/test_camera_signal_workflow.py`: Kiểm tra tín hiệu mạng camera, cơ chế thử lại (retry) và thu nhận luồng an toàn.
-- `tests/test_roi_masking.py`: Kiểm tra thuật toán Point-in-Polygon lọc khu vực Green Zone (LẤY) và Red Zone (BỎ ĐI).
-- `tests/test_login_api.py`: Kiểm tra xác thực đăng nhập JWT, hash mật khẩu bcrypt, bảo mật cookie và phân quyền tài khoản.
-- `tests/test_excel_export.py`: Kiểm tra cấu trúc file Excel xuất ra theo quy chuẩn mẫu của Sở GD&ĐT.
-- `tests/test_zalo_service.py`: Kiểm tra định dạng thông báo gửi cảnh báo qua Zalo Bot Gateway / OA.
-- `tests/test_rtsp_mock.py`: Kiểm tra khả năng xử lý mất kết nối mạng và phục hồi luồng hình ảnh.
+Danh mục các bộ kiểm thử tự động:
+- `tests/test_attendance_engine.py`: Quy trình điều phối quét sĩ số 30 camera và tính toán vắng.
+- `tests/test_camera_management.py`: Kiểm tra CRUD camera, phân loại RTSP/Webcam/File mẫu.
+- `tests/test_camera_signal_workflow.py`: Kiểm tra cơ chế kích hoạt tín hiệu hồng ngoại camera.
+- `tests/test_yolo26_detector.py`: Kiểm tra suy luận AI, thuật toán NMS và chống nuốt học sinh ngồi trước-sau.
+- `tests/test_roi_masking.py`: Kiểm tra thuật toán Point-in-Polygon lọc khu vực Green và Red Zone.
+- `tests/test_excel_export.py`: Kiểm tra cấu trúc bảng Excel xuất theo chuẩn mẫu Sở GD&ĐT.
+- `tests/test_zalo_service.py`: Kiểm tra định dạng tin nhắn gửi qua Zalo Bot Gateway / OA.
+- `tests/test_backup_system.py`: Kiểm tra sao lưu CSDL local và đồng bộ Google Drive.
 
 ---
 
@@ -323,12 +244,34 @@ Danh mục các bộ kiểm thử:
 - 🎨 **Sổ tay phát triển Frontend:** [frontend/README_FRONTEND.md](frontend/README_FRONTEND.md)
 - ⚙️ **Sổ tay phát triển Backend REST API:** [backend/README_BACKEND.md](backend/README_BACKEND.md)
 - 🗄️ **Sổ tay phát triển Cơ sở dữ liệu:** [database/README_DATABASE.md](database/README_DATABASE.md)
-- 🧠 **Sổ tay huấn luyện mô hình AI YOLOv8:** [training/HUONG_DAN_TRAINING_AI.md](training/HUONG_DAN_TRAINING_AI.md)
-- 📁 **Thuyết minh bộ dữ liệu 30 lớp học:** [dataset/classrooms_media/README.md](dataset/classrooms_media/README.md)
+- 🧠 **Sổ tay huấn luyện mô hình AI:** [training/train_real_camera.py](training/train_real_camera.py)
 - 🐳 **Hướng dẫn triển khai Docker & Containerization:** [docker/README_DOCKER.md](docker/README_DOCKER.md)
+- 🛡️ **Kiến trúc bảo mật & Kiểm toán:** [SECURITY_ARCHITECTURE.md](SECURITY_ARCHITECTURE.md) | [SECURITY_AUDIT_REPORT.md](SECURITY_AUDIT_REPORT.md)
+
+---
+
+## 📤 HƯỚNG DẪN ĐẨY LÊN GITHUB (KHI BẠN ĐÃ KIỂM THỬ HOÀN TẤT)
+
+> [!NOTE]
+> Hệ thống và tệp tin `.gitignore` đã được chuẩn hóa để chặn toàn bộ các tệp video lớn > 2GB và các file nhạy cảm.  
+> Khi bạn đã chạy thử nghiệm trên máy tính của mình và hoàn toàn hài lòng, bạn chỉ cần mở terminal và thực hiện các lệnh sau để đẩy lên GitHub:
+
+```bash
+# 1. Kiểm tra trạng thái các file sạch sẽ
+git status
+
+# 2. Thêm toàn bộ mã nguồn đã hoàn thiện vào vùng chờ commit
+git add .
+
+# 3. Tạo commit đánh dấu phiên bản hoàn thiện
+git commit -m "feat: complete production AI attendance system with modular backend and studenthead dataset"
+
+# 4. Đẩy mã nguồn lên GitHub
+git push origin phat
+```
 
 ---
 
 ## 📜 BẢN QUYỀN
-Hệ thống được thiết kế, phát triển và chuyển giao phục vụ đề án chuyển đổi số giáo dục tại **Trường THPT Điều Cải**.
+Hệ thống được thiết kế, phát triển và chuyển giao phục vụ đề án chuyển đổi số giáo dục tại **Trường THPT Điều Cải**.  
 Mọi quyền sở hữu trí tuệ thuộc về nhóm tác giả và nhà trường.

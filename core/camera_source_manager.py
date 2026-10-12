@@ -28,14 +28,16 @@ from database.models import Classroom, ROIPolygon
 
 DEFAULT_MOCK_FOLDER = settings.BASE_DIR / "camera"
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
+VIDEO_EXTENSIONS = {".mp4", ".avi", ".mkv", ".mov"}
+MEDIA_EXTENSIONS = IMAGE_EXTENSIONS | VIDEO_EXTENSIONS
 
 def natural_sort_key(s: str):
-    """Sắp xếp chuỗi theo số tự nhiên (1.jpg, 2.jpg ... 10.jpg thay vì 1, 10, 2)."""
+    """Sắp xếp chuỗi theo số tự nhiên (1.mp4, 2.mp4 ... 10.mp4 thay vì 1, 10, 2)."""
     return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', s)]
 
 
 class CameraSourceManager:
-    """Quản lý chuyển đổi giữa Chế độ Giả lập Ảnh mẫu (Test) và Đầu Ghi NVR Thật (Bàn giao)."""
+    """Quản lý chuyển đổi giữa Chế độ Giả lập Ảnh/Video mẫu (Test) và Đầu Ghi NVR Thật (Bàn giao)."""
 
     @classmethod
     def resolve_folder_path(cls, folder_str: Optional[str]) -> Path:
@@ -50,13 +52,13 @@ class CameraSourceManager:
 
     @classmethod
     def get_image_files(cls, folder_path: Path) -> List[Path]:
-        """Lấy danh sách tất cả file ảnh trong thư mục và sắp xếp tự nhiên."""
+        """Lấy danh sách tất cả file ảnh/video trong thư mục và sắp xếp tự nhiên."""
         if not folder_path.exists() or not folder_path.is_dir():
             return []
         files = []
         try:
             for item in folder_path.iterdir():
-                if item.is_file() and item.suffix.lower() in IMAGE_EXTENSIONS:
+                if item.is_file() and item.suffix.lower() in MEDIA_EXTENSIONS:
                     files.append(item)
             files.sort(key=lambda x: natural_sort_key(x.name))
         except Exception as e:
@@ -115,9 +117,9 @@ class CameraSourceManager:
         for c in classrooms:
             url = (c.rtsp_url or "").strip()
             url_lower = url.lower()
-            if any(url_lower.endswith(ext) for ext in IMAGE_EXTENSIONS):
+            if any(url_lower.endswith(ext) for ext in MEDIA_EXTENSIONS):
                 mock_count += 1
-                # Lấy thư mục cha của ảnh làm detected_folder
+                # Lấy thư mục cha của ảnh/video làm detected_folder
                 try:
                     p = Path(url)
                     if p.parent and str(p.parent) != ".":
@@ -326,7 +328,21 @@ class CameraSourceManager:
             # Copy đồng bộ ảnh sang latest để xem trước
             try:
                 dest_latest = latest_dir / f"Lop_{cls_obj.id}.jpg"
-                shutil.copy2(chosen_file, dest_latest)
+                if chosen_file.suffix.lower() in VIDEO_EXTENSIONS:
+                    import cv2
+                    cap = cv2.VideoCapture(str(chosen_file))
+                    if cap.isOpened():
+                        # Lấy frame 75 để làm thumbnail sắc nét
+                        cap.set(cv2.CAP_PROP_POS_FRAMES, 75)
+                        ret_thumb, thumb_frame = cap.read()
+                        if not ret_thumb or thumb_frame is None:
+                            cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                            ret_thumb, thumb_frame = cap.read()
+                        if ret_thumb and thumb_frame is not None:
+                            cv2.imwrite(str(dest_latest), thumb_frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
+                        cap.release()
+                else:
+                    shutil.copy2(chosen_file, dest_latest)
             except Exception as e:
                 logger.debug(f"Không thể copy ảnh latest cho lớp {cls_obj.id}: {e}")
 

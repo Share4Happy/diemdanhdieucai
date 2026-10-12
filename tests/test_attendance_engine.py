@@ -9,27 +9,29 @@ def test_full_attendance_pipeline():
     init_db()
     db = SessionLocal()
 
-    # Tạm thời chỉ bật 5 lớp để test chạy nhanh trên CPU máy dev (~5-8s)
-    # Các lớp khác vẫn giữ nguyên trong DB
-    db.query(Classroom).update({Classroom.is_active: False})
-    active_classes = db.query(Classroom).limit(5).all()
-    for c in active_classes:
-        c.is_active = True
-    db.commit()
+    try:
+        # Tạm thời chỉ bật 5 lớp để test chạy nhanh trên CPU máy dev (~5-8s)
+        # Các lớp khác vẫn giữ nguyên trong DB
+        db.query(Classroom).update({Classroom.is_active: False})
+        active_classes = db.query(Classroom).limit(5).all()
+        for c in active_classes:
+            c.is_active = True
+        db.commit()
 
-    result = attendance_engine.run_daily_attendance(trigger_led=False)
+        result = attendance_engine.run_daily_attendance(trigger_led=False)
 
-    expected_count = len(active_classes)
-    assert result["success"] is True
-    assert result["total_classes"] == expected_count
-    assert result["total_standard"] > 0
-    assert result["total_present"] >= 0
-    assert result["total_absent"] >= 0
-    assert os.path.exists(result["excel_report"])
-
-    # Khôi phục bật lại toàn bộ lớp cho hệ thống hoạt động chính thức
-    db.query(Classroom).update({Classroom.is_active: True})
-    db.commit()
+        expected_count = len(active_classes)
+        assert result["success"] is True
+        assert result["total_classes"] == expected_count
+        assert result["total_standard"] > 0
+        assert result["total_present"] >= 0
+        assert result["total_absent"] >= 0
+        assert os.path.exists(result["excel_report"])
+    finally:
+        # Khôi phục bật lại toàn bộ lớp cho hệ thống hoạt động chính thức
+        db.query(Classroom).update({Classroom.is_active: True})
+        db.commit()
+        db.close()
 
     # Kiểm tra trong Database
     session = db.query(AttendanceSession).filter(AttendanceSession.id == result["session_id"]).first()

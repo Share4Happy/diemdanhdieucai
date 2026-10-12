@@ -28,7 +28,8 @@ from backend.schemas.camera_schemas import (
     NVRProbeRequest,
     NVRBatchImportRequest,
     SwitchCameraSourceModeRequest,
-    InspectFolderRequest
+    InspectFolderRequest,
+    BatchStatusRequest
 )
 
 router = APIRouter(prefix="/cameras", tags=["Cameras"], dependencies=[Depends(get_current_user)])
@@ -182,6 +183,19 @@ async def delete_camera(classroom_id: int, _admin: User = Depends(require_admin)
     db.commit()
     logger.info(f"Đã xóa camera {cname} (ID {classroom_id})")
     return {"success": True, "message": f"Đã xóa camera {cname} thành công"}
+
+@router.post("/batch-status")
+async def batch_toggle_camera_status(data: BatchStatusRequest, _admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    """Bật/Tắt kích hoạt đồng loạt camera (chỉ admin). Nếu camera_ids rỗng thì áp dụng cho toàn bộ camera."""
+    query = db.query(Classroom)
+    if data.camera_ids and len(data.camera_ids) > 0:
+        query = query.filter(Classroom.id.in_(data.camera_ids))
+    count = query.update({Classroom.is_active: data.is_active}, synchronize_session=False)
+    db.commit()
+    status_str = "kích hoạt" if data.is_active else "tạm ngưng"
+    logger.info(f"Admin đã {status_str} đồng loạt {count} camera lớp học")
+    return {"success": True, "message": f"Đã {status_str} thành công {count} camera/lớp học!", "count": count}
+
 
 @router.get("/available-webcams")
 async def get_available_webcams_endpoint(refresh: bool = False, _admin: User = Depends(require_admin)):

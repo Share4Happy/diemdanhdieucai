@@ -82,11 +82,11 @@ class ROIManager:
         """
         px, py = float(point[0]), float(point[1])
 
-        # Kiểm tra Green Zone (Khu vực nhận diện / Bàn học sinh): Phải nằm bên trong hoặc sát viền mép (dung sai 10px)
+        # Kiểm tra Green Zone (Khu vực nhận diện / Bàn học sinh): Phải nằm bên trong hoặc sát viền mép (dung sai 25px)
         if green_zone and len(green_zone) >= 3:
             green_poly = cls.points_to_np(green_zone)
             dist_green = cv2.pointPolygonTest(green_poly, (px, py), True)
-            if dist_green < -10.0:
+            if dist_green < -25.0:
                 # Nằm ngoài vùng xanh -> Tự động bỏ qua
                 return False
 

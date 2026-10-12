@@ -60,11 +60,11 @@ class Settings(BaseModel):
     # AI Model Settings (Ultralytics YOLO26m + Classroom Head Specialized Model)
     YOLO_FAMILY: str = "YOLO26"
     YOLO_VARIANT: str = "26m"
-    YOLO_MODEL_NAME: str = os.getenv("YOLO_MODEL_NAME", str(BASE_DIR / "models" / "yolo26m.pt"))  # Mô hình thế hệ mới YOLO26m
+    YOLO_MODEL_NAME: str = os.getenv("YOLO_MODEL_NAME", str(BASE_DIR / "models" / "classroom_best.pt" if (BASE_DIR / "models" / "classroom_best.pt").exists() else BASE_DIR / "models" / "yolo26m.pt"))
     HEAD_MODEL_NAME: str = os.getenv("HEAD_MODEL_NAME", str(BASE_DIR / "models" / "classroom_best.pt")) # Mô hình chuyên biệt nhận diện đầu lớp học
     YOLO_IMGSZ: int = int(os.getenv("YOLO_IMGSZ", "1280"))               # Kích thước phân giải AI quét 1280px chống mờ ảnh 2K
-    AI_CONFIDENCE_THRESHOLD: float = float(os.getenv("AI_CONFIDENCE_THRESHOLD", "0.24")) # Ngưỡng tin cậy tối ưu phát hiện học sinh cúi đầu & ngồi xa
-    AI_IOU_THRESHOLD: float = float(os.getenv("AI_IOU_THRESHOLD", "0.48"))       # Ngưỡng IoU cho deduplication
+    AI_CONFIDENCE_THRESHOLD: float = float(os.getenv("AI_CONFIDENCE_THRESHOLD", "0.20")) # Ngưỡng tin cậy tối ưu phát hiện học sinh cúi đầu & ngồi xa
+    AI_IOU_THRESHOLD: float = float(os.getenv("AI_IOU_THRESHOLD", "0.35"))       # Ngưỡng IoU cho deduplication chặt chẽ chống box kép
     USE_IMAGE_ENHANCEMENT: bool = True  # Áp dụng CLAHE chống ngược sáng cửa sổ
     USE_TILED_INFERENCE: bool = True    # Bật thuật toán phân mảnh quét chi tiết đa tầng (SAHI)
 
@@ -153,8 +153,6 @@ for folder in [
     settings.CAPTURES_DIR,
     settings.ANNOTATED_DIR,
     settings.REPORTS_DIR,
-    settings.SAMPLES_DIR,
-    settings.CLASSROOMS_MEDIA_DIR,
     settings.MODELS_DIR,
     BASE_DIR / "database"
 ]:

@@ -67,3 +67,26 @@ def test_yolo26_deduplication():
     fused_b, fused_c = StudentDetector.deduplicate_boxes(boxes, confs, iou_thresh=0.5)
     assert len(fused_b) == 2
     assert fused_c[0] == 0.90
+
+def test_yolo26_vertical_body_head_fusion():
+    """Kiểm tra không gộp nhầm 2 học sinh ngồi trước-sau trên cùng một hàng dọc."""
+    boxes = [
+        [1372, 280, 1465, 358], # Box học sinh bàn sau
+        [1392, 350, 1495, 469], # Box học sinh bàn trước
+    ]
+    confs = [0.58, 0.81]
+
+    fused_b, fused_c = StudentDetector.deduplicate_boxes(boxes, confs, iou_thresh=0.48)
+    assert len(fused_b) == 2, "Hai học sinh ngồi thẳng hàng trước sau không được bị gộp nhầm thành 1"
+
+def test_yolo26_row_occlusion_retention():
+    """Kiểm tra không nuốt học sinh hàng ghế trước khi bị box người hàng sau che lấn."""
+    boxes = [
+        [1199, 101, 1297, 215], # Bạn nam hàng ghế sau (toàn thân)
+        [1232, 156, 1270, 214], # Đầu bạn nữ hàng ghế trước (nằm ở nửa dưới box bạn nam)
+    ]
+    confs = [0.47, 0.40]
+
+    fused_b, fused_c = StudentDetector.deduplicate_boxes(boxes, confs, iou_thresh=0.48)
+    assert len(fused_b) == 2, "Học sinh hàng trước không được bị xóa bởi box học sinh hàng sau"
+

@@ -24,7 +24,6 @@ echo.
 echo.
 echo ===================================================================
 echo [HOAN TAT] File trong so toi uu nhat da duoc luu tai:
-echo  - models\classroom_real_camera_best.pt
 echo  - models\classroom_best.pt
 echo ===================================================================
 pause

@@ -57,7 +57,7 @@ def test_restore_classrooms_auto():
 
 def test_api_test_connection_with_trigger_signal():
     response = client.post("/api/cameras/test-connection", json={
-        "source_url": "dataset/samples/classroom_sample_1.jpg",
+        "source_url": "camera/JPG/1.JPG",
         "trigger_signal": True
     })
     assert response.status_code == 200
@@ -92,21 +92,20 @@ def test_api_test_classroom_ir():
 
 def test_attendance_engine_signal_and_color_capture():
     db = SessionLocal()
-    # Chỉ bật 1 lớp để test chạy nhanh
-    db.query(Classroom).update({Classroom.is_active: False})
-    c = db.query(Classroom).first()
-    if c:
-        c.is_active = True
+    try:
+        # Chỉ bật 1 lớp để test chạy nhanh
+        db.query(Classroom).update({Classroom.is_active: False})
+        c = db.query(Classroom).first()
+        if c:
+            c.is_active = True
+            db.commit()
+
+        result = attendance_engine.run_daily_attendance(trigger_led=True)
+        assert result["success"] is True
+        assert result["total_classes"] >= 1
+        assert result["total_standard"] > 0
+    finally:
+        # Khôi phục bật lại lớp
+        db.query(Classroom).update({Classroom.is_active: True})
         db.commit()
-    db.close()
-
-    result = attendance_engine.run_daily_attendance(trigger_led=True)
-    assert result["success"] is True
-    assert result["total_classes"] >= 1
-    assert result["total_standard"] > 0
-
-    # Khôi phục bật lại lớp
-    db = SessionLocal()
-    db.query(Classroom).update({Classroom.is_active: True})
-    db.commit()
-    db.close()
+        db.close()

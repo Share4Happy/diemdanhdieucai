@@ -214,10 +214,47 @@ class RTSPCameraClient:
             elif ext in [".mp4", ".avi", ".mkv", ".mov"]:
                 cap = cv2.VideoCapture(str(local_path))
                 if cap.isOpened():
-                    ret, frame = cap.read()
-                    cap.release()
-                    if ret and frame is not None:
-                        return True, frame, "VIDEO_FILE", ""
+                    try:
+                        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                        fps = cap.get(cv2.CAP_PROP_FPS) or 25.0
+
+                        # Giả lập luồng camera thời gian thực (Virtual Live Stream):
+                        # 1. Bỏ qua 50 frames đầu (khoảng 2s) để tránh nhiễu khởi động/khung hình đen
+                        # 2. Tua khung hình theo thời gian thực (time.time()) để mỗi lần quét là một thời điểm khác nhau
+                        if total_frames > 75:
+                            usable_frames = max(1, total_frames - 75)
+                            current_sec = int(time.time())
+                            frame_offset = int(current_sec * (fps / 2)) % usable_frames
+                            target_frame = 50 + frame_offset
+                            cap.set(cv2.CAP_PROP_POS_FRAMES, target_frame)
+
+                        # 3. Lựa chọn khung hình sắc nét nhất (Anti-Motion-Blur & Best Sharpness)
+                        # Đọc tối đa 3 frame liên tiếp và chọn frame có độ nét (Laplacian variance) cao nhất
+                        best_frame = None
+                        max_sharpness = -1.0
+                        for _ in range(3):
+                            ret_f, f = cap.read()
+                            if ret_f and f is not None:
+                                try:
+                                    gray = cv2.cvtColor(f, cv2.COLOR_BGR2GRAY)
+                                    sharpness = cv2.Laplacian(gray, cv2.CV_64F).var()
+                                except Exception:
+                                    sharpness = 1.0
+                                if sharpness > max_sharpness:
+                                    max_sharpness = sharpness
+                                    best_frame = f
+
+                        # Fallback nếu không bắt được qua seek
+                        if best_frame is None:
+                            cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                            ret_f, best_frame = cap.read()
+
+                        if best_frame is not None:
+                            return True, best_frame, "VIDEO_FILE", ""
+                    except Exception as e:
+                        logger.warning(f"Lỗi khi trích xuất khung hình tối ưu từ video {local_path.name}: {e}")
+                    finally:
+                        cap.release()
                 return False, None, "VIDEO_FILE", f"Không thể đọc khung hình từ video {local_path.name}"
 
         # 3. Kiểm tra nếu là luồng RTSP

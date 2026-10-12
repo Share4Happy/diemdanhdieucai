@@ -521,9 +521,10 @@ html, body {
    ========================================================= */
 .canvas-outer-wrapper {
   flex: 1 !important;
-  min-height: 250px !important;
+  min-height: 0 !important;
   min-width: 0 !important;
   width: 100% !important;
+  height: 100% !important;
   box-sizing: border-box !important;
   display: flex !important;
   justify-content: center !important;
@@ -551,18 +552,16 @@ html, body {
   user-select: none !important;
   max-width: 100% !important;
   max-height: 100% !important;
-  width: auto !important;
-  height: auto !important;
   box-sizing: border-box !important;
+  flex-shrink: 0 !important;
 }
 
 #roiCanvas {
   display: block !important;
+  width: 100% !important;
+  height: 100% !important;
   max-width: 100% !important;
   max-height: 100% !important;
-  width: auto !important;
-  height: auto !important;
-  object-fit: contain !important;
   cursor: crosshair !important;
   touch-action: none !important;
   border-radius: 4px !important;

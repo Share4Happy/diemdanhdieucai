@@ -1,10 +1,12 @@
-# Cấu hình tập dữ liệu thực tế camera trường THPT Điều Cải
-# Nguồn: studenthead1.v1-1.yolo26 (Camera 1 & Camera 2)
-# Định dạng: Ultralytics YOLO
+# Cấu hình tập dữ liệu huấn luyện THPT Điều Cải (datatraining)
+# Gộp từ: h.v3i.yolo26, hea.v3-data6k.yolo26, My First Project.v4i.yolo26
+# Tổng số ảnh: 117,466 | Tổng số nhãn: 1,867,908
 
-path: ../studenthead1.v1-1.yolo26
+path: D:/Vibe Code/hethongdiemdanh Dieu Cai/dataset/datatraining
 train: train/images
 val: valid/images
+test: test/images
 
+nc: 1
 names:
   0: student_head

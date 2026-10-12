@@ -1,0 +1,31 @@
+﻿camera_id,ten_lop,phong_hoc,si_so_chuan,ai_dem_duoc,so_vang,do_tin_cay_tb,ghi_chu
+1,12a1,Phòng 1,48,47,1,0.8,Vắng 1 học sinh
+2,12a2,Phòng 2,45,46,0,0.57,Vượt sĩ số chuẩn (+1)
+3,12a3,Phòng 3,41,39,2,0.52,Vắng 2 học sinh
+4,12a4,Phòng 4,44,47,0,0.76,Vượt sĩ số chuẩn (+3)
+5,12a5,Phòng 5,42,40,2,0.75,Vắng 2 học sinh
+6,12a6,Phòng 6,41,36,5,0.76,Vắng 5 học sinh
+7,12a7,Phòng 5,44,43,1,0.7,Vắng 1 học sinh
+8,12a8,Phòng 8,44,43,1,0.77,Vắng 1 học sinh
+9,12a9,Phòng 9,38,39,0,0.69,Vượt sĩ số chuẩn (+1)
+10,12a10,Phòng 10,40,43,0,0.68,Vượt sĩ số chuẩn (+3)
+11,11a1,Phòng 11,43,44,0,0.7,Vượt sĩ số chuẩn (+1)
+12,11a2,Phòng 12,43,44,0,0.6,Vượt sĩ số chuẩn (+1)
+13,11a3,Phòng 13,31,31,0,0.57,Đủ sĩ số
+14,11a4,Phòng 14,35,35,0,0.53,Đủ sĩ số
+15,11a5,Phòng 15,45,46,0,0.57,Vượt sĩ số chuẩn (+1)
+16,11a6,Phòng 16,45,45,0,0.59,Đủ sĩ số
+17,11a7,Phòng 17,34,35,0,0.57,Vượt sĩ số chuẩn (+1)
+18,11a8,Phòng 18,30,28,2,0.59,Vắng 2 học sinh
+19,11a9,Phòng 19,36,39,0,0.64,Vượt sĩ số chuẩn (+3)
+20,11a10,Phòng 20,35,43,0,0.74,Vượt sĩ số chuẩn (+8)
+21,10a1,Phòng 21,44,45,0,0.74,Vượt sĩ số chuẩn (+1)
+22,10a6,Phòng 22,48,46,2,0.76,Vắng 2 học sinh
+23,10a2,Phòng 23,40,41,0,0.55,Vượt sĩ số chuẩn (+1)
+24,10a3,Phòng 24,38,40,0,0.69,Vượt sĩ số chuẩn (+2)
+25,10a4,Phòng 25,45,47,0,0.68,Vượt sĩ số chuẩn (+2)
+26,10a5,Phòng 26,44,45,0,0.79,Vượt sĩ số chuẩn (+1)
+27,10a7,Phòng 27,46,48,0,0.76,Vượt sĩ số chuẩn (+2)
+28,10a8,Phòng 28,35,34,1,0.77,Vắng 1 học sinh
+29,10a9,Phòng 29,37,36,1,0.76,Vắng 1 học sinh
+30,10a10,Phòng 30,47,47,0,0.7,Đủ sĩ số
