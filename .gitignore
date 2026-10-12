@@ -73,3 +73,6 @@ docs/
 
 # Secret & OAuth Tokens
 config/gdrive_token.json
+
+# Local Heavy Datasets & Videos (Chặn đẩy dataset hàng chục GB lên GitHub)
+dieucai/

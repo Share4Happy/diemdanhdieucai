@@ -152,7 +152,9 @@ export const CameraAPI = {
     getSourceStatus: (folder = '') => fetchAPI(`/api/cameras/source-status${folder ? `?folder=${encodeURIComponent(folder)}` : ''}`),
     inspectFolder: (folderPath) => fetchAPI('/api/cameras/inspect-folder', { method: 'POST', body: { folder_path: folderPath } }),
     switchSourceMode: (data) => fetchAPI('/api/cameras/switch-source-mode', { method: 'POST', body: data }),
-    cleanupTestImages: (folder = 'camera') => fetchAPI(`/api/cameras/cleanup-test-images?folder=${encodeURIComponent(folder)}`, { method: 'POST' })
+    cleanupTestImages: (folder = 'camera') => fetchAPI(`/api/cameras/cleanup-test-images?folder=${encodeURIComponent(folder)}`, { method: 'POST' }),
+    refreshAllSnapshots: () => fetchAPI('/api/cameras/refresh-all-snapshots', { method: 'POST' }),
+    refreshClassroomSnapshot: (id) => fetchAPI(`/api/cameras/${id}/refresh-snapshot`, { method: 'POST' })
 };
 
 // === ROI APIs ===

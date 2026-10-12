@@ -11,6 +11,7 @@ import numpy as np
 
 from config.settings import settings
 from config.logging_config import logger
+from core.rtsp_client import is_valid_frame
 
 class NVRService:
     """
@@ -19,18 +20,18 @@ class NVRService:
     """
 
     DEFAULT_30_CLASSES = [
-        ("10A1", 42, "Phòng 101"), ("10A2", 40, "Phòng 102"), ("10A3", 41, "Phòng 103"),
-        ("10A4", 43, "Phòng 104"), ("10A5", 39, "Phòng 105"), ("10A6", 42, "Phòng 106"),
-        ("10A7", 40, "Phòng 107"), ("10A8", 41, "Phòng 108"), ("10A9", 40, "Phòng 109"),
-        ("10A10", 42, "Phòng 110"),
-        ("11A1", 44, "Phòng 111"), ("11A2", 43, "Phòng 112"), ("11A3", 42, "Phòng 113"),
-        ("11A4", 40, "Phòng 114"), ("11A5", 41, "Phòng 115"), ("11A6", 42, "Phòng 116"),
-        ("11A7", 39, "Phòng 117"), ("11A8", 41, "Phòng 118"), ("11A9", 40, "Phòng 119"),
-        ("11A10", 43, "Phòng 120"),
-        ("12A1", 45, "Phòng 121"), ("12A2", 44, "Phòng 122"), ("12A3", 42, "Phòng 123"),
-        ("12A4", 43, "Phòng 124"), ("12A5", 41, "Phòng 125"), ("12A6", 40, "Phòng 126"),
-        ("12A7", 42, "Phòng 127"), ("12A8", 41, "Phòng 128"), ("12A9", 40, "Phòng 129"),
-        ("12A10", 42, "Phòng 130")
+        ("12A1", 48, "Phòng 1"), ("12A2", 45, "Phòng 2"), ("12A3", 41, "Phòng 3"),
+        ("12A4", 44, "Phòng 4"), ("12A5", 42, "Phòng 5"), ("12A6", 41, "Phòng 6"),
+        ("12A7", 44, "Phòng 7"), ("12A8", 44, "Phòng 8"), ("12A9", 39, "Phòng 9"),
+        ("12A10", 40, "Phòng 10"),
+        ("11A1", 43, "Phòng 11"), ("11A2", 43, "Phòng 12"), ("11A3", 31, "Phòng 13"),
+        ("11A4", 35, "Phòng 14"), ("11A5", 45, "Phòng 15"), ("11A6", 45, "Phòng 16"),
+        ("11A7", 34, "Phòng 17"), ("11A8", 30, "Phòng 18"), ("11A9", 36, "Phòng 19"),
+        ("11A10", 35, "Phòng 20"),
+        ("10A1", 44, "Phòng 21"), ("10A6", 48, "Phòng 22"), ("10A2", 40, "Phòng 23"),
+        ("10A3", 38, "Phòng 24"), ("10A4", 45, "Phòng 25"), ("10A5", 44, "Phòng 26"),
+        ("10A7", 46, "Phòng 27"), ("10A8", 35, "Phòng 28"), ("10A9", 37, "Phòng 29"),
+        ("10A10", 47, "Phòng 30")
     ]
 
     @staticmethod
@@ -124,26 +125,41 @@ class NVRService:
         # 1. Thử lấy luồng thật nếu host đầu ghi có thông mạng
         if is_nvr_reachable:
             try:
-                os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "timeout;1000000|rtsp_transport;tcp"
-                params = []
-                if hasattr(cv2, "CAP_PROP_OPEN_TIMEOUT_MSEC"):
-                    params.extend([cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 1000])
-                if hasattr(cv2, "CAP_PROP_READ_TIMEOUT_MSEC"):
-                    params.extend([cv2.CAP_PROP_READ_TIMEOUT_MSEC, 1000])
+                os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = (
+                    "timeout;4000000|rtsp_transport;tcp|buffer_size;2048000|analyzeduration;1000000|probesize;1000000"
+                )
+                # Ưu tiên lấy thumbnail nhanh từ luồng phụ để quét 30 kênh siêu mượt mà không nghẽn NVR
+                main_url = rtsp_url
+                sub_url = ""
+                if rtsp_url.endswith("01"):
+                    sub_url = rtsp_url[:-2] + "02"
+                elif "subtype=0" in rtsp_url:
+                    sub_url = rtsp_url.replace("subtype=0", "subtype=1")
 
-                if params:
-                    cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG, params)
-                else:
-                    cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
+                urls_to_try = [sub_url, main_url] if sub_url else [main_url]
 
-                if cap.isOpened():
-                    ret, f = cap.read()
-                    if ret and f is not None:
-                        frame = f
-                        is_online = True
-                        h, w = frame.shape[:2]
-                        resolution = f"{w}x{h}"
-                cap.release()
+                for u in urls_to_try:
+                    cap = cv2.VideoCapture(u, cv2.CAP_FFMPEG)
+                    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+                    if cap.isOpened():
+                        # Warm-up: Xả đệm 5 frames đầu để loại bỏ P-frame cũ
+                        for _ in range(5):
+                            cap.grab()
+
+                        read_start = time.time()
+                        timeout_limit = 2.5 if (u.endswith("02") or "subtype=1" in u) else 3.5
+                        while time.time() - read_start < timeout_limit:
+                            ret, f = cap.read()
+                            if ret and f is not None and is_valid_frame(f):
+                                frame = f
+                                is_online = True
+                                h, w = frame.shape[:2]
+                                resolution = f"{w}x{h}"
+                                break
+                            time.sleep(0.02)
+                    cap.release()
+                    if is_online:
+                        break
             except Exception as e:
                 logger.debug(f"Không thể đọc stream kênh {channel_num}: {e}")
 
@@ -222,9 +238,10 @@ class NVRService:
         logger.info(f"Dò NVR {host}:{port} ({brand}) - Trạng thái cổng RTSP: {'MỞ' if is_nvr_reachable else 'ĐÓNG/CHƯA CẮM DÂY'}")
 
         results = []
-        with ThreadPoolExecutor(max_workers=min(15, channels_count)) as executor:
+        with ThreadPoolExecutor(max_workers=min(3, channels_count)) as executor:
             future_to_ch = {}
             for ch in range(1, channels_count + 1):
+                time.sleep(0.08)  # Giãn cách 80ms để không dồn dập NVR CPU
                 url = self.build_rtsp_url(
                     brand=brand,
                     ip_address=host,

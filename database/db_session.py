@@ -30,12 +30,18 @@ def seed_default_classes(db=None):
         close_at_end = True
     try:
         classes_info = [
-            ("10A1", 42), ("10A2", 40), ("10A3", 41), ("10A4", 43), ("10A5", 39),
-            ("10A6", 42), ("10A7", 40), ("10A8", 41), ("10A9", 40), ("10A10", 42),
-            ("11A1", 44), ("11A2", 43), ("11A3", 42), ("11A4", 40), ("11A5", 41),
-            ("11A6", 42), ("11A7", 39), ("11A8", 41), ("11A9", 40), ("11A10", 43),
-            ("12A1", 45), ("12A2", 44), ("12A3", 42), ("12A4", 43), ("12A5", 41),
-            ("12A6", 40), ("12A7", 42), ("12A8", 41), ("12A9", 40), ("12A10", 42)
+            ("12A1", 48, "Phòng 1"), ("12A2", 45, "Phòng 2"), ("12A3", 41, "Phòng 3"),
+            ("12A4", 44, "Phòng 4"), ("12A5", 42, "Phòng 5"), ("12A6", 41, "Phòng 6"),
+            ("12A7", 44, "Phòng 7"), ("12A8", 44, "Phòng 8"), ("12A9", 39, "Phòng 9"),
+            ("12A10", 40, "Phòng 10"),
+            ("11A1", 43, "Phòng 11"), ("11A2", 43, "Phòng 12"), ("11A3", 31, "Phòng 13"),
+            ("11A4", 35, "Phòng 14"), ("11A5", 45, "Phòng 15"), ("11A6", 45, "Phòng 16"),
+            ("11A7", 34, "Phòng 17"), ("11A8", 30, "Phòng 18"), ("11A9", 36, "Phòng 19"),
+            ("11A10", 35, "Phòng 20"),
+            ("10A1", 44, "Phòng 21"), ("10A6", 48, "Phòng 22"), ("10A2", 40, "Phòng 23"),
+            ("10A3", 38, "Phòng 24"), ("10A4", 45, "Phòng 25"), ("10A5", 44, "Phòng 26"),
+            ("10A7", 46, "Phòng 27"), ("10A8", 35, "Phòng 28"), ("10A9", 37, "Phòng 29"),
+            ("10A10", 47, "Phòng 30")
         ]
         default_green_zone = [
             [200, 300], [1720, 300], [1850, 1050], [80, 1050]
@@ -43,16 +49,21 @@ def seed_default_classes(db=None):
         default_red_zone = []
 
         created_count = 0
-        for idx, (cname, standard_count) in enumerate(classes_info, 1):
+        for idx, (cname, standard_count, room_name) in enumerate(classes_info, 1):
             clean_code = f"LOP_{cname}"
+            # Kênh 17 và 29 dùng sub-stream (subtype=1) chống lỗi vỡ gói / nhiễu decoder H.265
+            sub = 1 if idx in (17, 29) else 0
+            stream_url = settings.get_dvr_rtsp_url(idx, subtype=sub)
+
             existing = db.query(Classroom).filter(Classroom.code == clean_code).first()
             if not existing:
                 cls = Classroom(
                     code=clean_code,
                     name=f"Lớp {cname}",
-                    room_number=f"Phòng {100 + idx}",
+                    room_number=room_name,
+                    channel_number=idx,
                     standard_count=standard_count,
-                    rtsp_url=settings.get_dvr_rtsp_url(idx, subtype=0),
+                    rtsp_url=stream_url,
                     relay_ip=settings.DVR_HOST,
                     is_active=True
                 )
@@ -68,9 +79,14 @@ def seed_default_classes(db=None):
                 )
                 db.add(roi)
                 created_count += 1
+            else:
+                existing.channel_number = idx
+                existing.room_number = room_name
+                existing.rtsp_url = stream_url
+                existing.is_active = True
 
+        db.commit()
         if created_count > 0:
-            db.commit()
             logger.info(f"Đã bổ sung thành công {created_count} lớp học chuẩn THPT Điều Cải!")
 
         from services.auth_service import seed_admin_if_empty

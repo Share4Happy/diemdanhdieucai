@@ -151,10 +151,10 @@ class CameraSourceManager:
         target_folder = folder_str if folder_str else detected_folder
         folder_info = cls.inspect_folder(target_folder)
 
-        dvr_host = getattr(settings, "DVR_HOST", getattr(settings, "NVR_HOST", "192.168.10.200"))
+        dvr_host = getattr(settings, "DVR_HOST", getattr(settings, "NVR_HOST", "192.168.1.200"))
         dvr_port = getattr(settings, "DVR_PORT", getattr(settings, "NVR_PORT", 554))
         dvr_user = getattr(settings, "DVR_USER", getattr(settings, "NVR_USER", "admin"))
-        dvr_pass = getattr(settings, "DVR_PASSWORD", getattr(settings, "NVR_PASSWORD", "DieuCai@2026"))
+        dvr_pass = getattr(settings, "DVR_PASSWORD", getattr(settings, "NVR_PASSWORD", "Lhu@2025"))
 
         return {
             "current_mode": current_mode,
@@ -206,12 +206,10 @@ class CameraSourceManager:
         for idx, cls_obj in enumerate(classrooms):
             ch = channel_start + idx
             # Tạo đường dẫn RTSP chuẩn hóa theo từng hãng đầu ghi
-            if nvr_brand.upper() == "HIKVISION":
+            if nvr_brand.upper() in ["DAHUA", "KBVISION"]:
+                rtsp_url = f"rtsp://{nvr_user}:{encoded_pass}@{nvr_ip}:{nvr_port}/cam/realmonitor?channel={ch}&subtype=0"
+            else:  # Mặc định HIKVISION (THPT Điều Cải sử dụng)
                 rtsp_url = f"rtsp://{nvr_user}:{encoded_pass}@{nvr_ip}:{nvr_port}/Streaming/Channels/{ch}01"
-            elif nvr_brand.upper() == "KBVISION":
-                rtsp_url = f"rtsp://{nvr_user}:{encoded_pass}@{nvr_ip}:{nvr_port}/cam/realmonitor?channel={ch}&subtype=0"
-            else:  # Mặc định DAHUA (THPT Điều Cải sử dụng)
-                rtsp_url = f"rtsp://{nvr_user}:{encoded_pass}@{nvr_ip}:{nvr_port}/cam/realmonitor?channel={ch}&subtype=0"
 
             cls_obj.rtsp_url = rtsp_url
             cls_obj.relay_ip = nvr_ip

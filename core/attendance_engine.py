@@ -120,6 +120,12 @@ class AttendanceEngine:
                 if frame is None and raw_path and os.path.exists(raw_path):
                     frame = cv2.imread(raw_path)
 
+                # Dự phòng kép: nếu frame rỗng, nạp snapshot thực tế gần nhất từ thư mục latest
+                if frame is None:
+                    latest_snap = settings.CAPTURES_DIR / "latest" / f"Lop_{c_id}.jpg"
+                    if latest_snap.exists():
+                        frame = cv2.imread(str(latest_snap))
+
                 present_count = 0
                 annotated_path = ""
                 confidence_avg = 0.0

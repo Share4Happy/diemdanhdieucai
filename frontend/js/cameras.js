@@ -35,6 +35,26 @@ function initApp() {
         loadCameraSourceStatus();
     });
 
+    // Chụp lại ảnh đồng loạt 30 camera từ đầu ghi NVR
+    const btnCaptureAll = document.getElementById('btnCaptureAllNow');
+    if (btnCaptureAll) {
+        btnCaptureAll.addEventListener('click', async () => {
+            btnCaptureAll.disabled = true;
+            btnCaptureAll.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang chụp 30 camera...';
+            showToast('Đang kết nối đầu ghi và chụp ảnh trực tiếp từ 30 camera...', 'info');
+            try {
+                const res = await CameraAPI.refreshAllSnapshots();
+                showToast(res.message || 'Đã làm mới ảnh toàn bộ 30 camera!', 'success');
+                await loadCameras();
+            } catch (err) {
+                showToast('Lỗi làm mới ảnh: ' + (err.message || err), 'danger');
+            } finally {
+                btnCaptureAll.disabled = false;
+                btnCaptureAll.innerHTML = '<i class="fa-solid fa-camera"></i> Chụp Lại 30 Camera';
+            }
+        });
+    }
+
     // Quick refresh button in banner
     const btnRefreshQuick = document.getElementById('btnRefreshQuick');
     if (btnRefreshQuick) btnRefreshQuick.addEventListener('click', loadCameras);
@@ -1027,6 +1047,9 @@ export function renderMatrixWall() {
                         <button type="button" class="card-dropdown-item menu-item-view" data-id="${cam.id}" data-name="${encodeURIComponent(cam.name)}">
                             <i class="fa-solid fa-expand" style="color: #0284c7;"></i> Xem trực tiếp
                         </button>
+                        <button type="button" class="card-dropdown-item menu-item-refresh-snap" data-id="${cam.id}">
+                            <i class="fa-solid fa-camera" style="color: #10b981;"></i> Chụp lại ảnh phòng này
+                        </button>
                         <button type="button" class="card-dropdown-item menu-item-edit" data-id="${cam.id}">
                             <i class="fa-solid fa-pen-to-square" style="color: #f59e0b;"></i> Chỉnh sửa thông tin
                         </button>
@@ -1100,6 +1123,31 @@ export function renderMatrixWall() {
             const id = btn.getAttribute('data-id');
             const name = decodeURIComponent(btn.getAttribute('data-name'));
             openLiveModal(id, name);
+        });
+    });
+
+    // Hành động Chụp lại ảnh phòng này từ menu 3 chấm
+    container.querySelectorAll('.menu-item-refresh-snap').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            closeAllCardMenus();
+            const id = parseInt(btn.getAttribute('data-id'));
+            showToast('Đang kết nối camera và chụp ảnh...', 'info');
+            try {
+                const res = await CameraAPI.refreshClassroomSnapshot(id);
+                if (res && res.success) {
+                    showToast(res.message || 'Chụp ảnh thành công!', 'success');
+                    const card = document.getElementById(`matrix_card_${id}`);
+                    const img = card?.querySelector('.matrix-thumb-img');
+                    if (img) {
+                        img.src = `/storage/captures/latest/Lop_${id}.jpg?t=${Date.now()}`;
+                    }
+                } else {
+                    showToast(res?.message || 'Không thể lấy ảnh mới cho phòng này', 'warning');
+                }
+            } catch (err) {
+                showToast('Lỗi chụp ảnh: ' + (err.message || err), 'danger');
+            }
         });
     });
 
@@ -1442,16 +1490,16 @@ export function closeNvrModal() {
 }
 
 export function fillSchoolPreset() {
-    document.getElementById('nvrIp').value = '192.168.10.200';
+    document.getElementById('nvrIp').value = '192.168.1.200';
     document.getElementById('nvrPort').value = '554';
     document.getElementById('nvrUsername').value = 'admin';
     document.getElementById('nvrPassword').value = 'Lhu@2025';
-    document.getElementById('nvrBrand').value = 'DAHUA';
+    document.getElementById('nvrBrand').value = 'HIKVISION';
     document.getElementById('nvrChannelsCount').value = '30';
     document.getElementById('nvrNamingMode').value = 'DEFAULT_30_CLASSES';
     const patternBox = document.getElementById('nvrCustomPatternBox');
     if (patternBox) patternBox.style.display = 'none';
-    showToast('Đã điền cấu hình mẫu THPT Điều Cải!', 'info');
+    showToast('Đã điền cấu hình chuẩn Hikvision THPT Điều Cải (192.168.1.200)!', 'info');
 }
 
 export async function probeNVRChannels() {
@@ -1459,7 +1507,7 @@ export async function probeNVRChannels() {
     const rtsp_port = parseInt(document.getElementById('nvrPort')?.value) || 554;
     const username = document.getElementById('nvrUsername')?.value.trim() || 'admin';
     const password = document.getElementById('nvrPassword')?.value.trim() || '';
-    const brand = document.getElementById('nvrBrand')?.value || 'DAHUA';
+    const brand = document.getElementById('nvrBrand')?.value || 'HIKVISION';
     const channels_count = parseInt(document.getElementById('nvrChannelsCount')?.value) || 30;
     const naming_mode = document.getElementById('nvrNamingMode')?.value || 'DEFAULT_30_CLASSES';
     const custom_pattern = document.getElementById('nvrCustomPattern')?.value.trim() || '';
@@ -1499,16 +1547,30 @@ export async function probeNVRChannels() {
         }
 
         probedChannels = res.channels || [];
-        renderNvrPreviewCards(probedChannels);
+        renderNvrPreviewCards(probedChannels, res.online_channels);
 
         const summaryEl = document.getElementById('nvrProbeSummary');
         if (summaryEl) {
             summaryEl.innerText = `${res.online_channels}/${res.total_channels} Kênh Online (${res.elapsed_seconds}s)`;
+            if (res.online_channels === 0) {
+                summaryEl.className = 'status-pill status-pill-danger';
+                summaryEl.style.background = '#fef2f2';
+                summaryEl.style.color = '#dc2626';
+            } else {
+                summaryEl.className = 'status-pill status-pill-success';
+                summaryEl.style.background = '';
+                summaryEl.style.color = '';
+            }
         }
 
         if (resultsEl) resultsEl.style.display = 'block';
         if (btnSave) btnSave.disabled = false;
-        showToast(`Quét thành công ${probedChannels.length} kênh camera!`, 'success');
+
+        if (res.online_channels === 0) {
+            showToast('⚠️ Không kết nối được kênh nào từ đầu ghi! Đang hiển thị ảnh mô phỏng. Vui lòng kiểm tra dây mạng LAN và mật khẩu.', 'warning');
+        } else {
+            showToast(`Quét thành công ${res.online_channels}/${probedChannels.length} kênh camera trực tiếp!`, 'success');
+        }
     } catch (err) {
         console.error('Lỗi khi thăm dò đầu ghi:', err);
         alert('Lỗi quét đầu ghi NVR: ' + (err.message || err));
@@ -1521,15 +1583,39 @@ export async function probeNVRChannels() {
     }
 }
 
-function renderNvrPreviewCards(channels) {
+function renderNvrPreviewCards(channels, onlineCount = 0) {
     const container = document.getElementById('nvrChannelList');
     if (!container) return;
     container.innerHTML = '';
+
+    // Nếu không có kênh nào online, hiển thị thông báo hướng dẫn rõ ràng
+    if (onlineCount === 0) {
+        const alertBox = document.createElement('div');
+        alertBox.style.cssText = 'grid-column: 1 / -1; background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; font-size: 0.85rem; color: #92400e; display: flex; align-items: flex-start; gap: 10px;';
+        alertBox.innerHTML = `
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.2rem; margin-top: 2px; color: #d97706;"></i>
+            <div>
+                <strong>Chưa nhận được tín hiệu hình ảnh trực tiếp từ đầu ghi (0/30 kênh online):</strong>
+                <ul style="margin: 4px 0 0 18px; padding: 0; line-height: 1.45;">
+                    <li>Máy tính cần cắm dây mạng LAN của trường (cùng dải mạng <code>192.168.1.x</code> với đầu ghi).</li>
+                    <li>Đảm bảo chọn đúng Hãng Đầu Ghi: <strong>Hikvision / Ezviz</strong>.</li>
+                    <li>Kiểm tra chính xác Mật khẩu tài khoản admin của đầu ghi Hikvision.</li>
+                    <li><em>Các hình ảnh bên dưới hiện tại là ảnh mô phỏng (dự phòng). Khi kết nối thành công, hệ thống sẽ hiện ảnh camera thật từ các phòng học.</em></li>
+                </ul>
+            </div>
+        `;
+        container.appendChild(alertBox);
+    }
 
     channels.forEach((ch, idx) => {
         const card = document.createElement('div');
         card.className = `nvr-ch-card ${ch.is_selected ? 'selected' : ''}`;
         card.id = `nvr_preview_card_${ch.channel}`;
+
+        const isLive = ch.is_online === true;
+        const liveBadge = isLive
+            ? `<span style="position: absolute; top: 4px; left: 4px; background: rgba(16, 185, 129, 0.95); color: #fff; font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; z-index: 2;"><i class="fa-solid fa-circle" style="font-size: 6px; vertical-align: middle;"></i> LIVE</span>`
+            : `<span style="position: absolute; top: 4px; left: 4px; background: rgba(220, 38, 38, 0.9); color: #fff; font-size: 0.62rem; font-weight: 600; padding: 2px 5px; border-radius: 4px; z-index: 2;"><i class="fa-solid fa-image"></i> ẢNH MẪU</span>`;
 
         const thumbHtml = ch.thumbnail
             ? `<img src="${ch.thumbnail}" alt="CH${ch.channel}">`
@@ -1539,7 +1625,8 @@ function renderNvrPreviewCards(channels) {
             <div style="display: flex; align-items: center;">
                 <input type="checkbox" class="nvr-ch-select" data-ch="${ch.channel}" ${ch.is_selected ? 'checked' : ''} style="width: 17px; height: 17px; cursor: pointer;">
             </div>
-            <div class="nvr-ch-thumb">
+            <div class="nvr-ch-thumb" style="position: relative;">
+                ${liveBadge}
                 ${thumbHtml}
                 <span class="nvr-ch-badge">CH${String(ch.channel).padStart(2, '0')}</span>
             </div>

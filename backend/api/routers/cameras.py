@@ -4,6 +4,9 @@ from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
+from starlette.concurrency import run_in_threadpool
+import time
+
 from config.settings import settings
 from config.logging_config import logger
 from database.db_session import get_db, init_db
@@ -219,6 +222,56 @@ async def test_camera_connection(req: TestCameraRequest, request: Request, _admi
         relay_ip=req.relay_ip or ""
     )
     return res
+
+@router.post("/refresh-all-snapshots")
+async def refresh_all_snapshots(request: Request, _user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Chụp lại ảnh mới nhất đồng loạt từ toàn bộ 30 camera lớp học trực tiếp qua NVR/RTSP."""
+    check_rate_limit("action", f"refreshsnaps:{client_ip(request)}", limit=10, window_seconds=60)
+    classrooms = db.query(Classroom).order_by(Classroom.id).all()
+    if not classrooms:
+        raise HTTPException(status_code=404, detail="Không có camera nào trong hệ thống.")
+    
+    cls_data_list = [
+        {"id": c.id, "name": c.name, "rtsp_url": c.rtsp_url}
+        for c in classrooms
+    ]
+    latest_dir = settings.CAPTURES_DIR / "latest"
+    latest_dir.mkdir(parents=True, exist_ok=True)
+    
+    results = await run_in_threadpool(
+        rtsp_client.capture_all_classrooms,
+        cls_data_list,
+        target_folder=latest_dir
+    )
+    success_count = sum(1 for r in results.values() if r.get("success"))
+    return {
+        "success": True,
+        "message": f"Đã làm mới và chụp ảnh thành công {success_count}/{len(classrooms)} camera!",
+        "success_count": success_count,
+        "total": len(classrooms)
+    }
+
+@router.post("/{classroom_id}/refresh-snapshot")
+async def refresh_single_classroom_snapshot(classroom_id: int, _user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Chụp lại ảnh mới nhất của 1 camera lớp học."""
+    cls = db.query(Classroom).filter(Classroom.id == classroom_id).first()
+    if not cls:
+        raise HTTPException(status_code=404, detail="Không tìm thấy camera/lớp học")
+    latest_dir = settings.CAPTURES_DIR / "latest"
+    latest_dir.mkdir(parents=True, exist_ok=True)
+    _, success, path, _ = await run_in_threadpool(
+        rtsp_client.capture_single_camera,
+        cls.id,
+        cls.name,
+        cls.rtsp_url,
+        latest_dir
+    )
+    return {
+        "success": success,
+        "message": f"Đã cập nhật khung hình mới cho {cls.name}" if success else f"Không thể lấy khung hình mới cho {cls.name}",
+        "snapshot_url": f"/storage/captures/latest/Lop_{cls.id}.jpg?t={int(time.time()*1000)}"
+    }
+
 
 @router.post("/test-ir-by-url")
 async def test_ir_by_url_endpoint(req: TestCameraRequest, _admin: User = Depends(require_admin)):

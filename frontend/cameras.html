@@ -579,8 +579,12 @@
 
                 <!-- Toolbar -->
                 <div class="camera-toolbar">
-                    <div class="camera-toolbar-right">
-                        <button class="btn btn-secondary btn-sm" id="btnRefresh" type="button">
+                    <div class="camera-toolbar-right" style="display: flex; gap: 8px;">
+                        <button class="btn btn-primary btn-sm" id="btnCaptureAllNow" type="button" title="Chụp lại ảnh trực tiếp từ toàn bộ 30 camera trường Điều Cải">
+                            <i class="fa-solid fa-camera"></i>
+                            Chụp Lại 30 Camera
+                        </button>
+                        <button class="btn btn-secondary btn-sm" id="btnRefresh" type="button" title="Tải lại danh sách">
                             <i class="fa-solid fa-rotate-right"></i>
                             Làm mới
                         </button>
@@ -1076,14 +1080,14 @@
                         <button type="button" class="btn btn-secondary btn-sm" id="btnFillSchoolPreset"
                             title="Điền nhanh cấu hình chuẩn THPT Điều Cải"
                             style="font-size: 0.82rem; font-weight: 600; color: var(--primary);">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> Mẫu Chuẩn Điều Cải (192.168.10.200)
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Mẫu Chuẩn Hikvision Điều Cải (192.168.1.200)
                         </button>
                     </div>
 
                     <div class="form-grid" style="grid-template-columns: 2fr 1fr 1.5fr 1.5fr;">
                         <div class="form-group">
                             <label><i class="fa-solid fa-server" style="color: var(--primary);"></i> Địa chỉ IP NVR (*):</label>
-                            <input type="text" id="nvrIp" class="form-control" value="192.168.10.200" placeholder="192.168.10.200">
+                            <input type="text" id="nvrIp" class="form-control" value="192.168.1.200" placeholder="192.168.1.200">
                         </div>
                         <div class="form-group">
                             <label><i class="fa-solid fa-ethernet" style="color: var(--primary);"></i> Cổng RTSP:</label>
@@ -1095,7 +1099,7 @@
                         </div>
                         <div class="form-group">
                             <label><i class="fa-solid fa-key" style="color: var(--primary);"></i> Mật khẩu (*):</label>
-                            <input type="password" id="nvrPassword" class="form-control" value="Lhu@2025">
+                            <input type="password" id="nvrPassword" class="form-control" value="Lhu@2025" placeholder="Mật khẩu NVR">
                         </div>
                     </div>
 
@@ -1103,8 +1107,8 @@
                         <div class="form-group">
                             <label><i class="fa-solid fa-microchip" style="color: var(--primary);"></i> Hãng Đầu Ghi:</label>
                             <select id="nvrBrand" class="form-control">
-                                <option value="DAHUA" selected>Dahua / KBVision / IMOU</option>
-                                <option value="HIKVISION">Hikvision / Ezviz</option>
+                                <option value="HIKVISION" selected>Hikvision / Ezviz (DS-7632NXI-K2)</option>
+                                <option value="DAHUA">Dahua / KBVision / IMOU</option>
                                 <option value="UNIVIEW">Uniview (UNV)</option>
                                 <option value="CUSTOM">Tùy biến (Custom Pattern)</option>
                             </select>
@@ -1252,7 +1256,7 @@
                         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px;">
                             <div class="form-group">
                                 <label style="font-weight: 700; font-size: 0.85rem;"><i class="fa-solid fa-network-wired" style="color: var(--primary);"></i> Địa Chỉ IP Đầu Ghi:</label>
-                                <input type="text" id="deployNvrIp" class="form-control" value="192.168.10.200" placeholder="192.168.10.200">
+                                <input type="text" id="deployNvrIp" class="form-control" value="192.168.1.200" placeholder="192.168.1.200">
                             </div>
                             <div class="form-group">
                                 <label style="font-weight: 700; font-size: 0.85rem;"><i class="fa-solid fa-door-open" style="color: var(--primary);"></i> Cổng RTSP:</label>
@@ -1267,7 +1271,7 @@
                             </div>
                             <div class="form-group">
                                 <label style="font-weight: 700; font-size: 0.85rem;"><i class="fa-solid fa-key" style="color: var(--primary);"></i> Mật Khẩu NVR:</label>
-                                <input type="password" id="deployNvrPass" class="form-control" value="DieuCai@2026">
+                                <input type="password" id="deployNvrPass" class="form-control" value="Lhu@2025" placeholder="Mật khẩu NVR">
                             </div>
                         </div>
 
@@ -1275,8 +1279,8 @@
                             <div class="form-group">
                                 <label style="font-weight: 700; font-size: 0.85rem;"><i class="fa-solid fa-microchip" style="color: var(--primary);"></i> Hãng Đầu Ghi:</label>
                                 <select id="deployNvrBrand" class="form-control">
-                                    <option value="DAHUA" selected>Dahua (Khuyên dùng THPT Điều Cải)</option>
-                                    <option value="HIKVISION">Hikvision</option>
+                                    <option value="HIKVISION" selected>Hikvision (Đầu ghi thực tế THPT Điều Cải)</option>
+                                    <option value="DAHUA">Dahua / KBVision / IMOU</option>
                                     <option value="KBVISION">KBVision</option>
                                 </select>
                             </div>

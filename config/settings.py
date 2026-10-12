@@ -33,17 +33,20 @@ class Settings(BaseModel):
 
     # DVR / NVR Hardware Settings (Đầu ghi camera thực tế trường học)
     # LƯU Ý: DVR_PASSWORD PHẢI đặt trong .env. Không hardcode mật khẩu vào source.
-    DVR_HOST: str = "192.168.10.200"
+    DVR_HOST: str = "192.168.1.200"
     DVR_PORT: int = 554
     DVR_HTTP_PORT: int = 80
     DVR_USER: str = "admin"
     DVR_PASSWORD: str = os.getenv("DVR_PASSWORD", "")
-    DVR_PROTOCOL: str = "DAHUA" # Cấu trúc /cam/realmonitor?channel={ch}&subtype=0
+    DVR_PROTOCOL: str = "HIKVISION" # HIKVISION (DS-7632NXI-K2)
 
     def get_dvr_rtsp_url(self, channel_id: int, subtype: int = 0) -> str:
-        """Tạo chuỗi RTSP chuẩn mã hóa mật khẩu Lhu@2025 (ký tự @ thành %40)."""
+        """Tạo chuỗi RTSP chuẩn mã hóa mật khẩu theo hãng đầu ghi Hikvision hoặc Dahua."""
         from urllib.parse import quote
         encoded_pwd = quote(self.DVR_PASSWORD)
+        if self.DVR_PROTOCOL.upper() == "HIKVISION":
+            stream_code = f"{channel_id}0{1 if subtype == 0 else 2}"
+            return f"rtsp://{self.DVR_USER}:{encoded_pwd}@{self.DVR_HOST}:{self.DVR_PORT}/Streaming/Channels/{stream_code}"
         return f"rtsp://{self.DVR_USER}:{encoded_pwd}@{self.DVR_HOST}:{self.DVR_PORT}/cam/realmonitor?channel={channel_id}&subtype={subtype}"
 
     # Hardware & Scheduling
@@ -53,7 +56,7 @@ class Settings(BaseModel):
 
     # Relay LED Indicator
     RELAY_TYPE: str = "CAMERA_IO"  # "HTTP", "CAMERA_IO", "MOCK"
-    RELAY_HOST: str = "192.168.10.200"
+    RELAY_HOST: str = "192.168.1.200"
     RELAY_PORT: int = 80
     RELAY_DURATION_SECONDS: int = 180 # Bật đèn LED trong 3 phút (6h45 - 6h48)
 

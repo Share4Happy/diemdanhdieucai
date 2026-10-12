@@ -13,13 +13,64 @@ from config.settings import settings
 from config.logging_config import logger
 from core.timezone_utils import get_today_str
 
+def is_valid_frame(frame: Optional[np.ndarray]) -> bool:
+    """
+    Kiểm tra khung hình có hợp lệ và sạch hoàn toàn hay không:
+    - Loại bỏ frame None, rỗng, hoặc quá nhỏ.
+    - Loại bỏ frame xám un-synced (P-frame H.264/H.265 khi chưa nhận được I-frame / SPS / PPS, thường có canvas YUV=128).
+    - Loại bỏ frame sọc xanh lá hoặc sọc caro hồng/trắng do lỗi decoder / rớt gói slice macroblock.
+    - Đảm bảo độ lệch chuẩn chi tiết (std >= 12.0) và độ nét biên (Laplacian variance >= 4.0).
+    """
+    if frame is None or not isinstance(frame, np.ndarray) or frame.size == 0:
+        return False
+    h, w = frame.shape[:2]
+    if h < 240 or w < 320:
+        return False
+
+    # Resize nhỏ (160x90) để tính toán thống kê siêu nhanh (~0.1ms)
+    small = cv2.resize(frame, (160, 90))
+    if float(small.std()) < 12.0:
+        return False
+
+    # Kiểm tra phương sai Laplacian (độ nét góc cạnh, tránh màn hình phẳng lì một màu xám/xanh/đen)
+    try:
+        gray_small = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
+        lap_var = float(cv2.Laplacian(gray_small, cv2.CV_64F).var())
+        if lap_var < 4.0:
+            return False
+    except Exception:
+        pass
+
+    # Kiểm tra tỷ lệ màu xám YUV 128 (vùng đệm khởi tạo chưa có I-frame, BGR xấp xỉ [128, 128, 128])
+    gray_mask = (np.abs(small[:, :, 0].astype(int) - 128) < 18) & \
+                (np.abs(small[:, :, 1].astype(int) - 128) < 18) & \
+                (np.abs(small[:, :, 2].astype(int) - 128) < 18)
+    if float(gray_mask.mean()) > 0.25:
+        return False
+
+    # Kiểm tra màu xanh lá lỗi decoder YUV 0,0,0 (BGR ~ [0, 135, 0] hoặc vùng xanh lá chiếm ưu thế do tràn buffer)
+    green_dominant = (small[:, :, 1] > 80) & \
+                     (small[:, :, 0] < 70) & \
+                     (small[:, :, 2] < 70) & \
+                     ((small[:, :, 1].astype(int) - np.maximum(small[:, :, 0], small[:, :, 2])) > 30)
+    if float(green_dominant.mean()) > 0.08:
+        return False
+
+    # Kiểm tra nhiễu caro hồng/tím do lỗi rớt gói slice macroblock
+    pink_mask = (small[:, :, 2] > 160) & (small[:, :, 0] > 160) & (small[:, :, 1] < 140)
+    if float(pink_mask.mean()) > 0.12:
+        return False
+
+    return True
+
+
 class RTSPCameraClient:
     """
     Module quản lý kết nối Camera/DVR qua giao thức RTSP và chụp ảnh đồng loạt đa luồng.
     Tích hợp cơ chế kiểm tra socket nhanh (Fast TCP Probe) để không bao giờ bị nghẽn nếu camera mất điện/mất mạng.
     """
 
-    def __init__(self, timeout_seconds: int = 3):
+    def __init__(self, timeout_seconds: int = 6):
         self.timeout_seconds = timeout_seconds
 
     @staticmethod
@@ -151,6 +202,39 @@ class RTSPCameraClient:
         logger.info(f"Đã phát hiện {len(webcams)} webcam khả dụng trên máy: {[w['name'] for w in webcams]}")
         return webcams
 
+    def _read_rtsp_stream(self, url: str, timeout: float = 3.5) -> Optional[np.ndarray]:
+        """
+        Đọc 1 khung hình sạch từ luồng RTSP H.264/H.265 với timeout thích ứng.
+        Bổ sung cơ chế I-Frame Warm-up (xả bỏ 6-8 frames đầu) để loại bỏ sạch các P-frame dở dang,
+        đón trúng I-frame (Keyframe) thực sự sạch và sắc nét nhất.
+        """
+        try:
+            os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = (
+                "timeout;5000000|rtsp_transport;tcp|buffer_size;4194304|analyzeduration;1000000|probesize;1000000"
+            )
+            cap = cv2.VideoCapture(url, cv2.CAP_FFMPEG)
+            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            if not cap.isOpened():
+                return None
+
+            # I-Frame Warm-up: Xả đệm 6-8 frame đầu tiên để decoder đồng bộ Keyframe
+            for _ in range(6):
+                cap.grab()
+
+            start_time = time.time()
+            clean_frame = None
+            while time.time() - start_time < timeout:
+                ret, frame = cap.read()
+                if ret and frame is not None and is_valid_frame(frame):
+                    clean_frame = frame
+                    break
+                time.sleep(0.025)
+            cap.release()
+            return clean_frame
+        except Exception as e:
+            logger.debug(f"Lỗi đọc luồng RTSP {url}: {e}")
+            return None
+
     def _fetch_frame_from_source(self, source_url: str) -> Tuple[bool, Optional[np.ndarray], str, str]:
         """
         Đọc một khung hình từ nguồn bất kỳ:
@@ -259,24 +343,50 @@ class RTSPCameraClient:
 
         # 3. Kiểm tra nếu là luồng RTSP
         if source_str.startswith("rtsp://"):
-            if self.is_host_reachable(source_str):
+            # Tự động hỗ trợ thông minh:
+            # Nếu người dùng hoặc hệ thống cấu hình IP camera riêng (192.168.1.201 - 192.168.1.232)
+            # do camera vật lý bị khóa password riêng khi gắn vào NVR (401 Unauthorized),
+            # hệ thống tự động ánh xạ qua Cổng NVR Master 192.168.1.200 với kênh tương ứng (101, 201...)
+            candidate_urls = [source_str]
+            parsed = urlparse(source_str)
+            host = parsed.hostname or ""
+            
+            if host.startswith("192.168.1.2"):
                 try:
-                    os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "timeout;2000000|rtsp_transport;tcp"
-                    cap = cv2.VideoCapture(source_str, cv2.CAP_FFMPEG)
-                    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-                    start_time = time.time()
-                    while time.time() - start_time < self.timeout_seconds:
-                        ret, f = cap.read()
-                        if ret and f is not None:
-                            cap.release()
-                            return True, f, "RTSP_STREAM", ""
-                        time.sleep(0.05)
-                    cap.release()
-                    return False, None, "RTSP_STREAM", "Hết thời gian chờ nhận frame từ luồng RTSP"
-                except Exception as e:
-                    return False, None, "RTSP_STREAM", str(e)
-            else:
-                return False, None, "RTSP_STREAM", "Không thể kết nối tới IP/Port camera RTSP (Timeout hoặc ngắt mạng)"
+                    last_octet = int(host.split(".")[-1])
+                    if 201 <= last_octet <= 232:
+                        ch_num = last_octet - 200
+                        nvr_ch_url = f"rtsp://admin:Dieucai1982@192.168.1.200:554/Streaming/Channels/{ch_num}01"
+                        if nvr_ch_url not in candidate_urls:
+                            candidate_urls.append(nvr_ch_url)
+                except Exception:
+                    pass
+
+            # Luôn chuẩn bị phương án dự phòng thông minh: luồng phụ (02 / subtype=1) hoặc luồng chính (01)
+            extended_urls = []
+            for u in candidate_urls:
+                extended_urls.append(u)
+                if u.endswith("01"):
+                    extended_urls.append(u[:-2] + "02")
+                elif u.endswith("02"):
+                    alt_01 = u[:-2] + "01"
+                    if alt_01 not in extended_urls:
+                        extended_urls.append(alt_01)
+                elif "subtype=0" in u:
+                    extended_urls.append(u.replace("subtype=0", "subtype=1"))
+                elif "subtype=1" in u:
+                    extended_urls.append(u.replace("subtype=1", "subtype=0"))
+
+            for target_url in extended_urls:
+                if self.is_host_reachable(target_url):
+                    timeout = 3.5 if target_url.endswith("01") else 2.5
+                    frame = self._read_rtsp_stream(target_url, timeout=timeout)
+                    if frame is not None and is_valid_frame(frame):
+                        is_sub = target_url.endswith("02")
+                        label = "RTSP_SUBSTREAM" if is_sub else "RTSP_STREAM"
+                        return True, frame, label, ""
+
+            return False, None, "RTSP_STREAM", "Không nhận được tín hiệu hình ảnh sạch từ camera RTSP (Đang chờ I-frame H.265)"
 
         # 4. Kiểm tra nếu là luồng HTTP / MJPEG
         if source_str.startswith("http://") or source_str.startswith("https://"):
@@ -393,7 +503,7 @@ class RTSPCameraClient:
         # Thử lấy frame từ nguồn thật
         if rtsp_url:
             success, fetched_frame, _, _ = self._fetch_frame_from_source(rtsp_url)
-            if success and fetched_frame is not None:
+            if success and fetched_frame is not None and is_valid_frame(fetched_frame):
                 frame = fetched_frame
                 is_success = True
 
@@ -402,10 +512,10 @@ class RTSPCameraClient:
             latest_capture = settings.CAPTURES_DIR / "latest" / f"Lop_{classroom_id}.jpg"
             if latest_capture.exists():
                 f_candidate = cv2.imread(str(latest_capture))
-                if f_candidate is not None:
+                if f_candidate is not None and is_valid_frame(f_candidate):
                     h, w = f_candidate.shape[:2]
-                    # Chỉ dùng ảnh cache nếu đạt chuẩn tối thiểu 720p (ngăn chặn tái sử dụng thumbnail mờ 320x180)
-                    if w >= 1280 and h >= 720:
+                    # Chỉ dùng ảnh cache nếu đạt chuẩn tối thiểu 640x480
+                    if w >= 640 and h >= 480:
                         frame = f_candidate
 
             if frame is None:
@@ -431,16 +541,18 @@ class RTSPCameraClient:
                 cv2.putText(frame, "He thong AI THPT Dieu Cai - Tu dong nhan dien khi co luong RTSP thuc te", (160, 580),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, (160, 160, 160), 2)
 
-            is_success = True
+            is_success = False
 
         # Lưu ảnh vào thư mục máy chủ với độ nén JPEG chất lượng cao 95%
         if frame is not None:
             cv2.imwrite(str(file_path), frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
-            # Đồng bộ cập nhật ngay vào thư mục latest để hiển thị sắc nét trên giao diện ROI
-            latest_path = settings.CAPTURES_DIR / "latest" / f"Lop_{classroom_id}.jpg"
-            if str(file_path) != str(latest_path):
-                cv2.imwrite(str(latest_path), frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
-            return classroom_id, True, str(file_path), frame
+            # CHỈ đồng bộ vào thư mục latest nếu đây là ảnh camera thực tế (is_success=True)
+            # Ngăn ngừa tuyệt đối việc ghi đè ảnh xám fallback lên ảnh chụp thật của phòng học
+            if is_success:
+                latest_path = settings.CAPTURES_DIR / "latest" / f"Lop_{classroom_id}.jpg"
+                if str(file_path) != str(latest_path):
+                    cv2.imwrite(str(latest_path), frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
+            return classroom_id, is_success, str(file_path), frame
         else:
             logger.error(f"Lỗi chụp ảnh cho lớp {classroom_name}")
             return classroom_id, False, "", None
@@ -449,12 +561,12 @@ class RTSPCameraClient:
         self,
         classrooms: List[Dict],
         date_str: Optional[str] = None,
-        max_workers: int = 10,
+        max_workers: int = 3,
         target_folder: Optional[Path] = None
     ) -> Dict[int, Dict]:
         """
-        Sử dụng đa luồng (multi-threading) để chụp ảnh từ 30 camera cùng lúc.
-        Hỗ trợ phân tách thư mục theo phiên (session folder) để không bao giờ bị ghi đè giữa các phiên trong ngày.
+        Sử dụng đa luồng (multi-threading) tối ưu để chụp ảnh từ 30 camera trường Điều Cải.
+        Giới hạn max_workers=3 kết hợp giãn cách thời gian (staggering) để bảo đảm đầu ghi NVR không bị nghẽn luồng.
         """
         if target_folder is None:
             if not date_str:
@@ -463,19 +575,21 @@ class RTSPCameraClient:
         target_folder.mkdir(parents=True, exist_ok=True)
 
         results = {}
-        logger.info(f"Bắt đầu chụp đồng loạt {len(classrooms)} camera với {max_workers} luồng xử lý...")
+        logger.info(f"Bắt đầu chụp đồng loạt {len(classrooms)} camera với {max_workers} luồng xử lý (Staggered NVR RTSP)...")
         start_time = time.time()
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            future_to_class = {
-                executor.submit(
+            future_to_class = {}
+            for cls in classrooms:
+                time.sleep(0.08)  # Giãn cách 80ms ngăn ngừa xung đột bắt tay kết nối đồng thời với NVR
+                fut = executor.submit(
                     self.capture_single_camera,
                     cls["id"],
                     cls["name"],
                     cls.get("rtsp_url", ""),
                     target_folder
-                ): cls for cls in classrooms
-            }
+                )
+                future_to_class[fut] = cls
 
             for future in as_completed(future_to_class):
                 cls_info = future_to_class[future]

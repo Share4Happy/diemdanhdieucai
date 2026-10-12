@@ -258,17 +258,41 @@ class RelayService:
         elif mode == "AUTO":
             onvif_filter = "AUTO"
 
-        # 1. ƯU TIÊN SỐ 1: GỬI QUA ONVIF IMAGING SERVICE
-        # Phương thức này tương thích cao nhất với camera Imou, Dahua WiFi, Ezviz, Hikvision,...
-        if mode in ["IR_ON", "COLOR", "AUTO"]:
-            if self._send_onvif_ircut(host, http_port, user, pwd, onvif_filter, timeout=timeout):
-                return True
-
         auth_digest = HTTPDigestAuth(user, pwd)
 
         try:
+            # 1. ƯU TIÊN SỐ 1 CHO HIKVISION QUA ISAPI TRỰC TIẾP (Siêu nhanh, không nghẽn cổng)
+            if brand == "HIKVISION":
+                filter_mode = "day"
+                if mode == "IR_ON":
+                    filter_mode = "night"
+                elif mode == "AUTO":
+                    filter_mode = "auto"
+
+                hik_channels = [ch, ch * 100 + 1] if ch < 100 else [ch]
+                for h_ch in hik_channels:
+                    url_hik = f"http://{host}:{http_port}/ISAPI/Image/channels/{h_ch}/IrcutFilter"
+                    xml_data = (
+                        f'<IrcutFilter version="2.0" xmlns="http://www.isapi.org/ver20/XMLSchema">'
+                        f'<IrcutFilterType>{filter_mode}</IrcutFilterType>'
+                        f'</IrcutFilter>'
+                    )
+                    try:
+                        res = requests.put(
+                            url_hik,
+                            data=xml_data,
+                            headers={"Content-Type": "application/xml"},
+                            auth=auth_digest,
+                            timeout=timeout
+                        )
+                        if res.status_code in [200, 204]:
+                            logger.info(f"[HIK-ISAPI]: Đã chuyển IrcutFilter={filter_mode} trên kênh {h_ch} ({host})")
+                            return True
+                    except Exception:
+                        pass
+
             # 2. XỬ LÝ CAMERA DAHUA / KBVISION QUA CGI (Cả Camera IPC độc lập và Đầu ghi NVR đa kênh)
-            if brand == "DAHUA":
+            elif brand == "DAHUA":
                 # Chuẩn Dahua DayNightColor: 0 = Color (Ngày/Màu), 1 = Auto (Tự động), 2 = Black&White (Đêm/Bật hồng ngoại)
                 if mode == "IR_ON":
                     color_val = 2
@@ -331,35 +355,10 @@ class RelayService:
                 except Exception:
                     pass
 
-            # 3. XỬ LÝ CAMERA HIKVISION QUA ISAPI
-            elif brand == "HIKVISION":
-                filter_mode = "day"
-                if mode == "IR_ON":
-                    filter_mode = "night"
-                elif mode == "AUTO":
-                    filter_mode = "auto"
-
-                hik_channels = [ch, ch * 100 + 1] if ch < 100 else [ch]
-                for h_ch in hik_channels:
-                    url_hik = f"http://{host}:{http_port}/ISAPI/Image/channels/{h_ch}/IrcutFilter"
-                    xml_data = (
-                        f'<IrcutFilter version="2.0" xmlns="http://www.isapi.org/ver20/XMLSchema">'
-                        f'<IrcutFilterType>{filter_mode}</IrcutFilterType>'
-                        f'</IrcutFilter>'
-                    )
-                    try:
-                        res = requests.put(
-                            url_hik,
-                            data=xml_data,
-                            headers={"Content-Type": "application/xml"},
-                            auth=auth_digest,
-                            timeout=timeout
-                        )
-                        if res.status_code in [200, 204]:
-                            logger.info(f"[HIK-ISAPI]: Đã chuyển IrcutFilter={filter_mode} trên kênh {h_ch} ({host})")
-                            return True
-                    except Exception:
-                        pass
+            # 3. GỬI QUA ONVIF IMAGING SERVICE (Cho camera IP WiFi độc lập hỗ trợ ONVIF SOAP)
+            if mode in ["IR_ON", "COLOR", "AUTO"] and brand != "HIKVISION":
+                if self._send_onvif_ircut(host, http_port, user, pwd, onvif_filter, timeout=timeout):
+                    return True
 
             # 4. THỬ QUA HTTP RELAY THÔNG DỤNG (ESP32, SHELLY)
             if mode in ["IR_ON", "WHITE_LIGHT_ON"]:
@@ -376,10 +375,10 @@ class RelayService:
                 pass
 
         except Exception as e:
-            logger.warning(f"[CAMERA-SIGNAL]: Lỗi khi gửi lệnh điều khiển tới {info['name']} ({host}): {e}")
+            logger.debug(f"[CAMERA-SIGNAL]: Ngoại lệ khi gửi lệnh điều khiển tới {info['name']} ({host}): {e}")
             return False
 
-        logger.warning(f"[CAMERA-SIGNAL]: Camera {info['name']} ({host}) không phản hồi bất kỳ giao thức điều khiển nào (ONVIF, CGI, ISAPI, Relay).")
+        logger.debug(f"[CAMERA-SIGNAL]: Camera {info['name']} ({host}) dùng cảm biến tự động (không hỗ trợ điều khiển kính lọc IR qua mạng).")
         return False
 
     def signal_classrooms_before_capture(
@@ -387,7 +386,7 @@ class RelayService:
         classrooms: List[Any],
         signal_seconds: int = 3,
         capture_color: bool = True,
-        max_workers: int = 15
+        max_workers: int = 4
     ) -> Dict[str, Any]:
         """
         Chu trình báo hiệu đồng loạt trên 30 camera lớp học trước khi chụp ảnh:
@@ -425,13 +424,13 @@ class RelayService:
             f"(Báo hiệu {signal_seconds}s trước khi chụp) ==="
         )
 
-        # Bước 1: Gửi lệnh BẬT HỒNG NGOẠI đồng loạt qua đa luồng
+        # Bước 1: Gửi lệnh BẬT HỒNG NGOẠI đồng loạt qua đa luồng (thắt chặt max_workers=4)
         start_t = time.time()
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = [
-                executor.submit(self.set_camera_day_night, cls, "IR_ON")
-                for cls in classrooms
-            ]
+            futures = []
+            for cls in classrooms:
+                time.sleep(0.03)  # Giãn cách tránh nghẽn web server NVR
+                futures.append(executor.submit(self.set_camera_day_night, cls, "IR_ON"))
             for f in as_completed(futures):
                 try:
                     f.result()
@@ -440,7 +439,7 @@ class RelayService:
 
         elapsed_ir = time.time() - start_t
         logger.info(
-            f"[CAMERA-SIGNAL]: Đã kích hoạt đèn hồng ngoại 30 camera ({elapsed_ir:.2f}s). "
+            f"[CAMERA-SIGNAL]: Đã gửi tín hiệu đèn hồng ngoại ({elapsed_ir:.2f}s). "
             f"Học sinh có {signal_seconds} giây ổn định vị trí..."
         )
 
@@ -452,10 +451,10 @@ class RelayService:
             logger.info("[CAMERA-SIGNAL]: Đang chuyển camera sang chế độ ẢNH MÀU (Color Mode) để AI đếm chuẩn xác...")
             start_color = time.time()
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                futures = [
-                    executor.submit(self.set_camera_day_night, cls, "COLOR")
-                    for cls in classrooms
-                ]
+                futures = []
+                for cls in classrooms:
+                    time.sleep(0.03)
+                    futures.append(executor.submit(self.set_camera_day_night, cls, "COLOR"))
                 for f in as_completed(futures):
                     try:
                         f.result()
@@ -477,7 +476,7 @@ class RelayService:
     def restore_classrooms_auto(
         self,
         classrooms: List[Any],
-        max_workers: int = 15
+        max_workers: int = 4
     ):
         """
         Trả toàn bộ 30 camera về chế độ Tự Động (AUTO) sau khi phiên chụp điểm danh kết thúc.

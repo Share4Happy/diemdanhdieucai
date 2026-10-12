@@ -29,11 +29,11 @@ class TestCameraIRRequest(BaseModel):
     duration_seconds: Optional[int] = 4
 
 class NVRProbeRequest(BaseModel):
-    ip_address: str = "192.168.10.200"
+    ip_address: str = "192.168.1.200"
     rtsp_port: int = 554
     username: str = "admin"
     password: str = ""
-    brand: str = "DAHUA"
+    brand: str = "HIKVISION"
     channels_count: int = 30
     naming_mode: str = "DEFAULT_30_CLASSES"
     custom_pattern: Optional[str] = ""
@@ -50,13 +50,13 @@ class NVRChannelItem(BaseModel):
     thumbnail: Optional[str] = ""
 
 class NVRBatchImportRequest(BaseModel):
-    nvr_name: Optional[str] = "Đầu Ghi NVR Trường THPT Điều Cải"
-    ip_address: str = "192.168.10.200"
+    nvr_name: Optional[str] = "Đầu Ghi NVR Hikvision THPT Điều Cải"
+    ip_address: str = "192.168.1.200"
     rtsp_port: int = 554
     http_port: Optional[int] = 80
     username: str = "admin"
     password: str = ""
-    brand: str = "DAHUA"
+    brand: str = "HIKVISION"
     channels_count: int = 30
     custom_pattern: Optional[str] = ""
     replace_existing: bool = True
@@ -64,11 +64,11 @@ class NVRBatchImportRequest(BaseModel):
 
 class SwitchCameraSourceModeRequest(BaseModel):
     mode: str = "REAL_NVR"  # "REAL_NVR" or "MOCK_IMAGE"
-    nvr_ip: str = "192.168.10.200"
+    nvr_ip: str = "192.168.1.200"
     nvr_port: int = 554
     nvr_user: str = "admin"
-    nvr_pass: str = "DieuCai@2026"
-    nvr_brand: str = "DAHUA"
+    nvr_pass: str = "Lhu@2025"
+    nvr_brand: str = "HIKVISION"
     channel_start: int = 1
     cleanup_mock_images: bool = False
     mock_folder: Optional[str] = "camera"
