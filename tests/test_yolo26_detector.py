@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 from pathlib import Path
 from config.settings import settings
-from core.detector import StudentDetector, detector
+from backend.core.detector import StudentDetector, detector
 
 def test_yolo26_model_initialization():
     """Kiểm tra khởi tạo mô hình YOLO26m thành công và thông tin kiến trúc chính xác."""

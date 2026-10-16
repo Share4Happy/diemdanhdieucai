@@ -3,11 +3,13 @@
  * Tự động nhận diện môi trường (Port 8000 hay độc lập qua CORS / Live Server)
  */
 
-export const API_BASE = (function() {
+export const API_BASE = (function () {
+    if (typeof window === 'undefined') return '';
     if (window.location.protocol === 'file:') return 'http://localhost:8000';
-    if (window.location.origin.includes(':8000') || window.location.origin.includes(':80')) return '';
-    const host = window.location.hostname || 'localhost';
-    return `${window.location.protocol}//${host}:8000`;
+    if (window.location.port && ['5500', '5501', '5502', '3001'].includes(window.location.port)) {
+        return `http://${window.location.hostname || 'localhost'}:8000`;
+    }
+    return '';
 })();
 
 /**
@@ -27,11 +29,11 @@ function redirectToLogin() {
     try {
         localStorage.removeItem('currentUser');
         localStorage.removeItem('currentUserRole');
-    } catch (e) {}
+    } catch (e) { }
 
     const filename = path.split('/').pop() || 'index.html';
-    const redirectUrl = (filename && filename !== 'login.html') 
-        ? `login.html?redirect=${encodeURIComponent(filename + window.location.search)}` 
+    const redirectUrl = (filename && filename !== 'login.html')
+        ? `login.html?redirect=${encodeURIComponent(filename + window.location.search)}`
         : 'login.html';
     window.location.href = redirectUrl;
 }
@@ -66,7 +68,7 @@ async function fetchAPI(endpoint, options = {}) {
             try {
                 const errData = await response.json();
                 if (errData.detail) errorMsg = typeof errData.detail === 'string' ? errData.detail : JSON.stringify(errData.detail);
-            } catch (e) {}
+            } catch (e) { }
             const err = new Error(errorMsg);
             err.status = response.status;
             throw err;
@@ -86,7 +88,7 @@ export const AuthAPI = {
             try {
                 localStorage.setItem('currentUserRole', res.user.role || 'staff');
                 localStorage.setItem('currentUser', JSON.stringify(res.user));
-            } catch (e) {}
+            } catch (e) { }
         }
         return res;
     },
@@ -97,7 +99,7 @@ export const AuthAPI = {
             try {
                 localStorage.removeItem('currentUser');
                 localStorage.removeItem('currentUserRole');
-            } catch (e) {}
+            } catch (e) { }
         }
     },
     me: () => fetchAPI('/api/auth/me', { skipAuthRedirect: true }),
@@ -112,11 +114,15 @@ export const AuthAPI = {
 // === ATTENDANCE APIs ===
 export const AttendanceAPI = {
     getLatest: (options = {}) => fetchAPI('/api/attendance/latest', options),
+    getLatestSession: (options = {}) => fetchAPI('/api/attendance/latest', options),
     getTodaySessions: (options = {}) => fetchAPI('/api/attendance/today-sessions', options),
     get7DaysTrend: (options = {}) => fetchAPI('/api/attendance/trend-7days', options),
     triggerScan: () => fetchAPI('/api/attendance/trigger', { method: 'POST' }),
+    getProgress: () => fetchAPI('/api/attendance/progress', { suppressAuthRedirect: true }),
     getHistory: (limit = 150) => fetchAPI(`/api/attendance/history?limit=${limit}`),
     clearHistory: () => fetchAPI('/api/attendance/clear-history', { method: 'DELETE' }),
+    overrideDetail: (detailId, data) => fetchAPI(`/api/attendance/details/${detailId}/override`, { method: 'PUT', body: data }),
+    getSessionById: (sessionId) => fetchAPI(`/api/attendance/sessions/${sessionId}`),
     getDownloadExcelUrl: () => `${API_BASE}/api/attendance/download-excel`
 };
 
@@ -136,6 +142,16 @@ export const CameraAPI = {
         method: 'POST',
         body: { source_url: sourceUrl, relay_ip: relayIp }
     }),
+    validateNewCamera: (sourceUrl, relayIp = "", redZone = null, greenZone = null, standardCount = 40) => fetchAPI('/api/cameras/validate-new-camera', {
+        method: 'POST',
+        body: {
+            source_url: sourceUrl,
+            relay_ip: relayIp,
+            red_zone: redZone,
+            green_zone: greenZone,
+            standard_count: standardCount
+        }
+    }),
     testClassroomIR: (classroomId, durationSeconds = 4, mode = "IR_ON") => fetchAPI(`/api/cameras/${classroomId}/test-ir`, {
         method: 'POST',
         body: { duration_seconds: durationSeconds, mode: mode }
@@ -154,14 +170,19 @@ export const CameraAPI = {
     switchSourceMode: (data) => fetchAPI('/api/cameras/switch-source-mode', { method: 'POST', body: data }),
     cleanupTestImages: (folder = 'camera') => fetchAPI(`/api/cameras/cleanup-test-images?folder=${encodeURIComponent(folder)}`, { method: 'POST' }),
     refreshAllSnapshots: () => fetchAPI('/api/cameras/refresh-all-snapshots', { method: 'POST' }),
-    refreshClassroomSnapshot: (id) => fetchAPI(`/api/cameras/${id}/refresh-snapshot`, { method: 'POST' })
+    refreshClassroomSnapshot: (id) => fetchAPI(`/api/cameras/${id}/refresh-snapshot`, { method: 'POST' }),
+    getProgress: () => fetchAPI('/api/cameras/progress', { suppressAuthRedirect: true }),
+    getAutoSchedule: () => fetchAPI('/api/cameras/auto-schedule'),
+    saveAutoSchedule: (data) => fetchAPI('/api/cameras/auto-schedule', { method: 'POST', body: data }),
+    triggerAutoSchedule: () => fetchAPI('/api/cameras/auto-schedule/trigger', { method: 'POST' })
 };
 
 // === ROI APIs ===
 export const ROIAPI = {
     getROI: (classroomId, refresh = false) => fetchAPI(`/api/roi/${classroomId}?refresh=${refresh}`),
     refreshSnapshot: (classroomId) => fetchAPI(`/api/roi/${classroomId}/refresh-snapshot`, { method: 'POST' }),
-    saveROI: (classroomId, data) => fetchAPI(`/api/roi/${classroomId}`, { method: 'POST', body: data })
+    saveROI: (classroomId, data) => fetchAPI(`/api/roi/${classroomId}`, { method: 'POST', body: data }),
+    applyAll: (data) => fetchAPI('/api/roi/apply-all', { method: 'POST', body: data })
 };
 
 // === REPORTS & NOTIFICATIONS APIs ===

@@ -1,0 +1,530 @@
+/**
+ * ============================================================================
+ * PROGRESS MODAL COMPONENT STYLES
+ * Trường THPT Điều Cải - Hệ Thống Điểm Danh AI Camera
+ * ============================================================================
+ * Thiết kế giao diện Modal hiển thị tiến trình quét điểm danh và chụp lại camera:
+ * - Glassmorphism, viền tinh tế, gradient hiện đại.
+ * - Thanh tiến trình đa màu sắc kèm hiệu ứng ánh sáng (shimmer effect).
+ * - Stepper 3 giai đoạn trực quan (Chụp NVR -> AI YOLO -> Lưu CSDL).
+ * - Console Log thời gian thực hiển thị từng camera / lớp học.
+ * - Bảng tổng kết KPI nổi bật khi hoàn tất.
+ * ============================================================================
+ */
+
+/* ==================== BACKDROP & CONTAINER ==================== */
+.progress-modal-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(15, 23, 42, 0.78) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    z-index: 999999 !important;
+    display: none;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 20px !important;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.progress-modal-backdrop.active {
+    display: flex !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+}
+
+.progress-modal-container {
+    background: #ffffff;
+    width: 100%;
+    max-width: 640px;
+    border-radius: 20px;
+    box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.35), 0 0 0 1px rgba(226, 232, 240, 0.8);
+    overflow: hidden;
+    transform: translateY(20px) scale(0.97);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+.progress-modal-backdrop.active .progress-modal-container {
+    transform: translateY(0) scale(1);
+}
+
+/* ==================== HEADER ==================== */
+.progress-modal-header {
+    padding: 22px 28px 18px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+
+.progress-modal-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.progress-modal-icon-badge {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    box-shadow: 0 8px 16px -4px rgba(79, 70, 229, 0.35);
+    position: relative;
+}
+
+.progress-modal-icon-badge.camera-mode {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    box-shadow: 0 8px 16px -4px rgba(16, 185, 129, 0.35);
+}
+
+.progress-modal-icon-badge.single-mode {
+    background: linear-gradient(135deg, #2563eb 0%, #38bdf8 100%);
+    box-shadow: 0 8px 16px -4px rgba(37, 99, 235, 0.35);
+}
+
+.progress-modal-icon-badge::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 17px;
+    border: 2px solid rgba(79, 70, 229, 0.4);
+    animation: pulseRing 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.progress-modal-icon-badge.camera-mode::after {
+    border-color: rgba(16, 185, 129, 0.4);
+}
+
+@keyframes pulseRing {
+    0% { transform: scale(0.96); opacity: 0.8; }
+    50% { transform: scale(1.08); opacity: 0.2; }
+    100% { transform: scale(0.96); opacity: 0.8; }
+}
+
+.progress-modal-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+    line-height: 1.3;
+}
+
+.progress-modal-subtitle {
+    font-size: 0.82rem;
+    color: #64748b;
+    margin: 3px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.progress-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    background: #ecfdf5;
+    color: #059669;
+}
+
+.progress-status-pill .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #10b981;
+    animation: blinkDot 1.4s ease-in-out infinite;
+}
+
+@keyframes blinkDot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+.progress-modal-close-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    border: none;
+    background: #f1f5f9;
+    color: #64748b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.progress-modal-close-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+.progress-modal-close-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ==================== BODY ==================== */
+.progress-modal-body {
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-height: calc(85vh - 140px);
+    overflow-y: auto;
+}
+
+/* Multi-stage Stepper (cho Quét Điểm Danh) */
+.progress-stepper {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.progress-step-item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.25s ease;
+}
+
+.progress-step-item.active {
+    background: #eff6ff;
+    border-color: #93c5fd;
+    box-shadow: 0 4px 12px -2px rgba(59, 130, 246, 0.15);
+}
+
+.progress-step-item.completed {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+}
+
+.progress-step-number {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #e2e8f0;
+    color: #64748b;
+    font-weight: 700;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.progress-step-item.active .progress-step-number {
+    background: #3b82f6;
+    color: #ffffff;
+}
+
+.progress-step-item.completed .progress-step-number {
+    background: #10b981;
+    color: #ffffff;
+}
+
+.progress-step-text {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #475569;
+    line-height: 1.25;
+}
+
+.progress-step-item.active .progress-step-text {
+    color: #1d4ed8;
+}
+
+.progress-step-item.completed .progress-step-text {
+    color: #047857;
+}
+
+/* Percentage & Main Progress Bar */
+.progress-metric-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.progress-metric-label {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.progress-metric-values {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.progress-percent-huge {
+    font-size: 1.85rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+
+.progress-elapsed-badge {
+    font-size: 0.76rem;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Progress Track & Animated Bar */
+.progress-bar-track {
+    width: 100%;
+    height: 12px;
+    background: #e2e8f0;
+    border-radius: 9999px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 9999px;
+    background: linear-gradient(90deg, #4f46e5 0%, #06b6d4 50%, #10b981 100%);
+    background-size: 200% 100%;
+    transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    box-shadow: 0 0 12px rgba(6, 182, 212, 0.45);
+    animation: shimmerGradient 3s linear infinite;
+}
+
+@keyframes shimmerGradient {
+    0% { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+}
+
+/* Active Item Spotlight Box */
+.progress-spotlight-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.progress-spotlight-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.progress-spotlight-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: #e0e7ff;
+    color: #4338ca;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.progress-spotlight-name {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.3;
+}
+
+.progress-spotlight-desc {
+    font-size: 0.78rem;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.progress-counter-badge {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #334155;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* Live Terminal / Log Box */
+.progress-log-terminal {
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 14px;
+    padding: 12px 14px;
+    max-height: 145px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.78rem;
+    color: #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.progress-log-terminal::-webkit-scrollbar {
+    width: 6px;
+}
+
+.progress-log-terminal::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 3px;
+}
+
+.progress-log-line {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    line-height: 1.45;
+}
+
+.progress-log-time {
+    color: #64748b;
+    font-size: 0.72rem;
+    flex-shrink: 0;
+}
+
+.progress-log-text {
+    word-break: break-word;
+}
+
+.progress-log-text.success { color: #34d399; }
+.progress-log-text.warning { color: #fbbf24; }
+.progress-log-text.error   { color: #f87171; }
+.progress-log-text.info    { color: #93c5fd; }
+
+/* Completion Summary Card (hiện khi 100%) */
+.progress-summary-card {
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+    border: 1px solid #a7f3d0;
+    border-radius: 16px;
+    padding: 16px 20px;
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+    animation: fadeInSlideUp 0.35s ease-out;
+}
+
+@keyframes fadeInSlideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.progress-summary-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #065f46;
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.progress-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.progress-summary-kpi {
+    background: #ffffff;
+    border: 1px solid #d1fae5;
+    border-radius: 10px;
+    padding: 8px 12px;
+    text-align: center;
+}
+
+.progress-summary-kpi-val {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #065f46;
+}
+
+.progress-summary-kpi-lbl {
+    font-size: 0.72rem;
+    color: #047857;
+    margin-top: 2px;
+}
+
+/* ==================== FOOTER ==================== */
+.progress-modal-footer {
+    padding: 16px 28px 20px;
+    border-top: 1px solid #f1f5f9;
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.progress-btn-done {
+    background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px -2px rgba(79, 70, 229, 0.35);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.progress-btn-done:hover {
+    background: linear-gradient(135deg, #4338ca 0%, #2563eb 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px -2px rgba(79, 70, 229, 0.45);
+}
+
+.progress-btn-secondary {
+    background: #ffffff;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 9px 18px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.progress-btn-secondary:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}

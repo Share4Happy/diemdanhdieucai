@@ -4,12 +4,14 @@ from fastapi.testclient import TestClient
 from backend.main import app
 from database.db_session import init_db, SessionLocal
 from database.models import Classroom, AttendanceSession, AttendanceDetail, User
-from core.relay_service import relay_service
-from core.attendance_engine import attendance_engine
+from backend.core.relay_service import relay_service
+from backend.core.attendance_engine import attendance_engine
 
-from backend.api.deps import get_current_user
+from backend.app.api.deps import get_current_user, require_admin
 
-app.dependency_overrides[get_current_user] = lambda: User(id=1, email="admin@truongdieucai.edu.vn", role="admin")
+admin_user = User(id=1, email="admin@truongdieucai.edu.vn", role="admin", is_active=True)
+app.dependency_overrides[get_current_user] = lambda: admin_user
+app.dependency_overrides[require_admin] = lambda: admin_user
 
 client = TestClient(app)
 
@@ -55,9 +57,15 @@ def test_restore_classrooms_auto():
     # Không ném ngoại lệ
     relay_service.restore_classrooms_auto(mock_classes)
 
-def test_api_test_connection_with_trigger_signal():
+def test_api_test_connection_with_trigger_signal(tmp_path):
+    import numpy as np
+    import cv2
+    test_img = tmp_path / "test_preview.jpg"
+    img = np.ones((720, 1280, 3), dtype=np.uint8) * 128
+    cv2.imwrite(str(test_img), img)
+
     response = client.post("/api/cameras/test-connection", json={
-        "source_url": "camera/JPG/1.JPG",
+        "source_url": str(test_img),
         "trigger_signal": True
     })
     assert response.status_code == 200
@@ -96,16 +104,26 @@ def test_attendance_engine_signal_and_color_capture():
         # Chỉ bật 1 lớp để test chạy nhanh
         db.query(Classroom).update({Classroom.is_active: False})
         c = db.query(Classroom).first()
+        if not c:
+            from database.db_session import seed_default_classes
+            seed_default_classes(db)
+            c = db.query(Classroom).first()
         if c:
             c.is_active = True
-            db.commit()
+        db.commit()
+    finally:
+        db.close()
 
+    try:
         result = attendance_engine.run_daily_attendance(trigger_led=True)
         assert result["success"] is True
         assert result["total_classes"] >= 1
         assert result["total_standard"] > 0
     finally:
         # Khôi phục bật lại lớp
-        db.query(Classroom).update({Classroom.is_active: True})
-        db.commit()
-        db.close()
+        db_restore = SessionLocal()
+        try:
+            db_restore.query(Classroom).update({Classroom.is_active: True})
+            db_restore.commit()
+        finally:
+            db_restore.close()

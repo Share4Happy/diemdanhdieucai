@@ -31,11 +31,13 @@ class HeaderActions {
     }
 
     fetchJSON(endpoint) {
-        const base = (function() {
+        const base = (function () {
+            if (typeof window === 'undefined') return '';
             if (window.location.protocol === 'file:') return 'http://localhost:8000';
-            if (window.location.origin.includes(':8000') || window.location.origin.includes(':80')) return '';
-            const host = window.location.hostname || 'localhost';
-            return `${window.location.protocol}//${host}:8000`;
+            if (window.location.port && ['5500', '5501', '5502', '3001'].includes(window.location.port)) {
+                return `http://${window.location.hostname || 'localhost'}:8000`;
+            }
+            return '';
         })();
         const headers = { 'Accept': 'application/json' };
         return fetch(`${base}${endpoint}`, {

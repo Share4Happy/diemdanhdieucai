@@ -1,0 +1,307 @@
+/* =========================================================================
+   CLASSROOMS MANAGEMENT CSS - THPT ĐIỀU CẢI DESIGN SYSTEM
+   Phong cách hiện đại, thanh lịch, chuẩn mực sư phạm
+   ========================================================================= */
+
+.classrooms-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.kpi-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+.kpi-icon-wrap {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+}
+
+.kpi-icon-blue {
+    background: rgba(37, 99, 235, 0.1);
+    color: #2563eb;
+}
+
+.kpi-icon-emerald {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.kpi-icon-indigo {
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
+}
+
+.kpi-icon-amber {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+}
+
+.kpi-info-wrap {
+    display: flex;
+    flex-direction: column;
+}
+
+.kpi-value {
+    font-size: 1.65rem;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.2;
+}
+
+.kpi-label {
+    font-size: 0.82rem;
+    color: #64748b;
+    font-weight: 600;
+    margin-top: 2px;
+}
+
+/* Control & Filter Bar */
+.classrooms-filter-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.grade-tabs {
+    display: flex;
+    gap: 6px;
+    background: #f1f5f9;
+    padding: 4px;
+    border-radius: 8px;
+}
+
+.grade-tab-btn {
+    padding: 6px 14px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.grade-tab-btn:hover {
+    color: #0f172a;
+}
+
+.grade-tab-btn.active {
+    background: #ffffff;
+    color: #2563eb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    font-weight: 700;
+}
+
+.grade-badge-count {
+    background: #e2e8f0;
+    color: #475569;
+    font-size: 0.72rem;
+    padding: 1px 6px;
+    border-radius: 999px;
+}
+
+.grade-tab-btn.active .grade-badge-count {
+    background: rgba(37, 99, 235, 0.15);
+    color: #2563eb;
+}
+
+.search-box-wrap {
+    position: relative;
+    flex: 1;
+    max-width: 380px;
+    min-width: 240px;
+}
+
+.search-box-wrap i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+
+.search-box-input {
+    width: 100%;
+    padding: 8px 12px 8px 36px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    font-size: 0.88rem;
+    background: #f8fafc;
+    transition: all 0.2s;
+}
+
+.search-box-input:focus {
+    outline: none;
+    border-color: #2563eb;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* Data Table */
+.classrooms-table-card {
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.classrooms-table-wrap {
+    overflow-x: auto;
+}
+
+.class-row:hover {
+    background: #f8fafc;
+}
+
+.class-code-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    background: #eff6ff;
+    color: #2563eb;
+    font-weight: 700;
+    font-size: 0.82rem;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    letter-spacing: 0.3px;
+}
+
+.class-name-text {
+    font-weight: 700;
+    color: #0f172a;
+    font-size: 0.95rem;
+}
+
+.grade-tag {
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.grade-10 {
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+}
+
+.grade-11 {
+    background: #eff6ff;
+    color: #2563eb;
+    border: 1px solid #bfdbfe;
+}
+
+.grade-12 {
+    background: #fef3c7;
+    color: #d97706;
+    border: 1px solid #fde68a;
+}
+
+.teacher-name {
+    font-weight: 600;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.camera-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.camera-status-pill.online {
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+}
+
+.camera-status-pill.offline {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #cbd5e1;
+}
+
+.table-action-btn-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.action-btn {
+    padding: 5px 9px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #475569;
+    cursor: pointer;
+    font-size: 0.82rem;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.action-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #cbd5e1;
+}
+
+.action-btn-primary:hover {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #2563eb;
+}
+
+.action-btn-success:hover {
+    background: #10b981;
+    color: #ffffff;
+    border-color: #10b981;
+}
+
+/* Modal styles overrides */
+.modal-standard-field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}

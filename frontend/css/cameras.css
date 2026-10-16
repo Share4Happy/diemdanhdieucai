@@ -1269,3 +1269,218 @@
         font-size: 1.25rem;
     }
 }
+
+/* =========================================================================
+   MATRIX CARD ATTENDANCE METRICS & SCHEDULE MODAL STYLES
+   ========================================================================= */
+
+.matrix-card-footer {
+    padding: 10px 14px;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.matrix-footer-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.matrix-footer-bottom-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding-top: 6px;
+    border-top: 1px dashed #e2e8f0;
+    font-size: 0.78rem;
+    min-height: 24px;
+}
+
+.matrix-att-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    white-space: nowrap;
+    letter-spacing: 0.01em;
+}
+
+.matrix-att-pill.att-badge-full {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+
+.matrix-att-pill.att-badge-warning {
+    background: #fffbeb;
+    color: #b45309;
+    border: 1px solid #fde68a;
+}
+
+.matrix-att-pill.att-badge-danger {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+.matrix-att-pill.att-badge-pending {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+}
+
+.matrix-scan-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #64748b;
+    font-size: 0.76rem;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.matrix-scan-meta i {
+    color: #4f46e5;
+    font-size: 0.75rem;
+}
+
+.matrix-absent-chip {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.matrix-absent-chip.ok {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.matrix-absent-chip.warning {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.matrix-absent-chip.pending {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.matrix-osd-bottom-time {
+    position: absolute;
+    bottom: 6px;
+    right: 8px;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(4px);
+    color: #f8fafc;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    pointer-events: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.matrix-osd-bottom-time i {
+    color: #38bdf8;
+    font-size: 0.68rem;
+}
+
+/* Switch & Day-chips for Schedule Modal */
+.day-chip {
+    flex: 1;
+    text-align: center;
+    padding: 6px 0;
+    background: #f1f5f9;
+    color: #64748b;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 1px solid #e2e8f0;
+}
+
+.day-chip.active {
+    background: #4f46e5;
+    color: #ffffff;
+    border-color: #4f46e5;
+}
+
+/* Switch & Slider Toggle Styling */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 26px;
+    margin: 0;
+    cursor: pointer;
+}
+
+.switch.switch-sm {
+    width: 40px;
+    height: 22px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+.switch .slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background-color: #cbd5e1 !important;
+    transition: background-color 0.25s ease, box-shadow 0.25s ease;
+    border-radius: 34px;
+}
+
+.switch .slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: #ffffff;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 50%;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.switch.switch-sm .slider:before {
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+}
+
+.switch input:checked + .slider {
+    background-color: #4f46e5 !important;
+    box-shadow: 0 0 10px rgba(79, 70, 229, 0.5);
+}
+
+.switch input:checked + .slider:before {
+    transform: translateX(22px);
+}
+
+.switch.switch-sm input:checked + .slider:before {
+    transform: translateX(18px);
+}

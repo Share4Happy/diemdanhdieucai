@@ -62,11 +62,11 @@ html, body {
    BANNER TRÊN: THẨM MỸ, THOÁNG ĐÃNG, KHẮC PHỤC "BỊ SÁT NHAU"
    ========================================================= */
 .roi-banner {
-  background: #ffffff !important;
-  border-radius: 12px !important;
-  padding: 0.6rem 1.25rem !important;
-  border: 1px solid var(--border-color) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  padding: 0.35rem 0.15rem !important;
+  border: none !important;
+  box-shadow: none !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
@@ -75,39 +75,34 @@ html, body {
   margin-bottom: 0 !important;
 }
 
-.banner-title-group {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.roi-arrow-btn {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #334155 !important;
+  font-size: 0.9rem !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
 }
 
-.banner-icon-badge {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #eff6ff, #dbeafe);
-  color: #2563eb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  border: 1px solid #bfdbfe;
-  flex-shrink: 0;
-  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.1);
+.roi-arrow-btn:hover {
+  background: #eff6ff !important;
+  border-color: #2563eb !important;
+  color: #1d4ed8 !important;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2) !important;
+  transform: translateY(-1px) !important;
 }
 
-.banner-info h2 {
-  font-size: 1.12rem !important;
-  font-weight: 700 !important;
-  color: #0f172a !important;
-  margin: 0 0 2px 0 !important;
-  line-height: 1.25;
-}
-
-.banner-info p {
-  font-size: 0.8rem !important;
-  color: #64748b !important;
-  margin: 0 !important;
+.roi-arrow-btn:active {
+  transform: translateY(0) !important;
 }
 
 .banner-actions {
@@ -346,6 +341,44 @@ html, body {
 .btn-save:hover {
   background: linear-gradient(135deg, #1d4ed8, #1e40af) !important;
   box-shadow: 0 4px 10px rgba(37, 99, 235, 0.4) !important;
+}
+
+/* Nút Áp Dụng Cho Tất Cả Các Lớp */
+.btn-apply-all {
+  background: linear-gradient(135deg, #6366f1, #4f46e5) !important;
+  color: #ffffff !important;
+  border: none !important;
+  font-weight: 700 !important;
+  font-size: 0.84rem !important;
+  padding: 7px 16px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3) !important;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-apply-all:hover {
+  background: linear-gradient(135deg, #4f46e5, #4338ca) !important;
+  box-shadow: 0 4px 10px rgba(99, 102, 241, 0.45) !important;
+  transform: translateY(-1px);
+}
+
+.btn-apply-all:active {
+  transform: translateY(0);
+}
+
+.btn-apply-all.pulse-indigo {
+  animation: pulseIndigo 1.5s infinite;
+}
+
+@keyframes pulseIndigo {
+  0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.6); }
+  70% { box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
 }
 
 /* =========================================================

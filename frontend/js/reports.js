@@ -132,7 +132,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Refresh DB
     const btnReload = document.getElementById('btnReloadDb');
-    if (btnReload) btnReload.addEventListener('click', loadAttendanceHistory);
+    if (btnReload) {
+        btnReload.addEventListener('click', async () => {
+            const icon = btnReload.querySelector('i');
+            if (icon) icon.classList.add('fa-spin');
+            btnReload.disabled = true;
+
+            // Reset bộ lọc về mặc định
+            reportActiveGrade = 'all';
+            reportActiveStatus = 'all';
+            reportDateFilter = '';
+            reportKeyword = '';
+            dbCurrentPage = 1;
+
+            const gradeSelect = document.getElementById('filterGradeSelect');
+            if (gradeSelect) gradeSelect.value = 'all';
+
+            const statusGroup = document.getElementById('reportStatusFilterGroup');
+            if (statusGroup) {
+                statusGroup.querySelectorAll('.segmented-tab').forEach(b => {
+                    b.classList.toggle('active', b.dataset.reportStatus === 'all');
+                });
+            }
+
+            const dateInput = document.getElementById('filterReportDate');
+            if (dateInput) dateInput.value = '';
+
+            const searchInput = document.getElementById('filterDbInput');
+            if (searchInput) searchInput.value = '';
+
+            const btnClearSearch = document.getElementById('btnClearDbSearch');
+            if (btnClearSearch) btnClearSearch.style.display = 'none';
+
+            try {
+                await loadAttendanceHistory();
+                showToast('Đã làm mới dữ liệu điểm danh thành công!', 'success');
+            } catch (err) {
+                showToast('Lỗi khi tải lại dữ liệu: ' + (err.message || err), 'danger');
+            } finally {
+                if (icon) icon.classList.remove('fa-spin');
+                btnReload.disabled = false;
+            }
+        });
+    }
 
     // Clear Attendance History
     const btnClearHistory = document.getElementById('btnClearAttendanceHistory');
@@ -222,6 +264,16 @@ export async function loadAttendanceHistory() {
  * Khởi tạo bộ điều khiển lọc cho CSDL (Grade Stepper, Segmented Status, Date, Search, Page Size)
  */
 function initDbControlsEvents() {
+    // Dropdown chọn Khối đơn giản
+    const gradeSelect = document.getElementById('filterGradeSelect');
+    if (gradeSelect) {
+        gradeSelect.addEventListener('change', (e) => {
+            reportActiveGrade = e.target.value;
+            dbCurrentPage = 1;
+            applyDbFilters();
+        });
+    }
+
     // 1. Grade Stepper: Prev, Next, Current Click Popover
     const gradeStepper = document.getElementById('gradeSwitcherPill');
     const btnPrev = document.getElementById('btnGradePrev');
@@ -240,6 +292,7 @@ function initDbControlsEvents() {
 
     const updateGradeSelection = (newGrade) => {
         reportActiveGrade = newGrade;
+        if (gradeSelect) gradeSelect.value = newGrade;
         if (gradeText) gradeText.textContent = gradeLabels[newGrade] || 'Tất Cả';
 
         if (gradeMenu) {
@@ -384,6 +437,7 @@ function initDbControlsEvents() {
             reportKeyword = '';
             dbCurrentPage = 1;
 
+            if (gradeSelect) gradeSelect.value = 'all';
             if (gradeText) gradeText.textContent = 'Tất Cả';
             if (gradeMenu) {
                 gradeMenu.querySelectorAll('.grade-menu-opt').forEach(b => {

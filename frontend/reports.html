@@ -67,9 +67,15 @@
                         </a>
                     </li>
                     <li class="sidebar-nav-item">
+                        <a href="classrooms.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-chalkboard-user"></i></span>
+                            <span class="sidebar-nav-text">Quản lý lớp học</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
                         <a href="cameras.html" class="sidebar-nav-link">
                             <span class="sidebar-nav-icon"><i class="fa-solid fa-video"></i></span>
-                            <span class="sidebar-nav-text">Camera & Lớp Học</span>
+                            <span class="sidebar-nav-text">Quản lý camera</span>
                         </a>
                     </li>
                     <li class="sidebar-nav-item">
@@ -120,25 +126,9 @@
         <main class="app-main">
             <!-- Page Content -->
             <div class="page-container">
-                <!-- Banner Hành Động Nhanh -->
-                <div class="action-banner">
-                    <div class="banner-info">
-                        <div>
-                            <h2>Trung Tâm Dữ Liệu & Báo Cáo Điểm Danh</h2>
-                            <p style="color: var(--text-muted); margin: 0; font-size: 0.9rem;">
-                                Hệ thống tự động lưu trữ CSDL, xử lý báo cáo tổng hợp và kết xuất dữ liệu thống kê chuyên cần.
-                            </p>
-                        </div>
-                    </div>
-                    <div class="banner-actions">
-                        <button id="btnExportExcelNow" class="btn btn-primary"
-                            style="background: linear-gradient(135deg, #10b981, #059669); border: none; font-weight: 700;">
-                            <i class="fa-solid fa-file-arrow-down"></i> Xuất Báo Cáo Excel Ngay
-                        </button>
-                    </div>
-                </div>
+                <!-- Hidden H1 for SEO & Accessibility -->
+                <h1 style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0;">Báo Cáo & Dữ Liệu</h1>
 
-                <!-- Thanh Tabs Điều Hướng -->
                 <!-- Thanh Tabs Điều Hướng -->
                 <div class="tabs-container">
                     <div class="tabs-nav">
@@ -160,75 +150,17 @@
                 <!-- TAB 1: DỮ LIỆU CSDL -->
                 <div id="tab-database" class="tab-content active">
                     <div class="report-section">
-                        <!-- Header Lịch Sử Điểm Danh CSDL -->
-                        <div class="reports-db-header">
-                            <div class="reports-db-header-main">
-                                <div class="reports-title-group">
-                                    <h3 class="reports-db-title">
-                                        <i class="fa-solid fa-database text-primary"></i> Lưu Trữ Kết Quả Điểm Danh (CSDL)
-                                    </h3>
-                                    <span class="retention-badge" id="retentionNoticeBadge">
-                                        <i class="fa-solid fa-clock-rotate-left"></i> Dữ liệu tự động lưu <span id="lblRetentionDaysNotice">90</span> ngày
-                                    </span>
-                                </div>
-                                <div class="reports-meta-count">
-                                    <span class="badge-count-pill" id="repSummaryBadge">
-                                        <i class="fa-solid fa-layer-group"></i> Hiển thị <strong id="repFilteredCount">0</strong> / <span id="repTotalCount">0</span> bản ghi
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="reports-db-header-actions">
-                                <button id="btnReloadDb" class="btn btn-secondary btn-sm" title="Tải lại dữ liệu mới nhất từ CSDL">
-                                    <i class="fa-solid fa-rotate-right"></i> Làm Mới
-                                </button>
-                                <button id="btnClearAttendanceHistory" class="btn btn-danger btn-sm"
-                                    style="white-space: nowrap;" title="Xóa toàn bộ lịch sử điểm danh">
-                                    <i class="fa-solid fa-trash-can"></i> Xóa Lịch Sử
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Bộ Lọc Đa Chiều Cho Lịch Sử Điểm Danh (Đồng nhất với Dashboard) -->
+                        <!-- Bộ Lọc Đa Chiều Cho Lịch Sử Điểm Danh -->
                         <div class="table-controls-row reports-controls-row">
-                            <!-- Bộ điều khiển chuyển Khối dạng 1 nút tinh gọn -->
-                            <div class="filter-field-group grade-filter-control">
+                            <!-- Bộ điều khiển chọn Khối dạng Dropdown đơn giản -->
+                            <div class="filter-field-group">
                                 <span class="control-label">Khối:</span>
-                                <div class="grade-stepper-group" id="gradeSwitcherPill" tabindex="0" title="Bấm mũi tên hoặc click để chuyển khối">
-                                    <button type="button" class="btn-stepper-nav prev" id="btnGradePrev" title="Khối trước">
-                                        <i class="fa-solid fa-chevron-left"></i>
-                                    </button>
-                                    <button type="button" class="btn-stepper-main" id="btnGradeCurrent" title="Bấm để chuyển nhanh qua lại hoặc chọn khối">
-                                        <span class="stepper-grade-name" id="currentGradeText">Tất Cả</span>
-                                        <i class="fa-solid fa-chevron-down stepper-caret"></i>
-                                    </button>
-                                    <button type="button" class="btn-stepper-nav next" id="btnGradeNext" title="Khối tiếp theo">
-                                        <i class="fa-solid fa-chevron-right"></i>
-                                    </button>
-
-                                    <!-- Menu thả xuống chọn nhanh -->
-                                    <div class="grade-menu-popover" id="gradeDropdownMenu">
-                                        <button type="button" class="grade-menu-opt active" data-grade="all">
-                                            <span class="opt-name">Tất cả các khối</span>
-                                            <span class="opt-hint">Khối 10, 11 và 12</span>
-                                            <i class="fa-solid fa-check opt-check"></i>
-                                        </button>
-                                        <button type="button" class="grade-menu-opt" data-grade="10">
-                                            <span class="opt-name">Khối 10</span>
-                                            <span class="opt-hint">10A1 - 10A10</span>
-                                            <i class="fa-solid fa-check opt-check"></i>
-                                        </button>
-                                        <button type="button" class="grade-menu-opt" data-grade="11">
-                                            <span class="opt-name">Khối 11</span>
-                                            <span class="opt-hint">11A1 - 11A10</span>
-                                            <i class="fa-solid fa-check opt-check"></i>
-                                        </button>
-                                        <button type="button" class="grade-menu-opt" data-grade="12">
-                                            <span class="opt-name">Khối 12</span>
-                                            <span class="opt-hint">12A1 - 12A10</span>
-                                            <i class="fa-solid fa-check opt-check"></i>
-                                        </button>
-                                    </div>
-                                </div>
+                                <select id="filterGradeSelect" class="form-control" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #cbd5e1; background: #ffffff; color: #1e293b; font-weight: 600; font-size: 0.85rem; cursor: pointer;">
+                                    <option value="all">Tất cả các khối</option>
+                                    <option value="10">Khối 10</option>
+                                    <option value="11">Khối 11</option>
+                                    <option value="12">Khối 12</option>
+                                </select>
                             </div>
 
                             <div class="filter-separator"></div>
@@ -251,15 +183,12 @@
 
                             <div class="filter-separator"></div>
 
-                            <!-- Lọc theo Ngày -->
+                            <!-- Lọc theo Ngày (đã bỏ nút dấu x) -->
                             <div class="filter-field-group filter-date-field">
                                 <span class="control-label">Ngày:</span>
                                 <div class="filter-date-wrapper">
                                     <input type="date" id="filterReportDate" class="form-control-date" title="Chọn ngày điểm danh">
                                     <button type="button" id="btnFilterToday" class="btn-quick-date" title="Xem kết quả hôm nay">Hôm nay</button>
-                                    <button type="button" id="btnClearDateFilter" class="btn-clear-date" title="Xem tất cả các ngày">
-                                        <i class="fa-solid fa-xmark"></i>
-                                    </button>
                                 </div>
                             </div>
 
@@ -272,9 +201,16 @@
                                 </button>
                             </div>
 
-                            <button type="button" id="btnResetAllFilters" class="btn btn-secondary btn-sm" title="Khôi phục toàn bộ bộ lọc về mặc định" style="height: 34px; padding: 0 12px;">
-                                <i class="fa-solid fa-arrows-rotate"></i>
-                            </button>
+                            <!-- Cụm Hành Động Căn Phải: Làm Mới (Icon) & Xuất Excel Ngay -->
+                            <div class="reports-toolbar-actions" style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
+                                <button type="button" id="btnReloadDb" class="btn btn-secondary btn-sm" title="Tải lại dữ liệu mới nhất từ CSDL" style="height: 34px; padding: 0 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center;">
+                                    <i class="fa-solid fa-rotate-right"></i>
+                                </button>
+                                <button id="btnExportExcelNow" class="btn btn-primary btn-sm" type="button"
+                                    style="background: linear-gradient(135deg, #10b981, #059669); border: none; font-weight: 700; height: 34px; padding: 0 14px; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-file-arrow-down"></i> Xuất Báo Cáo Excel Ngay
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Bảng Dữ Liệu Điểm Danh -->
@@ -900,7 +836,7 @@
     <div id="toastContainer" class="toast-container"></div>
 
     <script type="module" src="js/shared/auth-guard.js?v=2.5"></script>
-    <script src="js/shared/app-shell.js?v=3.1"></script>
+    <script src="js/shared/app-shell.js?v=4.0"></script>
     <script src="js/shared/header-actions.js?v=2.2"></script>
 
     <!-- Page Script -->

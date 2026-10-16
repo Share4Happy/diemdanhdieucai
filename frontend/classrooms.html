@@ -1,0 +1,1633 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Lớp Học - THPT Điều Cải AI Camera</title>
+
+    <!-- Design System & Components -->
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/layout/app-shell.css?v=3.1">
+    <link rel="stylesheet" href="css/components/buttons-redesign.css">
+    <link rel="stylesheet" href="css/components/badges-redesign.css">
+    <link rel="stylesheet" href="css/components/cards-redesign.css">
+    <link rel="stylesheet" href="css/components/header-actions.css">
+    <link rel="stylesheet" href="css/components/confirmation-dialog.css">
+    <link rel="stylesheet" href="css/components/skeleton-loader.css">
+    <link rel="stylesheet" href="css/components/modal-system.css?v=2.0">
+    <link rel="stylesheet" href="css/components/progress-modal.css?v=6.0">
+    <link rel="stylesheet" href="css/cameras.css?v=2.2">
+    <link rel="stylesheet" href="css/roi_config.css?v=3.3">
+    <!-- Global Balance - MUST LOAD LAST -->
+    <link rel="stylesheet" href="css/global-table-balance.css?v=3.2">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* TV Wall Matrix Grid */
+        .tv-wall-container {
+            background: var(--surface, #ffffff);
+            border-radius: var(--radius-md);
+            padding: var(--space-6);
+            margin-top: var(--space-6);
+            border: 1px solid var(--border-color, #e2e8f0);
+        }
+
+        .tv-wall-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-4);
+            padding-bottom: var(--space-4);
+            border-bottom: 1px solid var(--border-color, #e2e8f0);
+        }
+
+        .tv-wall-title {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            color: var(--text-primary, #1e293b);
+        }
+
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-1) var(--space-3);
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--danger, #ef4444);
+            border-radius: var(--radius);
+            font-size: var(--text-xs);
+            font-weight: var(--font-semibold);
+            color: var(--danger, #ef4444);
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--danger, #ef4444);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .matrix-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: var(--space-4);
+        }
+
+        @media (max-width: 768px) {
+            .tv-wall-container {
+                padding: var(--space-3);
+                margin-top: var(--space-4);
+            }
+
+            .tv-wall-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .page-title-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+
+            .page-actions {
+                width: 100%;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .page-actions .btn {
+                flex: 1 1 auto;
+                justify-content: center;
+            }
+
+            .batch-action-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .batch-action-buttons {
+                flex-wrap: wrap;
+            }
+
+            .batch-action-buttons button {
+                flex: 1 1 auto;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .matrix-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+        }
+
+        .camera-tile {
+            background: var(--surface, #ffffff);
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            aspect-ratio: 16/9;
+            position: relative;
+            transition: all var(--transition-fast);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .camera-tile:hover {
+            border-color: var(--primary, #2563eb);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+        }
+
+        .camera-tile-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .camera-tile-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.8));
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: var(--space-3);
+        }
+
+        .camera-tile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .camera-tile-badge {
+            padding: 2px var(--space-2);
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            border-radius: var(--radius-sm);
+            font-size: var(--text-xs);
+            font-weight: var(--font-semibold);
+            color: white;
+        }
+
+        .camera-tile-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .camera-tile-info {
+            color: white;
+        }
+
+        .camera-tile-name {
+            font-size: var(--text-sm);
+            font-weight: var(--font-bold);
+            margin-bottom: 2px;
+        }
+
+        .camera-tile-meta {
+            font-size: var(--text-xs);
+            opacity: 0.8;
+        }
+
+        .camera-tile-status {
+            display: flex;
+            align-items: center;
+            gap: var(--space-1);
+            font-size: var(--text-xs);
+        }
+
+        /* Keep existing modal styles from cameras.css */
+
+        /* Checkbox chọn phòng trên thẻ camera */
+        .matrix-card-select {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            z-index: 6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .matrix-card-checkbox {
+            width: 19px;
+            height: 19px;
+            cursor: pointer;
+            accent-color: var(--primary, #2563eb);
+            border-radius: 4px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+            transition: transform 0.15s ease;
+        }
+
+        .matrix-card-checkbox:hover {
+            transform: scale(1.12);
+        }
+
+        /* Cho phép dropdown 3 chấm vươn ra ngoài thẻ mà không bị cắt / che khuất */
+        .matrix-card {
+            overflow: visible !important;
+        }
+
+        .matrix-card-screen {
+            overflow: visible !important;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        }
+
+        .matrix-thumb-img {
+            border-top-left-radius: 9px;
+            border-top-right-radius: 9px;
+        }
+
+        .matrix-card:has(.card-dropdown-menu.show) {
+            z-index: 99 !important;
+        }
+
+        .matrix-card.selected {
+            border-color: #2563eb !important;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.35), 0 4px 12px rgba(37, 99, 235, 0.15) !important;
+        }
+
+        /* Nút 3 chấm & Dropdown Menu góc phải trên cùng thẻ phòng */
+        .matrix-card-menu {
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            z-index: 50;
+        }
+
+        .card-menu-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            border: none;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(4px);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.88rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+        }
+
+        .card-menu-btn:hover,
+        .card-menu-btn.active {
+            background: rgba(15, 23, 42, 0.9);
+            color: #60a5fa;
+            transform: scale(1.06);
+        }
+
+        .card-dropdown-menu {
+            position: absolute;
+            top: calc(100% + 4px);
+            right: 0;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.15);
+            border: 1px solid #cbd5e1;
+            padding: 6px;
+            min-width: 175px;
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            gap: 2px;
+            animation: menuFadeIn 0.15s ease-out;
+        }
+
+        .card-dropdown-menu.show {
+            display: flex;
+        }
+
+        @keyframes menuFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 12px;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+            font-size: 0.83rem;
+            font-weight: 500;
+            color: #334155;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .card-dropdown-item i {
+            width: 15px;
+            text-align: center;
+            font-size: 0.85rem;
+        }
+
+        .card-dropdown-item:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        .card-dropdown-item.text-danger {
+            color: #ef4444;
+        }
+
+        .card-dropdown-item.text-danger:hover {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .card-dropdown-divider {
+            height: 1px;
+            background: #f1f5f9;
+            margin: 3px 0;
+        }
+
+        /* Chỗ phần xoá nhỏ khi chọn các phòng (Bulk Action Floating / Context Bar) */
+        .batch-action-bar {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: #ffffff;
+            padding: 10px 18px;
+            border-radius: 10px;
+            margin-bottom: var(--space-4);
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: slideDownBar 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .batch-action-bar.show {
+            display: flex;
+        }
+
+        @keyframes slideDownBar {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .batch-action-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.88rem;
+        }
+
+        .batch-selected-count {
+            background: #2563eb;
+            color: #ffffff;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+        }
+
+        .batch-action-buttons {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-batch-delete {
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 14px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-batch-delete:hover {
+            background: #dc2626;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
+        }
+
+        .btn-batch-cancel {
+            background: rgba(255, 255, 255, 0.15);
+            color: #e2e8f0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-batch-cancel:hover {
+            background: rgba(255, 255, 255, 0.25);
+            color: #ffffff;
+        }
+
+        /* =========================================================
+           ROI CONFIG MODAL - CĂN GIỮA MÀN HÌNH VÀ MỞ RỘNG TOÀN DIỆN
+           Khắc phục lỗi modal bị nhỏ (650px), lệch sang trái và bóp dọc
+           ========================================================= */
+        #roiConfigModal {
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 1.5rem !important;
+            box-sizing: border-box !important;
+        }
+
+        #roiConfigModal.active,
+        #roiConfigModal[style*="display: flex"] {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        #roiConfigModal .modal-dialog {
+            max-width: 1440px !important;
+            width: 96vw !important;
+            height: 92vh !important;
+            max-height: 94vh !important;
+            margin: 0 auto !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+        }
+
+        #roiConfigModal .modal-content {
+            max-width: 1440px !important;
+            width: 100% !important;
+            height: 100% !important;
+            max-height: 94vh !important;
+            margin: 0 auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+            border-radius: 14px !important;
+            overflow: hidden !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+            animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+
+        #roiConfigModal .modal-header {
+            flex-shrink: 0 !important;
+        }
+
+        #roiConfigModal .modal-footer {
+            flex-shrink: 0 !important;
+        }
+
+        #roiConfigModal .modal-body {
+            flex: 1 1 0% !important;
+            height: 100% !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+            padding: 12px 20px !important;
+            background: #ffffff !important;
+            box-sizing: border-box !important;
+        }
+
+        #roiConfigModal .tool-controls {
+            flex-shrink: 0 !important;
+            margin-bottom: 8px !important;
+        }
+
+        #roiConfigModal .roi-modal-hints {
+            flex-shrink: 0 !important;
+            margin-top: 6px !important;
+        }
+
+        #roiConfigModal .canvas-outer-wrapper {
+            flex: 1 1 0% !important;
+            min-height: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            background: #0f172a !important;
+            border: 1.5px solid #cbd5e1 !important;
+            border-radius: 10px !important;
+            position: relative !important;
+            overflow: hidden !important;
+            box-sizing: border-box !important;
+            padding: 8px !important;
+            margin: 0 !important;
+        }
+
+        #roiConfigModal .canvas-container {
+            position: relative !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            max-width: 100% !important;
+            max-height: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+        #roiConfigModal #roiModalCanvas {
+            display: block !important;
+            max-width: 100% !important;
+            max-height: 100% !important;
+            cursor: crosshair !important;
+            border-radius: 4px !important;
+        }
+    </style>
+
+</head>
+
+<body>
+    <!-- Mobile Topbar Navigation (Hiển thị cố định trên điện thoại & tablet <= 1024px) -->
+    <header class="mobile-topbar">
+        <div class="mobile-topbar-left">
+            <button type="button" class="mobile-menu-btn" title="Mở Menu Điều Hướng" aria-label="Mở Menu Điều Hướng">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="mobile-topbar-brand">
+                <div class="mobile-brand-logo">ĐC</div>
+                <div class="mobile-brand-text">
+                    <span class="mobile-brand-title">THPT ĐIỀU CẢI</span>
+                    <span class="mobile-brand-subtitle">AI CAMERA</span>
+                </div>
+            </div>
+        </div>
+        <div class="mobile-topbar-right">
+            <div class="mobile-user-avatar" id="mobileUserAvatar" title="Thông tin tài khoản">A</div>
+        </div>
+    </header>
+
+    <!-- App Shell -->
+    <div class="app-shell">
+        <!-- Sidebar -->
+        <aside class="app-sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">ĐC</div>
+                <div class="sidebar-brand-text">
+                    <span class="brand-title">THPT ĐIỀU CẢI</span>
+                    <span class="brand-subtitle">AI CAMERA</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <ul class="sidebar-nav-list">
+                    <li class="sidebar-nav-item">
+                        <a href="index.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-chart-line"></i></span>
+                            <span class="sidebar-nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="classrooms.html" class="sidebar-nav-link active">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-chalkboard-user"></i></span>
+                            <span class="sidebar-nav-text">Quản lý lớp học</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="cameras.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-video"></i></span>
+                            <span class="sidebar-nav-text">Quản lý camera</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="roi-config.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-draw-polygon"></i></span>
+                            <span class="sidebar-nav-text">Vùng ROI</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="reports.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-file-excel"></i></span>
+                            <span class="sidebar-nav-text">Báo Cáo & Dữ Liệu</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="notifications.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-paper-plane"></i></span>
+                            <span class="sidebar-nav-text">Thông Báo</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item nav-admin-only" hidden style="display: none !important;">
+                        <a href="users.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-user-gear"></i></span>
+                            <span class="sidebar-nav-text">Tài Khoản</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="sidebar-user-profile" id="sidebarUserProfile" title="Thông tin tài khoản">
+                    <div class="sidebar-user-avatar" id="sidebarUserAvatar">U</div>
+                    <div class="sidebar-user-info">
+                        <span class="sidebar-user-name" id="sidebarUserName">Người Dùng</span>
+                        <span class="sidebar-user-role" id="sidebarUserRole">---</span>
+                    </div>
+                    <button class="sidebar-logout-btn" type="button" id="sidebarLogoutBtn" title="Đăng Xuất">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Sidebar Overlay (Mobile) -->
+        <div class="sidebar-overlay"></div>
+
+        <!-- Main Content Area -->
+        <main class="app-main">
+            <!-- Page Content -->
+            <div class="page-container">
+                <!-- Page Header & Unified Toolbar -->
+                <div class="page-header" style="margin-bottom: 1.25rem;">
+                    <div class="classrooms-toolbar-row" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                        <!-- Bên trái: Ô tìm kiếm -->
+                        <div style="display: flex; align-items: center; flex: 1; min-width: 260px;">
+                            <h1 style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0;">Quản Lý Lớp Học</h1>
+                            <div class="search-box-wrapper" style="position: relative; width: 100%; max-width: 380px;">
+                                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; font-size: 0.85rem;"></i>
+                                <input type="text" id="searchClassroomInput" class="form-control" placeholder="Tìm theo tên lớp (vd: 10A1), phòng học..."
+                                    style="padding-left: 34px; padding-right: 30px; height: 38px; border-radius: 8px; font-size: 0.88rem; width: 100%;">
+                                <button type="button" id="btnClearClassroomSearch" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; display: none; font-size: 1.1rem; line-height: 1; padding: 2px 6px;" title="Xóa tìm kiếm">&times;</button>
+                            </div>
+                        </div>
+
+                        <!-- Bên phải: Tất cả các nút hành động trên cùng 1 hàng -->
+                        <div class="page-actions" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <button id="btnOpenScheduleModal" class="btn btn-secondary" type="button" onclick="window.openScheduleModal && window.openScheduleModal()"
+                                style="height: 38px; padding: 0 14px; font-size: 0.85rem; font-weight: 600;"
+                                title="Cài đặt lịch quét điểm danh tự động toàn trường">
+                                <i class="fa-solid fa-clock"></i> Đặt Lịch Quét
+                            </button>
+                            <button id="btnTriggerScan" class="btn btn-primary" type="button"
+                                style="background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); border-color: #4f46e5; font-weight: 600; height: 38px; padding: 0 14px; font-size: 0.85rem;" title="Kích hoạt chu trình AI quét điểm danh học sinh">
+                                <i class="fa-solid fa-qrcode"></i> Quét Điểm Danh
+                            </button>
+                            <button class="btn btn-primary" id="btnCaptureAllNow" type="button" title="Chụp lại ảnh trực tiếp từ toàn bộ 30 camera trường Điều Cải"
+                                style="height: 38px; padding: 0 14px; font-size: 0.85rem; font-weight: 600;">
+                                <i class="fa-solid fa-camera"></i> Chụp Lại 30 Camera
+                            </button>
+                            <button class="btn btn-secondary" id="btnRefresh" type="button" title="Tải lại danh sách"
+                                style="height: 38px; padding: 0 12px; font-size: 0.85rem; font-weight: 600;">
+                                <i class="fa-solid fa-rotate-right"></i> Làm mới
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chỗ Phần Xóa Nhỏ Xuất Hiện Khi Chọn Các Phòng -->
+                <div id="batchActionBar" class="batch-action-bar">
+                    <div class="batch-action-info">
+                        <i class="fa-solid fa-circle-check" style="color: #60a5fa; font-size: 1.1rem;"></i>
+                        <span>Đã chọn <strong id="batchSelectedCount" class="batch-selected-count">0</strong> phòng học</span>
+                    </div>
+                    <div class="batch-action-buttons">
+                        <button type="button" id="btnBatchSelectAll" class="btn-batch-cancel" title="Chọn tất cả phòng">
+                            <i class="fa-solid fa-check-double"></i> Chọn tất cả
+                        </button>
+                        <button type="button" id="btnBatchDeselectAll" class="btn-batch-cancel" title="Bỏ chọn">
+                            <i class="fa-solid fa-xmark"></i> Bỏ chọn
+                        </button>
+                        <button type="button" id="btnBatchActivate" class="btn-batch-activate" style="background: #10b981; color: white; border: none; border-radius: 6px; padding: 7px 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem;" title="Bật kích hoạt các camera đã chọn để quét điểm danh">
+                            <i class="fa-solid fa-circle-check"></i> Bật kích hoạt
+                        </button>
+                        <button type="button" id="btnBatchDeactivate" class="btn-batch-deactivate" style="background: #64748b; color: white; border: none; border-radius: 6px; padding: 7px 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem;" title="Tạm ngưng các camera đã chọn">
+                            <i class="fa-solid fa-circle-pause"></i> Tạm ngưng
+                        </button>
+                        <button type="button" id="btnBatchDeleteSelected" class="btn-batch-delete" title="Xóa các phòng đã chọn">
+                            <i class="fa-solid fa-trash-can"></i> Xóa đã chọn
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TV WALL VIEW -->
+                <div id="matrixView" class="tv-wall-container">
+                    <div class="matrix-grid" id="matrixGrid">
+                        <!-- Skeleton placeholders while loading -->
+                        <div class="matrix-card skeleton-matrix-card">
+                            <div class="matrix-card-screen skeleton">
+                                <div class="matrix-osd-top">
+                                    <div class="skeleton"
+                                        style="width: 44px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.3);">
+                                    </div>
+                                    <div class="skeleton"
+                                        style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="matrix-card-footer">
+                                <div style="flex: 1;">
+                                    <div class="skeleton"
+                                        style="width: 80px; height: 14px; margin-bottom: 5px; border-radius: 3px;">
+                                    </div>
+                                    <div class="skeleton" style="width: 55px; height: 11px; border-radius: 3px;"></div>
+                                </div>
+                                <div class="skeleton" style="width: 46px; height: 20px; border-radius: 999px;"></div>
+                            </div>
+                        </div>
+                        <div class="matrix-card skeleton-matrix-card">
+                            <div class="matrix-card-screen skeleton">
+                                <div class="matrix-osd-top">
+                                    <div class="skeleton"
+                                        style="width: 44px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.3);">
+                                    </div>
+                                    <div class="skeleton"
+                                        style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="matrix-card-footer">
+                                <div style="flex: 1;">
+                                    <div class="skeleton"
+                                        style="width: 80px; height: 14px; margin-bottom: 5px; border-radius: 3px;">
+                                    </div>
+                                    <div class="skeleton" style="width: 55px; height: 11px; border-radius: 3px;"></div>
+                                </div>
+                                <div class="skeleton" style="width: 46px; height: 20px; border-radius: 999px;"></div>
+                            </div>
+                        </div>
+                        <div class="matrix-card skeleton-matrix-card">
+                            <div class="matrix-card-screen skeleton">
+                                <div class="matrix-osd-top">
+                                    <div class="skeleton"
+                                        style="width: 44px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.3);">
+                                    </div>
+                                    <div class="skeleton"
+                                        style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="matrix-card-footer">
+                                <div style="flex: 1;">
+                                    <div class="skeleton"
+                                        style="width: 80px; height: 14px; margin-bottom: 5px; border-radius: 3px;">
+                                    </div>
+                                    <div class="skeleton" style="width: 55px; height: 11px; border-radius: 3px;"></div>
+                                </div>
+                                <div class="skeleton" style="width: 46px; height: 20px; border-radius: 999px;"></div>
+                            </div>
+                        </div>
+                        <div class="matrix-card skeleton-matrix-card">
+                            <div class="matrix-card-screen skeleton">
+                                <div class="matrix-osd-top">
+                                    <div class="skeleton"
+                                        style="width: 44px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.3);">
+                                    </div>
+                                    <div class="skeleton"
+                                        style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="matrix-card-footer">
+                                <div style="flex: 1;">
+                                    <div class="skeleton"
+                                        style="width: 80px; height: 14px; margin-bottom: 5px; border-radius: 3px;">
+                                    </div>
+                                    <div class="skeleton" style="width: 55px; height: 11px; border-radius: 3px;"></div>
+                                </div>
+                                <div class="skeleton" style="width: 46px; height: 20px; border-radius: 999px;"></div>
+                            </div>
+                        </div>
+                        <div class="matrix-card skeleton-matrix-card">
+                            <div class="matrix-card-screen skeleton">
+                                <div class="matrix-osd-top">
+                                    <div class="skeleton"
+                                        style="width: 44px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.3);">
+                                    </div>
+                                    <div class="skeleton"
+                                        style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="matrix-card-footer">
+                                <div style="flex: 1;">
+                                    <div class="skeleton"
+                                        style="width: 80px; height: 14px; margin-bottom: 5px; border-radius: 3px;">
+                                    </div>
+                                    <div class="skeleton" style="width: 55px; height: 11px; border-radius: 3px;"></div>
+                                </div>
+                                <div class="skeleton" style="width: 46px; height: 20px; border-radius: 999px;"></div>
+                            </div>
+                        </div>
+                        <div class="matrix-card skeleton-matrix-card">
+                            <div class="matrix-card-screen skeleton">
+                                <div class="matrix-osd-top">
+                                    <div class="skeleton"
+                                        style="width: 44px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.3);">
+                                    </div>
+                                    <div class="skeleton"
+                                        style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="matrix-card-footer">
+                                <div style="flex: 1;">
+                                    <div class="skeleton"
+                                        style="width: 80px; height: 14px; margin-bottom: 5px; border-radius: 3px;">
+                                    </div>
+                                    <div class="skeleton" style="width: 55px; height: 11px; border-radius: 3px;"></div>
+                                </div>
+                                <div class="skeleton" style="width: 46px; height: 20px; border-radius: 999px;"></div>
+                            </div>
+                        </div>
+                        <div class="matrix-card skeleton-matrix-card">
+                            <div class="matrix-card-screen skeleton">
+                                <div class="matrix-osd-top">
+                                    <div class="skeleton"
+                                        style="width: 44px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.3);">
+                                    </div>
+                                    <div class="skeleton"
+                                        style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="matrix-card-footer">
+                                <div style="flex: 1;">
+                                    <div class="skeleton"
+                                        style="width: 80px; height: 14px; margin-bottom: 5px; border-radius: 3px;">
+                                    </div>
+                                    <div class="skeleton" style="width: 55px; height: 11px; border-radius: 3px;"></div>
+                                </div>
+                                <div class="skeleton" style="width: 46px; height: 20px; border-radius: 999px;"></div>
+                            </div>
+                        </div>
+                        <div class="matrix-card skeleton-matrix-card">
+                            <div class="matrix-card-screen skeleton">
+                                <div class="matrix-osd-top">
+                                    <div class="skeleton"
+                                        style="width: 44px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.3);">
+                                    </div>
+                                    <div class="skeleton"
+                                        style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="matrix-card-footer">
+                                <div style="flex: 1;">
+                                    <div class="skeleton"
+                                        style="width: 80px; height: 14px; margin-bottom: 5px; border-radius: 3px;">
+                                    </div>
+                                    <div class="skeleton" style="width: 55px; height: 11px; border-radius: 3px;"></div>
+                                </div>
+                                <div class="skeleton" style="width: 46px; height: 20px; border-radius: 999px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL THÊM / SỬA CAMERA LỚP HỌC -->
+    <div class="modal-backdrop" id="cameraModal">
+        <div class="modal-container modal-lg">
+            <div class="modal-header">
+                <div class="modal-header-content">
+                    <h3 class="modal-title">
+                        <i class="fa-solid fa-video modal-title-icon" id="modalTitleIcon"></i>
+                        <span id="modalTitle">Thêm Camera Mới</span>
+                    </h3>
+                </div>
+                <button type="button" class="modal-close-btn" id="modalCloseBtn" onclick="window.closeModal && window.closeModal()" aria-label="Đóng">&times;</button>
+            </div>
+            <form id="cameraForm" onsubmit="return false;" style="display: flex; flex-direction: column; flex: 1; min-height: 0; margin: 0;">
+                <div class="modal-body">
+                    <input type="hidden" id="formCamId" value="">
+                    <input type="hidden" id="formRelayIp" value="">
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-barcode" style="color: var(--primary);"></i> Mã Lớp / Camera (*):</label>
+                            <input type="text" id="formCode" class="form-control" placeholder="Ví dụ: LOP_10A1" required>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-chalkboard-user" style="color: var(--primary);"></i> Tên Lớp Học (*):</label>
+                            <input type="text" id="formName" class="form-control" placeholder="Ví dụ: Lớp 10A1" required>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-door-open" style="color: var(--primary);"></i> Phòng Học:</label>
+                            <input type="text" id="formRoom" class="form-control" placeholder="Ví dụ: Phòng 101">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-users" style="color: var(--primary);"></i> Sĩ Số Chuẩn Của Lớp (*):</label>
+                            <input type="number" id="formStandard" class="form-control" value="40" min="1" max="60" required>
+                        </div>
+                    </div>
+
+                    <!-- NGUỒN CAMERA IP TRƯỜNG (RTSP) -->
+                    <div class="source-type-selector" style="margin-bottom: 12px;">
+                        <label style="font-size: 0.88rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                            <i class="fa-solid fa-server" style="color: var(--primary);"></i> Nguồn Camera:
+                        </label>
+                        <div class="source-tabs" style="display: inline-flex; width: auto;">
+                            <button type="button" class="source-tab active" id="tabBtnRtsp" style="cursor: default;">
+                                <i class="fa-solid fa-server"></i> Camera IP Trường (RTSP)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- PANEL RTSP NVR TRƯỜNG -->
+                    <div id="panelRtsp" class="source-panel" style="display: block;">
+                        <div class="preset-badge-group">
+                            <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; align-self: center;">Mẫu nhanh:</span>
+                            <button type="button" class="preset-btn" data-preset="DAHUA"><i class="fa-solid fa-server"></i> Dahua NVR Trường</button>
+                            <button type="button" class="preset-btn" data-preset="HIK"><i class="fa-solid fa-video"></i> Hikvision RTSP</button>
+                        </div>
+                        <div class="form-group" style="margin-top: 8px;">
+                            <label><i class="fa-solid fa-link" style="color: var(--primary);"></i> Đường Dẫn Luồng RTSP (*):</label>
+                            <input type="text" id="inputRtsp" class="form-control" placeholder="rtsp://admin:matkhau@192.168.10.200:554/cam/realmonitor?channel=1&subtype=0" required>
+                        </div>
+                    </div>
+
+                    <!-- Ô URL ĐƯỢC ĐỒNG BỘ ĐỂ GỬI LÊN SERVER -->
+                    <div id="advancedUrlBox" style="display: none; margin-bottom: 14px; background: #f1f5f9; padding: 12px; border-radius: 8px; border: 1.5px dashed #cbd5e1;">
+                        <label style="font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 6px; display: block;">
+                            <i class="fa-solid fa-code"></i> Đường dẫn nguồn chính thức (Gửi tới hệ thống AI):
+                        </label>
+                        <input type="text" id="formRtspUrl" class="form-control" style="font-family: monospace; font-size: 0.88rem;" required>
+                    </div>
+
+                    <!-- TRẠNG THÁI KÍCH HOẠT CAMERA CHO HỆ THỐNG AI -->
+                    <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <span style="font-weight: 700; font-size: 0.92rem; color: #1e293b; display: block;">
+                                <i class="fa-solid fa-video" style="color: var(--primary);"></i> Trạng Thái Kích Hoạt Camera
+                            </span>
+                            <span style="font-size: 0.8rem; color: #64748b;">
+                                Bật để hệ thống AI tự động quét và điểm danh học sinh lớp học này
+                            </span>
+                        </div>
+                        <label class="toggle-switch" title="Bật/Tắt kích hoạt camera này trong điểm danh">
+                            <input type="checkbox" id="formActive" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+
+                    <!-- Khung Test Kết Nối Live & Chụp Thử Nghiệm -->
+                    <div class="test-box">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                            <span style="font-weight: 700; font-size: 0.88rem; color: var(--text-main);">
+                                <i class="fa-solid fa-satellite-dish" style="color: var(--primary);"></i> Kiểm Tra Kết Nối & Bắt Khung Hình
+                            </span>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button type="button" id="btnTestStream" class="btn btn-secondary btn-sm" style="font-weight: 600;">
+                                    <i class="fa-solid fa-play"></i> Bắt Ảnh Xem Trước
+                                </button>
+                                <button type="button" id="btnTestSignalFlow" class="btn btn-primary btn-sm" style="font-weight: 600;">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Thử Chu Trình: Bật Đèn Báo -> Bắt Ảnh Màu
+                                </button>
+                            </div>
+                        </div>
+                        <div id="testStatusMsg" style="font-size: 0.82rem; margin-top: 6px; color: var(--text-muted);">
+                            Bấm "Bắt Ảnh Xem Trước" hoặc "Thử Chu Trình: Bật Đèn Báo -> Bắt Ảnh Màu" để kiểm chứng ảnh thu được có đầy đủ màu sắc.
+                        </div>
+                        <img id="testPreviewImg" class="test-preview-img" alt="Ảnh xem trước từ Camera">
+                    </div>
+                </div>
+
+                <div class="modal-footer" style="display: flex; justify-content: flex-end;">
+                    <button type="button" id="btnSaveCamera" class="btn btn-primary modal-btn modal-btn-primary" style="padding: 9px 24px; font-weight: 700;">
+                        <i class="fa-solid fa-floppy-disk"></i> Lưu Camera
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL XEM TRỰC TIẾP SNAPSHOT NHANH -->
+
+    <!-- MODAL XÓA CAMERA CHỌN LỌC -->
+    <div class="modal-backdrop" id="deleteCameraModal">
+        <div class="modal-container modal-md modal-danger">
+            <div class="modal-header">
+                <div class="modal-header-content">
+                    <h3 class="modal-title" style="color: #dc2626;">
+                        <i class="fa-solid fa-trash-can modal-title-icon" style="color: #dc2626;"></i>
+                        Xóa Camera / Lớp Học
+                    </h3>
+                    <p class="modal-subtitle">
+                        Chọn camera bạn muốn xóa khỏi hệ thống điểm danh
+                    </p>
+                </div>
+                <button type="button" class="modal-close-btn" id="deleteModalCloseBtn" aria-label="Đóng">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group" style="margin-bottom: 1.15rem;">
+                    <label style="font-weight: 700; font-size: 0.88rem; color: #1e293b; margin-bottom: 6px; display: block;">
+                        <i class="fa-solid fa-video" style="color: var(--primary);"></i> Chọn 1 camera cần xóa nhanh:
+                    </label>
+                    <select id="deleteModalSelectQuick" class="form-control" style="width: 100%; padding: 8px 12px; font-weight: 600; font-size: 0.88rem;">
+                        <option value="">-- Bấm vào đây để chọn camera --</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 1.15rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <label style="font-weight: 700; font-size: 0.88rem; color: #1e293b; margin: 0;">
+                            <i class="fa-solid fa-list-check" style="color: #64748b;"></i> Hoặc tích chọn nhiều camera:
+                        </label>
+                        <div style="display: flex; gap: 6px;">
+                            <button type="button" id="btnDeleteCheckAll" class="btn btn-secondary btn-sm" style="font-size: 0.78rem; padding: 4px 10px;">
+                                Chọn tất cả
+                            </button>
+                            <button type="button" id="btnDeleteUncheckAll" class="btn btn-secondary btn-sm" style="font-size: 0.78rem; padding: 4px 10px;">
+                                Bỏ chọn
+                            </button>
+                        </div>
+                    </div>
+                    <div id="deleteModalChecklist" style="max-height: 220px; overflow-y: auto; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 8px; background: #f8fafc; display: flex; flex-direction: column; gap: 6px;">
+                        <!-- Render danh sách camera kèm checkbox qua JS -->
+                    </div>
+                </div>
+
+                <div class="modal-info-box warning" style="padding: 10px 14px; font-size: 0.82rem;">
+                    <i class="fa-solid fa-triangle-exclamation modal-info-box-icon" style="color: #d97706;"></i>
+                    <div style="line-height: 1.45;">
+                        <strong>Cảnh báo:</strong> Việc xóa camera sẽ đồng thời xóa cấu hình vùng nhận diện ROI của lớp học đó. Thao tác này không thể hoàn tác.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="btnCancelDeleteModal" class="btn btn-secondary modal-btn modal-btn-secondary" style="padding: 9px 20px;">
+                    <i class="fa-solid fa-xmark"></i> Hủy
+                </button>
+                <button type="button" id="btnConfirmDeleteBatch" class="btn btn-danger modal-btn modal-btn-danger" style="padding: 9px 22px; font-weight: 700;">
+                    <i class="fa-solid fa-trash-can"></i> Xác Nhận Xóa
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL THÊM ĐẦU GHI (NVR) TỰ ĐỘNG 30 CAMERA -->
+    <div class="modal-backdrop" id="nvrModal">
+        <div class="modal-container modal-xl">
+            <div class="modal-header">
+                <div class="modal-header-content">
+                    <h3 class="modal-title">
+                        <i class="fa-solid fa-server modal-title-icon"></i>
+                        Thêm Đầu Ghi NVR
+                    </h3>
+                </div>
+                <button type="button" class="modal-close-btn" id="nvrModalCloseBtn" onclick="window.closeNvrModal && window.closeNvrModal()" aria-label="Đóng">&times;</button>
+            </div>
+            <div class="modal-body" style="overflow-y: auto; padding: 1.5rem; flex: 1;">
+                <!-- Bước 1: Thông tin kết nối NVR -->
+                <div class="nvr-config-card">
+                    <div style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                        Thông Số Kết Nối Đầu Ghi (NVR / DVR)
+                    </div>
+
+                    <div class="form-grid" style="grid-template-columns: 2fr 1fr 1.5fr 1.5fr;">
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-server" style="color: var(--primary);"></i> Địa chỉ IP NVR (*):</label>
+                            <input type="text" id="nvrIp" class="form-control" value="192.168.1.200" placeholder="192.168.1.200">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-ethernet" style="color: var(--primary);"></i> Cổng RTSP:</label>
+                            <input type="number" id="nvrPort" class="form-control" value="554">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-user-lock" style="color: var(--primary);"></i> Tài khoản (*):</label>
+                            <input type="text" id="nvrUsername" class="form-control" value="admin">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-key" style="color: var(--primary);"></i> Mật khẩu (*):</label>
+                            <input type="password" id="nvrPassword" class="form-control" value="Lhu@2025" placeholder="Mật khẩu NVR">
+                        </div>
+                    </div>
+
+                    <div class="form-grid" style="grid-template-columns: 1.3fr 0.9fr 0.9fr 1.6fr; margin-top: 10px;">
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-microchip" style="color: var(--primary);"></i> Hãng Đầu Ghi:</label>
+                            <select id="nvrBrand" class="form-control">
+                                <option value="HIKVISION" selected>Hikvision / Ezviz (DS-7632NXI-K2)</option>
+                                <option value="DAHUA">Dahua / KBVision / IMOU</option>
+                                <option value="UNIVIEW">Uniview (UNV)</option>
+                                <option value="CUSTOM">Tùy biến (Custom Pattern)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-play" style="color: var(--primary);"></i> Kênh Bắt Đầu:</label>
+                            <input type="number" id="nvrStartChannel" class="form-control" value="1" min="1" max="64">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-list-ol" style="color: var(--primary);"></i> Số Kênh:</label>
+                            <input type="number" id="nvrChannelsCount" class="form-control" value="30" min="1" max="64">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-tags" style="color: var(--primary);"></i> Quy Tắc Gán Tên Lớp Học:</label>
+                            <select id="nvrNamingMode" class="form-control">
+                                <option value="DEFAULT_30_CLASSES" selected>Chuẩn 30 Lớp Điều Cải (10A1 -> 12A10 kèm Sĩ Số)</option>
+                                <option value="CHANNEL_NUMBER">Theo Số Kênh (Camera Kênh 1 -> Kênh 30)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="nvrCustomPatternBox" style="display: none; margin-top: 10px;">
+                        <label><i class="fa-solid fa-link" style="color: var(--primary);"></i> Mẫu URL RTSP Tùy Chỉnh:</label>
+                        <input type="text" id="nvrCustomPattern" class="form-control"
+                            placeholder="rtsp://{user}:{password}@{ip}:{port}/cam/realmonitor?channel={channel}&subtype={subtype}">
+                    </div>
+
+                    <div style="margin-top: 14px; display: flex; justify-content: flex-end;">
+                        <button type="button" id="btnProbeNVR" class="btn btn-primary"
+                            onclick="window.probeNVRChannels && window.probeNVRChannels()"
+                            style="font-weight: 700; padding: 10px 24px; cursor: pointer;">
+                            Quét kênh camera
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Trạng thái quét / Loading -->
+                <div id="nvrProbeLoading"
+                    style="display: none; text-align: center; padding: 28px; background: #f8fafc; border-radius: 12px; margin-top: 14px; border: 1.5px dashed #cbd5e1;">
+                    <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2.2rem; color: var(--primary);"></i>
+                    <p style="margin-top: 10px; font-weight: 700; color: #0f172a; font-size: 1rem;">Đang quét song song 30 kênh từ đầu ghi và chụp ảnh xem trước...</p>
+                    <span style="font-size: 0.84rem; color: #64748b;">(Hệ thống dùng đa luồng quét siêu tốc trong 2-4 giây)</span>
+                </div>
+
+                <!-- Bước 2: Danh sách xem trước 30 Camera -->
+                <div id="nvrProbeResults" style="display: none; margin-top: 16px;">
+                    <div class="nvr-preview-toolbar">
+                        <div style="font-size: 0.95rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                            Kết Quả Dò Kênh: <span id="nvrProbeSummary" class="status-pill status-pill-success" style="font-size: 0.85rem; font-weight: 700;">30/30 Kênh</span>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <button type="button" id="btnSelectAllNvr" class="btn btn-secondary btn-sm" onclick="window.toggleAllNvrChannels && window.toggleAllNvrChannels(true)" style="font-size: 0.8rem; font-weight: 600;">Chọn Tất Cả</button>
+                            <button type="button" id="btnUnselectAllNvr" class="btn btn-secondary btn-sm" onclick="window.toggleAllNvrChannels && window.toggleAllNvrChannels(false)" style="font-size: 0.8rem; font-weight: 600;">Bỏ Chọn Hết</button>
+                        </div>
+                    </div>
+                    <div class="modal-info-box info" style="margin-bottom: 12px; padding: 10px 14px; font-size: 0.84rem;">
+                        <i class="fa-solid fa-circle-info modal-info-box-icon"></i>
+                        <span>Bạn có thể chỉnh sửa trực tiếp <strong>Tên Lớp, Số Phòng</strong> hoặc <strong>Sĩ Số</strong> ngay trên từng ô bên dưới trước khi lưu:</span>
+                    </div>
+
+                    <div id="nvrChannelList" class="nvr-channels-grid">
+                        <!-- Render 30 kênh xem trước qua JS -->
+                    </div>
+
+                    <div style="margin-top: 16px; padding: 12px 16px; background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 10px;">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.88rem; font-weight: 600; color: #166534; margin: 0;">
+                            <input type="checkbox" id="nvrReplaceExisting" checked style="width: 18px; height: 18px; accent-color: var(--primary);">
+                            <span>Khởi tạo mới: Thay thế toàn bộ danh sách camera cũ (đảm bảo đồng bộ chuẩn 30 lớp học)</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="display: flex; justify-content: flex-end;">
+                <button type="button" id="btnSaveNvrImport" class="btn btn-primary modal-btn modal-btn-primary"
+                    style="font-weight: 700; padding: 9px 24px; cursor: pointer;" disabled>
+                    <i class="fa-solid fa-floppy-disk"></i> Lưu trữ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- Modal: Quản Lý Nguồn Camera & Bàn Giao Đầu Ghi NVR -->
+    <div class="modal-backdrop" id="modalSourceManager">
+        <div class="modal-dialog" style="max-width: 680px;">
+            <div class="modal-content">
+                <div class="modal-header" style="background: #f8fafc; border-bottom: 1px solid var(--border-color); padding: 1.2rem 1.5rem;">
+                    <div>
+                        <h3 class="modal-title" style="font-size: 1.15rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 10px;">
+                            <i class="fa-solid fa-sliders" style="color: #f59e0b;"></i> Chế Độ Nguồn Camera & Bàn Giao Khách Hàng
+                        </h3>
+                        <p class="modal-subtitle" style="font-size: 0.84rem; color: #64748b; margin-top: 3px;">
+                            Chuyển đổi linh hoạt giữa Ảnh Mẫu Test (Offline) và Đầu Ghi NVR Thật (Bàn Giao)
+                        </p>
+                    </div>
+                    <button type="button" class="modal-close-btn" id="modalSourceCloseBtn" onclick="window.closeSourceManagerModal && window.closeSourceManagerModal()">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="modal-body" style="padding: 1.5rem;">
+                    <!-- Trạng thái hiện tại -->
+                    <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; margin-bottom: 18px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Chế Độ Đang Hoạt Động:</span>
+                                <h4 id="sourceStatusCurrentText" style="margin: 4px 0 0 0; font-size: 1.05rem; font-weight: 800; color: #1e293b;">
+                                    Đang kiểm tra...
+                                </h4>
+                            </div>
+                            <span id="sourceStatusBadge" class="status-pill" style="font-size: 0.85rem; padding: 6px 14px; font-weight: 700;">---</span>
+                        </div>
+                        <div style="margin-top: 10px; font-size: 0.82rem; color: #475569; display: flex; gap: 16px; border-top: 1px dashed #cbd5e1; padding-top: 8px;">
+                            <span><i class="fa-solid fa-video"></i> Tổng camera: <strong id="sourceStatusTotal">30</strong></span>
+                            <span><i class="fa-solid fa-image"></i> Ảnh test (camera/): <strong id="sourceStatusMockCount">--</strong></span>
+                            <span><i class="fa-solid fa-server"></i> NVR RTSP: <strong id="sourceStatusRtspCount">--</strong></span>
+                        </div>
+                    </div>
+
+                    <!-- Tabs chọn chế độ -->
+                    <div class="source-tabs" style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
+                        <button type="button" class="source-tab active" id="tabSourceNvr" onclick="window.switchSourceManagerTab && window.switchSourceManagerTab('nvr')" style="flex: 1; padding: 10px; border-radius: 8px; font-weight: 700; cursor: pointer;">
+                            <i class="fa-solid fa-server"></i> 1. Bàn Giao Đầu Ghi NVR Thật
+                        </button>
+                        <button type="button" class="source-tab" id="tabSourceMock" onclick="window.switchSourceManagerTab && window.switchSourceManagerTab('mock')" style="flex: 1; padding: 10px; border-radius: 8px; font-weight: 700; cursor: pointer;">
+                            <i class="fa-solid fa-flask"></i> 2. Chế Độ Ảnh Mẫu (Test)
+                        </button>
+                    </div>
+
+                    <!-- Panel 1: Bàn Giao Đầu Ghi Thực Tế -->
+                    <div id="panelSourceNvr">
+                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; font-size: 0.84rem; color: #166534;">
+                            <i class="fa-solid fa-circle-check"></i> <strong>Sẵn sàng bàn giao:</strong> Khi kết nối đầu ghi thực tế tại trường, điền thông số dưới đây. Hệ thống sẽ tự động gán toàn bộ 30 camera sang các luồng RTSP tương ứng chỉ với 1 click!
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px;">
+                            <div class="form-group">
+                                <label style="font-weight: 700; font-size: 0.85rem;"><i class="fa-solid fa-network-wired" style="color: var(--primary);"></i> Địa Chỉ IP Đầu Ghi:</label>
+                                <input type="text" id="deployNvrIp" class="form-control" value="192.168.1.200" placeholder="192.168.1.200">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-weight: 700; font-size: 0.85rem;"><i class="fa-solid fa-door-open" style="color: var(--primary);"></i> Cổng RTSP:</label>
+                                <input type="number" id="deployNvrPort" class="form-control" value="554">
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                            <div class="form-group">
+                                <label style="font-weight: 700; font-size: 0.85rem;"><i class="fa-solid fa-user" style="color: var(--primary);"></i> Tài Khoản NVR:</label>
+                                <input type="text" id="deployNvrUser" class="form-control" value="admin">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-weight: 700; font-size: 0.85rem;"><i class="fa-solid fa-key" style="color: var(--primary);"></i> Mật Khẩu NVR:</label>
+                                <input type="password" id="deployNvrPass" class="form-control" value="Lhu@2025" placeholder="Mật khẩu NVR">
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                            <div class="form-group">
+                                <label style="font-weight: 700; font-size: 0.85rem;"><i class="fa-solid fa-microchip" style="color: var(--primary);"></i> Hãng Đầu Ghi:</label>
+                                <select id="deployNvrBrand" class="form-control">
+                                    <option value="HIKVISION" selected>Hikvision (Đầu ghi thực tế THPT Điều Cải)</option>
+                                    <option value="DAHUA">Dahua / KBVision / IMOU</option>
+                                    <option value="KBVISION">KBVision</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label style="font-weight: 700; font-size: 0.85rem;"><i class="fa-solid fa-hashtag" style="color: var(--primary);"></i> Kênh bắt đầu:</label>
+                                <input type="number" id="deployNvrChannelStart" class="form-control" value="1" min="1">
+                            </div>
+                        </div>
+
+                        <div style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px;">
+                            <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; margin: 0; font-size: 0.86rem; color: #92400e; font-weight: 600;">
+                                <input type="checkbox" id="deployCleanupMock" style="width: 18px; height: 18px; margin-top: 2px;">
+                                <span>
+                                    <strong>Xóa sạch thư mục ảnh test giả lập (camera/) sau khi chuyển đổi</strong><br>
+                                    <span style="font-weight: 400; font-size: 0.78rem; color: #78350f;">
+                                        Tùy chọn này giúp giải phóng dung lượng và xóa bỏ toàn bộ dữ liệu mẫu kiểm thử khi bàn giao cho khách hàng. Hệ thống sẽ hoạt động 100% bằng đầu ghi thật.
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+
+                        <button type="button" id="btnApplyNvrDeploy" onclick="window.applyNvrDeploy && window.applyNvrDeploy()" class="btn btn-primary" style="width: 100%; padding: 11px; font-size: 0.95rem; font-weight: 700; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-color: #059669; cursor: pointer;">
+                            <i class="fa-solid fa-rocket"></i> ÁP DỤNG ĐẦU GHI NVR & BÀN GIAO TOÀN BỘ 30 CAMERA
+                        </button>
+                    </div>
+
+                    <!-- Panel 2: Chế Độ Ảnh Mẫu Thử Nghiệm -->
+                    <div id="panelSourceMock" style="display: none;">
+                        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; font-size: 0.84rem; color: #1e40af;">
+                            <i class="fa-solid fa-circle-info"></i> <strong>Chế độ Kiểm thử (Offline):</strong> Khi không có camera thật, bạn có thể chọn bất kỳ thư mục ảnh nào trên máy tính để làm nguồn hình ảnh cho 30 camera. AI sẽ nhận diện như camera thực tế.
+                        </div>
+
+                        <!-- Chọn Thư Mục Chứa Ảnh -->
+                        <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px;">
+                            <div class="form-group" style="margin-bottom: 8px;">
+                                <label style="font-weight: 700; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                    <span><i class="fa-solid fa-folder-open" style="color: #f59e0b;"></i> Thư Mục Chứa Hình Ảnh Camera:</span>
+                                    <span style="font-size: 0.78rem; font-weight: 400; color: #64748b;">(Tương đối hoặc tuyệt đối)</span>
+                                </label>
+                                <div style="display: flex; gap: 8px;">
+                                    <input type="text" id="mockFolderInput" class="form-control" value="camera" placeholder="Nhập đường dẫn, ví dụ: camera hoặc D:\AnhCamera..." style="flex: 1; font-family: monospace; font-size: 0.88rem;">
+                                    <button type="button" id="btnBrowseMockFolder" onclick="window.browseMockFolder && window.browseMockFolder()" class="btn btn-secondary" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; white-space: nowrap; cursor: pointer;">
+                                        <i class="fa-solid fa-folder-tree"></i> Chọn Thư Mục
+                                    </button>
+                                    <button type="button" id="btnCheckMockFolder" onclick="window.inspectMockFolder && window.inspectMockFolder()" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.82rem; font-weight: 600; cursor: pointer;" title="Kiểm tra thư mục này">
+                                        <i class="fa-solid fa-magnifying-glass"></i> Kiểm Tra
+                                    </button>
+                                </div>
+                                <input type="file" id="folderPickerInput" webkitdirectory directory style="display: none;">
+                            </div>
+
+                            <!-- Gợi ý nhanh thư mục -->
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;">
+                                <span style="font-size: 0.76rem; color: #64748b; align-self: center;">Gợi ý nhanh:</span>
+                                <button type="button" class="preset-folder-btn" onclick="window.selectMockPreset && window.selectMockPreset('camera')" data-folder="camera" style="padding: 3px 8px; font-size: 0.75rem; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer;">
+                                    📁 camera/ (Mặc định)
+                                </button>
+                                <button type="button" class="preset-folder-btn" onclick="window.selectMockPreset && window.selectMockPreset('dataset/samples')" data-folder="dataset/samples" style="padding: 3px 8px; font-size: 0.75rem; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer;">
+                                    📁 dataset/samples/
+                                </button>
+                                <button type="button" class="preset-folder-btn" onclick="window.selectMockPreset && window.selectMockPreset('dataset/extracted_frames')" data-folder="dataset/extracted_frames" style="padding: 3px 8px; font-size: 0.75rem; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer;">
+                                    📁 dataset/extracted_frames/
+                                </button>
+                            </div>
+
+                            <!-- Kết quả kiểm tra thư mục -->
+                            <div id="mockFolderDetails" style="font-size: 0.82rem; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 8px;">
+                                Đang tải thông tin thư mục...
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 10px;">
+                            <button type="button" id="btnApplyMockDeploy" onclick="window.applyMockFolder && window.applyMockFolder()" class="btn btn-warning" style="flex: 2; padding: 11px; font-weight: 700; cursor: pointer;">
+                                <i class="fa-solid fa-flask"></i> Áp Dụng Thư Mục Này Cho Camera (1 - 30)
+                            </button>
+                            <button type="button" id="btnDeleteMockFolder" onclick="window.deleteMockFolder && window.deleteMockFolder()" class="btn btn-danger" style="flex: 1; padding: 11px; font-weight: 700; cursor: pointer;" title="Xóa thư mục ảnh này để giải phóng dung lượng">
+                                <i class="fa-solid fa-trash-can"></i> Xóa Thư Mục Này
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer" style="background: #f8fafc; border-top: 1px solid var(--border-color); padding: 0.9rem 1.5rem; display: flex; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" id="btnCancelSourceModal" onclick="window.closeSourceManagerModal && window.closeSourceManagerModal()" style="padding: 7px 18px;">
+                        Đóng
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live View Modal - Xem Trực Tiếp Video Camera (Surveillance Live Video Player) -->
+    <div class="modal-backdrop" id="liveViewModal">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content" style="background: #090d16; color: #f8fafc; border: 1px solid #1e293b;">
+                <div class="modal-header" style="border-bottom: 1px solid #1e293b; background: #0f172a; padding: 12px 20px;">
+                    <div class="modal-header-info">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span class="live-pulse-badge" style="background: #dc2626; color: white; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; letter-spacing: 0.5px;">
+                                <span style="width: 8px; height: 8px; border-radius: 50%; background: #ffffff;"></span> LIVE
+                            </span>
+                            <h3 id="liveViewTitle" class="modal-title" style="color: #f8fafc; margin: 0; font-size: 1.15rem; font-weight: 700;">Xem Trực Tiếp Video Camera</h3>
+                        </div>
+                        <p id="liveViewSubtitle" class="modal-subtitle" style="color: #94a3b8; margin: 4px 0 0 0; font-size: 0.85rem;"></p>
+                    </div>
+                    <button type="button" class="modal-close-btn" id="liveViewCloseBtn" style="color: #94a3b8;" title="Đóng cửa sổ">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="modal-body modal-body-image" style="background: #020617; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
+                    <div class="live-player-container" style="position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #000000; overflow: hidden;">
+                        <img id="liveVideoPlayer" class="fullscreen-image live-stream-feed" src="" alt="Live Video Feed" style="max-width: 100%; max-height: calc(100vh - 140px); object-fit: contain; width: auto; height: auto;" />
+                        
+                        <!-- Video Player Control Bar -->
+                        <div class="live-video-controls" style="position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 30px; padding: 6px 18px; display: flex; align-items: center; gap: 14px; z-index: 10; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+                            <button type="button" class="img-control-btn" id="btnLiveTogglePlay" title="Tạm dừng / Xem tiếp" style="background: none; border: none; color: #f8fafc; cursor: pointer; font-size: 1rem; padding: 6px;">
+                                <i class="fa-solid fa-pause"></i>
+                            </button>
+                            <span style="width: 1px; height: 18px; background: rgba(255,255,255,0.2);"></span>
+                            <button type="button" class="img-control-btn" id="btnLiveSnapshot" title="Chụp ảnh tức thì từ luồng video" style="background: none; border: none; color: #10b981; cursor: pointer; font-size: 1rem; padding: 6px;">
+                                <i class="fa-solid fa-camera"></i>
+                            </button>
+                            <button type="button" class="img-control-btn" id="btnLiveFullscreen" title="Xem toàn màn hình" style="background: none; border: none; color: #38bdf8; cursor: pointer; font-size: 1rem; padding: 6px;">
+                                <i class="fa-solid fa-expand"></i>
+                            </button>
+                            <span style="width: 1px; height: 18px; background: rgba(255,255,255,0.2);"></span>
+                            <div style="font-size: 0.8rem; color: #94a3b8; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></span>
+                                <span id="liveStreamResolution">1080p • 25 FPS (Trực tuyến)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CẤU HÌNH VÙNG ROI TRỰC TIẾP TRÊN TRANG (DIRECT IN-PAGE ROI CONFIGURATION) -->
+    <div class="modal-backdrop" id="roiConfigModal" style="display: none; z-index: 9999; align-items: center; justify-content: center;">
+        <div class="modal-dialog modal-xl" style="max-width: 1440px; width: 96vw; height: 92vh; margin: 0 auto; display: flex; justify-content: center; align-items: center;">
+            <div class="modal-content" style="background: #ffffff; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.25); max-width: 1440px !important; width: 100% !important; height: 100% !important; max-height: 94vh; margin: 0 auto !important; display: flex !important; flex-direction: column !important;">
+                <!-- Header -->
+                <div class="modal-header" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+                    <div class="modal-header-content">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-draw-polygon" style="color: #8b5cf6; font-size: 1.2rem;"></i>
+                            <h3 id="roiModalTitle" class="modal-title" style="margin: 0; font-size: 1.15rem; font-weight: 700; color: #0f172a;">
+                                Thiết Lập Vùng Nhận Diện ROI
+                            </h3>
+                        </div>
+                        <p id="roiModalSubtitle" class="modal-subtitle" style="margin: 3px 0 0 0; font-size: 0.82rem; color: #64748b;">
+                            Vẽ đa giác vùng bàn học sinh để AI tập trung nhận diện. Vùng ngoài sẽ tự động bỏ qua.
+                        </p>
+                    </div>
+                    <button type="button" class="modal-close-btn" id="roiModalCloseBtn" aria-label="Đóng" style="font-size: 1.5rem; line-height: 1; border: none; background: transparent; cursor: pointer; color: #64748b;">&times;</button>
+                </div>
+
+                <!-- Body -->
+                <div class="modal-body" style="padding: 12px 20px; background: #ffffff; flex: 1 1 0%; height: 100%; min-height: 0; overflow: hidden; display: flex; flex-direction: column;">
+                    <!-- Thanh công cụ vẽ ROI -->
+                    <div class="tool-controls" style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; flex-shrink: 0;">
+                        <div class="tool-actions-left" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                            <button type="button" id="btnModalModeGreen" class="btn-mode-green active"
+                                style="background: #059669; color: white; border: none; border-radius: 6px; padding: 6px 12px; font-size: 0.82rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-draw-polygon"></i> Vẽ Vùng Nhận Diện (Bàn Học)
+                            </button>
+                            <button type="button" id="btnModalFourCorners" class="btn btn-secondary btn-sm"
+                                style="font-size: 0.82rem; padding: 6px 12px; font-weight: 600;" title="Tạo nhanh 4 điểm sát đúng 4 góc biên ảnh">
+                                <i class="fa-solid fa-arrows-to-dot"></i> Bắt 4 Góc Ảnh
+                            </button>
+                            <button type="button" id="btnModalUndo" class="btn btn-secondary btn-sm"
+                                style="font-size: 0.82rem; padding: 6px 12px; font-weight: 600;" title="Hoàn tác điểm vừa vẽ (Ctrl+Z)">
+                                <i class="fa-solid fa-rotate-left"></i> Hoàn Tác
+                            </button>
+                            <button type="button" id="btnModalClear" class="btn btn-secondary btn-sm"
+                                style="font-size: 0.82rem; padding: 6px 12px; font-weight: 600; color: #dc2626;" title="Xóa toàn bộ các điểm">
+                                <i class="fa-solid fa-trash-can"></i> Xóa Vùng
+                            </button>
+                        </div>
+                        <div style="font-size: 0.8rem; color: #64748b; font-weight: 600;" id="roiModalCoordsInfo">
+                            Độ phân giải: <strong>Tự động</strong>
+                        </div>
+                    </div>
+
+                    <!-- Khung Canvas Vẽ ROI (Mở rộng kích thước to hơn) -->
+                    <div class="canvas-outer-wrapper" style="border: 1.5px solid #cbd5e1; border-radius: 10px; overflow: hidden; background: #0f172a; position: relative; width: 100%; height: 100%; flex: 1 1 0%; min-height: 0; display: flex; align-items: center; justify-content: center; margin: 0; padding: 8px;">
+                        <div class="canvas-container" style="position: relative; max-width: 100%; max-height: 100%; display: flex; justify-content: center; align-items: center;">
+                            <canvas id="roiModalCanvas" style="display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; cursor: crosshair;"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Gợi ý thao tác -->
+                    <div class="roi-modal-hints" style="margin-top: 8px; font-size: 0.78rem; color: #64748b; line-height: 1.4; flex-shrink: 0;">
+                        💡 <strong>Hướng dẫn:</strong> Nhấp chuột trái để vẽ các điểm tạo vùng xanh quanh khu vực bàn học sinh. Kéo điểm neo để căn chỉnh viền. <strong>Chuột phải</strong> để xóa điểm. Nhấn <strong>Ctrl+Z</strong> để hoàn tác.
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="modal-footer" style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <button type="button" id="btnModalSnapshot" class="btn btn-secondary btn-sm" style="font-weight: 600; padding: 7px 14px;">
+                        <i class="fa-solid fa-camera-rotate"></i> Chụp Lại Ảnh Camera
+                    </button>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" id="btnModalCancelRoi" class="btn btn-secondary modal-btn modal-btn-secondary" style="padding: 7px 18px;">
+                            Đóng
+                        </button>
+                        <button type="button" id="btnModalSaveROI" class="btn btn-success modal-btn" style="background: #16a34a; border-color: #16a34a; color: white; padding: 7px 22px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-floppy-disk"></i> Lưu Tọa Độ Vùng
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Cài Đặt Lịch Quét Điểm Danh Tự Động -->
+    <div class="modal-backdrop" id="scheduleModal" style="display: none; z-index: 9999;">
+        <div class="modal-dialog modal-md" style="max-width: 580px; width: 95vw;">
+            <div class="modal-content" style="background: #ffffff; border-radius: 14px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.3); border: 1px solid #e2e8f0;">
+                <div class="modal-header" style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); color: #ffffff; padding: 18px 24px; border-bottom: 1px solid rgba(255,255,255,0.1); position: relative;">
+                    <div class="modal-header-content">
+                        <h3 id="scheduleModalTitle" class="modal-title" style="margin: 0; font-size: 1.15rem; font-weight: 700; color: #ffffff; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-clock" style="color: #818cf8;"></i> Cài Đặt Lịch Quét Điểm Danh Tự Động
+                        </h3>
+                    </div>
+                    <button type="button" class="modal-close-btn" id="scheduleModalCloseBtn" onclick="window.closeScheduleModal && window.closeScheduleModal()" aria-label="Đóng" style="color: #ffffff; background: rgba(255,255,255,0.15); border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; position: absolute; right: 18px; top: 18px;">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="modal-body" style="padding: 22px 24px; background: #ffffff;">
+                    <!-- Master Toggle: Bật/Tắt Quét Tự Động -->
+                    <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-weight: 700; font-size: 0.95rem; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-bolt" style="color: #6366f1;"></i> Bật Lập Lịch Quét Tự Động (Auto-Scan)
+                            </div>
+                            <div style="font-size: 0.8rem; color: #64748b; margin-top: 3px;" id="scheduleStatusText">
+                                Tự động quét theo lịch trình vào các ca học
+                            </div>
+                        </div>
+                        <label class="switch" style="position: relative; display: inline-block; width: 48px; height: 26px; margin: 0; cursor: pointer;">
+                            <input type="checkbox" id="chkAutoScanEnabled" checked style="opacity: 0; width: 0; height: 0;">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <!-- Ca Sáng & Ca Chiều Grid -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                        <!-- Ca Sáng -->
+                        <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; background: #fff;">
+                            <label style="font-weight: 700; font-size: 0.88rem; color: #1e293b; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                                <i class="fa-solid fa-sun" style="color: #f59e0b;"></i> Ca Sáng (Đầu buổi)
+                            </label>
+                            <input type="time" id="inputMorningScanTime" value="06:45" class="form-control"
+                                style="width: 100%; font-size: 1.05rem; font-weight: 700; text-align: center; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 8px;">
+                            <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 6px; text-align: center;">Khung chuẩn: 06:45 - 07:15</div>
+                        </div>
+
+                        <!-- Ca Chiều (Có switch bật/tắt riêng ca chiều/tối) -->
+                        <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; background: #fff;" id="afternoonScanCard">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <label style="font-weight: 700; font-size: 0.88rem; color: #1e293b; display: flex; align-items: center; gap: 6px; margin: 0;">
+                                    <i class="fa-solid fa-cloud-sun" style="color: #0284c7;"></i> Ca Chiều (Đầu buổi)
+                                </label>
+                                <label class="switch switch-sm" title="Bật/Tắt quét ca chiều" style="position: relative; display: inline-block; width: 40px; height: 22px; margin: 0; cursor: pointer;">
+                                    <input type="checkbox" id="chkAfternoonScanEnabled" checked style="opacity: 0; width: 0; height: 0;">
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                            <input type="time" id="inputAfternoonScanTime" value="12:45" class="form-control"
+                                style="width: 100%; font-size: 1.05rem; font-weight: 700; text-align: center; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 8px; transition: opacity 0.2s ease;">
+                            <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 6px; text-align: center;" id="afternoonScanHint">Khung chuẩn: 12:45 - 13:15</div>
+                        </div>
+                    </div>
+
+                    <!-- Ngày quét trong tuần -->
+                    <div style="margin-bottom: 20px;">
+                        <label style="font-weight: 700; font-size: 0.88rem; color: #1e293b; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                            <i class="fa-solid fa-calendar-days" style="color: #6366f1;"></i> Ngày Áp Dụng Trong Tuần
+                        </label>
+                        <select id="selectScheduleDays" class="form-control" style="width: 100%; font-size: 0.9rem; font-weight: 600; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px;">
+                            <option value="mon-sat">Thứ 2 đến Thứ 7 (Lịch chuẩn trường THPT)</option>
+                            <option value="mon-fri">Thứ 2 đến Thứ 6 (Các ngày hành chính)</option>
+                            <option value="all">Tất cả các ngày (Thứ 2 đến Chủ nhật)</option>
+                        </select>
+                        <div style="display: flex; gap: 6px; justify-content: space-between;">
+                            <span class="day-chip active" data-day="mon">T2</span>
+                            <span class="day-chip active" data-day="tue">T3</span>
+                            <span class="day-chip active" data-day="wed">T4</span>
+                            <span class="day-chip active" data-day="thu">T5</span>
+                            <span class="day-chip active" data-day="fri">T6</span>
+                            <span class="day-chip active" data-day="sat">T7</span>
+                            <span class="day-chip" data-day="sun">CN</span>
+                        </div>
+                    </div>
+
+                    <!-- Thông tin hệ thống -->
+                    <div style="background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; color: #3730a3; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-circle-info" style="font-size: 1rem; color: #4f46e5;"></i>
+                        <div>
+                            Múi giờ hoạt động: <strong>Asia/Ho_Chi_Minh (GMT+7)</strong>. Tác vụ quét sẽ chụp đồng loạt toàn bộ 30 camera và tự động lưu kết quả điểm danh.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer" style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 14px 24px; display: flex; justify-content: flex-end; gap: 10px; align-items: center;">
+                    <button type="button" id="btnCancelScheduleModal" onclick="window.closeScheduleModal && window.closeScheduleModal()" class="btn btn-secondary modal-btn modal-btn-secondary" style="padding: 8px 18px;">
+                        Hủy
+                    </button>
+                    <button type="button" id="btnSaveScheduleSettings" class="btn btn-primary modal-btn" style="background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); border-color: #4f46e5; color: white; padding: 8px 22px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-floppy-disk"></i> Lưu Cài Đặt Lịch
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="js/shared/auth-guard.js?v=2.5"></script>
+    <script src="js/shared/app-shell.js?v=4.0"></script>
+    <script src="js/shared/header-actions.js?v=2.2"></script>
+    <script src="js/shared/confirmation-dialog.js?v=1.0"></script>
+    <script type="module" src="js/components/progress_modal.js?v=6.0"></script>
+    <script src="js/roi_canvas.js?v=6.0"></script>
+    <script type="module" src="js/cameras.js?v=7.2"></script>
+</body>
+
+</html>

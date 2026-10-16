@@ -4,7 +4,7 @@ from app import app
 from database.db_session import init_db, SessionLocal
 from database.models import Classroom, ROIPolygon, User
 from config.settings import settings
-from backend.api.deps import get_current_user, require_admin
+from backend.app.api.deps import get_current_user, require_admin
 
 admin_user = User(id=1, email="admin@truongdieucai.edu.vn", role="admin", is_active=True, full_name="Admin")
 app.dependency_overrides[get_current_user] = lambda: admin_user
@@ -14,7 +14,7 @@ client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def setup_database():
-    init_db()
+    init_db(force_seed_classes=True)
     yield
 
 def test_get_cameras_list():
@@ -76,8 +76,10 @@ def test_create_and_delete_camera():
     assert cls_after is None
     db.close()
 
-    # Kiểm tra test connection với 1 file ảnh có sẵn trong thư mục camera
-    sample_file = settings.BASE_DIR / "camera" / "JPG" / "1.JPG"
+    # Kiểm tra test connection với 1 file ảnh có sẵn trong thư mục captures hoặc camera
+    sample_file = settings.STORAGE_DIR / "captures" / "2026-09-18" / "Lop_1.jpg"
+    if not sample_file.exists():
+        sample_file = settings.BASE_DIR / "camera" / "JPG" / "1.JPG"
     test_res = client.post("/api/cameras/test-connection", json={
         "source_url": str(sample_file)
     })

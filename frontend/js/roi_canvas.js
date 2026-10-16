@@ -3,11 +3,13 @@
  * Hỗ trợ kéo thả các điểm neo, hút nam châm mép ảnh, undo (Ctrl+Z), đổi độ phân giải.
  */
 
-const API_BASE = (function() {
+const API_BASE = (function () {
+    if (typeof window === 'undefined') return '';
     if (window.location.protocol === 'file:') return 'http://localhost:8000';
-    if (window.location.origin.includes(':8000') || window.location.origin.includes(':80')) return '';
-    const host = window.location.hostname || 'localhost';
-    return `${window.location.protocol}//${host}:8000`;
+    if (window.location.port && ['5500', '5501', '5502', '3001'].includes(window.location.port)) {
+        return `http://${window.location.hostname || 'localhost'}:8000`;
+    }
+    return '';
 })();
 
 function getAuthHeaders(extra = {}) {
@@ -35,7 +37,7 @@ class ROICanvasEditor {
         this.hoveredZone = null;
 
         // Chế độ độ phân giải: mặc định auto để giữ chuẩn tỉ lệ camera không méo ảnh
-        this.resMode = 'auto'; 
+        this.resMode = 'auto';
         this.targetWidth = 1920;
         this.targetHeight = 1080;
         this.storedRoiDims = null;
@@ -530,7 +532,7 @@ class ROICanvasEditor {
         this.saveState();
         const w = this.canvas.width;
         const h = this.canvas.height;
-        
+
         this.greenZone = [
             [0, 0],
             [w, 0],
@@ -677,14 +679,14 @@ class ROICanvasEditor {
                 headers: getAuthHeaders()
             });
             const data = await res.json();
-            
+
             const dbW = data.image_width || 1080;
             const dbH = data.image_height || 1024;
             this.storedRoiDims = { width: dbW, height: dbH };
             this.redZone = [];
             this.greenZone = data.green_zone || [];
             this.history = [];
-            
+
             let snapshotUrl = data.snapshot_url || `/dataset/samples/classroom_sample_1.jpg`;
             if (!snapshotUrl.startsWith('http')) {
                 snapshotUrl = `${API_BASE}${snapshotUrl}`;
@@ -701,11 +703,35 @@ class ROICanvasEditor {
     async refreshSnapshot() {
         const classSelect = document.getElementById('classSelect');
         const classId = classSelect ? classSelect.value : this.currentClassId;
+        const className = classSelect && classSelect.options[classSelect.selectedIndex]
+            ? classSelect.options[classSelect.selectedIndex].text
+            : `Lớp ${classId}`;
         const btn = document.getElementById('btnRefreshSnapshot');
         const btnHeader = document.getElementById('btnHeaderSnapshot');
         const oldHtml = btn ? btn.innerHTML : '';
         const oldHeaderHtml = btnHeader ? btnHeader.innerHTML : '';
-        
+
+        if (window.ProgressModal) {
+            try {
+                const res = await window.ProgressModal.startCaptureSingle(classId, className, {
+                    onComplete: () => {
+                        const bustUrl = `/storage/captures/latest/Lop_${classId}.jpg?_t=${Date.now()}`;
+                        this.loadImage(bustUrl);
+                        this.showToast("✓ Đã Cập Nhật Khung Hình!", "Ảnh chụp mới nhất từ camera đã được tải lên canvas.");
+                    }
+                });
+                if (res && res.snapshot_url) {
+                    const bustUrl = `/storage/captures/latest/Lop_${classId}.jpg?_t=${Date.now()}`;
+                    this.loadImage(bustUrl);
+                    this.showToast("✓ Đã Cập Nhật Khung Hình!", res.message || "Ảnh chụp mới nhất từ camera đã được tải lên canvas.");
+                }
+                return;
+            } catch (err) {
+                this.showToast("Lỗi chụp ảnh", "Không thể chụp khung hình mới: " + err, true);
+                return;
+            }
+        }
+
         if (btn) {
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang chụp từ camera...';
@@ -750,8 +776,8 @@ class ROICanvasEditor {
     async saveROI() {
         const classSelect = document.getElementById('classSelect');
         const classId = classSelect ? classSelect.value : this.currentClassId;
-        const className = classSelect && classSelect.options[classSelect.selectedIndex] 
-            ? classSelect.options[classSelect.selectedIndex].text 
+        const className = classSelect && classSelect.options[classSelect.selectedIndex]
+            ? classSelect.options[classSelect.selectedIndex].text
             : `Lớp ${classId}`;
 
         const btnSave = document.getElementById('btnSaveROI');

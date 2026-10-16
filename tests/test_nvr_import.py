@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from backend.main import app
 from services.nvr_service import nvr_service
 from database.db_session import SessionLocal, init_db
-from backend.api.deps import get_current_user
+from backend.app.api.deps import get_current_user
 from database.models import User
 
 app.dependency_overrides[get_current_user] = lambda: User(id=1, email="admin@truongdieucai.edu.vn", role="admin")
@@ -42,10 +42,10 @@ def test_nvr_probe_endpoint():
     assert data["success"] is True
     assert data["total_channels"] == 30
     assert len(data["channels"]) == 30
-    # Kênh 1 phải là 10A1
+    # Kênh 1 phải là 12A1 theo DEFAULT_30_CLASSES
     ch1 = data["channels"][0]
     assert ch1["channel"] == 1
-    assert "10A1" in ch1["name"]
+    assert "12A1" in ch1["name"]
     assert ch1["thumbnail"].startswith("data:image/jpeg;base64,")
 
 def test_nvr_batch_import_and_independent_crud():
@@ -96,9 +96,9 @@ def test_nvr_batch_import_and_independent_crud():
     cam_1 = next(c for c in updated_cams if c["id"] == first_cam_id)
     assert cam_1["name"] == "Phòng Thực Hành Tin Học"
     assert cam_1["standard_count"] == 35
-    # Camera thứ 2 vẫn là 10A2
+    # Camera thứ 2 vẫn là 12A2
     cam_2 = next(c for c in updated_cams if c["id"] != first_cam_id)
-    assert "10A" in cam_2["name"]
+    assert "12A" in cam_2["name"]
 
     # 5. KIỂM TRA XÓA ĐỘC LẬP TỪNG CAMERA
     # Xóa riêng lẻ camera thứ 1

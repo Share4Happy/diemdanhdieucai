@@ -16,8 +16,10 @@ env/
 weights/
 *.pt
 models/*.pt
+data/models/*.pt
 dataset/*/
 !dataset/.gitkeep
+data/dataset/*/
 *.yolo*
 
 # Camera Video Files & Large Test Feeds (Chặn đẩy file lớn > 2GB lên GitHub)
@@ -25,6 +27,8 @@ camera/*.MP4
 camera/*.mp4
 camera/25092026/
 camera/JPG/
+*.mp4
+*.MP4
 
 # Documentation Binaries
 *.docx
@@ -38,24 +42,22 @@ htmlcov/
 runs/
 *.cache
 
-# Local Database
+# Local Database & SQLite runtime
 database/*.db
-
-# Local Storage Captures & Reports (Tránh đẩy ảnh camera trường lên git)
-storage/captures/
-storage/annotated/
-storage/reports/
-storage/backups/
-storage/*.jpg
-storage/*.png
-storage/*.json
-storage/*.log
-storage/*.zip
-storage/*.db
+data/database/
 *.db
+*.db-shm
+*.db-wal
+
+# Local Storage Captures, Reports & Backups
+storage/
+data/storage/
+*.pids
+*.old
 
 # Logs
-logs/*.log
+logs/
+*.log
 
 # Scratch / Temp
 scratch/
@@ -73,6 +75,8 @@ docs/
 
 # Secret & OAuth Tokens
 config/gdrive_token.json
+data/tokens/
+tokens/
 
 # Local Heavy Datasets & Videos (Chặn đẩy dataset hàng chục GB lên GitHub)
 dieucai/

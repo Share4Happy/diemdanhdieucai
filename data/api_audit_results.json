@@ -1,0 +1,678 @@
+{
+  "total": 67,
+  "passed": 67,
+  "failed": 0,
+  "avg_latency_ms": 140.4,
+  "results": [
+    {
+      "router": "System",
+      "method": "GET",
+      "endpoint": "/api/health",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 10.6,
+      "passed": true,
+      "notes": "Công khai (Public)"
+    },
+    {
+      "router": "System",
+      "method": "GET",
+      "endpoint": "/api/database/info (unauth)",
+      "status_code": 401,
+      "expected_status": 401,
+      "latency_ms": 4.0,
+      "passed": true,
+      "notes": "Chặn 401 an toàn"
+    },
+    {
+      "router": "Auth",
+      "method": "GET",
+      "endpoint": "/api/auth/me (unauth)",
+      "status_code": 401,
+      "expected_status": 401,
+      "latency_ms": 3.2,
+      "passed": true,
+      "notes": "Chặn 401 an toàn"
+    },
+    {
+      "router": "Auth",
+      "method": "GET",
+      "endpoint": "/api/auth/users (unauth)",
+      "status_code": 401,
+      "expected_status": 401,
+      "latency_ms": 3.3,
+      "passed": true,
+      "notes": "Chặn 401 an toàn"
+    },
+    {
+      "router": "Cameras",
+      "method": "GET",
+      "endpoint": "/api/cameras (unauth)",
+      "status_code": 401,
+      "expected_status": 401,
+      "latency_ms": 4.0,
+      "passed": true,
+      "notes": "Chặn 401 an toàn"
+    },
+    {
+      "router": "Attendance",
+      "method": "GET",
+      "endpoint": "/api/attendance/latest (unauth)",
+      "status_code": 401,
+      "expected_status": 401,
+      "latency_ms": 4.7,
+      "passed": true,
+      "notes": "Chặn 401 an toàn"
+    },
+    {
+      "router": "Attendance",
+      "method": "GET",
+      "endpoint": "/api/attendance/history (unauth)",
+      "status_code": 401,
+      "expected_status": 401,
+      "latency_ms": 5.5,
+      "passed": true,
+      "notes": "Chặn 401 an toàn"
+    },
+    {
+      "router": "ROI",
+      "method": "GET",
+      "endpoint": "/api/roi/1 (unauth)",
+      "status_code": 401,
+      "expected_status": 401,
+      "latency_ms": 6.8,
+      "passed": true,
+      "notes": "Chặn 401 an toàn"
+    },
+    {
+      "router": "Reports",
+      "method": "GET",
+      "endpoint": "/api/reports/list (unauth)",
+      "status_code": 401,
+      "expected_status": 401,
+      "latency_ms": 4.8,
+      "passed": true,
+      "notes": "Chặn 401 an toàn"
+    },
+    {
+      "router": "Reports",
+      "method": "GET",
+      "endpoint": "/api/reports/distribution-status (unauth)",
+      "status_code": 401,
+      "expected_status": 401,
+      "latency_ms": 5.9,
+      "passed": true,
+      "notes": "Chặn 401 an toàn"
+    },
+    {
+      "router": "Backup",
+      "method": "GET",
+      "endpoint": "/api/backup/list (unauth)",
+      "status_code": 401,
+      "expected_status": 401,
+      "latency_ms": 4.4,
+      "passed": true,
+      "notes": "Chặn 401 an toàn"
+    },
+    {
+      "router": "Auth",
+      "method": "POST",
+      "endpoint": "/api/auth/login",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 275.9,
+      "passed": true,
+      "notes": "Đăng nhập thành công, cookie: True"
+    },
+    {
+      "router": "Auth",
+      "method": "GET",
+      "endpoint": "/api/auth/me",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 5.8,
+      "passed": true,
+      "notes": "Email: None, Role: None"
+    },
+    {
+      "router": "Auth",
+      "method": "GET",
+      "endpoint": "/api/auth/users",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 6.3,
+      "passed": true,
+      "notes": "Số tài khoản: 0"
+    },
+    {
+      "router": "Auth",
+      "method": "POST",
+      "endpoint": "/api/auth/forgot-password",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 4.7,
+      "passed": true,
+      "notes": "Nếu email tồn tại trong hệ thống, hướng dẫn đ"
+    },
+    {
+      "router": "System",
+      "method": "GET",
+      "endpoint": "/api/health",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 3.8,
+      "passed": true,
+      "notes": "Sức khỏe hệ thống & AI Engine"
+    },
+    {
+      "router": "System",
+      "method": "GET",
+      "endpoint": "/api/database/info",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 6.9,
+      "passed": true,
+      "notes": "Thông tin CSDL SQLite"
+    },
+    {
+      "router": "System",
+      "method": "GET",
+      "endpoint": "/api/ai/info",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 4.2,
+      "passed": true,
+      "notes": "Thông tin YOLO26 Engine"
+    },
+    {
+      "router": "System",
+      "method": "GET",
+      "endpoint": "/api/system/ai/info",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 4.6,
+      "passed": true,
+      "notes": "Alias YOLO26 Engine"
+    },
+    {
+      "router": "System",
+      "method": "GET",
+      "endpoint": "/api/system/classrooms-media",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 6.4,
+      "passed": true,
+      "notes": "Danh sách media mẫu phòng học"
+    },
+    {
+      "router": "System",
+      "method": "POST",
+      "endpoint": "/api/system/reset-to-camera-photos",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 76.5,
+      "passed": true,
+      "notes": "Reset về ảnh mẫu camera"
+    },
+    {
+      "router": "Cameras",
+      "method": "GET",
+      "endpoint": "/api/cameras",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 40.1,
+      "passed": true,
+      "notes": "Danh sách 30 camera kèm has_roi"
+    },
+    {
+      "router": "Cameras",
+      "method": "GET",
+      "endpoint": "/api/cameras/",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 39.9,
+      "passed": true,
+      "notes": "Trailing slash alias"
+    },
+    {
+      "router": "Cameras",
+      "method": "GET",
+      "endpoint": "/api/cameras/1/raw",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 7.5,
+      "passed": true,
+      "notes": "Raw RTSP URL (admin ID=1)"
+    },
+    {
+      "router": "Cameras",
+      "method": "GET",
+      "endpoint": "/api/cameras/matrix-wall",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 96.5,
+      "passed": true,
+      "notes": "Ma trận 30 camera trực tiếp"
+    },
+    {
+      "router": "Cameras",
+      "method": "GET",
+      "endpoint": "/api/cameras/source-status",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 6.6,
+      "passed": true,
+      "notes": "Trạng thái nguồn cấp hình"
+    },
+    {
+      "router": "Cameras",
+      "method": "GET",
+      "endpoint": "/api/cameras/available-webcams",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 8.4,
+      "passed": true,
+      "notes": "Quét webcam nội bộ"
+    },
+    {
+      "router": "Cameras",
+      "method": "GET",
+      "endpoint": "/api/cameras/progress",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 6.5,
+      "passed": true,
+      "notes": "Tiến độ chụp ảnh song song"
+    },
+    {
+      "router": "Cameras",
+      "method": "GET",
+      "endpoint": "/api/cameras/nvr/list",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 7.2,
+      "passed": true,
+      "notes": "Danh sách cấu hình NVR"
+    },
+    {
+      "router": "Cameras",
+      "method": "POST",
+      "endpoint": "/api/cameras/batch-status",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 8.3,
+      "passed": true,
+      "notes": "Batch status ping"
+    },
+    {
+      "router": "Cameras",
+      "method": "POST",
+      "endpoint": "/api/cameras/inspect-folder",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 16.3,
+      "passed": true,
+      "notes": "Kiểm tra thư mục media"
+    },
+    {
+      "router": "Cameras",
+      "method": "POST",
+      "endpoint": "/api/cameras/cleanup-test-images",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 6.0,
+      "passed": true,
+      "notes": "Dọn dẹp ảnh wizard"
+    },
+    {
+      "router": "Cameras",
+      "method": "POST",
+      "endpoint": "/api/cameras/test-connection",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 6.6,
+      "passed": true,
+      "notes": "Test preview ảnh mẫu"
+    },
+    {
+      "router": "Cameras",
+      "method": "POST",
+      "endpoint": "/api/cameras/test-ir-by-url",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 2508.7,
+      "passed": true,
+      "notes": "Test tín hiệu IR"
+    },
+    {
+      "router": "Cameras",
+      "method": "POST",
+      "endpoint": "/api/cameras/1/test-ir",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 209.7,
+      "passed": true,
+      "notes": "Test IR phòng ID=1"
+    },
+    {
+      "router": "Cameras",
+      "method": "POST",
+      "endpoint": "/api/cameras/validate-new-camera",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 7.4,
+      "passed": true,
+      "notes": "Validate Wizard camera"
+    },
+    {
+      "router": "ROI",
+      "method": "GET",
+      "endpoint": "/api/roi/1",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 87.4,
+      "passed": true,
+      "notes": "Đã có green/red zone: True"
+    },
+    {
+      "router": "ROI",
+      "method": "POST",
+      "endpoint": "/api/roi/1",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 2167.9,
+      "passed": true,
+      "notes": "Lưu tọa độ vùng ROI & sync AI"
+    },
+    {
+      "router": "ROI",
+      "method": "POST",
+      "endpoint": "/api/roi/1/refresh-snapshot",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 60.8,
+      "passed": true,
+      "notes": "Chụp lại ảnh mẫu phòng ID=1"
+    },
+    {
+      "router": "ROI",
+      "method": "POST",
+      "endpoint": "/api/roi/1/rescan",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 2896.7,
+      "passed": true,
+      "notes": "AI phát hiện: 0 học sinh"
+    },
+    {
+      "router": "Attendance",
+      "method": "GET",
+      "endpoint": "/api/attendance/latest",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 15.5,
+      "passed": true,
+      "notes": "Phiên điểm danh mới nhất"
+    },
+    {
+      "router": "Attendance",
+      "method": "GET",
+      "endpoint": "/api/attendance/today-sessions",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 8.3,
+      "passed": true,
+      "notes": "Danh sách phiên hôm nay"
+    },
+    {
+      "router": "Attendance",
+      "method": "GET",
+      "endpoint": "/api/attendance/trend-7days",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 7.3,
+      "passed": true,
+      "notes": "Xu hướng sĩ số 7 ngày qua"
+    },
+    {
+      "router": "Attendance",
+      "method": "GET",
+      "endpoint": "/api/attendance/history",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 26.9,
+      "passed": true,
+      "notes": "Lịch sử điểm danh"
+    },
+    {
+      "router": "Attendance",
+      "method": "GET",
+      "endpoint": "/api/attendance/progress",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 7.4,
+      "passed": true,
+      "notes": "Tiến độ quét điểm danh"
+    },
+    {
+      "router": "Attendance",
+      "method": "GET",
+      "endpoint": "/api/attendance/download-excel",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 18.6,
+      "passed": true,
+      "notes": "Tải file Excel mẫu"
+    },
+    {
+      "router": "Reports",
+      "method": "GET",
+      "endpoint": "/api/reports/list",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 114.0,
+      "passed": true,
+      "notes": "Danh sách báo cáo"
+    },
+    {
+      "router": "Reports",
+      "method": "GET",
+      "endpoint": "/api/reports/latest-summary",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 16.6,
+      "passed": true,
+      "notes": "Tổng hợp số liệu mới nhất"
+    },
+    {
+      "router": "Reports",
+      "method": "GET",
+      "endpoint": "/api/reports/distribution-status",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 22.5,
+      "passed": true,
+      "notes": "Trạng thái cấu hình gửi"
+    },
+    {
+      "router": "Reports",
+      "method": "GET",
+      "endpoint": "/api/reports/zalo-status",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 6.0,
+      "passed": true,
+      "notes": "Trạng thái kết nối Zalo OA"
+    },
+    {
+      "router": "Reports",
+      "method": "GET",
+      "endpoint": "/api/reports/zalo-config",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 7.7,
+      "passed": true,
+      "notes": "Cấu hình Zalo"
+    },
+    {
+      "router": "Reports",
+      "method": "GET",
+      "endpoint": "/api/reports/notification-settings",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 13.2,
+      "passed": true,
+      "notes": "Cấu hình gửi thông báo"
+    },
+    {
+      "router": "Reports",
+      "method": "GET",
+      "endpoint": "/api/reports/retention-settings",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 44.8,
+      "passed": true,
+      "notes": "Chính sách lưu trữ dữ liệu"
+    },
+    {
+      "router": "Reports",
+      "method": "POST",
+      "endpoint": "/api/reports/export-now",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 81.3,
+      "passed": true,
+      "notes": "Xuất báo cáo ngay lập tức"
+    },
+    {
+      "router": "Reports",
+      "method": "POST",
+      "endpoint": "/api/reports/save-email-config",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 24.9,
+      "passed": true,
+      "notes": "Lưu cấu hình email Hiệu Trưởng"
+    },
+    {
+      "router": "Reports",
+      "method": "POST",
+      "endpoint": "/api/reports/save-zalo-config",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 28.2,
+      "passed": true,
+      "notes": "Lưu cấu hình Zalo"
+    },
+    {
+      "router": "Reports",
+      "method": "POST",
+      "endpoint": "/api/reports/notification-settings",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 28.1,
+      "passed": true,
+      "notes": "Cập nhật ngưỡng thông báo"
+    },
+    {
+      "router": "Reports",
+      "method": "POST",
+      "endpoint": "/api/reports/retention-settings",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 17.7,
+      "passed": true,
+      "notes": "Cập nhật chính sách lưu trữ"
+    },
+    {
+      "router": "Reports",
+      "method": "POST",
+      "endpoint": "/api/reports/cleanup-expired",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 9.6,
+      "passed": true,
+      "notes": "Dọn dẹp báo cáo quá hạn"
+    },
+    {
+      "router": "Backup",
+      "method": "GET",
+      "endpoint": "/api/backup/list",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 23.2,
+      "passed": true,
+      "notes": "Danh sách bản sao lưu"
+    },
+    {
+      "router": "Backup",
+      "method": "GET",
+      "endpoint": "/api/backup/gdrive/status",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 12.2,
+      "passed": true,
+      "notes": "Trạng thái Google Drive"
+    },
+    {
+      "router": "Backup",
+      "method": "GET",
+      "endpoint": "/api/backup/gdrive/auth-url",
+      "status_code": 400,
+      "expected_status": "200/400",
+      "latency_ms": 9.0,
+      "passed": true,
+      "notes": "Chưa cấu hình .env: Chưa cấu hình GOOGLE_DRIVE_CLIENT_ID / GOOGLE_DRIVE_CLIENT_SECRET trong .env"
+    },
+    {
+      "router": "Backup",
+      "method": "POST",
+      "endpoint": "/api/backup/create",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 174.4,
+      "passed": true,
+      "notes": "Tạo file backup: backup_THPTDieuCai_20261013_192513.zip"
+    },
+    {
+      "router": "Backup",
+      "method": "GET",
+      "endpoint": "/api/backup/download/backup_THPTDieuCai_20261013_192513.zip",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 18.1,
+      "passed": true,
+      "notes": "Kích thước: 6395 bytes"
+    },
+    {
+      "router": "Backup",
+      "method": "DELETE",
+      "endpoint": "/api/backup/backup_THPTDieuCai_20261013_192513.zip",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 12.1,
+      "passed": true,
+      "notes": "Dọn dẹp file backup mẫu"
+    },
+    {
+      "router": "Auth",
+      "method": "POST",
+      "endpoint": "/api/auth/logout",
+      "status_code": 200,
+      "expected_status": 200,
+      "latency_ms": 12.7,
+      "passed": true,
+      "notes": "Thu hồi JTI và xoá cookie"
+    },
+    {
+      "router": "Auth",
+      "method": "GET",
+      "endpoint": "/api/auth/me (sau logout)",
+      "status_code": 401,
+      "expected_status": 401,
+      "latency_ms": 3.3,
+      "passed": true,
+      "notes": "Phiên JWT đã bị vô hiệu hoá thành công"
+    }
+  ]
+}

@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="css/global-table-balance.css?v=2.5">
     <link rel="stylesheet" href="css/dashboard.css?v=3.1">
     <link rel="stylesheet" href="css/components/image-zoom-viewer.css?v=1.0">
+    <link rel="stylesheet" href="css/components/progress-modal.css?v=6.0">
     <link rel="stylesheet" href="css/auth.css">
 
     <!-- Font Awesome -->
@@ -64,9 +65,15 @@
                         </a>
                     </li>
                     <li class="sidebar-nav-item">
+                        <a href="classrooms.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-chalkboard-user"></i></span>
+                            <span class="sidebar-nav-text">Quản lý lớp học</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
                         <a href="cameras.html" class="sidebar-nav-link">
                             <span class="sidebar-nav-icon"><i class="fa-solid fa-video"></i></span>
-                            <span class="sidebar-nav-text">Camera & Lớp Học</span>
+                            <span class="sidebar-nav-text">Quản lý camera</span>
                         </a>
                     </li>
                     <li class="sidebar-nav-item">
@@ -144,8 +151,8 @@
                                 <i class="fa-solid fa-file-excel"></i>
                                 Xuất Excel
                             </a>
-                            <button id="btnTriggerScan" class="btn btn-primary" type="button">
-                                Quét Điểm Danh
+                            <button id="btnTriggerScan" class="btn btn-primary" type="button" onclick="window.triggerAttendanceScan ? window.triggerAttendanceScan() : (window.ProgressModal && window.ProgressModal.startAttendanceScan())">
+                                <i class="fa-solid fa-bolt-lightning"></i> Quét Điểm Danh
                             </button>
                         </div>
                     </div>
@@ -423,9 +430,40 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Panel Điều Chỉnh Sĩ Số Thủ Công (Kiểm toán) -->
+                <div id="overrideBox" style="display: none; margin-top: 16px; padding: 14px 18px; background: rgba(59, 130, 246, 0.06); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h5 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #1e40af; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-pen-to-square"></i> Điều Chỉnh Sĩ Số Thủ Công (Kiểm toán bảo mật)
+                        </h5>
+                        <span style="font-size: 0.78rem; color: #64748b;">Ghi nhận danh tính người sửa & lý do</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 140px 1fr auto; gap: 12px; align-items: end;">
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: 600; color: #334155; display: block; margin-bottom: 4px;">Có mặt thực tế:</label>
+                            <input type="number" id="overridePresentInput" min="0" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: 600;">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: 600; color: #334155; display: block; margin-bottom: 4px;">Lý do điều chỉnh (bắt buộc):</label>
+                            <input type="text" id="overrideReasonInput" placeholder="Ví dụ: Học sinh vào muộn, xác nhận qua sổ đầu bài..." style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                        </div>
+                        <div>
+                            <button type="button" id="btnSaveOverride" class="btn btn-primary" style="padding: 8px 18px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-floppy-disk"></i> Lưu Thay Đổi
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="modal-footer" style="padding: 12px 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 10px;">
-                <button class="btn btn-secondary" type="button" id="modalCloseBtn">Đóng</button>
+            <div class="modal-footer" style="padding: 12px 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                <div id="modalAuditInfo" style="font-size: 0.82rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;"></div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-warning" type="button" id="btnModalOverride" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
+                        <i class="fa-solid fa-user-pen"></i> Sửa Sĩ Số
+                    </button>
+                    <button class="btn btn-secondary" type="button" id="modalCloseBtn">Đóng</button>
+                </div>
             </div>
         </div>
     </div>
@@ -470,15 +508,145 @@
         </div>
     </div>
 
+    <!-- Dialog Tiến Trình Quét Điểm Danh & Chụp Lại Camera -->
+    <div id="actionProgressModalBackdrop" class="progress-modal-backdrop" role="dialog" aria-modal="true">
+        <div class="progress-modal-container">
+            <!-- Header -->
+            <div class="progress-modal-header">
+                <div class="progress-modal-header-left">
+                    <div id="progIconBadge" class="progress-modal-icon-badge">
+                        <i id="progIcon" class="fa-solid fa-bolt-lightning"></i>
+                    </div>
+                    <div>
+                        <h3 id="progTitle" class="progress-modal-title">Tiến Trình Xử Lý</h3>
+                        <div class="progress-modal-subtitle">
+                            <span id="progStatusPill" class="progress-status-pill">
+                                <span class="dot"></span>
+                                <span id="progStatusText">Đang chạy thời gian thực</span>
+                            </span>
+                            <span id="progElapsedBadge" class="progress-elapsed-badge">⏱️ 0.0s</span>
+                        </div>
+                    </div>
+                </div>
+                <button id="progCloseBtn" class="progress-modal-close-btn" type="button" title="Đóng" disabled>
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="progress-modal-body">
+                <!-- Stepper 3 giai đoạn (cho Quét Điểm Danh) -->
+                <div id="progStepper" class="progress-stepper" style="display: none;">
+                    <div id="progStep1" class="progress-step-item active">
+                        <div class="progress-step-number">1</div>
+                        <div class="progress-step-text">Chụp NVR 30 Camera</div>
+                    </div>
+                    <div id="progStep2" class="progress-step-item">
+                        <div class="progress-step-number">2</div>
+                        <div class="progress-step-text">AI YOLO Nhận Diện</div>
+                    </div>
+                    <div id="progStep3" class="progress-step-item">
+                        <div class="progress-step-number">3</div>
+                        <div class="progress-step-text">Lưu CSDL & Báo Cáo</div>
+                    </div>
+                </div>
+
+                <!-- Progress Bar & Metric -->
+                <div>
+                    <div class="progress-metric-row">
+                        <span id="progStepTitle" class="progress-metric-label">Khởi tạo quy trình...</span>
+                        <div class="progress-metric-values">
+                            <span id="progPercent" class="progress-percent-huge">0%</span>
+                        </div>
+                    </div>
+                    <div class="progress-bar-track">
+                        <div id="progBarFill" class="progress-bar-fill" style="width: 0%;"></div>
+                    </div>
+                </div>
+
+                <!-- Active Item Spotlight Box -->
+                <div id="progSpotlightBox" class="progress-spotlight-box">
+                    <div class="progress-spotlight-left">
+                        <div class="progress-spotlight-icon">
+                            <i id="progSpotlightIcon" class="fa-solid fa-video"></i>
+                        </div>
+                        <div>
+                            <div id="progSpotlightName" class="progress-spotlight-name">Đang chuẩn bị...</div>
+                            <div id="progSpotlightDesc" class="progress-spotlight-desc">Đang thiết lập kết nối luồng camera</div>
+                        </div>
+                    </div>
+                    <div id="progCounterBadge" class="progress-counter-badge">0 / 30</div>
+                </div>
+
+                <!-- Snapshot Single Preview Box (nếu chụp 1 camera lẻ) -->
+                <div id="progSinglePreviewBox" style="display: none; text-align: center; background: #0f172a; border-radius: 12px; padding: 8px; overflow: hidden;">
+                    <img id="progSinglePreviewImg" src="" alt="Snapshot Preview" style="max-height: 220px; border-radius: 8px; object-fit: contain; width: 100%; display: block;" />
+                </div>
+
+                <!-- Mini Terminal / Logs -->
+                <div>
+                    <div style="font-size: 0.78rem; font-weight: 700; color: #475569; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-terminal" style="font-size: 0.75rem;"></i>
+                        <span>Nhật ký hoạt động chi tiết:</span>
+                    </div>
+                    <div id="progTerminal" class="progress-log-terminal">
+                        <div class="progress-log-line">
+                            <span class="progress-log-time">00:00:00</span>
+                            <span class="progress-log-text info">Đang kết nối hệ thống...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Completion Summary Card -->
+                <div id="progSummaryCard" class="progress-summary-card">
+                    <div class="progress-summary-header">
+                        <i class="fa-solid fa-circle-check" style="color: #10b981; font-size: 1.25rem;"></i>
+                        <span id="progSummaryTitle">Hoàn tất phiên điểm danh thành công!</span>
+                    </div>
+                    <div class="progress-summary-grid">
+                        <div class="progress-summary-kpi">
+                            <div id="progKpiTotal" class="progress-summary-kpi-val">30</div>
+                            <div class="progress-summary-kpi-lbl">Tổng Lớp</div>
+                        </div>
+                        <div class="progress-summary-kpi">
+                            <div id="progKpiPresent" class="progress-summary-kpi-val" style="color: #059669;">--</div>
+                            <div class="progress-summary-kpi-lbl">Hiện Diện</div>
+                        </div>
+                        <div class="progress-summary-kpi">
+                            <div id="progKpiAbsent" class="progress-summary-kpi-val" style="color: #dc2626;">--</div>
+                            <div class="progress-summary-kpi-lbl">Vắng</div>
+                        </div>
+                        <div class="progress-summary-kpi">
+                            <div id="progKpiDuration" class="progress-summary-kpi-val" style="color: #4f46e5;">--</div>
+                            <div class="progress-summary-kpi-lbl">Thời Gian</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="progress-modal-footer">
+                <button id="progBtnDone" class="progress-btn-done" type="button" style="display: none;">
+                    <i class="fa-solid fa-check"></i>
+                    <span>Xem Kết Quả & Hoàn Tất</span>
+                </button>
+                <button id="progBtnCancel" class="progress-btn-secondary" type="button">
+                    Đóng
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Container -->
     <div id="toast-container"></div>
 
     <script type="module" src="js/shared/auth-guard.js?v=2.5"></script>
-    <script src="js/shared/app-shell.js?v=3.1"></script>
+    <script src="js/shared/app-shell.js?v=4.0"></script>
     <script src="js/shared/header-actions.js?v=2.2"></script>
     <!-- Chart.js Engine (Local + Offline First) -->
     <script src="js/libs/chart.umd.min.js"></script>
-    <script type="module" src="js/dashboard.js?v=3.2"></script>
+    <script type="module" src="js/components/progress_modal.js?v=6.0"></script>
+    <script type="module" src="js/dashboard.js?v=6.0"></script>
 </body>
 
 </html>

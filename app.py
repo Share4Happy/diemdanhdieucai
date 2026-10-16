@@ -18,7 +18,7 @@ from backend.main import app
 if __name__ == "__main__":
     import uvicorn
     from config.settings import settings
-    reload_dirs = [str(PROJECT_ROOT / "backend"), str(PROJECT_ROOT / "core"), str(PROJECT_ROOT / "config")]
+    reload_dirs = [str(PROJECT_ROOT / "backend")]
     uvicorn.run(
         "backend.main:app",
         host=settings.HOST,

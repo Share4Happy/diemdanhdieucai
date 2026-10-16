@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from core.roi_manager import ROIManager
+from backend.core.roi_manager import ROIManager
 
 def test_roi_point_test():
     # Green Zone: Vùng nhận diện (Bàn học sinh)

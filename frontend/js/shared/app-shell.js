@@ -120,7 +120,8 @@ class AppShell {
     // CẤU HÌNH TẬP TRUNG TẤT CẢ CÁC TABS MENU CỦA HỆ THỐNG (Chỉ cần sửa tại đây sẽ tự động áp dụng mọi trang)
     const NAV_ITEMS = [
       { href: 'index.html', icon: 'fa-chart-line', text: 'Dashboard' },
-      { href: 'cameras.html', icon: 'fa-video', text: 'Camera & Lớp Học' },
+      { href: 'classrooms.html', icon: 'fa-chalkboard-user', text: 'Quản lý lớp học' },
+      { href: 'cameras.html', icon: 'fa-video', text: 'Quản lý camera' },
       { href: 'roi-config.html', icon: 'fa-draw-polygon', text: 'Vùng ROI' },
       { href: 'reports.html', icon: 'fa-file-excel', text: 'Báo Cáo & Dữ Liệu' },
       { href: 'notifications.html', icon: 'fa-paper-plane', text: 'Thông Báo' },

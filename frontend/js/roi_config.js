@@ -219,4 +219,196 @@ document.addEventListener('DOMContentLoaded', async () => {
             editor.saveROI();
         });
     }
+
+    // =========================================================
+    // TÍNH NĂNG: ÁP DỤNG TỌA ĐỘ ROI CHO TẤT CẢ CÁC LỚP HỌC
+    // =========================================================
+    const btnApplyAllROI = document.getElementById('btnApplyAllROI');
+    const modalApplyAllRoi = document.getElementById('modalApplyAllRoi');
+    const modalApplyAllCloseBtn = document.getElementById('modalApplyAllCloseBtn');
+    const btnCancelApplyAllModal = document.getElementById('btnCancelApplyAllModal');
+    const btnConfirmApplyAll = document.getElementById('btnConfirmApplyAll');
+    const applyAllSourceClass = document.getElementById('applyAllSourceClass');
+    const applyAllPointCount = document.getElementById('applyAllPointCount');
+    const applyAllResolution = document.getElementById('applyAllResolution');
+    const applyTotalCount = document.getElementById('applyTotalCount');
+    const scopeAllClasses = document.getElementById('scopeAllClasses');
+    const scopeCustomClasses = document.getElementById('scopeCustomClasses');
+    const applyCustomClassListWrap = document.getElementById('applyCustomClassListWrap');
+    const applyTargetClassCheckboxes = document.getElementById('applyTargetClassCheckboxes');
+    const checkSelectAllTargetClasses = document.getElementById('checkSelectAllTargetClasses');
+    const selectedTargetCountBadge = document.getElementById('selectedTargetCountBadge');
+
+    const updateTargetCountBadge = () => {
+        if (!applyTargetClassCheckboxes || !selectedTargetCountBadge) return;
+        const total = applyTargetClassCheckboxes.querySelectorAll('input[type="checkbox"]').length;
+        const checked = applyTargetClassCheckboxes.querySelectorAll('input[type="checkbox"]:checked').length;
+        selectedTargetCountBadge.textContent = `${checked}/${total}`;
+        if (checkSelectAllTargetClasses) {
+            checkSelectAllTargetClasses.checked = (checked === total && total > 0);
+            checkSelectAllTargetClasses.indeterminate = (checked > 0 && checked < total);
+        }
+    };
+
+    const renderTargetClassCheckboxes = (sourceClassId) => {
+        if (!applyTargetClassCheckboxes) return;
+        applyTargetClassCheckboxes.innerHTML = classrooms.map(c => {
+            const isSource = String(c.id) === String(sourceClassId);
+            return `
+                <label style="display: flex; align-items: center; gap: 5px; font-size: 0.82rem; padding: 3px 6px; border-radius: 4px; background: ${isSource ? '#eff6ff' : '#f8fafc'}; border: 1px solid ${isSource ? '#bfdbfe' : '#e2e8f0'}; cursor: pointer;">
+                    <input type="checkbox" class="target-cls-item" value="${c.id}" checked>
+                    <span style="font-weight: ${isSource ? '700' : '500'}; color: ${isSource ? '#1d4ed8' : '#334155'};">
+                        ${esc(c.name)} ${isSource ? '<span style="font-size: 0.72rem; color: #2563eb;">(mẫu)</span>' : ''}
+                    </span>
+                </label>
+            `;
+        }).join('');
+
+        applyTargetClassCheckboxes.querySelectorAll('.target-cls-item').forEach(cb => {
+            cb.addEventListener('change', updateTargetCountBadge);
+        });
+        updateTargetCountBadge();
+    };
+
+    const closeApplyAllModal = () => {
+        if (modalApplyAllRoi) {
+            modalApplyAllRoi.classList.remove('active');
+        }
+    };
+
+    if (btnApplyAllROI) {
+        btnApplyAllROI.addEventListener('click', () => {
+            const greenPts = editor ? (editor.greenZone || []) : [];
+            const redPts = editor ? (editor.redZone || []) : [];
+
+            if (greenPts.length === 0 && redPts.length === 0) {
+                showToast('Chưa có vùng ROI nào được vẽ! Vui lòng vẽ vùng nhận diện (bàn học) trước khi áp dụng cho tất cả.', 'warning');
+                return;
+            }
+
+            const currentId = String(classSelect ? classSelect.value : (editor ? editor.currentClassId : 1));
+            const currentClass = classrooms.find(c => String(c.id) === currentId) || { id: currentId, name: `Lớp ${currentId}` };
+
+            if (applyAllSourceClass) {
+                applyAllSourceClass.textContent = `${currentClass.name} (${currentClass.room_number || 'Phòng ' + currentClass.id})`;
+            }
+            if (applyAllPointCount) {
+                applyAllPointCount.textContent = `${greenPts.length}`;
+            }
+            if (applyAllResolution) {
+                const w = (editor && editor.canvas) ? editor.canvas.width : 1920;
+                const h = (editor && editor.canvas) ? editor.canvas.height : 1080;
+                applyAllResolution.textContent = `${w} × ${h}`;
+            }
+            if (applyTotalCount) {
+                applyTotalCount.textContent = `${classrooms.length}`;
+            }
+
+            if (scopeAllClasses) scopeAllClasses.checked = true;
+            if (scopeCustomClasses) scopeCustomClasses.checked = false;
+            if (applyCustomClassListWrap) applyCustomClassListWrap.style.display = 'none';
+
+            renderTargetClassCheckboxes(currentId);
+
+            if (modalApplyAllRoi) {
+                modalApplyAllRoi.classList.add('active');
+            }
+        });
+    }
+
+    if (modalApplyAllCloseBtn) modalApplyAllCloseBtn.addEventListener('click', closeApplyAllModal);
+    if (btnCancelApplyAllModal) btnCancelApplyAllModal.addEventListener('click', closeApplyAllModal);
+
+    if (modalApplyAllRoi) {
+        modalApplyAllRoi.addEventListener('click', (e) => {
+            if (e.target === modalApplyAllRoi) closeApplyAllModal();
+        });
+    }
+
+    if (scopeAllClasses) {
+        scopeAllClasses.addEventListener('change', () => {
+            if (applyCustomClassListWrap) applyCustomClassListWrap.style.display = 'none';
+        });
+    }
+    if (scopeCustomClasses) {
+        scopeCustomClasses.addEventListener('change', () => {
+            if (applyCustomClassListWrap) applyCustomClassListWrap.style.display = 'block';
+        });
+    }
+
+    if (checkSelectAllTargetClasses) {
+        checkSelectAllTargetClasses.addEventListener('change', (e) => {
+            const checked = e.target.checked;
+            if (applyTargetClassCheckboxes) {
+                applyTargetClassCheckboxes.querySelectorAll('.target-cls-item').forEach(cb => {
+                    cb.checked = checked;
+                });
+            }
+            updateTargetCountBadge();
+        });
+    }
+
+    // Xác nhận áp dụng hàng loạt
+    if (btnConfirmApplyAll) {
+        btnConfirmApplyAll.addEventListener('click', async () => {
+            const greenPts = editor ? (editor.greenZone || []) : [];
+            const redPts = editor ? (editor.redZone || []) : [];
+            const currentId = parseInt(classSelect ? classSelect.value : (editor ? editor.currentClassId : 1), 10);
+
+            let targetClassIds = null;
+            if (scopeCustomClasses && scopeCustomClasses.checked) {
+                const checkedBoxes = applyTargetClassCheckboxes.querySelectorAll('.target-cls-item:checked');
+                if (checkedBoxes.length === 0) {
+                    showToast('Vui lòng chọn ít nhất 1 phòng học để áp dụng!', 'warning');
+                    return;
+                }
+                targetClassIds = Array.from(checkedBoxes).map(cb => parseInt(cb.value, 10));
+            }
+
+            const originalBtnHtml = btnConfirmApplyAll.innerHTML;
+            btnConfirmApplyAll.disabled = true;
+            btnConfirmApplyAll.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang Áp Dụng CSDL...';
+
+            try {
+                const apiObj = window.ROIAPI || ROIAPI;
+                const payload = {
+                    source_classroom_id: currentId,
+                    green_zone: greenPts,
+                    red_zone: redPts,
+                    image_width: (editor && editor.canvas) ? editor.canvas.width : 1920,
+                    image_height: (editor && editor.canvas) ? editor.canvas.height : 1080,
+                    target_classroom_ids: targetClassIds
+                };
+
+                const res = await apiObj.applyAll(payload);
+
+                if (res && res.success) {
+                    closeApplyAllModal();
+                    const count = res.updated_count || (targetClassIds ? targetClassIds.length : classrooms.length);
+                    showToast(`✓ Đã áp dụng thành công tọa độ ROI cho ${count} lớp học!`, 'success');
+
+                    // Hiệu ứng hoàn tất trên nút bấm chính
+                    if (btnApplyAllROI) {
+                        const prevHtml = btnApplyAllROI.innerHTML;
+                        btnApplyAllROI.classList.remove('btn-apply-all');
+                        btnApplyAllROI.classList.add('btn-success', 'pulse-success');
+                        btnApplyAllROI.innerHTML = `<i class="fa-solid fa-check"></i> ĐÃ ÁP DỤNG (${count} LỚP)`;
+                        setTimeout(() => {
+                            btnApplyAllROI.classList.remove('btn-success', 'pulse-success');
+                            btnApplyAllROI.classList.add('btn-apply-all');
+                            btnApplyAllROI.innerHTML = prevHtml;
+                        }, 3500);
+                    }
+                } else {
+                    throw new Error(res.error || res.detail || 'Lỗi không thể lưu đồng loạt');
+                }
+            } catch (err) {
+                console.error('Lỗi khi áp dụng ROI cho tất cả:', err);
+                showToast('Lỗi khi áp dụng ROI: ' + (err.message || err), 'error');
+            } finally {
+                btnConfirmApplyAll.disabled = false;
+                btnConfirmApplyAll.innerHTML = originalBtnHtml;
+            }
+        });
+    }
 });

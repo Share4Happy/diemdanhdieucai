@@ -1,0 +1,832 @@
+/* =========================================================================
+   VMS SURVEILLANCE MATRIX CSS - THPT ĐIỀU CẢI (Dark Glassmorphism Theme)
+   Mô phỏng giao diện hệ thống quản lý giám sát camera chuyên nghiệp (CMS / VMS)
+   ========================================================================= */
+
+:root {
+    --vms-bg-base: #090d16;
+    --vms-panel-bg: #0f172a;
+    --vms-panel-border: #1e293b;
+    --vms-slot-bg: #070b12;
+    --vms-slot-border: #1e293b;
+    --vms-slot-active-border: #38bdf8;
+    --vms-osd-bg: rgba(15, 23, 42, 0.85);
+    --vms-text-primary: #f8fafc;
+    --vms-text-muted: #94a3b8;
+    --vms-accent-blue: #2563eb;
+    --vms-accent-emerald: #10b981;
+    --vms-accent-amber: #f59e0b;
+    --vms-accent-danger: #ef4444;
+}
+
+/* VMS Main Viewport Container */
+.vms-workspace {
+    display: flex;
+    gap: 1rem;
+    height: calc(100vh - 120px);
+    min-height: 640px;
+    background: transparent !important;
+    border-radius: 14px;
+    padding: 0.85rem;
+    border: none !important;
+    box-shadow: none !important;
+    overflow: hidden;
+}
+
+/* =========================================================================
+   1. CỘT TRÁI: SIDEBAR QUẢN LÝ THIẾT BỊ CAMERA & NVR
+   ========================================================================= */
+.vms-sidebar {
+    width: 320px;
+    min-width: 300px;
+    max-width: 340px;
+    background: var(--vms-panel-bg);
+    border: 1px solid var(--vms-panel-border);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    padding: 0.85rem;
+    gap: 0.75rem;
+    overflow: hidden;
+}
+
+/* Khối 2 nút hành động nổi bật đầu trang */
+.vms-top-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.btn-vms-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px 10px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-vms-nvr {
+    background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+    color: #ffffff;
+    box-shadow: 0 3px 10px rgba(37, 99, 235, 0.3);
+}
+
+.btn-vms-nvr:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 5px 14px rgba(37, 99, 235, 0.45);
+}
+
+.btn-vms-cam {
+    background: linear-gradient(135deg, #065f46 0%, #059669 100%);
+    color: #ffffff;
+    box-shadow: 0 3px 10px rgba(5, 150, 105, 0.3);
+}
+
+.btn-vms-cam:hover {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 5px 14px rgba(16, 185, 129, 0.45);
+}
+
+/* Ô tìm kiếm thông minh */
+.vms-search-box {
+    position: relative;
+    width: 100%;
+}
+
+.vms-search-box i {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.vms-search-input {
+    width: 100%;
+    padding: 7px 10px 7px 32px;
+    background: #090d16;
+    border: 1px solid #1e293b;
+    border-radius: 7px;
+    color: #e2e8f0;
+    font-size: 0.82rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.vms-search-input:focus {
+    border-color: #38bdf8;
+    background: #0c1220;
+}
+
+/* Bộ lọc Live / Playback */
+.vms-mode-filter {
+    background: #090d16;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.vms-mode-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+}
+
+.vms-mode-btn {
+    background: transparent;
+    border: none;
+    padding: 5px 8px;
+    border-radius: 5px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.vms-mode-btn.active {
+    background: #1e293b;
+    color: #38bdf8;
+    font-weight: 700;
+}
+
+.vms-time-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
+
+.vms-realtime-clock {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    padding: 3px 8px !important;
+    border-radius: 6px !important;
+    font-weight: 700 !important;
+    font-size: 0.78rem !important;
+    border: 1px solid #cbd5e1 !important;
+    display: inline-block !important;
+}
+
+.vms-time-input {
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 4px;
+    color: #cbd5e1;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    flex: 1;
+}
+
+/* CÂY THƯ MỤC THIẾT BỊ NVR & CAMERA (TREE VIEW) */
+.vms-tree-container {
+    flex: 1;
+    overflow-y: auto;
+    background: #090d16;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.vms-tree-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.vms-tree-container::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 3px;
+}
+
+.vms-tree-node-root {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    background: rgba(30, 41, 59, 0.4);
+    color: #f1f5f9;
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.vms-tree-node-root:hover {
+    background: rgba(30, 41, 59, 0.8);
+}
+
+.vms-tree-group {
+    margin-left: 8px;
+    margin-top: 2px;
+    border-left: 1px dashed #1e293b;
+    padding-left: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.vms-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 6px;
+    border-radius: 4px;
+    color: #cbd5e1;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+}
+
+.vms-group-header:hover {
+    background: #131d33;
+}
+
+.vms-group-count {
+    background: #1e293b;
+    color: #94a3b8;
+    font-size: 0.68rem;
+    padding: 1px 5px;
+    border-radius: 999px;
+}
+
+.vms-camera-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 8px;
+    border-radius: 5px;
+    color: #94a3b8;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.vms-camera-item:hover {
+    background: #1e293b;
+    color: #f8fafc;
+    transform: translateX(2px);
+}
+
+.vms-camera-item.is-selected {
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+    border-left: 3px solid #38bdf8;
+}
+
+.vms-cam-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.vms-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.vms-dot-online {
+    background: #10b981;
+    box-shadow: 0 0 6px #10b981;
+    animation: vmsPulse 2s infinite;
+}
+
+.vms-dot-offline {
+    background: #64748b;
+}
+
+@keyframes vmsPulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.3); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.vms-cam-name {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.vms-cam-actions {
+    display: none;
+    gap: 4px;
+}
+
+.vms-camera-item:hover .vms-cam-actions {
+    display: flex;
+}
+
+.vms-cam-btn-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    background: #1e293b;
+    color: #cbd5e1;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.68rem;
+    cursor: pointer;
+}
+
+.vms-cam-btn-icon:hover {
+    background: #38bdf8;
+    color: #0f172a;
+}
+
+/* Dòng ghi chú nhắc nhở click đúp */
+.vms-hint-tip {
+    font-size: 0.72rem;
+    color: #64748b;
+    background: #090d16;
+    border: 1px dashed #1e293b;
+    border-radius: 6px;
+    padding: 6px 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1.35;
+}
+
+/* Thanh công cụ phụ dưới đáy cột trái */
+.vms-bottom-tools {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.btn-vms-sub {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #cbd5e1;
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    transition: all 0.15s;
+}
+
+.btn-vms-sub:hover {
+    background: #334155;
+    color: #ffffff;
+}
+
+/* =========================================================================
+   2. CỘT PHẢI: KHU VỰC MA TRẬN VIDEO (MATRIX VIEWPORT)
+   ========================================================================= */
+.vms-main-viewport {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--vms-panel-bg);
+    border: 1px solid var(--vms-panel-border);
+    border-radius: 12px;
+    padding: 0.85rem;
+    gap: 0.75rem;
+    overflow: hidden;
+}
+
+/* Thanh công cụ bố cục màn hình (Matrix Toolbar) */
+.vms-matrix-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #090d16;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    padding: 6px 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.vms-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.vms-toolbar-title {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 8px;
+}
+
+.vms-grid-btn-group {
+    display: flex;
+    gap: 4px;
+    background: #0f172a;
+    padding: 3px;
+    border-radius: 6px;
+    border: 1px solid #1e293b;
+}
+
+.vms-grid-btn {
+    background: transparent;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 4px;
+    color: #64748b;
+    font-weight: 700;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.vms-grid-btn:hover {
+    color: #cbd5e1;
+}
+
+.vms-grid-btn.active {
+    background: #1e293b;
+    color: #38bdf8;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.vms-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-vms-tool {
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    color: #cbd5e1;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-vms-tool:hover {
+    background: #1e293b;
+    color: #f8fafc;
+    border-color: #334155;
+}
+
+.btn-vms-tool-danger:hover {
+    background: #dc2626;
+    color: #ffffff;
+    border-color: #ef4444;
+}
+
+/* LƯỚI KHUNG HÌNH MA TRẬN CAMERA (GRID CONTAINER) */
+.vms-matrix-grid {
+    flex: 1;
+    display: grid;
+    gap: 8px;
+    background: #050810;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    padding: 8px;
+    overflow-y: auto;
+    position: relative;
+}
+
+/* Các chế độ chia lưới */
+.vms-matrix-grid.grid-1x1 {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+}
+
+.vms-matrix-grid.grid-2x2 {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+}
+
+.vms-matrix-grid.grid-3x3 {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+}
+
+.vms-matrix-grid.grid-4x4 {
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+}
+
+/* TỪNG Ô KHUNG HÌNH (CAMERA SLOT) */
+.vms-slot {
+    background: var(--vms-slot-bg);
+    border: 1.5px solid var(--vms-slot-border);
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+    min-height: 160px;
+}
+
+.vms-slot.is-active-slot {
+    border-color: var(--vms-slot-active-border);
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+}
+
+/* OSD Header trên từng ô */
+.vms-slot-osd-top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(180deg, rgba(7, 11, 18, 0.9) 0%, rgba(7, 11, 18, 0) 100%);
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 10;
+    pointer-events: auto;
+}
+
+.vms-slot-title-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #ffffff;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.vms-live-badge {
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid #ef4444;
+    color: #ef4444;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+
+.vms-slot-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.vms-slot-ctrl-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    background: rgba(15, 23, 42, 0.7);
+    color: #e2e8f0;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.68rem;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition: all 0.15s;
+}
+
+.vms-slot-ctrl-btn:hover {
+    background: rgba(56, 189, 248, 0.8);
+    color: #0f172a;
+}
+
+.vms-slot-ctrl-btn.btn-close-slot:hover {
+    background: #ef4444;
+    color: #ffffff;
+}
+
+/* Nội dung video hiển thị trong ô */
+.vms-slot-video-wrap {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: #000000;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vms-slot-video-feed {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* OSD Footer trên từng ô */
+.vms-slot-osd-bottom {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(0deg, rgba(7, 11, 18, 0.9) 0%, rgba(7, 11, 18, 0) 100%);
+    padding: 4px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    color: #94a3b8;
+    z-index: 10;
+    pointer-events: none;
+}
+
+/* Trạng thái ô trống (Empty Slot Placeholder) */
+.vms-slot-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #475569;
+    padding: 1.5rem;
+    text-align: center;
+    gap: 8px;
+    background: repeating-linear-gradient(
+        45deg,
+        rgba(15, 23, 42, 0.5),
+        rgba(15, 23, 42, 0.5) 10px,
+        rgba(20, 30, 50, 0.5) 10px,
+        rgba(20, 30, 50, 0.5) 20px
+    );
+}
+
+.vms-slot-empty i {
+    font-size: 2rem;
+    color: #334155;
+    transition: transform 0.2s;
+}
+
+.vms-slot:hover .vms-slot-empty i {
+    transform: scale(1.1);
+    color: #475569;
+}
+
+.vms-slot-empty-title {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.vms-slot-empty-desc {
+    font-size: 0.75rem;
+    color: #475569;
+    max-width: 200px;
+    line-height: 1.35;
+}
+
+.btn-vms-assign-cam {
+    margin-top: 2px;
+    padding: 3px 8px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 4px;
+    color: #cbd5e1;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.btn-vms-assign-cam:hover {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #2563eb;
+}
+
+/* =========================================================================
+   THANH PHÂN TRANG MA TRẬN CAMERA (VMS PAGINATION BAR)
+   ========================================================================= */
+.vms-pagination-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: transparent;
+    padding: 2px;
+    margin-top: 2px;
+}
+
+.btn-vms-page-nav {
+    width: 34px;
+    height: 32px;
+    border-radius: 6px;
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    color: #cbd5e1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.btn-vms-page-nav:hover:not(:disabled) {
+    background: #2563eb;
+    border-color: #38bdf8;
+    color: #ffffff;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+    transform: translateY(-1px);
+}
+
+.btn-vms-page-nav:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    background: #090d16;
+    border-color: #1e293b;
+    color: #475569;
+}
+
+.vms-page-info {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    background: #0f172a;
+    padding: 5px 14px;
+    border-radius: 6px;
+    border: 1px solid #1e293b;
+    letter-spacing: 0.3px;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+.vms-flat-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 2px;
+}
+
+.vms-realtime-clock {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #38bdf8;
+    background: #090d16;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #1e293b;
+}
+
+/* =========================================================================
+   3. RESPONSIVE CHO MÀN HÌNH NHỎ
+   ========================================================================= */
+@media (max-width: 1024px) {
+    .vms-workspace {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .vms-sidebar {
+        width: 100%;
+        max-width: 100%;
+        height: 380px;
+    }
+
+    .vms-main-viewport {
+        min-height: 500px;
+    }
+}

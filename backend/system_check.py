@@ -50,31 +50,37 @@ except Exception as e:
     print(f" - Database Error: {e}")
 
 print("\n[3] KIỂM TRA BỘ DỮ LIỆU & TRỌNG SỐ AI:")
-media_dir = ROOT_DIR / "dataset" / "classrooms_media"
+data_dataset = ROOT_DIR / "data" / "dataset" / "classrooms_media"
+media_dir = data_dataset if data_dataset.exists() else (ROOT_DIR / "dataset" / "classrooms_media")
 if media_dir.exists():
     classes_media = [d for d in media_dir.iterdir() if d.is_dir() and d.name.startswith("Lop_")]
     print(f" - Dữ liệu 30 lớp học:        SẴN SÀNG ({len(classes_media)}/30 lớp)")
 else:
     print(" - Dữ liệu 30 lớp học:        CHƯA KHỞI TẠO")
 
-model_best = ROOT_DIR / "models" / "classroom_best.pt"
-if model_best.exists():
-    mb_size = round(model_best.stat().st_size / (1024 * 1024), 1)
-    print(f" - Trọng số AI (classroom_best.pt): SẴN SÀNG ({mb_size} MB)")
+model_candidates = [
+    ROOT_DIR / "data" / "models" / "classroom_best.pt",
+    ROOT_DIR / "models" / "classroom_best.pt",
+]
+found_model = next((p for p in model_candidates if p.exists()), None)
+if found_model:
+    mb_size = round(found_model.stat().st_size / (1024 * 1024), 1)
+    print(f" - Trọng số AI ({found_model.name}): SẴN SÀNG ({mb_size} MB tại {found_model.parent.name}/)")
 else:
     print(" - Trọng số AI (classroom_best.pt): CHƯA CÓ")
 
 print("\n[4] TÌNH TRẠNG CÁC PHÂN HỆ:")
 modules = [
     ("Frontend UI", "frontend"),
-    ("Backend API", "backend"),
-    ("Core Engine", "core"),
-    ("Services", "services"),
+    ("Backend REST API", "backend/app"),
+    ("Core Engine", "backend/app/core"),
+    ("Services", "backend/app/services"),
+    ("Database Layer", "backend/app/database"),
+    ("Data Store", "data"),
     ("AI Training", "training"),
-    ("Database", "database"),
 ]
 for name, p in modules:
     status = "HOẠT ĐỘNG" if (ROOT_DIR / p).exists() else "THIẾU"
-    print(f" - {name:15}: {status}")
+    print(f" - {name:18}: {status}")
 
 print("=========================================================================")

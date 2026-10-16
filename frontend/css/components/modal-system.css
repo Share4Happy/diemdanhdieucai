@@ -187,11 +187,11 @@
 
 /* Close Button */
 .modal-close-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    background: #ffffff;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
     color: #64748b;
 
     display: flex;
@@ -201,21 +201,19 @@
     cursor: pointer;
     flex-shrink: 0;
 
-    font-size: 1.25rem;
+    font-size: 1.4rem;
     line-height: 1;
 
-    transition: all 0.2s ease;
+    transition: color 0.15s ease;
 }
 
 .modal-close-btn:hover {
-    background: #f8fafc;
-    border-color: #cbd5e1;
-    color: #1e293b;
-    transform: rotate(90deg);
+    background: transparent;
+    color: #ef4444;
 }
 
 .modal-close-btn:active {
-    transform: rotate(90deg) scale(0.95);
+    color: #dc2626;
 }
 
 /* ==================== MODAL BODY ==================== */

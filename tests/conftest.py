@@ -5,7 +5,11 @@ from config.settings import settings
 
 @pytest.fixture(scope="session", autouse=True)
 def preserve_live_database():
-    db_file = settings.BASE_DIR / "database" / "attendance.db"
+    candidates = [
+        settings.BASE_DIR / "data" / "database" / "attendance.db",
+        settings.BASE_DIR / "database" / "attendance.db",
+    ]
+    db_file = next((f for f in candidates if f.exists()), candidates[0])
     backup_file = db_file.with_suffix(".pytest_bak")
 
     # Sao lưu CSDL hiện tại trước khi toàn bộ test suite chạy
