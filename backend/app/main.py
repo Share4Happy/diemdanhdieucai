@@ -146,6 +146,10 @@ if frontend_dir.exists():
     async def get_cameras_page():
         return FileResponse(frontend_dir / "cameras.html")
 
+    @app.get("/classrooms", include_in_schema=False)
+    async def get_classrooms_page():
+        return FileResponse(frontend_dir / "classrooms.html")
+
     @app.get("/roi-config", include_in_schema=False)
     async def get_roi_page():
         return FileResponse(frontend_dir / "roi-config.html")
