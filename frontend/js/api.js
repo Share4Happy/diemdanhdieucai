@@ -180,7 +180,20 @@ export const CameraAPI = {
     getProgress: () => fetchAPI('/api/cameras/progress', { suppressAuthRedirect: true }),
     getAutoSchedule: () => fetchAPI('/api/cameras/auto-schedule'),
     saveAutoSchedule: (data) => fetchAPI('/api/cameras/auto-schedule', { method: 'POST', body: data }),
-    triggerAutoSchedule: () => fetchAPI('/api/cameras/auto-schedule/trigger', { method: 'POST' })
+    triggerAutoSchedule: () => fetchAPI('/api/cameras/auto-schedule/trigger', { method: 'POST' }),
+    getStreamProfiles: () => fetchAPI('/api/cameras/stream-profiles'),
+    switchCameraStream: (id, streamType) => fetchAPI(`/api/cameras/${id}/switch-stream`, {
+        method: 'POST',
+        body: { stream_type: streamType }
+    }),
+    batchSwitchStream: (streamType, classroomIds = null) => fetchAPI('/api/cameras/batch-switch-stream', {
+        method: 'POST',
+        body: { stream_type: streamType, classroom_ids: classroomIds }
+    }),
+    compareStreams: (id) => fetchAPI(`/api/cameras/${id}/compare-streams`),
+    simulateCaptureTest: (data = {}) => fetchAPI('/api/cameras/simulate-capture-test', { method: 'POST', body: data }),
+    getStreamPolicy: () => fetchAPI('/api/cameras/stream-policy'),
+    updateStreamPolicy: (data) => fetchAPI('/api/cameras/stream-policy', { method: 'POST', body: data })
 };
 
 // === ROI APIs ===

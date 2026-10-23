@@ -96,3 +96,14 @@ class AutoScheduleRequest(BaseModel):
     afternoon_enabled: Optional[bool] = True
     schedule_days: Optional[str] = "mon-sat"
 
+class SwitchStreamRequest(BaseModel):
+    stream_type: str = "main"  # "main" | "sub"
+
+class BatchSwitchStreamRequest(BaseModel):
+    stream_type: str = "main"  # "main" | "sub"
+    classroom_ids: Optional[list[int]] = None
+
+class StreamPolicyRequest(BaseModel):
+    auto_fallback: bool = True
+    timeout_seconds: float = 3.5
+

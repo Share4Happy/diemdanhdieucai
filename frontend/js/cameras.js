@@ -5,7 +5,7 @@
  * ===================================================================
  */
 
-import { CameraAPI, AttendanceAPI, showToast, API_BASE, escapeHtml } from './api.js';
+import { CameraAPI, AttendanceAPI, showToast, API_BASE, escapeHtml } from './api.js?v=9.0';
 import SkeletonTemplates from './components/skeleton-templates.js';
 import { progressModal } from './components/progress_modal.js';
 import { VmsSurveillanceController } from './modules/cameras/vms-controller.js';
@@ -65,11 +65,57 @@ import {
     setCrudCameras
 } from './modules/cameras/camera-crud.js';
 
+import {
+    initStreamProfilesTab,
+    loadStreamProfiles,
+    switchSingleStream,
+    batchSwitchAllStreams,
+    openStreamCompareModal,
+    closeStreamCompareModal,
+    applyStreamFromABModal,
+    quickCaptureStreamPreview,
+    closeQuickCaptureModal,
+    startCaptureSimulation,
+    closeSimulationModal
+} from './modules/cameras/stream-profiles.js?v=9.0';
+
 const esc = (v) => escapeHtml(v);
 
 if (typeof window !== 'undefined') {
     window.CameraAPI = CameraAPI;
     window.AttendanceAPI = AttendanceAPI;
+    window.switchSingleStream = switchSingleStream;
+    window.batchSwitchAllStreams = batchSwitchAllStreams;
+    window.openStreamCompareModal = openStreamCompareModal;
+    window.closeStreamCompareModal = closeStreamCompareModal;
+    window.applyStreamFromABModal = applyStreamFromABModal;
+    window.quickCaptureStreamPreview = quickCaptureStreamPreview;
+    window.closeQuickCaptureModal = closeQuickCaptureModal;
+    window.startCaptureSimulation = startCaptureSimulation;
+    window.closeSimulationModal = closeSimulationModal;
+    window.loadStreamProfiles = loadStreamProfiles;
+
+    window.switchCameraMainTab = function(tabName) {
+        const tabBtnMatrix = document.getElementById('tabBtnVmsMatrix');
+        const tabBtnStream = document.getElementById('tabBtnStreamProfiles');
+        const viewMatrix = document.getElementById('vmsWorkspace');
+        const viewStream = document.getElementById('streamProfilesWorkspace');
+
+        if (tabName === 'stream-profiles') {
+            if (tabBtnMatrix) tabBtnMatrix.classList.remove('active');
+            if (tabBtnStream) tabBtnStream.classList.add('active', 'active-amber');
+            if (viewMatrix) viewMatrix.style.display = 'none';
+            if (viewStream) {
+                viewStream.style.display = 'flex';
+                loadStreamProfiles();
+            }
+        } else {
+            if (tabBtnStream) tabBtnStream.classList.remove('active', 'active-amber');
+            if (tabBtnMatrix) tabBtnMatrix.classList.add('active');
+            if (viewStream) viewStream.style.display = 'none';
+            if (viewMatrix) viewMatrix.style.display = '';
+        }
+    };
 }
 
 let allCameras = [];
@@ -96,6 +142,7 @@ function initApp() {
     initSourceManagerEvents();
     initClassroomSearch();
     initScheduleModalEvents();
+    initStreamProfilesTab();
 
     const btnVmsAddNvr = document.getElementById('btnVmsAddNVR');
     if (btnVmsAddNvr) btnVmsAddNvr.addEventListener('click', openNvrModal);

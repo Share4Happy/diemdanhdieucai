@@ -129,6 +129,9 @@ class RTSPCameraClient:
         self._nvr_semaphores: Dict[str, threading.Semaphore] = {}
         self._semaphore_lock = threading.Lock()
         self._max_concurrency_per_nvr = 3
+        # Quản lý chính sách dự phòng luồng (Stream Failover Policy)
+        self.auto_fallback_enabled: bool = True
+        self.rtsp_timeout_threshold: float = 3.5
 
     def _get_nvr_semaphore(self, host: str) -> threading.Semaphore:
         """Lấy hoặc khởi tạo Semaphore giới hạn tải đồng thời riêng cho từng đầu ghi NVR."""
@@ -526,27 +529,28 @@ class RTSPCameraClient:
                 except Exception:
                     pass
 
-            # Luôn chuẩn bị phương án dự phòng thông minh: luồng phụ (02 / subtype=1) hoặc luồng chính (01)
+            # Chuẩn bị phương án dự phòng nếu được bật trong chính sách (Auto-Fallback)
             extended_urls = []
             for u in candidate_urls:
                 extended_urls.append(u)
-                if u.endswith("01"):
-                    extended_urls.append(u[:-2] + "02")
-                elif u.endswith("02"):
-                    alt_01 = u[:-2] + "01"
-                    if alt_01 not in extended_urls:
-                        extended_urls.append(alt_01)
-                elif "subtype=0" in u:
-                    extended_urls.append(u.replace("subtype=0", "subtype=1"))
-                elif "subtype=1" in u:
-                    extended_urls.append(u.replace("subtype=1", "subtype=0"))
+                if self.auto_fallback_enabled:
+                    if u.endswith("01"):
+                        extended_urls.append(u[:-2] + "02")
+                    elif u.endswith("02"):
+                        alt_01 = u[:-2] + "01"
+                        if alt_01 not in extended_urls:
+                            extended_urls.append(alt_01)
+                    elif "subtype=0" in u:
+                        extended_urls.append(u.replace("subtype=0", "subtype=1"))
+                    elif "subtype=1" in u:
+                        extended_urls.append(u.replace("subtype=1", "subtype=0"))
 
             for target_url in extended_urls:
                 if self.is_host_reachable(target_url):
-                    timeout = 3.5 if target_url.endswith("01") else 2.5
+                    timeout = self.rtsp_timeout_threshold if (target_url.endswith("01") or "subtype=0" in target_url) else 2.5
                     frame = self._read_rtsp_stream(target_url, timeout=timeout)
                     if frame is not None and is_valid_frame(frame):
-                        is_sub = target_url.endswith("02")
+                        is_sub = target_url.endswith("02") or "subtype=1" in target_url
                         label = "RTSP_SUBSTREAM" if is_sub else "RTSP_STREAM"
                         return True, frame, label, ""
 
