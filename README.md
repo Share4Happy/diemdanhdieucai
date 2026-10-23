@@ -131,11 +131,18 @@ hethongdiemdanh Dieu Cai/
 ├── ⚙️ config/                       # Cấu hình tập trung (settings.py, logging_config.py)
 ├── 🧪 tests/                        # Bộ kiểm thử tự động Pytest (47/47 test cases PASSED)
 │
-├── 🚀 TỆP TIN THỰC THI CHÍNH:
-│   ├── run.bat                     # 1-click khởi động toàn diện hệ thống trên Windows
-│   ├── train_real_camera.bat       # 1-click huấn luyện AI trên GPU NVIDIA RTX 3050
-│   ├── requirements.txt            # Danh sách thư viện phụ thuộc Python
-│   └── .gitignore                  # Cấu hình loại trừ Git chuẩn (chặn video lớn, file nhạy cảm)
+├── 🚀 TỆP TIN THỰC THI & CÔNG CỤ VẬN HÀNH:
+│   ├── run.bat                               # 1-click khởi động toàn diện hệ thống trên Windows
+│   ├── scripts/
+│   │   ├── docker_start.bat                  # 1-click khởi chạy cụm Docker (Nginx + FastAPI)
+│   │   ├── docker_stop.bat                   # 1-click dừng cụm Docker an toàn
+│   │   ├── reset_admin_password.py           # Công cụ CLI đổi/đặt lại mật khẩu Admin
+│   │   ├── test_nvr_live.py                  # Công cụ kiểm tra trực tiếp luồng camera NVR
+│   │   └── training/
+│   │       ├── train_real_camera.bat         # 1-click huấn luyện AI trên GPU NVIDIA RTX 3050
+│   │       └── train_real_camera.py          # Huấn luyện YOLO nhận diện học sinh THPT Điều Cải
+│   ├── requirements.txt                      # Danh sách thư viện phụ thuộc Python
+│   └── .gitignore                            # Cấu hình loại trừ Git chuẩn
 ```
 
 ---
@@ -253,7 +260,7 @@ git remote add origin https://github.com/<tai-khoan-cua-ban>/<ten-repository>.gi
 # 6. Đẩy mã nguồn lên GitHub
 git push -u origin main
 ```
-
+<!-- git clone student-detection -->
 ---
 
 ## 📜 BẢN QUYỀN

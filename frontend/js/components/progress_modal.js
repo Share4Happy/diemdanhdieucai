@@ -240,6 +240,12 @@ class ActionProgressModal {
             if (title) title.textContent = options.title || 'Chụp Lại Ảnh Camera Phòng Học';
             if (stepper) stepper.style.display = 'none';
             if (spotlightBox) spotlightBox.style.display = 'flex';
+        } else if (this.currentAction === 'ATTENDANCE_SCAN_SINGLE') {
+            if (iconBadge) iconBadge.className = 'progress-modal-icon-badge';
+            if (icon) icon.className = 'fa-solid fa-qrcode';
+            if (title) title.textContent = options.title || 'Quét Lại Phòng Này (AI)';
+            if (stepper) stepper.style.display = 'none';
+            if (spotlightBox) spotlightBox.style.display = 'flex';
         }
 
         this.backdrop.classList.add('active');
@@ -256,7 +262,7 @@ class ActionProgressModal {
 
     _startPolling() {
         this._stopPolling();
-        const pollEndpoint = this.currentAction === 'ATTENDANCE_SCAN' 
+        const pollEndpoint = (this.currentAction === 'ATTENDANCE_SCAN' || this.currentAction === 'ATTENDANCE_SCAN_SINGLE')
             ? () => AttendanceAPI.getProgress()
             : () => CameraAPI.getProgress();
 
@@ -545,6 +551,41 @@ class ActionProgressModal {
             throw err;
         }
     }
+
+    /**
+     * Kích hoạt quét điểm danh AI cho 1 phòng học đơn lẻ kèm Dialog
+     */
+    async startAttendanceScanSingle(classroomId, className = '', callbacks = {}) {
+        this.open({
+            action: 'ATTENDANCE_SCAN_SINGLE',
+            title: `Quét Lại AI ${className || `Phòng ${classroomId}`}`,
+            onComplete: callbacks.onComplete,
+            onError: callbacks.onError
+        });
+
+        const spotlightName = document.getElementById('progSpotlightName');
+        const spotlightDesc = document.getElementById('progSpotlightDesc');
+        if (spotlightName) spotlightName.textContent = className || `Lớp ${classroomId}`;
+        if (spotlightDesc) spotlightDesc.textContent = 'Đang kích hoạt chu trình nhận diện AI riêng cho phòng này...';
+
+        try {
+            const result = await AttendanceAPI.rescanSingle(classroomId);
+            setTimeout(() => {
+                if (this.pollTimer) {
+                    AttendanceAPI.getProgress().then(st => this._renderState(st));
+                }
+            }, 300);
+            return result;
+        } catch (err) {
+            console.error('[ProgressModal] Lỗi quét lại phòng đơn:', err);
+            this._handleFinished({
+                status: 'error',
+                message: err.message || 'Lỗi khi quét lại phòng học'
+            });
+            if (callbacks.onError) callbacks.onError(err);
+            throw err;
+        }
+    }
 }
 
 export const progressModal = new ActionProgressModal();
@@ -553,4 +594,5 @@ if (typeof window !== 'undefined') {
     window.triggerAttendanceScan = (cb) => progressModal.startAttendanceScan(cb);
     window.triggerCaptureAll = (cb) => progressModal.startCaptureAll(cb);
     window.triggerCaptureSingle = (id, name, cb) => progressModal.startCaptureSingle(id, name, cb);
+    window.triggerAttendanceScanSingle = (id, name, cb) => progressModal.startAttendanceScanSingle(id, name, cb);
 }

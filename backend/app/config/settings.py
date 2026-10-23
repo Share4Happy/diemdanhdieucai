@@ -81,16 +81,28 @@ class Settings(BaseModel):
     HEAD_MODEL_NAME: str = os.getenv("HEAD_MODEL_NAME", str(BASE_DIR / "models" / "classroom_best.pt")) # Mô hình chuyên biệt nhận diện đầu lớp học
     YOLO_IMGSZ: int = int(os.getenv("YOLO_IMGSZ", "1280"))               # Kích thước phân giải AI quét 1280px chống mờ ảnh 2K
     AI_CONFIDENCE_THRESHOLD: float = float(os.getenv("AI_CONFIDENCE_THRESHOLD", "0.20")) # Ngưỡng tin cậy tối ưu phát hiện học sinh cúi đầu & ngồi xa
-    AI_IOU_THRESHOLD: float = float(os.getenv("AI_IOU_THRESHOLD", "0.35"))       # Ngưỡng IoU cho deduplication chặt chẽ chống box kép
+    AI_IOU_THRESHOLD: float = float(os.getenv("AI_IOU_THRESHOLD", "0.35"))               # Ngưỡng IoU lọc trùng lặp YOLO
     USE_IMAGE_ENHANCEMENT: bool = True  # Áp dụng CLAHE chống ngược sáng cửa sổ
     USE_TILED_INFERENCE: bool = True    # Bật thuật toán phân mảnh quét chi tiết đa tầng (SAHI)
+
+    # Cấu Hình Tích Hợp AI Depth-NMS (/api/predict) & Hiển Thị Chấm Tròn
+    USE_PREDICT_API_ENGINE: bool = os.getenv("USE_PREDICT_API_ENGINE", "true").lower() in ("1", "true", "yes")
+    VISUALIZATION_MODE: str = os.getenv("VISUALIZATION_MODE", "dot")  # "dot" (chấm tròn tâm đầu), "box", "both"
+    STUDENT_DETECTION_API_URL: str = os.getenv("STUDENT_DETECTION_API_URL", "http://student-detection:8010/api/predict")
+    DEPTH_NMS_IOU_THRESHOLD: float = float(os.getenv("DEPTH_NMS_IOU_THRESHOLD", "0.25"))
+    DEPTH_NMS_DIFF_THRESHOLD: float = float(os.getenv("DEPTH_NMS_DIFF_THRESHOLD", "0.0100"))
+
+    # Cấu Hình Quét Đa Khung Hình (10 Lần) & Thuật Toán Trọng Số Tần Suất
+    ATTENDANCE_NUM_PASSES: int = int(os.getenv("ATTENDANCE_NUM_PASSES", "10"))
+    ATTENDANCE_PASS_DELAY_SECONDS: float = float(os.getenv("ATTENDANCE_PASS_DELAY_SECONDS", "10.0"))
+    ATTENDANCE_SCAN_MODE: str = os.getenv("ATTENDANCE_SCAN_MODE", "round_robin")  # "round_robin" (xoay vòng ~4-5 phút) hoặc "sequential"
 
     # Auth / Login
     # LƯU Ý: JWT_SECRET phải được đặt trong .env (chuỗi ngẫu nhiên dài >= 32 ký tự).
     # Giá trị default chỉ là fallback để app khởi động được; không dùng trong production.
     JWT_SECRET: str = os.getenv("JWT_SECRET", "change-me-diemdanh-dieucai")
-    JWT_EXPIRE_HOURS: int = int(os.getenv("JWT_EXPIRE_HOURS", "12"))
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("JWT_EXPIRE_HOURS", "12")) * 60
+    JWT_EXPIRE_HOURS: int = int(os.getenv("JWT_EXPIRE_HOURS", "4320"))  # Mặc định 6 tháng (180 ngày = 4320h)
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("JWT_EXPIRE_HOURS", "4320")) * 60
     ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "admin@truongdieucai.edu.vn")
     ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "Admin@2025")
     ADMIN_FULL_NAME: str = os.getenv("ADMIN_FULL_NAME", "Quản trị hệ thống")
@@ -181,3 +193,8 @@ load_runtime_zalo(settings)
 # Khôi phục cấu hình điều chỉnh thông báo đã lưu
 from config.notification_settings_store import load_notification_settings
 load_notification_settings(settings)
+
+# Khôi phục cấu hình URL AI Student Detection đã lưu
+from config.ai_runtime_store import load_runtime_ai
+load_runtime_ai(settings)
+

@@ -219,8 +219,11 @@ class ROICanvasEditor {
     }
 
     updateStatsBar(savedTime = null, aiResult = null) {
-        const statsElem = document.getElementById('saveStatusBar');
-        if (!statsElem) return;
+        const statsElems = [
+            document.getElementById('saveStatusBar'),
+            document.getElementById('roiModalStatusBar')
+        ].filter(Boolean);
+        if (statsElems.length === 0) return;
 
         const greenCount = this.greenZone.length;
 
@@ -234,16 +237,22 @@ class ROICanvasEditor {
         } else if (savedTime) {
             statusHtml += `<span style="color: #047857; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> Đã lưu CSDL lúc ${savedTime}</span>`;
         } else {
-            statusHtml += `<span style="color: #64748b;"><i class="fa-solid fa-database"></i> Sẵn sàng ghi CSDL & Phân tích AI</span>`;
+            statusHtml += `<span style="color: #64748b;"><i class="fa-solid fa-database"></i> Sẵn sàng ghi CSDL</span>`;
         }
 
-        statsElem.innerHTML = statusHtml;
+        statsElems.forEach(el => {
+            el.innerHTML = statusHtml;
+        });
     }
 
     updateResolutionDisplay() {
         const resElem = document.getElementById('canvasCoords');
         if (resElem) {
             resElem.innerHTML = `<i class="fa-solid fa-expand"></i> Độ phân giải: <strong>${this.canvas.width} × ${this.canvas.height}</strong>`;
+        }
+        const modalResElem = document.getElementById('roiModalCoordsInfo');
+        if (modalResElem) {
+            modalResElem.innerHTML = `<i class="fa-solid fa-expand"></i> Độ phân giải: <strong>${this.canvas.width} × ${this.canvas.height}</strong>`;
         }
     }
 
@@ -295,7 +304,7 @@ class ROICanvasEditor {
 
     loadImage(src, retryCount = 0) {
         this.imageLoaded = false;
-        const skeletonOverlay = document.getElementById('canvasSkeletonOverlay');
+        const skeletonOverlay = document.getElementById('canvasSkeletonOverlay') || document.getElementById('roiModalSkeletonOverlay');
         if (skeletonOverlay && retryCount === 0) {
             skeletonOverlay.classList.remove('hidden');
         }
@@ -553,6 +562,14 @@ class ROICanvasEditor {
         this.showToast("Đã xóa vùng", "Đã xóa toàn bộ các điểm của Vùng Nhận Diện");
     }
 
+    setFourCorners() {
+        this.addFourCorners();
+    }
+
+    clearZone() {
+        this.clearCurrentZone();
+    }
+
     render() {
         this.resetContainerScroll();
         this.fitCanvasToWrapper();
@@ -700,14 +717,16 @@ class ROICanvasEditor {
         }
     }
 
-    async refreshSnapshot() {
+    async refreshSnapshot(customClassName = null) {
         const classSelect = document.getElementById('classSelect');
         const classId = classSelect ? classSelect.value : this.currentClassId;
-        const className = classSelect && classSelect.options[classSelect.selectedIndex]
+        const modalTitle = document.getElementById('roiModalTitle');
+        const modalName = modalTitle ? modalTitle.textContent.replace('Thiết Lập Vùng Nhận Diện ROI - ', '').trim() : '';
+        const className = customClassName || modalName || (classSelect && classSelect.options[classSelect.selectedIndex]
             ? classSelect.options[classSelect.selectedIndex].text
-            : `Lớp ${classId}`;
+            : `Lớp ${classId}`);
         const btn = document.getElementById('btnRefreshSnapshot');
-        const btnHeader = document.getElementById('btnHeaderSnapshot');
+        const btnHeader = document.getElementById('btnHeaderSnapshot') || document.getElementById('btnModalSnapshot');
         const oldHtml = btn ? btn.innerHTML : '';
         const oldHeaderHtml = btnHeader ? btnHeader.innerHTML : '';
 
@@ -725,10 +744,10 @@ class ROICanvasEditor {
                     this.loadImage(bustUrl);
                     this.showToast("✓ Đã Cập Nhật Khung Hình!", res.message || "Ảnh chụp mới nhất từ camera đã được tải lên canvas.");
                 }
-                return;
+                return res;
             } catch (err) {
                 this.showToast("Lỗi chụp ảnh", "Không thể chụp khung hình mới: " + err, true);
-                return;
+                throw err;
             }
         }
 
@@ -756,11 +775,14 @@ class ROICanvasEditor {
                 const bustUrl = snap + (snap.includes('?') ? '&' : '?') + '_t=' + Date.now();
                 this.loadImage(bustUrl);
                 this.showToast("✓ Đã Cập Nhật Khung Hình!", data.message || "Ảnh chụp mới nhất từ camera đã được tải lên canvas.");
+                return data;
             } else {
                 this.showToast("Cảnh báo", data.message || "Không thể chụp từ camera", true);
+                throw new Error(data.message || "Không thể chụp từ camera");
             }
         } catch (err) {
             this.showToast("Lỗi chụp ảnh", "Không thể chụp khung hình mới: " + err, true);
+            throw err;
         } finally {
             if (btn) {
                 btn.disabled = false;
@@ -773,14 +795,11 @@ class ROICanvasEditor {
         }
     }
 
-    async saveROI() {
+    async saveROI(customBtn = null) {
         const classSelect = document.getElementById('classSelect');
         const classId = classSelect ? classSelect.value : this.currentClassId;
-        const className = classSelect && classSelect.options[classSelect.selectedIndex]
-            ? classSelect.options[classSelect.selectedIndex].text
-            : `Lớp ${classId}`;
 
-        const btnSave = document.getElementById('btnSaveROI');
+        const btnSave = customBtn || document.getElementById('btnSaveROI') || document.getElementById('btnModalSaveROI');
         const originalBtnHtml = btnSave ? btnSave.innerHTML : '';
 
         if (btnSave) {
@@ -806,20 +825,21 @@ class ROICanvasEditor {
 
             if (res.ok && result.success) {
                 if (btnSave) {
-                    btnSave.className = 'btn btn-success pulse-success';
-                    btnSave.innerHTML = '<i class="fa-solid fa-check"></i> ĐÃ LƯU & ĐỒNG BỘ AI!';
+                    btnSave.className = (btnSave.className || '').replace(/btn-[a-z-]+/g, '') + ' btn btn-success pulse-success';
+                    btnSave.innerHTML = '<i class="fa-solid fa-check"></i> ĐÃ LƯU TỌA ĐỘ!';
                 }
 
-                this.updateStatsBar(nowTime, result);
+                this.updateStatsBar(nowTime);
 
                 setTimeout(() => {
                     if (btnSave) {
                         btnSave.disabled = false;
-                        btnSave.className = 'btn btn-save';
+                        btnSave.className = 'btn btn-save modal-btn';
                         btnSave.innerHTML = originalBtnHtml || '<i class="fa-solid fa-floppy-disk"></i> Lưu Tọa Độ Vùng';
                     }
                 }, 2500);
 
+                return result;
             } else {
                 throw new Error(result.error || result.detail || 'Lỗi không xác định từ máy chủ');
             }
@@ -833,6 +853,7 @@ class ROICanvasEditor {
                 btnSave.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Thử Lại';
             }
             this.showToast("Lỗi Lưu CSDL", err.message, true);
+            throw err;
         }
     }
 }

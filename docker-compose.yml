@@ -23,13 +23,17 @@ services:
       - DATABASE_URL=${DATABASE_URL:-sqlite:///database/attendance.db}
       - JWT_SECRET=${JWT_SECRET:-change-me-diemdanh-dieucai-random-secret-key}
       - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@truongdieucai.edu.vn}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-Admin@2025}
-      - APP_PUBLIC_URL=https://eyeai.share4happy.com
-      - CORS_ORIGINS=http://localhost:8000,http://127.0.0.1:8000,http://localhost:3000,http://127.0.0.1:3000,https://eyeai.share4happy.com,http://eyeai.share4happy.com
+      - APP_PUBLIC_URL=${APP_PUBLIC_URL:-http://localhost:3000}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:8000,http://127.0.0.1:8000,http://localhost:3000,http://127.0.0.1:3000}
+      - COOKIE_SECURE=${COOKIE_SECURE:-false}
       - PYTHONPATH=/app/backend/app:/app
+      - STUDENT_DETECTION_API_URL=${STUDENT_DETECTION_API_URL:-http://host.docker.internal:8010/api/predict}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     env_file:
       - .env
     volumes:
+      - ./.env:/app/.env
       # 1. Mã nguồn Backend thống nhất tập trung trong ./backend (Package backend.app)
       - ./backend:/app/backend
       - ./backend/app/config:/app/config
@@ -107,6 +111,52 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+  # ---------------------------------------------------------------------------
+  # 4. RTSP MOCK SERVER: MediaMTX & Tự Động Phát 30 Luồng Camera RTSP (Port 8554)
+  # [ĐÃ COMMENT THEO YÊU CẦU - DÙNG CAMERA & NVR HIKVISION THẬT]
+  # ---------------------------------------------------------------------------
+  # rtsp_mock:
+  #   image: bluenviron/mediamtx:latest-ffmpeg
+  #   container_name: diemdanh_rtsp_mock
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8554:8554"
+  #     - "8888:8888"
+  #     - "8889:8889"
+  #   volumes:
+  #     - ./mock_and_experiments/stream_config/docker_mock_stream/mediamtx.yml:/mediamtx.yml:ro
+  #     - ./mock_and_experiments/mock_data/samples:/media/samples:ro
+  #     - ./mock_and_experiments/mock_data/mock_streams:/media/scenarios
+  #     - ./mock_and_experiments/stream_config/docker_mock_stream/entrypoint.sh:/entrypoint.sh:ro
+  #   entrypoint: ["/bin/sh", "/entrypoint.sh"]
+  #   networks:
+  #     - attendance-network
+
+
+  # ---------------------------------------------------------------------------
+  # 5. STUDENT DETECTION AI SERVICE: YOLO + Depth Anything V2 (Port 8010)
+  # ---------------------------------------------------------------------------
+  student-detection:
+    build:
+      context: ./student-detection
+      dockerfile: docker/Dockerfile
+    container_name: diemdanh_student_detection
+    restart: unless-stopped
+    ports:
+      - "8010:8010"
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+      - PYTHONUNBUFFERED=1
+      - DET_MODEL_PATH=data/models/yolo26m_finetuned_heads.pt
+      - DEPTH_CHECKPOINT=depth-anything/Depth-Anything-V2-Small-hf
+    volumes:
+      - ./data/models:/app/data/models
+      - ./student-detection/data/models:/app/data/models
+      - ./data/dataset/samples:/app/data/samples
+      - ./student-detection/data/samples:/app/data/samples
+      - huggingface_cache:/root/.cache/huggingface
+    networks:
+      - attendance-network
 
 networks:
   attendance-network:
@@ -116,3 +166,5 @@ networks:
 volumes:
   pgdata:
     name: diemdanh_dieucai_pgdata
+  huggingface_cache:
+    name: diemdanh_dieucai_huggingface_cache

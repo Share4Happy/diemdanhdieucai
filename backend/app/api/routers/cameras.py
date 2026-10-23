@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from starlette.concurrency import run_in_threadpool
 import time
@@ -47,15 +47,35 @@ router = APIRouter(prefix="/cameras", tags=["Cameras"], dependencies=[Depends(ge
 @router.get("/")
 async def get_all_cameras(db: Session = Depends(get_db)):
     """Lấy danh sách chi tiết tất cả Camera/Lớp học kèm loại nguồn, trạng thái và số liệu điểm danh mới nhất."""
-    classrooms = db.query(Classroom).order_by(Classroom.id.asc()).all()
+    # 1. Eager load Classroom và ROIPolygon trong 1 câu query duy nhất (khử 30 queries riêng lẻ)
+    classrooms = db.query(Classroom).options(joinedload(Classroom.roi)).order_by(Classroom.id.asc()).all()
 
-    # Thu thập dữ liệu điểm danh thực tế mới nhất cho từng lớp
+    # 2. Thu thập dữ liệu điểm danh thực tế mới nhất theo batch kèm joinedload session
     latest_session = db.query(AttendanceSession).order_by(AttendanceSession.id.desc()).first()
     details_map = {}
     if latest_session:
-        details = db.query(AttendanceDetail).filter(AttendanceDetail.session_id == latest_session.id).all()
+        details = (
+            db.query(AttendanceDetail)
+            .options(joinedload(AttendanceDetail.session))
+            .filter(AttendanceDetail.session_id == latest_session.id)
+            .all()
+        )
         for d in details:
             details_map[d.classroom_id] = d
+
+    # Nạp bản ghi mới nhất cho các lớp còn thiếu trong 1 câu batch query duy nhất
+    missing_c_ids = [c.id for c in classrooms if c.id not in details_map]
+    if missing_c_ids:
+        fallback_details = (
+            db.query(AttendanceDetail)
+            .options(joinedload(AttendanceDetail.session))
+            .filter(AttendanceDetail.classroom_id.in_(missing_c_ids))
+            .order_by(AttendanceDetail.id.desc())
+            .all()
+        )
+        for fd in fallback_details:
+            if fd.classroom_id not in details_map:
+                details_map[fd.classroom_id] = fd
 
     results = []
     for c in classrooms:
@@ -72,15 +92,8 @@ async def get_all_cameras(db: Session = Depends(get_db)):
 
         has_roi = bool(c.roi and (c.roi.green_zone or c.roi.red_zone))
 
-        # Tìm chi tiết điểm danh mới nhất
+        # Lấy từ bộ đệm details_map (không query DB trong vòng lặp)
         det = details_map.get(c.id)
-        if not det:
-            det = (
-                db.query(AttendanceDetail)
-                .filter(AttendanceDetail.classroom_id == c.id)
-                .order_by(AttendanceDetail.id.desc())
-                .first()
-            )
 
         present_count = det.present_count if det else 0
         absent_count = det.absent_count if det else 0
@@ -352,9 +365,9 @@ async def create_camera(data: CameraCreateRequest, _admin: User = Depends(requir
     db.add(cls)
     db.flush()
 
-    # Tạo vùng ROI mặc định cho camera mới (1920x1080)
-    default_green_zone = [[200, 300], [1720, 300], [1850, 1050], [80, 1050]]  # Phần LẤY (bàn học)
-    default_red_zone = [[350, 80], [900, 80], [950, 280], [300, 280]]          # Phần BỎ ĐI (bục giảng)
+    # Camera mới mặc định ở trạng thái toàn cảnh (chưa cấu hình ROI)
+    default_green_zone = []
+    default_red_zone = []
     roi = ROIPolygon(
         classroom_id=cls.id,
         red_zone_json=json.dumps(default_red_zone),
@@ -861,10 +874,9 @@ async def batch_import_nvr_endpoint(req: NVRBatchImportRequest, _admin: User = D
 
     # Thư mục lưu snapshot mới nhất
     latest_dir = settings.CAPTURES_DIR / "latest"
-    latest_dir.mkdir(parents=True, exist_ok=True)
-
-    default_red_zone = [[200, 300], [1720, 300], [1850, 1050], [80, 1050]]
-    default_green_zone = [[350, 80], [900, 80], [950, 280], [300, 280]]
+    # Camera import mặc định ở trạng thái toàn cảnh (chưa cấu hình ROI)
+    default_red_zone = []
+    default_green_zone = []
 
     imported_count = 0
     for item in req.channels:

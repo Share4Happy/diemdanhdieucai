@@ -6,7 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản Lý Camera - THPT Điều Cải AI Camera</title>
 
+    <!-- Fonts & Preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
+
     <!-- Design System & Components -->
+    <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/design-system.css">
     <link rel="stylesheet" href="css/layout/app-shell.css?v=3.1">
     <link rel="stylesheet" href="css/components/buttons-redesign.css">
@@ -300,7 +306,8 @@
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.15);
             border: 1px solid #cbd5e1;
             padding: 6px;
-            min-width: 175px;
+            width: max-content;
+            min-width: 190px;
             z-index: 100;
             display: none;
             flex-direction: column;
@@ -337,6 +344,7 @@
             color: #334155;
             border-radius: 6px;
             cursor: pointer;
+            white-space: nowrap;
             transition: all 0.15s ease;
         }
 
@@ -500,7 +508,7 @@
                     <li class="sidebar-nav-item">
                         <a href="classrooms.html" class="sidebar-nav-link">
                             <span class="sidebar-nav-icon"><i class="fa-solid fa-chalkboard-user"></i></span>
-                            <span class="sidebar-nav-text">Quản lý lớp học</span>
+                            <span class="sidebar-nav-text">Quản lý điểm danh</span>
                         </a>
                     </li>
                     <li class="sidebar-nav-item">
@@ -509,12 +517,7 @@
                             <span class="sidebar-nav-text">Quản lý camera</span>
                         </a>
                     </li>
-                    <li class="sidebar-nav-item">
-                        <a href="roi-config.html" class="sidebar-nav-link">
-                            <span class="sidebar-nav-icon"><i class="fa-solid fa-draw-polygon"></i></span>
-                            <span class="sidebar-nav-text">Vùng ROI</span>
-                        </a>
-                    </li>
+
                     <li class="sidebar-nav-item">
                         <a href="reports.html" class="sidebar-nav-link">
                             <span class="sidebar-nav-icon"><i class="fa-solid fa-file-excel"></i></span>
@@ -528,9 +531,9 @@
                         </a>
                     </li>
                     <li class="sidebar-nav-item nav-admin-only" hidden style="display: none !important;">
-                        <a href="users.html" class="sidebar-nav-link">
-                            <span class="sidebar-nav-icon"><i class="fa-solid fa-user-gear"></i></span>
-                            <span class="sidebar-nav-text">Tài Khoản</span>
+                        <a href="settings.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-gear"></i></span>
+                            <span class="sidebar-nav-text">Cài Đặt</span>
                         </a>
                     </li>
                 </ul>
@@ -612,8 +615,8 @@
                             <button type="button" class="btn-vms-sub" id="btnVmsRefreshTree" title="Tải lại danh sách camera">
                                 <i class="fa-solid fa-rotate-right"></i> Làm Mới
                             </button>
-                            <a href="classrooms.html" class="btn-vms-sub" style="text-decoration: none;" title="Chuyển sang Quản Lý Lớp Học">
-                                <i class="fa-solid fa-chalkboard-user" style="color: #38bdf8;"></i> Lớp Học
+                            <a href="classrooms.html" class="btn-vms-sub" style="text-decoration: none;" title="Chuyển sang Quản Lý Điểm Danh">
+                                <i class="fa-solid fa-chalkboard-user" style="color: #38bdf8;"></i> Điểm Danh
                             </a>
                         </div>
                     </aside>
@@ -671,176 +674,23 @@
                 <!-- Legacy TV Wall View (Ẩn nhưng giữ ID để đảm bảo tương thích hoàn toàn) -->
                 <div id="matrixView" class="tv-wall-container" style="display: none;">
                     <div class="matrix-grid" id="matrixGrid">
-                        <!-- Skeleton placeholders while loading -->
-                        <div class="matrix-card skeleton-matrix-card">
-                            <div class="matrix-card-screen skeleton">
-                                <div class="matrix-osd-top">
-                                    <div class="skeleton"
-                                        style="width: 44px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                    <div class="skeleton"
-                                        style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="matrix-card-footer">
-                                <div style="flex: 1;">
-                                    <div class="skeleton"
-                                        style="width: 80px; height: 14px; margin-bottom: 5px; border-radius: 3px;">
-                                    </div>
-                                    <div class="skeleton" style="width: 55px; height: 11px; border-radius: 3px;"></div>
-                                </div>
-                                <div class="skeleton" style="width: 46px; height: 20px; border-radius: 999px;"></div>
-                            </div>
-                        </div>
-                        <div class="matrix-card skeleton-matrix-card">
-                            <div class="matrix-card-screen skeleton">
-                                <div class="matrix-osd-top">
-                                    <div class="skeleton"
-                                        style="width: 44px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                    <div class="skeleton"
-                                        style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="matrix-card-footer">
-                                <div style="flex: 1;">
-                                    <div class="skeleton"
-                                        style="width: 80px; height: 14px; margin-bottom: 5px; border-radius: 3px;">
-                                    </div>
-                                    <div class="skeleton" style="width: 55px; height: 11px; border-radius: 3px;"></div>
-                                </div>
-                                <div class="skeleton" style="width: 46px; height: 20px; border-radius: 999px;"></div>
-                            </div>
-                        </div>
-                        <div class="matrix-card skeleton-matrix-card">
-                            <div class="matrix-card-screen skeleton">
-                                <div class="matrix-osd-top">
-                                    <div class="skeleton"
-                                        style="width: 44px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                    <div class="skeleton"
-                                        style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="matrix-card-footer">
-                                <div style="flex: 1;">
-                                    <div class="skeleton"
-                                        style="width: 80px; height: 14px; margin-bottom: 5px; border-radius: 3px;">
-                                    </div>
-                                    <div class="skeleton" style="width: 55px; height: 11px; border-radius: 3px;"></div>
-                                </div>
-                                <div class="skeleton" style="width: 46px; height: 20px; border-radius: 999px;"></div>
-                            </div>
-                        </div>
-                        <div class="matrix-card skeleton-matrix-card">
-                            <div class="matrix-card-screen skeleton">
-                                <div class="matrix-osd-top">
-                                    <div class="skeleton"
-                                        style="width: 44px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                    <div class="skeleton"
-                                        style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="matrix-card-footer">
-                                <div style="flex: 1;">
-                                    <div class="skeleton"
-                                        style="width: 80px; height: 14px; margin-bottom: 5px; border-radius: 3px;">
-                                    </div>
-                                    <div class="skeleton" style="width: 55px; height: 11px; border-radius: 3px;"></div>
-                                </div>
-                                <div class="skeleton" style="width: 46px; height: 20px; border-radius: 999px;"></div>
-                            </div>
-                        </div>
-                        <div class="matrix-card skeleton-matrix-card">
-                            <div class="matrix-card-screen skeleton">
-                                <div class="matrix-osd-top">
-                                    <div class="skeleton"
-                                        style="width: 44px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                    <div class="skeleton"
-                                        style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="matrix-card-footer">
-                                <div style="flex: 1;">
-                                    <div class="skeleton"
-                                        style="width: 80px; height: 14px; margin-bottom: 5px; border-radius: 3px;">
-                                    </div>
-                                    <div class="skeleton" style="width: 55px; height: 11px; border-radius: 3px;"></div>
-                                </div>
-                                <div class="skeleton" style="width: 46px; height: 20px; border-radius: 999px;"></div>
-                            </div>
-                        </div>
-                        <div class="matrix-card skeleton-matrix-card">
-                            <div class="matrix-card-screen skeleton">
-                                <div class="matrix-osd-top">
-                                    <div class="skeleton"
-                                        style="width: 44px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                    <div class="skeleton"
-                                        style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="matrix-card-footer">
-                                <div style="flex: 1;">
-                                    <div class="skeleton"
-                                        style="width: 80px; height: 14px; margin-bottom: 5px; border-radius: 3px;">
-                                    </div>
-                                    <div class="skeleton" style="width: 55px; height: 11px; border-radius: 3px;"></div>
-                                </div>
-                                <div class="skeleton" style="width: 46px; height: 20px; border-radius: 999px;"></div>
-                            </div>
-                        </div>
-                        <div class="matrix-card skeleton-matrix-card">
-                            <div class="matrix-card-screen skeleton">
-                                <div class="matrix-osd-top">
-                                    <div class="skeleton"
-                                        style="width: 44px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                    <div class="skeleton"
-                                        style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="matrix-card-footer">
-                                <div style="flex: 1;">
-                                    <div class="skeleton"
-                                        style="width: 80px; height: 14px; margin-bottom: 5px; border-radius: 3px;">
-                                    </div>
-                                    <div class="skeleton" style="width: 55px; height: 11px; border-radius: 3px;"></div>
-                                </div>
-                                <div class="skeleton" style="width: 46px; height: 20px; border-radius: 999px;"></div>
-                            </div>
-                        </div>
-                        <div class="matrix-card skeleton-matrix-card">
-                            <div class="matrix-card-screen skeleton">
-                                <div class="matrix-osd-top">
-                                    <div class="skeleton"
-                                        style="width: 44px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                    <div class="skeleton"
-                                        style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="matrix-card-footer">
-                                <div style="flex: 1;">
-                                    <div class="skeleton"
-                                        style="width: 80px; height: 14px; margin-bottom: 5px; border-radius: 3px;">
-                                    </div>
-                                    <div class="skeleton" style="width: 55px; height: 11px; border-radius: 3px;"></div>
-                                </div>
-                                <div class="skeleton" style="width: 46px; height: 20px; border-radius: 999px;"></div>
-                            </div>
-                        </div>
+                        <!-- Dynamic Skeleton Placeholders (Tự động thích ứng theo số lượng thực tế) -->
                     </div>
+                    <script>
+                        (function() {
+                            var grid = document.getElementById('matrixGrid');
+                            if (grid) {
+                                var cached = parseInt(localStorage.getItem('dieucai_classrooms_count'), 10);
+                                var count = (cached && cached > 0) ? cached : 30;
+                                var card = '<div class="matrix-card skeleton-matrix-card"><div class="matrix-card-screen skeleton"><div class="matrix-osd-top"><div class="skeleton" style="width: 44px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.3);"></div><div class="skeleton" style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);"></div></div></div><div class="matrix-card-footer"><div style="flex: 1;"><div class="skeleton" style="width: 80px; height: 14px; margin-bottom: 5px; border-radius: 3px;"></div><div class="skeleton" style="width: 55px; height: 11px; border-radius: 3px;"></div></div><div class="skeleton" style="width: 46px; height: 20px; border-radius: 999px;"></div></div></div>';
+                                var html = '';
+                                for (var i = 0; i < count; i++) {
+                                    html += card;
+                                }
+                                grid.innerHTML = html;
+                            }
+                        })();
+                    </script>
                 </div>
             </div>
         </main>
@@ -1036,7 +886,7 @@
 
     <!-- MODAL THÊM ĐẦU GHI (NVR) TỰ ĐỘNG 30 CAMERA -->
     <div class="modal-backdrop" id="nvrModal">
-        <div class="modal-container modal-xl">
+        <div class="modal-container modal-xl" style="border-radius: 0;">
             <div class="modal-header">
                 <div class="modal-header-content">
                     <h3 class="modal-title">

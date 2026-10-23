@@ -3,7 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng nhập - THPT Điều Cải AI Camera</title>
+    <!-- Fonts & Preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
+
+    <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/design-system.css">
     <link rel="stylesheet" href="css/components/buttons-redesign.css">
     <link rel="stylesheet" href="css/auth.css">
@@ -25,15 +30,15 @@
             <form id="loginForm">
                 <div class="auth-field">
                     <label for="email">Email</label>
-                    <input class="form-control" type="email" id="email" name="email" required autocomplete="username">
+                    <input class="form-control" type="email" id="email" name="email" required autocomplete="username" autofocus spellcheck="false" autocapitalize="none" placeholder="admin@truongdieucai.edu.vn">
                 </div>
                 <div class="auth-field">
                     <label for="password">Mật khẩu</label>
-                    <input class="form-control" type="password" id="password" name="password" required autocomplete="current-password">
+                    <input class="form-control" type="password" id="password" name="password" required autocomplete="current-password" placeholder="Nhập mật khẩu">
                 </div>
                 <div class="auth-actions">
-                    <button class="btn btn-primary" type="submit">
-                        <i class="fa-solid fa-right-to-bracket"></i> Đăng nhập
+                    <button id="loginSubmitBtn" class="btn btn-primary" type="submit">
+                        <i class="fa-solid fa-right-to-bracket"></i> <span>Đăng nhập</span>
                     </button>
                 </div>
             </form>

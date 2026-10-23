@@ -358,11 +358,17 @@ export async function handleCaptureAll() {
 export async function loadCameras() {
     const container = document.getElementById('matrixGrid');
     if (container && allCameras.length === 0) {
-        container.innerHTML = (SkeletonTemplates.cameraGrid || SkeletonTemplates.cameraMatrixGrid)(8);
+        const cachedCount = parseInt(localStorage.getItem('dieucai_classrooms_count'), 10) || 30;
+        container.innerHTML = (SkeletonTemplates.cameraGrid || SkeletonTemplates.cameraMatrixGrid)(cachedCount);
     }
     try {
         const data = await CameraAPI.getAll();
         allCameras = data.cameras || [];
+        if (allCameras.length > 0) {
+            try {
+                localStorage.setItem('dieucai_classrooms_count', allCameras.length);
+            } catch (_) {}
+        }
         setMatrixCameras(allCameras);
         setCrudCameras(allCameras);
         if (window.vmsSurveillance) {

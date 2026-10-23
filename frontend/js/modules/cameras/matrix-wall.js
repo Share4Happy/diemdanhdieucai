@@ -5,7 +5,7 @@
  * ===================================================================
  */
 
-import { CameraAPI, showToast, escapeHtml } from '../../api.js';
+import { CameraAPI, AttendanceAPI, ROIAPI, showToast, escapeHtml } from '../../api.js';
 import { progressModal } from '../../components/progress_modal.js';
 
 const esc = (v) => escapeHtml(v);
@@ -161,6 +161,9 @@ export function renderMatrixWall(cameras = null) {
                         <i class="fa-solid fa-ellipsis-vertical"></i>
                     </button>
                     <div class="card-dropdown-menu" id="card_menu_${cam.id}">
+                        <button type="button" class="card-dropdown-item menu-item-rescan-ai" data-id="${cam.id}" data-name="${encodeURIComponent(cam.name)}" title="Chạy AI quét điểm danh riêng cho phòng này">
+                            <i class="fa-solid fa-qrcode" style="color: #6366f1;"></i> Quét lại phòng này
+                        </button>
                         <button type="button" class="card-dropdown-item menu-item-view" data-id="${cam.id}" data-name="${encodeURIComponent(cam.name)}">
                             <i class="fa-solid fa-expand" style="color: #0284c7;"></i> Xem trực tiếp
                         </button>
@@ -235,6 +238,38 @@ export function renderMatrixWall(cameras = null) {
                 btn.classList.add('active');
                 const card = btn.closest('.matrix-card');
                 if (card) card.style.zIndex = '99';
+            }
+        });
+    });
+
+    // Hành động Quét lại phòng này (chạy AI riêng cho phòng được chọn)
+    container.querySelectorAll('.menu-item-rescan-ai').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            closeAllCardMenus();
+            const id = parseInt(btn.getAttribute('data-id'), 10);
+            const card = document.getElementById(`matrix_card_${id}`);
+            const camName = decodeURIComponent(btn.getAttribute('data-name')) || card?.querySelector('.matrix-class-title')?.textContent?.trim() || `Phòng ${id}`;
+
+            try {
+                const res = await progressModal.startAttendanceScanSingle(id, camName, {
+                    onComplete: (completedState) => {
+                        const payload = completedState?.result || res;
+                        updateSingleClassroomCard(id, payload);
+                        if (typeof externalHandlers.onRefreshCameras === 'function') {
+                            externalHandlers.onRefreshCameras();
+                        }
+                    }
+                });
+                if (res && res.success) {
+                    showToast(res.message || `Quét lại thành công ${camName}!`, 'success');
+                    updateSingleClassroomCard(id, res);
+                    if (typeof externalHandlers.onRefreshCameras === 'function') {
+                        externalHandlers.onRefreshCameras();
+                    }
+                }
+            } catch (err) {
+                showToast('Lỗi quét lại phòng học: ' + (err.message || err), 'danger');
             }
         });
     });
@@ -488,10 +523,28 @@ export function openLiveModal(id, name) {
         playerEl.dataset.streamUrl = streamUrl;
         playerEl.dataset.isPlaying = 'true';
 
+        playerEl.onload = () => {
+            const resEl = document.getElementById('liveStreamResolution') || document.getElementById('imageResolution');
+            if (resEl && playerEl.naturalWidth && playerEl.naturalHeight) {
+                const w = playerEl.naturalWidth;
+                const h = playerEl.naturalHeight;
+                let label = `${w}x${h}`;
+                if (w >= 1920 && h >= 1080) label = '1080p FHD';
+                else if (w >= 1280 && h >= 720) label = '720p HD';
+                else if (w >= 640 && h >= 480) label = '480p SD';
+                resEl.textContent = `${label} • Trực tuyến (MJPEG)`;
+                resEl.title = `Kích thước thật: ${w}x${h} px`;
+            }
+        };
+
         playerEl.onerror = () => {
             // Fallback sang snapshot nếu camera offline
             playerEl.onerror = null;
             playerEl.src = `/storage/captures/latest/Lop_${id}.jpg?_t=${Date.now()}`;
+            const resEl = document.getElementById('liveStreamResolution') || document.getElementById('imageResolution');
+            if (resEl) {
+                resEl.textContent = 'Ảnh chụp dự phòng';
+            }
         };
     }
 
@@ -508,6 +561,8 @@ export function closeLiveModal() {
         playerEl.src = '';
         playerEl.dataset.isPlaying = 'false';
     }
+    const resEl = document.getElementById('liveStreamResolution') || document.getElementById('imageResolution');
+    if (resEl) resEl.textContent = '--';
 }
 
 export function initImageControls() {
@@ -523,16 +578,19 @@ export function initImageControls() {
             const camId = playerEl.dataset.cameraId;
             if (!camId) return;
 
+            const resEl = document.getElementById('liveStreamResolution') || document.getElementById('imageResolution');
             if (playerEl.dataset.isPlaying === 'true') {
                 playerEl.src = '';
                 playerEl.dataset.isPlaying = 'false';
                 btnTogglePlay.innerHTML = '<i class="fa-solid fa-play"></i>';
                 btnTogglePlay.title = 'Tiếp tục phát luồng';
+                if (resEl) resEl.textContent = 'Đã tạm dừng';
             } else {
                 playerEl.src = `/api/cameras/${camId}/stream?_t=${Date.now()}`;
                 playerEl.dataset.isPlaying = 'true';
                 btnTogglePlay.innerHTML = '<i class="fa-solid fa-pause"></i>';
                 btnTogglePlay.title = 'Tạm dừng luồng';
+                if (resEl) resEl.textContent = 'Đang tải lại luồng...';
             }
         };
     }
@@ -572,6 +630,13 @@ export function initImageControls() {
             const modal = document.getElementById('liveViewModal');
             if (modal && modal.classList.contains('active')) {
                 closeLiveModal();
+                return;
+            }
+            const applyAllModal = document.getElementById('modalApplyAllRoi');
+            if (applyAllModal && (applyAllModal.classList.contains('active') || applyAllModal.style.display !== 'none')) {
+                applyAllModal.style.display = 'none';
+                applyAllModal.classList.remove('active');
+                return;
             }
             const roiModal = document.getElementById('roiConfigModal');
             if (roiModal && (roiModal.classList.contains('active') || roiModal.style.display !== 'none')) {
@@ -609,7 +674,7 @@ export function openRoiModal(camId, camName) {
     const subEl = document.getElementById('roiModalSubtitle');
     if (titleEl) titleEl.innerText = `Thiết Lập Vùng Nhận Diện ROI - ${camName}`;
     if (subEl && cam) {
-        subEl.innerText = `${cam.room_number || 'Phòng N/A'} • Sĩ số: ${cam.standard_count} HS • Vẽ đa giác quanh khu vực bàn học sinh`;
+        subEl.innerText = `${cam.room_number || 'Phòng N/A'} • Sĩ số: ${cam.standard_count || 40} HS • Vẽ đa giác quanh khu vực bàn học sinh`;
     }
 
     modal.style.display = 'flex';
@@ -632,7 +697,7 @@ export function openRoiModal(camId, camName) {
                 modalRoiEditor.fitCanvasToWrapper();
                 modalRoiEditor.render();
             }
-        }, 60);
+        }, 80);
     }
 }
 
@@ -641,6 +706,11 @@ export function closeRoiModal() {
     if (modal) {
         modal.style.display = 'none';
         modal.classList.remove('active');
+    }
+    const modalApplyAll = document.getElementById('modalApplyAllRoi');
+    if (modalApplyAll) {
+        modalApplyAll.style.display = 'none';
+        modalApplyAll.classList.remove('active');
     }
 }
 
@@ -662,8 +732,12 @@ function bindRoiModalControls() {
     const btnFourCorners = document.getElementById('btnModalFourCorners');
     if (btnFourCorners) {
         btnFourCorners.onclick = () => {
-            if (modalRoiEditor && typeof modalRoiEditor.setFourCorners === 'function') {
-                modalRoiEditor.setFourCorners();
+            if (modalRoiEditor) {
+                if (typeof modalRoiEditor.addFourCorners === 'function') {
+                    modalRoiEditor.addFourCorners();
+                } else if (typeof modalRoiEditor.setFourCorners === 'function') {
+                    modalRoiEditor.setFourCorners();
+                }
             }
         };
     }
@@ -680,8 +754,13 @@ function bindRoiModalControls() {
     const btnClear = document.getElementById('btnModalClear');
     if (btnClear) {
         btnClear.onclick = () => {
-            if (modalRoiEditor && typeof modalRoiEditor.clearZone === 'function') {
-                modalRoiEditor.clearZone();
+            if (!modalRoiEditor) return;
+            if (confirm("Bạn có chắc chắn muốn xóa toàn bộ các điểm của Vùng Nhận Diện không?")) {
+                if (typeof modalRoiEditor.clearCurrentZone === 'function') {
+                    modalRoiEditor.clearCurrentZone();
+                } else if (typeof modalRoiEditor.clearZone === 'function') {
+                    modalRoiEditor.clearZone();
+                }
             }
         };
     }
@@ -690,7 +769,13 @@ function bindRoiModalControls() {
     if (btnSnapshot) {
         btnSnapshot.onclick = async () => {
             if (modalRoiEditor && typeof modalRoiEditor.refreshSnapshot === 'function') {
-                await modalRoiEditor.refreshSnapshot();
+                const cam = matrixCameras.find(c => c.id === currentRoiCameraId);
+                const camName = cam?.name || `Lớp ${currentRoiCameraId}`;
+                try {
+                    await modalRoiEditor.refreshSnapshot(camName);
+                } catch (err) {
+                    console.warn("Lỗi refreshSnapshot:", err);
+                }
             }
         };
     }
@@ -699,20 +784,268 @@ function bindRoiModalControls() {
     if (btnSave) {
         btnSave.onclick = async () => {
             if (!modalRoiEditor || !currentRoiCameraId) return;
-            btnSave.disabled = true;
-            btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
             try {
-                await modalRoiEditor.saveROI();
-                showToast(`Đã lưu tọa độ vùng ROI thành công!`, 'success');
-                setTimeout(() => {
-                    closeRoiModal();
-                }, 500);
+                await modalRoiEditor.saveROI(btnSave);
+                showToast(`✓ Đã lưu thành công tọa độ vùng ROI!`, 'success');
             } catch (err) {
-                showToast('Lỗi lưu tọa độ ROI: ' + (err.message || err), 'danger');
-            } finally {
-                btnSave.disabled = false;
-                btnSave.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Lưu Tọa Độ Vùng';
+                showToast('Lỗi lưu tọa độ ROI: ' + (err.message || err), 'error');
             }
         };
+    }
+
+    // =========================================================
+    // TÍNH NĂNG: ÁP DỤNG ROI CHO TẤT CẢ CÁC LỚP HỌC (MODAL)
+    // =========================================================
+    const btnApplyAllROI = document.getElementById('btnModalApplyAllROI');
+    const modalApplyAll = document.getElementById('modalApplyAllRoi');
+    const modalApplyAllCloseBtn = document.getElementById('modalApplyAllCloseBtn');
+    const btnCancelModalApplyAll = document.getElementById('btnCancelModalApplyAll');
+    const btnConfirmModalApplyAll = document.getElementById('btnConfirmModalApplyAll');
+    const applyAllSourceClass = document.getElementById('applyAllSourceClass');
+    const applyAllPointCount = document.getElementById('applyAllPointCount');
+    const applyAllResolution = document.getElementById('applyAllResolution');
+    const modalApplyTotalCount = document.getElementById('modalApplyTotalCount');
+    const modalScopeAllClasses = document.getElementById('modalScopeAllClasses');
+    const modalScopeCustomClasses = document.getElementById('modalScopeCustomClasses');
+    const modalApplyCustomClassListWrap = document.getElementById('modalApplyCustomClassListWrap');
+    const modalApplyTargetClassCheckboxes = document.getElementById('modalApplyTargetClassCheckboxes');
+    const modalCheckSelectAllTargetClasses = document.getElementById('modalCheckSelectAllTargetClasses');
+    const modalSelectedTargetCountBadge = document.getElementById('modalSelectedTargetCountBadge');
+
+    const updateTargetCountBadge = () => {
+        if (!modalApplyTargetClassCheckboxes || !modalSelectedTargetCountBadge) return;
+        const total = modalApplyTargetClassCheckboxes.querySelectorAll('input[type="checkbox"]').length;
+        const checked = modalApplyTargetClassCheckboxes.querySelectorAll('input[type="checkbox"]:checked').length;
+        modalSelectedTargetCountBadge.textContent = `${checked}/${total}`;
+        if (modalCheckSelectAllTargetClasses) {
+            modalCheckSelectAllTargetClasses.checked = (checked === total && total > 0);
+            modalCheckSelectAllTargetClasses.indeterminate = (checked > 0 && checked < total);
+        }
+    };
+
+    const renderTargetCheckboxes = (sourceClassId) => {
+        if (!modalApplyTargetClassCheckboxes) return;
+        const list = matrixCameras.length > 0 ? matrixCameras : [];
+        modalApplyTargetClassCheckboxes.innerHTML = list.map(c => {
+            const isSource = String(c.id) === String(sourceClassId);
+            return `
+                <label style="display: flex; align-items: center; gap: 5px; font-size: 0.82rem; padding: 4px 6px; border-radius: 4px; background: ${isSource ? '#eff6ff' : '#f8fafc'}; border: 1px solid ${isSource ? '#bfdbfe' : '#e2e8f0'}; cursor: pointer;">
+                    <input type="checkbox" class="modal-target-cls-item" value="${c.id}" checked>
+                    <span style="font-weight: ${isSource ? '700' : '500'}; color: ${isSource ? '#1d4ed8' : '#334155'};">
+                        ${esc(c.name)} ${isSource ? '<span style="font-size: 0.72rem; color: #2563eb;">(mẫu)</span>' : ''}
+                    </span>
+                </label>
+            `;
+        }).join('');
+
+        modalApplyTargetClassCheckboxes.querySelectorAll('.modal-target-cls-item').forEach(cb => {
+            cb.addEventListener('change', updateTargetCountBadge);
+        });
+        updateTargetCountBadge();
+    };
+
+    const closeApplyAllModal = () => {
+        if (modalApplyAll) {
+            modalApplyAll.style.display = 'none';
+            modalApplyAll.classList.remove('active');
+        }
+    };
+
+    if (btnApplyAllROI) {
+        btnApplyAllROI.onclick = () => {
+            const greenPts = modalRoiEditor ? (modalRoiEditor.greenZone || []) : [];
+            if (greenPts.length === 0) {
+                showToast('Chưa có vùng ROI nào được vẽ! Vui lòng vẽ vùng nhận diện (bàn học) trước khi áp dụng cho tất cả.', 'warning');
+                return;
+            }
+
+            const currentId = currentRoiCameraId || 1;
+            const currentClass = matrixCameras.find(c => c.id === currentId) || { id: currentId, name: `Lớp ${currentId}` };
+
+            if (applyAllSourceClass) {
+                applyAllSourceClass.textContent = `${currentClass.name} (${currentClass.room_number || 'Phòng ' + currentClass.id})`;
+            }
+            if (applyAllPointCount) {
+                applyAllPointCount.textContent = `${greenPts.length}`;
+            }
+            if (applyAllResolution) {
+                const w = (modalRoiEditor && modalRoiEditor.canvas) ? modalRoiEditor.canvas.width : 1920;
+                const h = (modalRoiEditor && modalRoiEditor.canvas) ? modalRoiEditor.canvas.height : 1080;
+                applyAllResolution.textContent = `${w} × ${h}`;
+            }
+            if (modalApplyTotalCount) {
+                modalApplyTotalCount.textContent = `${matrixCameras.length}`;
+            }
+
+            if (modalScopeAllClasses) modalScopeAllClasses.checked = true;
+            if (modalScopeCustomClasses) modalScopeCustomClasses.checked = false;
+            if (modalApplyCustomClassListWrap) modalApplyCustomClassListWrap.style.display = 'none';
+
+            renderTargetCheckboxes(currentId);
+
+            if (modalApplyAll) {
+                modalApplyAll.style.display = 'flex';
+                modalApplyAll.classList.add('active');
+            }
+        };
+    }
+
+    if (modalApplyAllCloseBtn) modalApplyAllCloseBtn.onclick = closeApplyAllModal;
+    if (btnCancelModalApplyAll) btnCancelModalApplyAll.onclick = closeApplyAllModal;
+
+    if (modalApplyAll) {
+        modalApplyAll.onclick = (e) => {
+            if (e.target === modalApplyAll) closeApplyAllModal();
+        };
+    }
+
+    if (modalScopeAllClasses) {
+        modalScopeAllClasses.onchange = () => {
+            if (modalApplyCustomClassListWrap) modalApplyCustomClassListWrap.style.display = 'none';
+        };
+    }
+    if (modalScopeCustomClasses) {
+        modalScopeCustomClasses.onchange = () => {
+            if (modalApplyCustomClassListWrap) modalApplyCustomClassListWrap.style.display = 'block';
+        };
+    }
+
+    if (modalCheckSelectAllTargetClasses) {
+        modalCheckSelectAllTargetClasses.onchange = (e) => {
+            const checked = e.target.checked;
+            if (modalApplyTargetClassCheckboxes) {
+                modalApplyTargetClassCheckboxes.querySelectorAll('.modal-target-cls-item').forEach(cb => {
+                    cb.checked = checked;
+                });
+            }
+            updateTargetCountBadge();
+        };
+    }
+
+    if (btnConfirmModalApplyAll) {
+        btnConfirmModalApplyAll.onclick = async () => {
+            const greenPts = modalRoiEditor ? (modalRoiEditor.greenZone || []) : [];
+            const redPts = modalRoiEditor ? (modalRoiEditor.redZone || []) : [];
+            const currentId = currentRoiCameraId || 1;
+
+            let targetClassIds = null;
+            if (modalScopeCustomClasses && modalScopeCustomClasses.checked) {
+                const checkedBoxes = modalApplyTargetClassCheckboxes.querySelectorAll('.modal-target-cls-item:checked');
+                if (checkedBoxes.length === 0) {
+                    showToast('Vui lòng chọn ít nhất 1 phòng học để áp dụng!', 'warning');
+                    return;
+                }
+                targetClassIds = Array.from(checkedBoxes).map(cb => parseInt(cb.value, 10));
+            }
+
+            const originalBtnHtml = btnConfirmModalApplyAll.innerHTML;
+            btnConfirmModalApplyAll.disabled = true;
+            btnConfirmModalApplyAll.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang Áp Dụng CSDL...';
+
+            try {
+                const apiObj = window.ROIAPI || ROIAPI;
+                const payload = {
+                    source_classroom_id: currentId,
+                    green_zone: greenPts,
+                    red_zone: redPts,
+                    image_width: (modalRoiEditor && modalRoiEditor.canvas) ? modalRoiEditor.canvas.width : 1920,
+                    image_height: (modalRoiEditor && modalRoiEditor.canvas) ? modalRoiEditor.canvas.height : 1080,
+                    target_classroom_ids: targetClassIds
+                };
+
+                const res = await apiObj.applyAll(payload);
+
+                if (res && res.success) {
+                    closeApplyAllModal();
+                    const count = res.updated_count || (targetClassIds ? targetClassIds.length : matrixCameras.length);
+                    showToast(`✓ Đã áp dụng thành công tọa độ ROI cho ${count} lớp học!`, 'success');
+
+                    if (btnApplyAllROI) {
+                        const prevHtml = btnApplyAllROI.innerHTML;
+                        btnApplyAllROI.style.background = '#10b981';
+                        btnApplyAllROI.innerHTML = `<i class="fa-solid fa-check"></i> ĐÃ ÁP DỤNG (${count} LỚP)`;
+                        setTimeout(() => {
+                            btnApplyAllROI.style.background = 'linear-gradient(135deg, #6366f1, #4f46e5)';
+                            btnApplyAllROI.innerHTML = prevHtml;
+                        }, 3500);
+                    }
+                } else {
+                    throw new Error(res.error || res.detail || 'Lỗi không thể lưu đồng loạt');
+                }
+            } catch (err) {
+                console.error('Lỗi khi áp dụng ROI cho tất cả:', err);
+                showToast('Lỗi khi áp dụng ROI: ' + (err.message || err), 'error');
+            } finally {
+                btnConfirmModalApplyAll.disabled = false;
+                btnConfirmModalApplyAll.innerHTML = originalBtnHtml;
+            }
+        };
+    }
+}
+
+/**
+ * Cập nhật giao diện thẻ phòng học đơn lẻ ngay sau khi quét AI
+ */
+function updateSingleClassroomCard(id, res) {
+    if (!res) return;
+    const card = document.getElementById(`matrix_card_${id}`);
+    if (!card) return;
+
+    // 1. Cập nhật ảnh thumbnail
+    const img = card.querySelector('.matrix-thumb-img');
+    if (img) {
+        const newSrc = res.snapshot_url || res.annotated_url || `/storage/captures/latest/Lop_${id}.jpg?t=${Date.now()}`;
+        img.src = newSrc;
+    }
+
+    // 2. Cập nhật OSD time
+    const osdTime = card.querySelector('.matrix-osd-bottom-time');
+    if (osdTime) {
+        osdTime.innerHTML = `<i class="fa-regular fa-clock"></i> ${res.scan_time || 'Vừa xong'}`;
+    }
+
+    // 3. Cập nhật footer meta scan time
+    const scanMeta = card.querySelector('.matrix-scan-meta span');
+    if (scanMeta) {
+        scanMeta.textContent = `Quét: ${res.scan_time || 'Vừa xong'}`;
+    }
+
+    // 4. Cập nhật badge sĩ số
+    if (res.present_count !== undefined && res.standard_count !== undefined) {
+        const topRow = card.querySelector('.matrix-footer-top-row');
+        if (topRow) {
+            let attPill = topRow.querySelector('.matrix-att-pill');
+            if (!attPill) {
+                attPill = document.createElement('span');
+                topRow.appendChild(attPill);
+            }
+            attPill.className = 'matrix-att-pill';
+            attPill.title = `Sĩ số: ${res.present_count}/${res.standard_count} HS`;
+            attPill.innerHTML = `<i class="fa-solid fa-user-check"></i> ${res.present_count} / ${res.standard_count} HS`;
+        }
+
+        const bottomRow = card.querySelector('.matrix-footer-bottom-row');
+        if (bottomRow) {
+            let absentChip = bottomRow.querySelector('.matrix-absent-chip');
+            if (res.absent_count === 0) {
+                if (!absentChip) {
+                    absentChip = document.createElement('span');
+                    bottomRow.appendChild(absentChip);
+                }
+                absentChip.className = 'matrix-absent-chip success';
+                absentChip.title = 'Đủ 100% sĩ số';
+                absentChip.innerHTML = '<i class="fa-solid fa-circle-check"></i> Đủ';
+            } else if (res.absent_count > 0) {
+                if (!absentChip) {
+                    absentChip = document.createElement('span');
+                    bottomRow.appendChild(absentChip);
+                }
+                absentChip.className = 'matrix-absent-chip warning';
+                absentChip.title = `Vắng ${res.absent_count} học sinh`;
+                absentChip.textContent = `Vắng ${res.absent_count} HS`;
+            } else if (absentChip) {
+                absentChip.remove();
+            }
+        }
     }
 }

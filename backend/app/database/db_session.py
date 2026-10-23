@@ -39,9 +39,7 @@ def seed_default_classes(db=None):
         close_at_end = True
     try:
         classes_info = DEFAULT_30_CLASSES
-        default_green_zone = [
-            [200, 300], [1720, 300], [1850, 1050], [80, 1050]
-        ]
+        default_green_zone = []
         default_red_zone = []
 
         created_count = 0
@@ -130,6 +128,9 @@ def init_db(force_seed_classes: bool = False):
                         conn.execute(text("ALTER TABLE attendance_details ADD COLUMN override_reason TEXT"))
                     if "override_at" not in att_existing_cols:
                         conn.execute(text("ALTER TABLE attendance_details ADD COLUMN override_at DATETIME"))
+                    # Tạo index cho session_id và classroom_id để tối ưu truy vấn O(1)
+                    conn.execute(text("CREATE INDEX IF NOT EXISTS ix_attendance_details_session_id ON attendance_details(session_id)"))
+                    conn.execute(text("CREATE INDEX IF NOT EXISTS ix_attendance_details_classroom_id ON attendance_details(classroom_id)"))
 
                 # Migration an toàn bảng users nếu có phiên bản cũ dùng username/hashed_password
                 user_cols_res = conn.execute(text("PRAGMA table_info(users)")).fetchall()

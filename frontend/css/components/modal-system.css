@@ -139,6 +139,7 @@
 
 .modal-container.modal-xl {
     max-width: var(--modal-xl);
+    border-radius: 0;
 }
 
 .modal-container.modal-full {

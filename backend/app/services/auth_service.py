@@ -33,7 +33,7 @@ def revoke_token_jti(jti: Optional[str], expires_at_ts: Optional[int] = None) ->
     if not jti:
         return
     if expires_at_ts is None:
-        expires_at_ts = int(time.time()) + 3600 * 12
+        expires_at_ts = int(time.time()) + 3600 * settings.JWT_EXPIRE_HOURS
     _revoked_jtis[jti] = expires_at_ts
     _cleanup_revoked()
 

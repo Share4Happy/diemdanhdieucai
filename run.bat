@@ -27,17 +27,12 @@ if errorlevel 1 (
 )
 
 echo.
-echo [2/3] Dang khoi tao CSDL va chuan bi du lieu mau...
-%PYTHON_EXEC% -c "from database.db_session import init_db; init_db()"
-%PYTHON_EXEC% training\sample_extractor.py
-
-echo.
-echo [3/3] Dang khoi dong Web Server va Bo Lap Lich 06:45 AM...
+echo [2/2] Dang khoi dong Web Server va Bo Lap Lich 06:45 AM...
 for /f "tokens=5" %%a in ('netstat -aon ^| findstr :8000 ^| findstr LISTENING') do taskkill /f /pid %%a >nul 2>&1
 echo Truy cap Dashboard quan tri tai: http://localhost:8000
-echo Truy cap Quan ly Camera tai: http://localhost:8000/cameras
-echo Truy cap Cau hinh Khong gian ROI tai: http://localhost:8000/roi-config
-echo Truy cap Quan ly Bao cao tai: http://localhost:8000/reports
+echo Truy cap Quan ly Camera tai:     http://localhost:8000/cameras
+echo Truy cap Cau hinh Vung ROI tai:  http://localhost:8000/roi-config
+echo Truy cap Quan ly Bao cao tai:    http://localhost:8000/reports
 echo.
 %PYTHON_EXEC% app.py
 pause

@@ -324,19 +324,3 @@ function hideGlobalLoading() {
         setTimeout(() => modal.remove(), 300);
     }
 }
-
-// ============================================================================
-// BACKWARDS COMPATIBILITY: Replace alert()
-// ============================================================================
-// Uncomment this to automatically replace all alert() calls
-// window.alert = function(message) {
-//     if (message.toLowerCase().includes('lỗi') || message.toLowerCase().includes('error')) {
-//         showError(message);
-//     } else if (message.toLowerCase().includes('thành công') || message.toLowerCase().includes('success')) {
-//         showSuccess(message);
-//     } else if (message.toLowerCase().includes('cảnh báo') || message.toLowerCase().includes('warning')) {
-//         showWarning(message);
-//     } else {
-//         showInfo(message);
-//     }
-// };

@@ -18,10 +18,12 @@ function updateAdminNav(isAdmin) {
     });
 }
 
-// 1. Phục hồi ngay thông tin tài khoản và quyền từ localStorage để hiển thị tức thời, triệt tiêu FOUC/nhấp nháy
+// 1. Phục hồi ngay quyền từ localStorage để hiển thị menu admin mượt mà, không chờ API
 try {
     const cachedRole = localStorage.getItem('currentUserRole');
-    updateAdminNav(cachedRole === 'admin');
+    if (cachedRole) {
+        updateAdminNav(cachedRole === 'admin');
+    }
     const cachedUserStr = localStorage.getItem('currentUser');
     if (cachedUserStr) {
         window.currentUser = JSON.parse(cachedUserStr);
@@ -63,15 +65,15 @@ async function guardApp() {
             console.warn('[Auth Guard] Lỗi cập nhật giao diện người dùng:', e);
         }
 
-        if (!isAdmin && (window.location.pathname || '').includes('users')) {
-            showToast('Chỉ quản trị viên mới vào được trang Tài Khoản.', 'danger');
+        const currentPath = window.location.pathname || '';
+        if (!isAdmin && (currentPath.includes('settings') || currentPath.includes('users'))) {
+            showToast('Chỉ quản trị viên mới vào được trang Cài Đặt.', 'danger');
             window.location.href = 'index.html';
         }
     } catch (err) {
         console.warn('[Auth Guard] Lỗi khi kiểm tra phiên làm việc:', err);
         
         // CHỈ chuyển hướng về login nếu server phản hồi mã 401 Unauthorized (phiên hết hạn thực sự)
-        // Tuyệt đối không chuyển hướng khi gặp lỗi mạng tạm thời, lỗi 500, hay huỷ request do chuyển trang
         if (err && err.status === 401) {
             console.log('[Auth Guard] Phiên làm việc không hợp lệ (401), điều hướng về login');
             try {
@@ -86,12 +88,10 @@ async function guardApp() {
                 : 'login.html';
             window.location.href = redirectUrl;
         } else {
-            // Lỗi mạng hoặc server bận: Nếu đã có thông tin cached trước đó, giữ nguyên trạng thái
+            // Lỗi mạng hoặc server bận: duy trì giao diện hiện tại
             console.warn('[Auth Guard] Bỏ qua lỗi kết nối mạng/máy chủ bận, duy trì giao diện hiện tại.');
         }
     }
 }
 
 guardApp();
-
-

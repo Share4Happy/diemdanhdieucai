@@ -8,8 +8,8 @@ echo   Dataset: studenthead1.v1-1.yolo26 (Camera 1 ^& Camera 2)
 echo   Hardware: NVIDIA GeForce RTX 3050 Laptop GPU (CUDA 12.1)
 echo ===================================================================
 echo.
-cd /d "%~dp0\.."
-echo [*] Thu muc lam viec: %CD%
+cd /d "%~dp0\..\.."
+echo [*] Thu muc lam viec goc: %CD%
 echo.
 
 set PYTHON_EXEC=python
@@ -19,7 +19,7 @@ if exist "venv_cuda\Scripts\python.exe" (
 
 echo [*] Dang bat dau qua trinh Fine-tuning [30 epochs, batch 4, imgsz 640]...
 echo.
-%PYTHON_EXEC% training\train_real_camera.py --epochs 30 --batch 4 --imgsz 640 --device 0
+%PYTHON_EXEC% scripts\training\train_real_camera.py --epochs 30 --batch 4 --imgsz 640 --device 0
 
 echo.
 echo ===================================================================

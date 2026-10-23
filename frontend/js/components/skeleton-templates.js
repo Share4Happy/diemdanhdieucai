@@ -189,10 +189,10 @@ export const SkeletonTemplates = {
     /**
      * Camera grid skeleton
      */
-    cameraGrid(count = 8) {
+    cameraGrid(count = 30) {
         return Array(count).fill(null).map(() => SkeletonTemplates.cameraMatrixCard()).join('');
     },
-    cameraMatrixGrid(count = 8) {
+    cameraMatrixGrid(count = 30) {
         return SkeletonTemplates.cameraGrid(count);
     },
 

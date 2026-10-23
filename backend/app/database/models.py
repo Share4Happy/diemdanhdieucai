@@ -116,8 +116,8 @@ class AttendanceDetail(Base):
     __tablename__ = "attendance_details"
 
     id = Column(Integer, primary_key=True, index=True)
-    session_id = Column(Integer, ForeignKey("attendance_sessions.id", ondelete="CASCADE"), nullable=False)
-    classroom_id = Column(Integer, ForeignKey("classrooms.id"), nullable=False)
+    session_id = Column(Integer, ForeignKey("attendance_sessions.id", ondelete="CASCADE"), nullable=False, index=True)
+    classroom_id = Column(Integer, ForeignKey("classrooms.id"), nullable=False, index=True)
     standard_count = Column(Integer, default=0)
     present_count = Column(Integer, default=0)
     absent_count = Column(Integer, default=0)

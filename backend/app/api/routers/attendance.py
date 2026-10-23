@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from config.settings import settings
 from config.logging_config import logger
@@ -62,6 +62,18 @@ async def trigger_attendance_scan(request: Request, _admin: User = Depends(requi
     """Kích hoạt quét điểm danh đồng loạt các lớp ngay lập tức trong worker thread, không chặn event loop (chỉ admin)."""
     check_rate_limit("action", f"trigger:{client_ip(request)}", limit=3, window_seconds=120)
     result = await run_in_threadpool(attendance_engine.run_daily_attendance, trigger_led=False)
+    return result
+
+@router.post("/classrooms/{classroom_id}/rescan")
+async def rescan_single_classroom_attendance(classroom_id: int, request: Request, _user: User = Depends(get_current_user)):
+    """Kích hoạt quét điểm danh AI riêng cho 1 phòng học được chọn."""
+    check_rate_limit("action", f"rescan_single:{client_ip(request)}", limit=10, window_seconds=60)
+    result = await run_in_threadpool(attendance_engine.run_single_classroom_attendance, classroom_id)
+    if not result.get("success"):
+        raise HTTPException(
+            status_code=400,
+            detail=result.get("error") or result.get("message") or "Lỗi khi quét điểm danh phòng học"
+        )
     return result
 
 @router.get("/progress")
@@ -220,6 +232,10 @@ async def get_attendance_history(limit: int = 500, db: Session = Depends(get_db)
     limit = max(1, min(limit, 500))
     details = (
         db.query(AttendanceDetail)
+        .options(
+            joinedload(AttendanceDetail.session),
+            joinedload(AttendanceDetail.classroom)
+        )
         .join(AttendanceSession)
         .join(Classroom)
         .order_by(AttendanceSession.id.desc(), Classroom.id.asc())

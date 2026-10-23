@@ -280,7 +280,7 @@ class RTSPCameraClient:
                 "reorder_queue_size;500|"
                 "stimeout;5000000|"
                 "analyzeduration;1500000|probesize;1500000|"
-                "protocol_whitelist;rtsp,rtp,tcp"
+                "protocol_whitelist;file,rtsp,rtp,tcp,udp,crypto,data"
             )
             cap = cv2.VideoCapture(url, cv2.CAP_FFMPEG)
             cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)

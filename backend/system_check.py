@@ -15,8 +15,10 @@ if sys.platform == "win32":
 
 CURRENT_DIR = Path(__file__).resolve().parent
 ROOT_DIR = CURRENT_DIR.parent
-if str(ROOT_DIR) not in sys.path:
-    sys.path.insert(0, str(ROOT_DIR))
+APP_DIR = CURRENT_DIR / "app"
+for p in [str(ROOT_DIR), str(CURRENT_DIR), str(APP_DIR)]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
 
 print("=========================================================================")
 print("   BẢNG KIỂM TRA TIẾN ĐỘ & TRẠNG THÁI HỆ THỐNG - THPT ĐIỀU CẢI")
@@ -77,7 +79,7 @@ modules = [
     ("Services", "backend/app/services"),
     ("Database Layer", "backend/app/database"),
     ("Data Store", "data"),
-    ("AI Training", "training"),
+    ("AI Training", "scripts/training"),
 ]
 for name, p in modules:
     status = "HOẠT ĐỘNG" if (ROOT_DIR / p).exists() else "THIẾU"

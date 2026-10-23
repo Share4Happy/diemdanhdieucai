@@ -4,9 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Lý Lớp Học - THPT Điều Cải AI Camera</title>
+    <title>Quản Lý Điểm Danh - THPT Điều Cải AI Camera</title>
+
+    <!-- Fonts & Preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
 
     <!-- Design System & Components -->
+    <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/design-system.css">
     <link rel="stylesheet" href="css/layout/app-shell.css?v=3.1">
     <link rel="stylesheet" href="css/components/buttons-redesign.css">
@@ -300,7 +306,8 @@
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.15);
             border: 1px solid #cbd5e1;
             padding: 6px;
-            min-width: 175px;
+            width: max-content;
+            min-width: 190px;
             z-index: 100;
             display: none;
             flex-direction: column;
@@ -337,6 +344,7 @@
             color: #334155;
             border-radius: 6px;
             cursor: pointer;
+            white-space: nowrap;
             transition: all 0.15s ease;
         }
 
@@ -609,7 +617,7 @@
                     <li class="sidebar-nav-item">
                         <a href="classrooms.html" class="sidebar-nav-link active">
                             <span class="sidebar-nav-icon"><i class="fa-solid fa-chalkboard-user"></i></span>
-                            <span class="sidebar-nav-text">Quản lý lớp học</span>
+                            <span class="sidebar-nav-text">Quản lý điểm danh</span>
                         </a>
                     </li>
                     <li class="sidebar-nav-item">
@@ -618,12 +626,7 @@
                             <span class="sidebar-nav-text">Quản lý camera</span>
                         </a>
                     </li>
-                    <li class="sidebar-nav-item">
-                        <a href="roi-config.html" class="sidebar-nav-link">
-                            <span class="sidebar-nav-icon"><i class="fa-solid fa-draw-polygon"></i></span>
-                            <span class="sidebar-nav-text">Vùng ROI</span>
-                        </a>
-                    </li>
+
                     <li class="sidebar-nav-item">
                         <a href="reports.html" class="sidebar-nav-link">
                             <span class="sidebar-nav-icon"><i class="fa-solid fa-file-excel"></i></span>
@@ -637,9 +640,9 @@
                         </a>
                     </li>
                     <li class="sidebar-nav-item nav-admin-only" hidden style="display: none !important;">
-                        <a href="users.html" class="sidebar-nav-link">
-                            <span class="sidebar-nav-icon"><i class="fa-solid fa-user-gear"></i></span>
-                            <span class="sidebar-nav-text">Tài Khoản</span>
+                        <a href="settings.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-gear"></i></span>
+                            <span class="sidebar-nav-text">Cài Đặt</span>
                         </a>
                     </li>
                 </ul>
@@ -671,7 +674,7 @@
                     <div class="classrooms-toolbar-row" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
                         <!-- Bên trái: Ô tìm kiếm -->
                         <div style="display: flex; align-items: center; flex: 1; min-width: 260px;">
-                            <h1 style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0;">Quản Lý Lớp Học</h1>
+                            <h1 style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0;">Quản Lý Điểm Danh</h1>
                             <div class="search-box-wrapper" style="position: relative; width: 100%; max-width: 380px;">
                                 <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; font-size: 0.85rem;"></i>
                                 <input type="text" id="searchClassroomInput" class="form-control" placeholder="Tìm theo tên lớp (vd: 10A1), phòng học..."
@@ -731,176 +734,23 @@
                 <!-- TV WALL VIEW -->
                 <div id="matrixView" class="tv-wall-container">
                     <div class="matrix-grid" id="matrixGrid">
-                        <!-- Skeleton placeholders while loading -->
-                        <div class="matrix-card skeleton-matrix-card">
-                            <div class="matrix-card-screen skeleton">
-                                <div class="matrix-osd-top">
-                                    <div class="skeleton"
-                                        style="width: 44px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                    <div class="skeleton"
-                                        style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="matrix-card-footer">
-                                <div style="flex: 1;">
-                                    <div class="skeleton"
-                                        style="width: 80px; height: 14px; margin-bottom: 5px; border-radius: 3px;">
-                                    </div>
-                                    <div class="skeleton" style="width: 55px; height: 11px; border-radius: 3px;"></div>
-                                </div>
-                                <div class="skeleton" style="width: 46px; height: 20px; border-radius: 999px;"></div>
-                            </div>
-                        </div>
-                        <div class="matrix-card skeleton-matrix-card">
-                            <div class="matrix-card-screen skeleton">
-                                <div class="matrix-osd-top">
-                                    <div class="skeleton"
-                                        style="width: 44px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                    <div class="skeleton"
-                                        style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="matrix-card-footer">
-                                <div style="flex: 1;">
-                                    <div class="skeleton"
-                                        style="width: 80px; height: 14px; margin-bottom: 5px; border-radius: 3px;">
-                                    </div>
-                                    <div class="skeleton" style="width: 55px; height: 11px; border-radius: 3px;"></div>
-                                </div>
-                                <div class="skeleton" style="width: 46px; height: 20px; border-radius: 999px;"></div>
-                            </div>
-                        </div>
-                        <div class="matrix-card skeleton-matrix-card">
-                            <div class="matrix-card-screen skeleton">
-                                <div class="matrix-osd-top">
-                                    <div class="skeleton"
-                                        style="width: 44px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                    <div class="skeleton"
-                                        style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="matrix-card-footer">
-                                <div style="flex: 1;">
-                                    <div class="skeleton"
-                                        style="width: 80px; height: 14px; margin-bottom: 5px; border-radius: 3px;">
-                                    </div>
-                                    <div class="skeleton" style="width: 55px; height: 11px; border-radius: 3px;"></div>
-                                </div>
-                                <div class="skeleton" style="width: 46px; height: 20px; border-radius: 999px;"></div>
-                            </div>
-                        </div>
-                        <div class="matrix-card skeleton-matrix-card">
-                            <div class="matrix-card-screen skeleton">
-                                <div class="matrix-osd-top">
-                                    <div class="skeleton"
-                                        style="width: 44px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                    <div class="skeleton"
-                                        style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="matrix-card-footer">
-                                <div style="flex: 1;">
-                                    <div class="skeleton"
-                                        style="width: 80px; height: 14px; margin-bottom: 5px; border-radius: 3px;">
-                                    </div>
-                                    <div class="skeleton" style="width: 55px; height: 11px; border-radius: 3px;"></div>
-                                </div>
-                                <div class="skeleton" style="width: 46px; height: 20px; border-radius: 999px;"></div>
-                            </div>
-                        </div>
-                        <div class="matrix-card skeleton-matrix-card">
-                            <div class="matrix-card-screen skeleton">
-                                <div class="matrix-osd-top">
-                                    <div class="skeleton"
-                                        style="width: 44px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                    <div class="skeleton"
-                                        style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="matrix-card-footer">
-                                <div style="flex: 1;">
-                                    <div class="skeleton"
-                                        style="width: 80px; height: 14px; margin-bottom: 5px; border-radius: 3px;">
-                                    </div>
-                                    <div class="skeleton" style="width: 55px; height: 11px; border-radius: 3px;"></div>
-                                </div>
-                                <div class="skeleton" style="width: 46px; height: 20px; border-radius: 999px;"></div>
-                            </div>
-                        </div>
-                        <div class="matrix-card skeleton-matrix-card">
-                            <div class="matrix-card-screen skeleton">
-                                <div class="matrix-osd-top">
-                                    <div class="skeleton"
-                                        style="width: 44px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                    <div class="skeleton"
-                                        style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="matrix-card-footer">
-                                <div style="flex: 1;">
-                                    <div class="skeleton"
-                                        style="width: 80px; height: 14px; margin-bottom: 5px; border-radius: 3px;">
-                                    </div>
-                                    <div class="skeleton" style="width: 55px; height: 11px; border-radius: 3px;"></div>
-                                </div>
-                                <div class="skeleton" style="width: 46px; height: 20px; border-radius: 999px;"></div>
-                            </div>
-                        </div>
-                        <div class="matrix-card skeleton-matrix-card">
-                            <div class="matrix-card-screen skeleton">
-                                <div class="matrix-osd-top">
-                                    <div class="skeleton"
-                                        style="width: 44px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                    <div class="skeleton"
-                                        style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="matrix-card-footer">
-                                <div style="flex: 1;">
-                                    <div class="skeleton"
-                                        style="width: 80px; height: 14px; margin-bottom: 5px; border-radius: 3px;">
-                                    </div>
-                                    <div class="skeleton" style="width: 55px; height: 11px; border-radius: 3px;"></div>
-                                </div>
-                                <div class="skeleton" style="width: 46px; height: 20px; border-radius: 999px;"></div>
-                            </div>
-                        </div>
-                        <div class="matrix-card skeleton-matrix-card">
-                            <div class="matrix-card-screen skeleton">
-                                <div class="matrix-osd-top">
-                                    <div class="skeleton"
-                                        style="width: 44px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                    <div class="skeleton"
-                                        style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="matrix-card-footer">
-                                <div style="flex: 1;">
-                                    <div class="skeleton"
-                                        style="width: 80px; height: 14px; margin-bottom: 5px; border-radius: 3px;">
-                                    </div>
-                                    <div class="skeleton" style="width: 55px; height: 11px; border-radius: 3px;"></div>
-                                </div>
-                                <div class="skeleton" style="width: 46px; height: 20px; border-radius: 999px;"></div>
-                            </div>
-                        </div>
+                        <!-- Dynamic Skeleton Placeholders (Tự động thích ứng theo số lượng thực tế) -->
                     </div>
+                    <script>
+                        (function() {
+                            var grid = document.getElementById('matrixGrid');
+                            if (grid) {
+                                var cached = parseInt(localStorage.getItem('dieucai_classrooms_count'), 10);
+                                var count = (cached && cached > 0) ? cached : 30;
+                                var card = '<div class="matrix-card skeleton-matrix-card"><div class="matrix-card-screen skeleton"><div class="matrix-osd-top"><div class="skeleton" style="width: 44px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.3);"></div><div class="skeleton" style="width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);"></div></div></div><div class="matrix-card-footer"><div style="flex: 1;"><div class="skeleton" style="width: 80px; height: 14px; margin-bottom: 5px; border-radius: 3px;"></div><div class="skeleton" style="width: 55px; height: 11px; border-radius: 3px;"></div></div><div class="skeleton" style="width: 46px; height: 20px; border-radius: 999px;"></div></div></div>';
+                                var html = '';
+                                for (var i = 0; i < count; i++) {
+                                    html += card;
+                                }
+                                grid.innerHTML = html;
+                            }
+                        })();
+                    </script>
                 </div>
             </div>
         </main>
@@ -1092,7 +942,7 @@
 
     <!-- MODAL THÊM ĐẦU GHI (NVR) TỰ ĐỘNG 30 CAMERA -->
     <div class="modal-backdrop" id="nvrModal">
-        <div class="modal-container modal-xl">
+        <div class="modal-container modal-xl" style="border-radius: 0;">
             <div class="modal-header">
                 <div class="modal-header-content">
                     <h3 class="modal-title">
@@ -1430,7 +1280,7 @@
                             <span style="width: 1px; height: 18px; background: rgba(255,255,255,0.2);"></span>
                             <div style="font-size: 0.8rem; color: #94a3b8; font-weight: 600; display: flex; align-items: center; gap: 8px;">
                                 <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></span>
-                                <span id="liveStreamResolution">1080p • 25 FPS (Trực tuyến)</span>
+                                <span id="liveStreamResolution">720p HD • Trực tuyến</span>
                             </div>
                         </div>
                     </div>
@@ -1489,12 +1339,22 @@
                     <!-- Khung Canvas Vẽ ROI (Mở rộng kích thước to hơn) -->
                     <div class="canvas-outer-wrapper" style="border: 1.5px solid #cbd5e1; border-radius: 10px; overflow: hidden; background: #0f172a; position: relative; width: 100%; height: 100%; flex: 1 1 0%; min-height: 0; display: flex; align-items: center; justify-content: center; margin: 0; padding: 8px;">
                         <div class="canvas-container" style="position: relative; max-width: 100%; max-height: 100%; display: flex; justify-content: center; align-items: center;">
+                            <div id="roiModalSkeletonOverlay" class="canvas-skeleton-overlay hidden">
+                                <div class="skeleton" style="width: 100%; height: 100%; border-radius: 4px;"></div>
+                            </div>
                             <canvas id="roiModalCanvas" style="display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; cursor: crosshair;"></canvas>
                         </div>
                     </div>
 
+                    <!-- Thanh trạng thái nạp vùng & phân tích AI -->
+                    <div class="save-status-bar" id="roiModalStatusBar" style="margin-top: 6px; padding: 6px 14px; font-size: 0.8rem; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; flex-shrink: 0;">
+                        <span><i class="fa-solid fa-draw-polygon" style="color: #059669;"></i> Vùng Nhận Diện: <strong>Đang nạp...</strong></span>
+                        <span style="color: #64748b;"><i class="fa-solid fa-ban"></i> Ngoài vùng: Tự động bỏ qua</span>
+                        <span style="color: #475569;"><i class="fa-solid fa-database"></i> Sẵn sàng ghi CSDL</span>
+                    </div>
+
                     <!-- Gợi ý thao tác -->
-                    <div class="roi-modal-hints" style="margin-top: 8px; font-size: 0.78rem; color: #64748b; line-height: 1.4; flex-shrink: 0;">
+                    <div class="roi-modal-hints" style="margin-top: 6px; font-size: 0.78rem; color: #64748b; line-height: 1.4; flex-shrink: 0;">
                         💡 <strong>Hướng dẫn:</strong> Nhấp chuột trái để vẽ các điểm tạo vùng xanh quanh khu vực bàn học sinh. Kéo điểm neo để căn chỉnh viền. <strong>Chuột phải</strong> để xóa điểm. Nhấn <strong>Ctrl+Z</strong> để hoàn tác.
                     </div>
                 </div>
@@ -1504,14 +1364,96 @@
                     <button type="button" id="btnModalSnapshot" class="btn btn-secondary btn-sm" style="font-weight: 600; padding: 7px 14px;">
                         <i class="fa-solid fa-camera-rotate"></i> Chụp Lại Ảnh Camera
                     </button>
-                    <div style="display: flex; gap: 8px;">
-                        <button type="button" id="btnModalCancelRoi" class="btn btn-secondary modal-btn modal-btn-secondary" style="padding: 7px 18px;">
-                            Đóng
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button type="button" id="btnModalApplyAllROI" class="btn btn-apply-all btn-sm" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; border: none; padding: 7px 16px; font-weight: 600; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;" title="Sao chép và áp dụng tọa độ vùng ROI hiện tại cho các phòng học khác">
+                            <i class="fa-solid fa-clone"></i> Áp Dụng Cho Tất Cả
                         </button>
                         <button type="button" id="btnModalSaveROI" class="btn btn-success modal-btn" style="background: #16a34a; border-color: #16a34a; color: white; padding: 7px 22px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
                             <i class="fa-solid fa-floppy-disk"></i> Lưu Tọa Độ Vùng
                         </button>
+                        <button type="button" id="btnModalCancelRoi" class="btn btn-secondary modal-btn modal-btn-secondary" style="padding: 7px 18px;">
+                            Đóng
+                        </button>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Xác Nhận Áp Dụng ROI Cho Các Lớp Học (Classrooms Direct ROI) -->
+    <div class="modal-backdrop" id="modalApplyAllRoi" role="dialog" aria-modal="true" style="display: none; z-index: 100000; align-items: center; justify-content: center;">
+        <div class="modal-dialog modal-md" style="max-width: 600px; width: 95vw; margin: auto;">
+            <div class="modal-content" style="background: #ffffff; border-radius: 14px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.35); border: 1px solid #cbd5e1;">
+                <div class="modal-header" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <div class="modal-header-content">
+                        <h3 class="modal-title" style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-clone" style="color: #6366f1;"></i>
+                            <span>Áp Dụng ROI Cho Các Lớp Học</span>
+                        </h3>
+                        <p class="modal-subtitle" style="margin: 3px 0 0; font-size: 0.8rem; color: #64748b;">Đồng bộ vùng nhận diện từ lớp đang chọn sang các phòng học khác</p>
+                    </div>
+                    <button type="button" class="modal-close-btn" id="modalApplyAllCloseBtn" aria-label="Đóng" style="font-size: 1.5rem; line-height: 1; border: none; background: transparent; cursor: pointer; color: #64748b;">&times;</button>
+                </div>
+                <div class="modal-body" style="padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 14px;">
+                    <!-- Info card về ROI nguồn -->
+                    <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 12px 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span style="font-weight: 700; color: #1e293b; font-size: 0.9rem;">
+                                <i class="fa-solid fa-door-open text-primary"></i> Lớp học mẫu:
+                            </span>
+                            <span id="applyAllSourceClass" style="font-weight: 700; color: #2563eb; font-size: 0.92rem;">Lớp 10A1</span>
+                        </div>
+                        <div style="display: flex; gap: 16px; font-size: 0.82rem; color: #475569;">
+                            <span><i class="fa-solid fa-draw-polygon" style="color: #059669;"></i> Vùng nhận diện: <strong id="applyAllPointCount">0</strong> điểm</span>
+                            <span><i class="fa-solid fa-expand" style="color: #6366f1;"></i> Độ phân giải: <strong id="applyAllResolution">1920x1080</strong></span>
+                        </div>
+                    </div>
+
+                    <!-- Lựa chọn phạm vi -->
+                    <div>
+                        <label style="font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 8px; display: block;">
+                            Phạm vi áp dụng:
+                        </label>
+                        <div style="display: flex; gap: 16px; margin-bottom: 10px;">
+                            <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.86rem; font-weight: 600; cursor: pointer;">
+                                <input type="radio" name="modalApplyTargetScope" value="all" checked id="modalScopeAllClasses">
+                                Tất cả các lớp trong trường (<span id="modalApplyTotalCount">30</span> lớp)
+                            </label>
+                            <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.86rem; font-weight: 600; cursor: pointer;">
+                                <input type="radio" name="modalApplyTargetScope" value="custom" id="modalScopeCustomClasses">
+                                Tùy chọn danh sách lớp
+                            </label>
+                        </div>
+
+                        <!-- Danh sách chọn lớp tùy chỉnh (ẩn mặc định) -->
+                        <div id="modalApplyCustomClassListWrap" style="display: none; max-height: 180px; overflow-y: auto; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 8px 12px; background: #ffffff;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #f1f5f9;">
+                                <label style="font-size: 0.8rem; font-weight: 700; color: #475569; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                                    <input type="checkbox" id="modalCheckSelectAllTargetClasses" checked> Chọn tất cả
+                                </label>
+                                <span id="modalSelectedTargetCountBadge" style="font-size: 0.76rem; font-weight: 700; background: #e0e7ff; color: #4338ca; padding: 2px 8px; border-radius: 10px;">30/30</span>
+                            </div>
+                            <div id="modalApplyTargetClassCheckboxes" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+                                <!-- Checkboxes rendered dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cảnh báo ghi đè -->
+                    <div class="modal-info-box warning" style="padding: 10px 14px; font-size: 0.82rem; margin: 0; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; display: flex; align-items: flex-start; gap: 10px;">
+                        <i class="fa-solid fa-triangle-exclamation modal-info-box-icon" style="color: #d97706; font-size: 1.1rem; margin-top: 2px;"></i>
+                        <span style="color: #92400e; line-height: 1.4;">
+                            Hành động này sẽ ghi đè tọa độ đa giác ROI hiện tại của các phòng học được chọn. Các phiên quét kế tiếp sẽ đồng loạt dùng tọa độ này để nhận diện học sinh.
+                        </span>
+                    </div>
+                </div>
+                <div class="modal-footer" style="padding: 12px 20px; display: flex; justify-content: flex-end; gap: 10px; background: #f8fafc; border-top: 1px solid #e2e8f0; border-radius: 0 0 14px 14px;">
+                    <button type="button" class="btn btn-secondary modal-btn modal-btn-secondary" id="btnCancelModalApplyAll">
+                        Hủy Bỏ
+                    </button>
+                    <button type="button" class="btn btn-primary modal-btn" id="btnConfirmModalApplyAll" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; font-weight: 700; border: none; padding: 8px 20px; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <i class="fa-solid fa-check-double"></i> Xác Nhận Áp Dụng
+                    </button>
                 </div>
             </div>
         </div>

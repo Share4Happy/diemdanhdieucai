@@ -13,13 +13,13 @@ from pathlib import Path
 
 # Đảm bảo đường dẫn gốc dự án có trong sys.path
 CURRENT_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = CURRENT_DIR.parent
+PROJECT_ROOT = CURRENT_DIR.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 BASE_DIR = PROJECT_ROOT
 MODELS_DIR = BASE_DIR / "models"
-DATASET_DIR = BASE_DIR / "dataset"
+DATASET_DIR = BASE_DIR / "data" / "dataset" if (BASE_DIR / "data" / "dataset").exists() else BASE_DIR / "dataset"
 RUNS_DIR = BASE_DIR / "runs" / "train"
 
 MODELS_DIR.mkdir(parents=True, exist_ok=True)

@@ -6,7 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Điểm Danh - THPT Điều Cải AI Camera</title>
 
+    <!-- Fonts & Preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
+
     <!-- Design System & Components -->
+    <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/design-system.css">
     <link rel="stylesheet" href="css/layout/app-shell.css?v=3.1">
     <link rel="stylesheet" href="css/components/buttons-redesign.css">
@@ -67,7 +73,7 @@
                     <li class="sidebar-nav-item">
                         <a href="classrooms.html" class="sidebar-nav-link">
                             <span class="sidebar-nav-icon"><i class="fa-solid fa-chalkboard-user"></i></span>
-                            <span class="sidebar-nav-text">Quản lý lớp học</span>
+                            <span class="sidebar-nav-text">Quản lý điểm danh</span>
                         </a>
                     </li>
                     <li class="sidebar-nav-item">
@@ -76,12 +82,7 @@
                             <span class="sidebar-nav-text">Quản lý camera</span>
                         </a>
                     </li>
-                    <li class="sidebar-nav-item">
-                        <a href="roi-config.html" class="sidebar-nav-link">
-                            <span class="sidebar-nav-icon"><i class="fa-solid fa-draw-polygon"></i></span>
-                            <span class="sidebar-nav-text">Vùng ROI</span>
-                        </a>
-                    </li>
+
                     <li class="sidebar-nav-item">
                         <a href="reports.html" class="sidebar-nav-link">
                             <span class="sidebar-nav-icon"><i class="fa-solid fa-file-excel"></i></span>
@@ -94,10 +95,24 @@
                             <span class="sidebar-nav-text">Thông Báo</span>
                         </a>
                     </li>
+                    <!-- 
+                    <li class="sidebar-nav-item">
+                        <a href="stream-config.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-tower-broadcast"></i></span>
+                            <span class="sidebar-nav-text">Cấu hình Stream</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="ai-test.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-flask-vial"></i></span>
+                            <span class="sidebar-nav-text">Thử Nghiệm AI</span>
+                        </a>
+                    </li>
+                    -->
                     <li class="sidebar-nav-item nav-admin-only" hidden style="display: none !important;">
-                        <a href="users.html" class="sidebar-nav-link">
-                            <span class="sidebar-nav-icon"><i class="fa-solid fa-user-gear"></i></span>
-                            <span class="sidebar-nav-text">Tài Khoản</span>
+                        <a href="settings.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-gear"></i></span>
+                            <span class="sidebar-nav-text">Cài Đặt</span>
                         </a>
                     </li>
                 </ul>

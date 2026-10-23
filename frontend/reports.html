@@ -6,7 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Báo Cáo & Dữ Liệu - THPT Điều Cải AI Camera</title>
 
+    <!-- Fonts & Preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
+
     <!-- Design System & Components -->
+    <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/design-system.css">
     <link rel="stylesheet" href="css/layout/app-shell.css?v=3.1">
     <link rel="stylesheet" href="css/components/buttons-redesign.css">
@@ -69,7 +75,7 @@
                     <li class="sidebar-nav-item">
                         <a href="classrooms.html" class="sidebar-nav-link">
                             <span class="sidebar-nav-icon"><i class="fa-solid fa-chalkboard-user"></i></span>
-                            <span class="sidebar-nav-text">Quản lý lớp học</span>
+                            <span class="sidebar-nav-text">Quản lý điểm danh</span>
                         </a>
                     </li>
                     <li class="sidebar-nav-item">
@@ -78,12 +84,7 @@
                             <span class="sidebar-nav-text">Quản lý camera</span>
                         </a>
                     </li>
-                    <li class="sidebar-nav-item">
-                        <a href="roi-config.html" class="sidebar-nav-link">
-                            <span class="sidebar-nav-icon"><i class="fa-solid fa-draw-polygon"></i></span>
-                            <span class="sidebar-nav-text">Vùng ROI</span>
-                        </a>
-                    </li>
+
                     <li class="sidebar-nav-item">
                         <a href="reports.html" class="sidebar-nav-link active">
                             <span class="sidebar-nav-icon"><i class="fa-solid fa-file-excel"></i></span>
@@ -97,9 +98,9 @@
                         </a>
                     </li>
                     <li class="sidebar-nav-item nav-admin-only" hidden style="display: none !important;">
-                        <a href="users.html" class="sidebar-nav-link">
-                            <span class="sidebar-nav-icon"><i class="fa-solid fa-user-gear"></i></span>
-                            <span class="sidebar-nav-text">Tài Khoản</span>
+                        <a href="settings.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-gear"></i></span>
+                            <span class="sidebar-nav-text">Cài Đặt</span>
                         </a>
                     </li>
                 </ul>
@@ -154,7 +155,6 @@
                         <div class="table-controls-row reports-controls-row">
                             <!-- Bộ điều khiển chọn Khối dạng Dropdown đơn giản -->
                             <div class="filter-field-group">
-                                <span class="control-label">Khối:</span>
                                 <select id="filterGradeSelect" class="form-control" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #cbd5e1; background: #ffffff; color: #1e293b; font-weight: 600; font-size: 0.85rem; cursor: pointer;">
                                     <option value="all">Tất cả các khối</option>
                                     <option value="10">Khối 10</option>

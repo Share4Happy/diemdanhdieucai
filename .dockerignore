@@ -34,3 +34,7 @@ storage/annotated/*
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Mock tools, experiments & mock stream data
+mock_and_experiments/
+data/mock_streams/

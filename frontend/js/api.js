@@ -65,6 +65,11 @@ async function fetchAPI(endpoint, options = {}) {
         }
         if (!response.ok) {
             let errorMsg = `Lỗi máy chủ (${response.status})`;
+            if (response.status === 413) {
+                errorMsg = 'Tệp tin tải lên quá lớn (Vượt quá dung lượng cho phép của máy chủ, tối đa 500MB).';
+            } else if (response.status === 504) {
+                errorMsg = 'Máy chủ phản hồi quá lâu (Gateway Timeout). Vui lòng thử lại với video ngắn hơn.';
+            }
             try {
                 const errData = await response.json();
                 if (errData.detail) errorMsg = typeof errData.detail === 'string' ? errData.detail : JSON.stringify(errData.detail);
@@ -123,6 +128,7 @@ export const AttendanceAPI = {
     clearHistory: () => fetchAPI('/api/attendance/clear-history', { method: 'DELETE' }),
     overrideDetail: (detailId, data) => fetchAPI(`/api/attendance/details/${detailId}/override`, { method: 'PUT', body: data }),
     getSessionById: (sessionId) => fetchAPI(`/api/attendance/sessions/${sessionId}`),
+    rescanSingle: (classroomId) => fetchAPI(`/api/attendance/classrooms/${classroomId}/rescan`, { method: 'POST' }),
     getDownloadExcelUrl: () => `${API_BASE}/api/attendance/download-excel`
 };
 
@@ -208,10 +214,34 @@ export const ReportAPI = {
 
 // === SYSTEM APIs ===
 export const SystemAPI = {
-    getDbInfo: () => fetchAPI('/api/database/info'),
     getDatabaseInfo: () => fetchAPI('/api/database/info'),
-    getHealth: () => fetchAPI('/api/health')
+    getHealth: () => fetchAPI('/api/health'),
+    getAiInfo: () => fetchAPI('/api/system/ai/info'),
+    getSampleFrames: () => fetchAPI('/api/system/sample-frames'),
+    getSamplePreviewUrl: (path) => `${API_BASE}/api/system/sample-frame-preview?path=${encodeURIComponent(path)}`,
+    getClassroomsRoi: () => fetchAPI('/api/system/classrooms-roi'),
+    testRawAI: (formData) => fetchAPI('/api/system/test-raw-ai', { method: 'POST', body: formData }),
+    getAiEndpoint: () => fetchAPI('/api/system/ai-endpoint'),
+    pingAiEndpoint: (apiUrl) => fetchAPI('/api/system/ai-ping', {
+        method: 'POST',
+        body: typeof apiUrl === 'string' ? { api_url: apiUrl } : (apiUrl || {})
+    }),
+    updateAiEndpoint: (payloadOrUrl) => fetchAPI('/api/system/ai-endpoint', {
+        method: 'POST',
+        body: typeof payloadOrUrl === 'string' ? { api_url: payloadOrUrl } : payloadOrUrl
+    }),
+    saveBatchTest: (batchData) => fetchAPI('/api/system/test-batches/save', { method: 'POST', body: batchData }),
+    listBatchTests: () => fetchAPI('/api/system/test-batches'),
+    getBatchTest: (batchId) => fetchAPI(`/api/system/test-batches/${batchId}`),
+    getBatchZipUrl: (batchId) => `${API_BASE}/api/system/test-batches/${batchId}/export-zip`,
+    getBatchExcelUrl: (batchId) => `${API_BASE}/api/system/test-batches/${batchId}/export-excel`,
+    getBatchImageUrl: (batchId, type, filename) => `${API_BASE}/api/system/test-batches/${batchId}/image/${type}/${filename}`
 };
+
+export const PredictAPI = {
+    predict: (formData, endpoint = '/api/predict') => fetchAPI(endpoint, { method: 'POST', body: formData, skipAuthRedirect: true })
+};
+
 
 // Chuẩn hóa URL cho ảnh tĩnh
 export function getMediaUrl(path) {
@@ -333,16 +363,55 @@ export const BackupAPI = {
     gdriveDisconnect: () => fetchAPI('/api/backup/gdrive/disconnect', { method: 'POST' })
 };
 
+// === CLASSROOMS MANAGEMENT APIs ===
+export const ClassroomsAPI = {
+    getAll: (params = {}) => {
+        const query = new URLSearchParams();
+        if (params.search) query.append('search', params.search);
+        if (params.grade) query.append('grade', params.grade);
+        if (params.has_camera !== undefined && params.has_camera !== null) {
+            query.append('has_camera', params.has_camera);
+        }
+        const qs = query.toString() ? `?${query.toString()}` : '';
+        return fetchAPI(`/api/classrooms${qs}`);
+    },
+    getDetail: (id) => fetchAPI(`/api/classrooms/${id}`),
+    create: (data) => fetchAPI('/api/classrooms', { method: 'POST', body: data }),
+    update: (id, data) => fetchAPI(`/api/classrooms/${id}`, { method: 'PUT', body: data }),
+    quickUpdateCount: (id, count) => fetchAPI(`/api/classrooms/${id}/count`, {
+        method: 'PATCH',
+        body: { standard_count: count }
+    }),
+    delete: (id) => fetchAPI(`/api/classrooms/${id}`, { method: 'DELETE' }),
+    getAvailableCameras: () => fetchAPI('/api/classrooms/available-cameras'),
+    importPreview: (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        return fetchAPI('/api/classrooms/import-preview', {
+            method: 'POST',
+            body: formData
+        });
+    },
+    batchImport: (data) => fetchAPI('/api/classrooms/batch-import', {
+        method: 'POST',
+        body: data
+    }),
+    getTemplateUrl: (format = 'xlsx') => `${API_BASE}/api/classrooms/template?format=${format}`,
+    getExportUrl: () => `${API_BASE}/api/classrooms/export`
+};
+
 // Luôn gắn các API lên window để đảm bảo tương thích toàn diện kể cả khi có cache cũ
 if (typeof window !== 'undefined') {
     window.API_BASE = API_BASE;
     window.CameraAPI = CameraAPI;
     window.AttendanceAPI = AttendanceAPI;
+    window.ClassroomsAPI = ClassroomsAPI;
     window.ROIAPI = ROIAPI;
     window.AuthAPI = AuthAPI;
     window.ReportAPI = ReportAPI;
     window.BackupAPI = BackupAPI;
     window.SystemAPI = SystemAPI;
+    window.PredictAPI = PredictAPI;
     window.showToast = showToast;
     window.getMediaUrl = getMediaUrl;
     window.escapeHtml = escapeHtml;

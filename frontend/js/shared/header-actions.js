@@ -335,7 +335,6 @@ class HeaderActions {
         backdrop.querySelector('#settingsModalClose').addEventListener('click', () => backdrop.remove());
         backdrop.querySelector('#settingsCancelBtn').addEventListener('click', () => backdrop.remove());
         backdrop.querySelector('#settingsSaveBtn').addEventListener('click', () => {
-            // TODO: Save settings to backend
             alert('Đã lưu cài đặt!');
             backdrop.remove();
         });

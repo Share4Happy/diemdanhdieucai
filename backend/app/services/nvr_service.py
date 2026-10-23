@@ -125,7 +125,7 @@ class NVRService:
         if is_nvr_reachable:
             try:
                 os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = (
-                    "timeout;1500000|rtsp_transport;tcp|analyzeduration;300000|probesize;300000|protocol_whitelist;rtsp,rtp,tcp"
+                    "timeout;1500000|rtsp_transport;tcp|analyzeduration;300000|probesize;300000|protocol_whitelist;file,rtsp,rtp,tcp,udp,crypto,data"
                 )
                 main_url = rtsp_url
                 sub_url = ""

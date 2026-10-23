@@ -464,14 +464,28 @@ export class VmsSurveillanceController {
                      id="vmsSlotImg_${idx}"
                      class="vms-slot-video-feed"
                      alt="${cam.name}"
-                     onerror="if(this.dataset.fallbackTried !== 'true'){ this.dataset.fallbackTried = 'true'; this.src='${slot.snapshotUrl}'; } else { this.onerror=null; this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22400%22%20height%3D%22225%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20fill%3D%22%230f172a%22%20width%3D%22400%22%20height%3D%22225%22%2F%3E%3Ctext%20fill%3D%22%2364748b%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3ENo%20Signal%20(Ch%C6%B0a%20c%C3%B3%20khung%20h%C3%ACnh)%3C%2Ftext%3E%3C%2Fsvg%3E'; }" />
+                     onload="window.vmsSurveillance && window.vmsSurveillance.onSlotImgLoaded(${idx}, this)"
+                     onerror="window.vmsSurveillance && window.vmsSurveillance.onSlotImgError(${idx}, this, '${slot.snapshotUrl}')" />
             </div>
 
             <!-- Footer OSD Bar -->
             <div class="vms-slot-osd-bottom">
-                <div>
-                    <i class="fa-solid fa-wifi" style="color: #10b981; margin-right: 4px;"></i>
-                    <span>1080p | 25 FPS | 1.8 Mbps</span>
+                <div id="vmsSlotOsdInfo_${idx}">
+                    ${isStreaming ? `
+                        <span style="display: inline-flex; align-items: center; gap: 5px;">
+                            <span style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; display: inline-block; box-shadow: 0 0 6px #10b981;"></span>
+                            <strong id="vmsSlotRes_${idx}" style="color: #f8fafc;">720p HD</strong>
+                            <span style="color: #64748b;">•</span>
+                            <span style="color: #cbd5e1;">Trực tuyến (MJPEG)</span>
+                        </span>
+                    ` : `
+                        <span style="display: inline-flex; align-items: center; gap: 5px;">
+                            <i class="fa-solid fa-camera" style="color: #38bdf8; font-size: 0.75rem;"></i>
+                            <strong id="vmsSlotRes_${idx}" style="color: #f8fafc;">720p HD</strong>
+                            <span style="color: #64748b;">•</span>
+                            <span style="color: #cbd5e1;">Ảnh chụp tĩnh</span>
+                        </span>
+                    `}
                 </div>
                 <div class="vms-osd-clock">${timeStr}</div>
             </div>
@@ -579,5 +593,52 @@ export class VmsSurveillanceController {
         showToast(`Vui lòng click đúp chuột vào camera trên danh sách bên trái để mở lên ô ${slotIndex + 1}`, 'info');
         const search = document.getElementById('vmsTreeSearch');
         if (search) search.focus();
+    }
+
+    onSlotImgLoaded(idx, img) {
+        if (!img || !img.naturalWidth || !img.naturalHeight) return;
+        const w = img.naturalWidth;
+        const h = img.naturalHeight;
+        const resEl = document.getElementById(`vmsSlotRes_${idx}`);
+        if (resEl) {
+            let label = `${w}x${h}`;
+            if (w >= 1920 && h >= 1080) label = '1080p FHD';
+            else if (w >= 1280 && h >= 720) label = '720p HD';
+            else if (w >= 640 && h >= 480) label = '480p SD';
+            resEl.textContent = label;
+            resEl.title = `Độ phân giải thực: ${w}x${h} px`;
+        }
+    }
+
+    onSlotImgError(idx, img, fallbackUrl) {
+        if (img.dataset.fallbackTried !== 'true' && fallbackUrl) {
+            img.dataset.fallbackTried = 'true';
+            img.src = fallbackUrl;
+            const infoEl = document.getElementById(`vmsSlotOsdInfo_${idx}`);
+            if (infoEl) {
+                infoEl.innerHTML = `
+                    <span style="display: inline-flex; align-items: center; gap: 5px;">
+                        <i class="fa-solid fa-camera" style="color: #f59e0b; font-size: 0.75rem;"></i>
+                        <strong id="vmsSlotRes_${idx}" style="color: #fbbf24;">Snapshot</strong>
+                        <span style="color: #64748b;">•</span>
+                        <span style="color: #cbd5e1;">Ảnh dự phòng</span>
+                    </span>
+                `;
+            }
+        } else {
+            img.onerror = null;
+            img.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22400%22%20height%3D%22225%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20fill%3D%22%230f172a%22%20width%3D%22400%22%20height%3D%22225%22%2F%3E%3Ctext%20fill%3D%22%2364748b%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3ENo%20Signal%20(M%E1%BA%A5t%20k%E1%BA%BFt%20n%E1%BB%91i)%3C%2Ftext%3E%3C%2Fsvg%3E';
+            const infoEl = document.getElementById(`vmsSlotOsdInfo_${idx}`);
+            if (infoEl) {
+                infoEl.innerHTML = `
+                    <span style="display: inline-flex; align-items: center; gap: 5px; color: #ef4444;">
+                        <i class="fa-solid fa-triangle-exclamation" style="font-size: 0.75rem;"></i>
+                        <strong>No Signal</strong>
+                        <span style="color: #64748b;">•</span>
+                        <span>Mất kết nối</span>
+                    </span>
+                `;
+            }
+        }
     }
 }

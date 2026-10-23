@@ -29,23 +29,68 @@ async function tryRedirectIfLoggedIn() {
     }
 }
 
+function cleanEmailInput(val) {
+    if (!val) return '';
+    return val.replace(/\s+/g, '').toLowerCase();
+}
+
 function bindLogin() {
     const form = document.getElementById('loginForm');
     const alertEl = document.getElementById('authAlert');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
     if (!form) return;
+
+    // Tự động làm sạch khoảng trắng khi người dùng gõ hoặc dán email
+    if (emailInput) {
+        const handleEmailClean = () => {
+            const cleaned = cleanEmailInput(emailInput.value);
+            if (emailInput.value !== cleaned) {
+                const cursorPos = emailInput.selectionStart;
+                emailInput.value = cleaned;
+                try { emailInput.setSelectionRange(cursorPos, cursorPos); } catch (e) {}
+            }
+        };
+        emailInput.addEventListener('input', handleEmailClean);
+        emailInput.addEventListener('blur', handleEmailClean);
+        emailInput.addEventListener('paste', () => setTimeout(handleEmailClean, 10));
+    }
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const email = document.getElementById('email')?.value.trim();
-        const password = document.getElementById('password')?.value;
+        const email = cleanEmailInput(emailInput?.value || '');
+        const password = (passwordInput?.value || '').trim();
+
+        if (emailInput) emailInput.value = email;
+        if (passwordInput) passwordInput.value = password;
+
+        if (!email) {
+            showAlert(alertEl, 'Vui lòng nhập địa chỉ email.', 'error');
+            emailInput?.focus();
+            return;
+        }
+        if (!password) {
+            showAlert(alertEl, 'Vui lòng nhập mật khẩu.', 'error');
+            passwordInput?.focus();
+            return;
+        }
+
         const btn = form.querySelector('button[type="submit"]');
-        btn.disabled = true;
+        const origBtnContent = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Đang đăng nhập...</span>';
+        }
+
         try {
             await AuthAPI.login({ email, password });
             window.location.href = getRedirectTarget();
         } catch (err) {
-            showAlert(alertEl, err.message || 'Đăng nhập thất bại', 'error');
-        } finally {
-            btn.disabled = false;
+            showAlert(alertEl, err.message || 'Email hoặc mật khẩu không chính xác', 'error');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origBtnContent;
+            }
         }
     });
 }
@@ -53,12 +98,34 @@ function bindLogin() {
 function bindForgot() {
     const form = document.getElementById('forgotForm');
     const alertEl = document.getElementById('authAlert');
+    const emailInput = document.getElementById('email');
     if (!form) return;
+
+    if (emailInput) {
+        const handleEmailClean = () => {
+            emailInput.value = cleanEmailInput(emailInput.value);
+        };
+        emailInput.addEventListener('blur', handleEmailClean);
+        emailInput.addEventListener('paste', () => setTimeout(handleEmailClean, 10));
+    }
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const email = document.getElementById('email')?.value.trim();
+        const email = cleanEmailInput(emailInput?.value || '');
+        if (emailInput) emailInput.value = email;
+
+        if (!email) {
+            showAlert(alertEl, 'Vui lòng nhập email hợp lệ.', 'error');
+            return;
+        }
+
         const btn = form.querySelector('button[type="submit"]');
-        btn.disabled = true;
+        const origBtnContent = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Đang gửi...</span>';
+        }
+
         try {
             const res = await AuthAPI.forgotPassword(email);
             showAlert(alertEl, res.message || 'Nếu email tồn tại, hướng dẫn đã được gửi.', 'success');
@@ -66,7 +133,10 @@ function bindForgot() {
         } catch (err) {
             showAlert(alertEl, err.message || 'Không gửi được yêu cầu', 'error');
         } finally {
-            btn.disabled = false;
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origBtnContent;
+            }
         }
     });
 }

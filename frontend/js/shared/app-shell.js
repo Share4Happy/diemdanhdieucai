@@ -120,12 +120,14 @@ class AppShell {
     // CẤU HÌNH TẬP TRUNG TẤT CẢ CÁC TABS MENU CỦA HỆ THỐNG (Chỉ cần sửa tại đây sẽ tự động áp dụng mọi trang)
     const NAV_ITEMS = [
       { href: 'index.html', icon: 'fa-chart-line', text: 'Dashboard' },
-      { href: 'classrooms.html', icon: 'fa-chalkboard-user', text: 'Quản lý lớp học' },
+      { href: 'classrooms.html', icon: 'fa-chalkboard-user', text: 'Quản lý điểm danh' },
+      { href: 'classes.html', icon: 'fa-school', text: 'Quản lý lớp học' },
       { href: 'cameras.html', icon: 'fa-video', text: 'Quản lý camera' },
-      { href: 'roi-config.html', icon: 'fa-draw-polygon', text: 'Vùng ROI' },
       { href: 'reports.html', icon: 'fa-file-excel', text: 'Báo Cáo & Dữ Liệu' },
       { href: 'notifications.html', icon: 'fa-paper-plane', text: 'Thông Báo' },
-      { href: 'users.html', icon: 'fa-user-gear', text: 'Tài Khoản', adminOnly: true }
+      // { href: 'stream-config.html', icon: 'fa-tower-broadcast', text: 'Cấu hình Stream' },
+      // { href: 'ai-test.html', icon: 'fa-flask-vial', text: 'Thử Nghiệm AI' },
+      { href: 'settings.html', icon: 'fa-gear', text: 'Cài Đặt', adminOnly: true }
     ];
 
     const currentPath = window.location.pathname.toLowerCase();
@@ -138,7 +140,8 @@ class AppShell {
     navList.innerHTML = visibleItems.map(item => {
       const pageName = item.href.replace('.html', '').toLowerCase();
       const isHome = (currentPath === '/' || currentPath === '' || currentPath.endsWith('/index.html') || currentPath.endsWith('/index')) && pageName === 'index';
-      const isActive = isHome || (pageName !== 'index' && currentPath.includes(pageName)) || currentPath.includes(item.href.toLowerCase());
+      const isSettings = (pageName === 'settings') && (currentPath.includes('settings') || currentPath.includes('users'));
+      const isActive = isHome || isSettings || (pageName !== 'index' && currentPath.includes(pageName)) || currentPath.includes(item.href.toLowerCase());
       const adminClass = item.adminOnly ? ' nav-admin-only is-visible' : '';
       const activeClass = isActive ? ' active' : '';
 
@@ -319,7 +322,8 @@ class AppShell {
       if (!href) return;
       const pageName = href.replace('.html', '');
       const isHome = (currentPath === '/' || currentPath === '' || currentPath.endsWith('/index.html')) && pageName === 'index';
-      if (isHome || (pageName !== 'index' && currentPath.includes(pageName)) || currentPath.includes(href)) {
+      const isSettings = (pageName === 'settings') && (currentPath.includes('settings') || currentPath.includes('users'));
+      if (isHome || isSettings || (pageName !== 'index' && currentPath.includes(pageName)) || currentPath.includes(href)) {
         link.classList.add('active');
       } else {
         link.classList.remove('active');

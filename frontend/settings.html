@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cài Đặt Hệ Thống - THPT Điều Cải</title>
+    <!-- Fonts & Preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
+
+    <!-- Design System & Components -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/layout/app-shell.css?v=3.1">
+    <link rel="stylesheet" href="css/components/buttons-redesign.css">
+    <link rel="stylesheet" href="css/components/badges-redesign.css">
+    <link rel="stylesheet" href="css/components/header-actions.css">
+    <link rel="stylesheet" href="css/components/cards-redesign.css">
+    <link rel="stylesheet" href="css/components/confirmation-dialog.css?v=1.1">
+    <link rel="stylesheet" href="css/components/modal-system.css?v=2.0">
+    <link rel="stylesheet" href="css/reports.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="css/components/skeleton-loader.css">
+    <link rel="stylesheet" href="css/global-table-balance.css?v=3.2">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* === TABS SYSTEM === */
+        .tabs-container {
+            background: var(--surface, #ffffff);
+            border-radius: var(--radius-lg, 12px);
+            padding: 8px 14px 0 14px;
+            border: 1px solid var(--border-color, #e2e8f0);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            margin-bottom: var(--space-6, 24px);
+        }
+
+        .tabs-nav {
+            display: flex;
+            gap: 8px;
+            border-bottom: 2px solid transparent;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .tab-btn {
+            padding: 11px 22px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted, #64748b);
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 8px 8px 0 0;
+            white-space: nowrap;
+            user-select: none;
+        }
+
+        /* Đảm bảo click vào icon hoặc chữ đều kích hoạt nút mượt mà */
+        .tab-btn * {
+            pointer-events: none;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary, #0f172a);
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        .tab-btn.active {
+            color: var(--primary, #2563eb);
+            border-bottom-color: var(--primary, #2563eb);
+            background: rgba(37, 99, 235, 0.09);
+            font-weight: 700;
+        }
+
+        .tab-content {
+            display: none !important;
+        }
+
+        .tab-content.active {
+            display: block !important;
+            animation: fadeInTab 0.25s ease forwards;
+        }
+
+        @keyframes fadeInTab {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* === TAB 1: ACCOUNTS STATS & CONTROLS === */
+        .users-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--space-4, 16px);
+            margin-bottom: var(--space-6, 24px);
+        }
+
+        .users-stats-grid .stat-card {
+            background: var(--surface, #ffffff);
+            border-radius: var(--radius-lg, 12px);
+            padding: var(--space-4, 16px);
+            border: 1px solid var(--border-color, #e2e8f0);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            gap: var(--space-4, 16px);
+        }
+
+        .users-stats-grid .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .users-stats-grid .stat-icon.primary {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary, #2563eb);
+        }
+
+        .users-stats-grid .stat-icon.warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning, #f59e0b);
+        }
+
+        .users-stats-grid .stat-icon.info {
+            background: rgba(6, 182, 212, 0.1);
+            color: #0891b2;
+        }
+
+        .users-stats-grid .stat-icon.success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success, #10b981);
+        }
+
+        .users-stats-grid .stat-content h4 {
+            margin: 0;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-primary, #0f172a);
+        }
+
+        .users-stats-grid .stat-content p {
+            margin: 2px 0 0 0;
+            font-size: 0.8rem;
+            color: var(--text-muted, #64748b);
+        }
+
+        .table-controls-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: var(--space-4, 16px);
+            flex-wrap: wrap;
+        }
+
+        .table-search-box {
+            position: relative;
+            flex: 1;
+            min-width: 240px;
+            max-width: 400px;
+        }
+
+        .table-search-box i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted, #64748b);
+            font-size: 0.88rem;
+            pointer-events: none;
+        }
+
+        .table-search-input {
+            width: 100%;
+            padding: 9px 14px 9px 38px;
+            border-radius: var(--radius-md, 8px);
+            border: 1px solid var(--border-color, #cbd5e1);
+            background: var(--surface, #ffffff);
+            font-size: 0.88rem;
+            color: var(--text-primary, #0f172a);
+            transition: all 0.2s ease;
+        }
+
+        .table-search-input:focus {
+            outline: none;
+            border-color: var(--primary, #2563eb);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .user-row-inactive td {
+            opacity: 0.65;
+            background: rgba(241, 245, 249, 0.4);
+        }
+
+        .action-btn-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color, #cbd5e1);
+            background: var(--surface, #ffffff);
+            color: var(--text-secondary, #334155);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-size: 0.85rem;
+        }
+
+        .action-btn-icon:hover {
+            background: var(--primary-light, #dbeafe);
+            color: var(--primary, #2563eb);
+            border-color: var(--primary, #2563eb);
+        }
+
+        .action-btn-icon.warning:hover {
+            background: #fef3c7;
+            color: #d97706;
+            border-color: #d97706;
+        }
+
+        .action-btn-icon:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* === TAB 2: AI API SETTINGS STYLES === */
+        .ai-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            font-size: 0.84rem;
+            font-weight: 600;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .ai-status-pill.online {
+            background: #dcfce7;
+            color: #15803d;
+            border-color: #86efac;
+        }
+
+        .ai-status-pill.offline {
+            background: #fef3c7;
+            color: #b45309;
+            border-color: #fde68a;
+        }
+
+        .ai-status-pill.checking {
+            background: #e0f2fe;
+            color: #0284c7;
+            border-color: #7dd3fc;
+        }
+
+        .endpoint-box-container {
+            background: var(--surface, #ffffff);
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: var(--radius-lg, 12px);
+            padding: var(--space-6, 24px);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .endpoint-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color, #f1f5f9);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .endpoint-title {
+            font-size: 1.12rem;
+            font-weight: 700;
+            color: var(--text-primary, #0f172a);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 0 4px 0;
+        }
+
+        .endpoint-title i {
+            color: var(--primary, #2563eb);
+        }
+
+        .endpoint-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted, #64748b);
+            margin: 0;
+        }
+
+        .endpoint-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .endpoint-input-wrapper {
+            position: relative;
+            flex: 1;
+            min-width: 280px;
+        }
+
+        .endpoint-input-wrapper i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary, #2563eb);
+            font-size: 0.95rem;
+            pointer-events: none;
+        }
+
+        .endpoint-input {
+            width: 100%;
+            padding: 11px 14px 11px 40px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.92rem;
+            border-radius: var(--radius-md, 8px);
+            border: 1px solid var(--border-color, #cbd5e1);
+            background: var(--surface, #ffffff);
+            color: var(--text-primary, #0f172a);
+            transition: all 0.2s ease;
+        }
+
+        .endpoint-input:focus {
+            outline: none;
+            border-color: var(--primary, #2563eb);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        /* Doc modal tabs */
+        .doc-tab-btn {
+            padding: 6px 14px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color, #334155);
+            background: #0f172a;
+            color: #94a3b8;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .doc-tab-btn.active {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: #38bdf8;
+            color: #38bdf8;
+        }
+
+        /* Modal API Doc */
+        #modalApiDoc {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.78);
+            backdrop-filter: blur(8px);
+            z-index: 99999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        #modalApiDoc.active {
+            display: flex !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+
+        #modalApiDoc.active .modal-container {
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Mobile Topbar Navigation -->
+    <header class="mobile-topbar">
+        <div class="mobile-topbar-left">
+            <button type="button" class="mobile-menu-btn" title="Mở Menu Điều Hướng" aria-label="Mở Menu Điều Hướng">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="mobile-topbar-brand">
+                <div class="mobile-brand-logo">ĐC</div>
+                <div class="mobile-brand-text">
+                    <span class="mobile-brand-title">THPT ĐIỀU CẢI</span>
+                    <span class="mobile-brand-subtitle">AI CAMERA</span>
+                </div>
+            </div>
+        </div>
+        <div class="mobile-topbar-right">
+            <div class="mobile-user-avatar" id="mobileUserAvatar" title="Thông tin tài khoản">A</div>
+        </div>
+    </header>
+
+    <div class="app-layout">
+        <aside class="app-sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">ĐC</div>
+                <div class="sidebar-brand-text">
+                    <span class="brand-title">THPT ĐIỀU CẢI</span>
+                    <span class="brand-subtitle">AI CAMERA</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <ul class="sidebar-nav-list">
+                    <li class="sidebar-nav-item">
+                        <a href="index.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-chart-line"></i></span>
+                            <span class="sidebar-nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="classrooms.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-chalkboard-user"></i></span>
+                            <span class="sidebar-nav-text">Quản lý điểm danh</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="classes.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-school"></i></span>
+                            <span class="sidebar-nav-text">Quản lý lớp học</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="cameras.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-video"></i></span>
+                            <span class="sidebar-nav-text">Quản lý camera</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="reports.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-file-excel"></i></span>
+                            <span class="sidebar-nav-text">Báo Cáo & Dữ Liệu</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="notifications.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-paper-plane"></i></span>
+                            <span class="sidebar-nav-text">Thông Báo</span>
+                        </a>
+                    </li>
+                    <!-- 
+                    <li class="sidebar-nav-item">
+                        <a href="stream-config.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-tower-broadcast"></i></span>
+                            <span class="sidebar-nav-text">Cấu hình Stream</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="ai-test.html" class="sidebar-nav-link">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-flask-vial"></i></span>
+                            <span class="sidebar-nav-text">Thử Nghiệm AI</span>
+                        </a>
+                    </li>
+                    -->
+                    <li class="sidebar-nav-item nav-admin-only">
+                        <a href="settings.html" class="sidebar-nav-link active">
+                            <span class="sidebar-nav-icon"><i class="fa-solid fa-gear"></i></span>
+                            <span class="sidebar-nav-text">Cài Đặt</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="sidebar-user-profile" id="sidebarUserProfile" title="Thông tin tài khoản">
+                    <div class="sidebar-user-avatar" id="sidebarUserAvatar">U</div>
+                    <div class="sidebar-user-info">
+                        <span class="sidebar-user-name" id="sidebarUserName">Người Dùng</span>
+                        <span class="sidebar-user-role" id="sidebarUserRole">---</span>
+                    </div>
+                    <button class="sidebar-logout-btn" type="button" id="sidebarLogoutBtn" title="Đăng Xuất">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+        <div class="sidebar-overlay"></div>
+        <main class="app-main">
+            <div class="page-container">
+                <div class="page-header">
+                    <div class="page-title-row">
+                        <div>
+                            <h1 class="page-title">
+                                <i class="fa-solid fa-gear" style="color: var(--primary, #2563eb); margin-right: 8px;"></i>
+                                Cài Đặt Hệ Thống
+                            </h1>
+                            <p class="page-description">Quản lý tài khoản người dùng, phân quyền quản trị viên và cán bộ nhân viên nhà trường.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thanh Tabs Điều Hướng: 1 là Tài Khoản, 2 là Kết Nối AI Service -->
+                <div class="tabs-container">
+                    <div class="tabs-nav" role="tablist" aria-label="Cài đặt hệ thống">
+                        <button type="button" class="tab-btn active" data-tab="tab-accounts" id="tabBtnAccounts" role="tab" aria-selected="true" aria-controls="tab-accounts">
+                            <i class="fa-solid fa-users-gear"></i>
+                            <span>Tài Khoản & Người Dùng</span>
+                        </button>
+                        <button type="button" class="tab-btn" data-tab="tab-ai-service" id="tabBtnAiService" role="tab" aria-selected="false" aria-controls="tab-ai-service">
+                            <i class="fa-solid fa-brain"></i>
+                            <span>Kết Nối AI Service</span>
+                            <span id="tabAiStatusPill" style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 9999px; font-size: 0.72rem; font-weight: 600; background: rgba(56, 189, 248, 0.15); color: #0284c7; margin-left: 6px;">
+                                <i class="fa-solid fa-circle-dot" style="font-size: 0.55rem;"></i> AI Service
+                            </span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ======================================================== -->
+                <!-- TAB 1: QUẢN LÝ TÀI KHOẢN & NGƯỜI DÙNG HỆ THỐNG -->
+                <!-- ======================================================== -->
+                <div id="tab-accounts" class="tab-content active" role="tabpanel" aria-labelledby="tabBtnAccounts">
+                    <!-- Thẻ thống kê tài khoản -->
+                    <div class="users-stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon primary">
+                                <i class="fa-solid fa-users"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h4 id="statTotalUsers">0</h4>
+                                <p>Tổng Tài Khoản</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon warning">
+                                <i class="fa-solid fa-user-shield"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h4 id="statAdminUsers">0</h4>
+                                <p>Quản Trị Viên</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon info">
+                                <i class="fa-solid fa-chalkboard-user"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h4 id="statStaffUsers">0</h4>
+                                <p>Nhân Viên</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon success">
+                                <i class="fa-solid fa-circle-check"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h4 id="statActiveUsers">0</h4>
+                                <p>Đang Hoạt Động</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Danh Sách Tài Khoản -->
+                    <section class="report-section">
+                        <div class="table-controls-bar">
+                            <div style="display: flex; gap: 10px; align-items: center; flex: 1; flex-wrap: wrap;">
+                                <div class="table-search-box">
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                    <input type="text" id="filterUsersInput" placeholder="Tìm kiếm theo họ tên, email..." class="table-search-input">
+                                </div>
+                                <select id="filterUserRole" class="form-control" style="width: auto; min-width: 140px; font-size: 0.86rem;">
+                                    <option value="all">Tất cả vai trò</option>
+                                    <option value="admin">Quản Trị Viên</option>
+                                    <option value="staff">Nhân Viên</option>
+                                </select>
+                            </div>
+                            <div>
+                                <button id="btnOpenCreateUserModal" class="btn btn-primary" type="button">
+                                    <i class="fa-solid fa-user-plus"></i> Thêm Tài Khoản
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="data-table-container">
+                            <table class="custom-table">
+                                <thead>
+                                    <tr>
+                                        <th>Họ Tên</th>
+                                        <th>Email Đăng Nhập</th>
+                                        <th>Vai Trò</th>
+                                        <th>Trạng Thái</th>
+                                        <th class="cell-actions">Thao Tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTableBody">
+                                    <tr class="skeleton-table-row">
+                                        <td class="skeleton-table-cell"><div class="skeleton skeleton-text" style="width: 140px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton skeleton-text" style="width: 190px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton skeleton-badge" style="width: 75px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton skeleton-badge" style="width: 80px;"></div></td>
+                                        <td class="skeleton-table-cell cell-actions">
+                                            <div style="display: flex; gap: var(--space-2); justify-content: center;">
+                                                <div class="skeleton skeleton-button" style="width: 32px; height: 32px;"></div>
+                                                <div class="skeleton skeleton-button" style="width: 32px; height: 32px;"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="skeleton-table-row">
+                                        <td class="skeleton-table-cell"><div class="skeleton skeleton-text" style="width: 160px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton skeleton-text" style="width: 210px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton skeleton-badge" style="width: 75px;"></div></td>
+                                        <td class="skeleton-table-cell"><div class="skeleton skeleton-badge" style="width: 80px;"></div></td>
+                                        <td class="skeleton-table-cell cell-actions">
+                                            <div style="display: flex; gap: var(--space-2); justify-content: center;">
+                                                <div class="skeleton skeleton-button" style="width: 32px; height: 32px;"></div>
+                                                <div class="skeleton skeleton-button" style="width: 32px; height: 32px;"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                </div>
+
+                <!-- ======================================================== -->
+                <!-- TAB 2: CÀI ĐẶT KẾT NỐI AI SERVICE & CHẠY THỬ NGHIỆM -->
+                <!-- ======================================================== -->
+                <div id="tab-ai-service" class="tab-content" role="tabpanel" aria-labelledby="tabBtnAiService" hidden>
+                    <!-- 1. KHUNG CẤU HÌNH KẾT NỐI AI MICROSERVICE -->
+                    <div class="endpoint-box-container" style="margin-bottom: 24px;">
+                        <div class="endpoint-header">
+                            <div>
+                                <h3 class="endpoint-title">
+                                    <i class="fa-solid fa-server"></i>
+                                    Đường Dẫn Kết Nối AI Microservice
+                                </h3>
+                                <p class="endpoint-desc">Cấu hình URL máy chủ AI nhận diện học sinh và đồng bộ vào toàn bộ lượt điểm danh trường học.</p>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <button type="button" class="btn btn-sm btn-secondary" id="btnOpenApiDocModal" onclick="openApiDocModal()" style="font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                                    <i class="fa-solid fa-book-open" style="color: #ec4899; pointer-events: none;"></i> <span style="pointer-events: none;">Tài Liệu Đặc Tả API</span>
+                                </button>
+                                <div class="ai-status-pill checking" id="aiStatusPill">
+                                    <i class="fa-solid fa-spinner fa-spin"></i>
+                                    <span id="aiStatusText">Đang kiểm tra kết nối...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="endpoint-input-group">
+                            <div class="endpoint-input-wrapper">
+                                <i class="fa-solid fa-network-wired"></i>
+                                <input type="text" id="aiApiUrl" class="endpoint-input"
+                                    placeholder="http://host.docker.internal:8010/api/predict hoặc http://172.18.0.1:8010/api/predict" 
+                                    value="http://host.docker.internal:8010/api/predict">
+                            </div>
+                            <button type="button" class="btn btn-secondary" id="btnAiPingTest" title="Gửi yêu cầu kiểm tra phản hồi từ máy chủ AI">
+                                <i class="fa-solid fa-bolt"></i> Test Kết Nối
+                            </button>
+                            <button type="button" class="btn btn-primary" id="btnSaveAiConfig" title="Lưu cấu hình đường dẫn máy chủ AI">
+                                <i class="fa-solid fa-floppy-disk"></i> Lưu Cấu Hình
+                            </button>
+                        </div>
+
+                        <div id="aiPingResultHint" style="margin-top: 12px; font-size: 0.85rem;"></div>
+
+                        <!-- 1.1 CẤU HÌNH QUÉT ĐA KHUNG HÌNH (MULTI-PASS) & THUẬT TOÁN TRỌNG SỐ -->
+                        <div style="margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--border-color, #cbd5e1); display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px;">
+                            <div>
+                                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-primary, #0f172a); margin-bottom: 6px;">
+                                    <i class="fa-solid fa-repeat" style="color: #2563eb; margin-right: 4px;"></i> Số lần quét mỗi lớp:
+                                </label>
+                                <input type="number" id="inputNumPasses" min="1" max="30" value="10" class="table-search-input" style="padding: 8px 12px; font-size: 0.9rem;" title="Số lần quét đa khung hình cho mỗi phòng học">
+                                <span style="font-size: 0.75rem; color: var(--text-muted, #64748b); display: block; margin-top: 4px;">Mặc định: 10 lần (chốt sĩ số bằng thuật toán trọng số)</span>
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-primary, #0f172a); margin-bottom: 6px;">
+                                    <i class="fa-solid fa-stopwatch" style="color: #f59e0b; margin-right: 4px;"></i> Nghỉ giữa các lần quét (giây):
+                                </label>
+                                <input type="number" id="inputDelaySeconds" min="0.1" max="120" step="0.5" value="10.0" class="table-search-input" style="padding: 8px 12px; font-size: 0.9rem;" title="Thời gian chờ giữa 2 lần quét của camera">
+                                <span style="font-size: 0.75rem; color: var(--text-muted, #64748b); display: block; margin-top: 4px;">Mặc định: 10.0s (để học sinh cử động/đổi tư thế)</span>
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-primary, #0f172a); margin-bottom: 6px;">
+                                    <i class="fa-solid fa-arrows-spin" style="color: #10b981; margin-right: 4px;"></i> Chế độ quét toàn trường:
+                                </label>
+                                <select id="selectScanMode" class="table-search-input" style="padding: 8px 12px; font-size: 0.88rem;">
+                                    <option value="round_robin">Xoay vòng toàn trường (~4-5 phút) [Khuyến nghị]</option>
+                                    <option value="sequential">Tuần tự từng lớp (lần lượt 30 lớp)</option>
+                                </select>
+                                <span style="font-size: 0.75rem; color: var(--text-muted, #64748b); display: block; margin-top: 4px;">Chế độ xoay vòng giúp 30 lớp xong trong ~5 phút</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. KHUNG CHẠY THỬ NGHIỆM AI TRỰC TIẾP (LIVE TEST) -->
+                    <div class="endpoint-box-container">
+                        <div class="endpoint-header" style="margin-bottom: 16px;">
+                            <div>
+                                <h3 class="endpoint-title">
+                                    <i class="fa-solid fa-vial-circle-check" style="color: #10b981;"></i>
+                                    Chạy Thử Nghiệm AI Trực Tiếp (Live Test)
+                                </h3>
+                                <p class="endpoint-desc">Tải ảnh phòng học lên hoặc dùng ảnh mẫu để kiểm tra trực tiếp khả năng nhận diện và vẽ chấm tròn của Service AI.</p>
+                            </div>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <input type="file" id="aiTestFileInput" accept="image/jpeg,image/png,image/webp" style="display: none;">
+                                <button type="button" class="btn btn-sm btn-secondary" id="btnSelectCustomImage">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i> Tải Ảnh Lên
+                                </button>
+                                <button type="button" class="btn btn-sm btn-secondary" id="btnLoadSampleImage">
+                                    <i class="fa-solid fa-image"></i> Dùng Ảnh Mẫu
+                                </button>
+                                <button type="button" class="btn btn-sm btn-primary" id="btnRunLiveAiTest" style="background: #10b981; border-color: #10b981; color: #fff;">
+                                    <i class="fa-solid fa-play"></i> Chạy Thử Nghiệm AI
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Thanh trạng thái & chỉ số kết quả sau khi chạy test -->
+                        <div id="liveTestStatusRow" style="display: none; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 18px; margin-bottom: 16px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                                <div style="display: flex; align-items: center; gap: 14px;">
+                                    <span style="font-weight: 700; color: #0f172a; font-size: 0.95rem;">
+                                        Sĩ số đếm được: <span style="color: #2563eb; font-size: 1.25rem; font-weight: 800;" id="liveTestPeopleCount">0</span> Học Sinh
+                                    </span>
+                                    <span style="font-size: 0.8rem; background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 6px; font-weight: 600;" id="liveTestTiming">Thời gian: -- ms</span>
+                                </div>
+                                <div style="font-size: 0.82rem; color: #475569;" id="liveTestDetectionsSummary">
+                                    Tổng phát hiện: <strong id="liveTestTotal">--</strong> | Giữ lại: <strong id="liveTestKept" style="color: #16a34a;">--</strong> | Loại bỏ (trùng): <strong id="liveTestSuppressed" style="color: #dc2626;">--</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Khung hiển thị ảnh kết quả vẽ chấm tròn -->
+                        <div id="liveTestPreviewWrap" style="background: #0f172a; border-radius: 8px; overflow: hidden; position: relative; min-height: 320px; display: flex; align-items: center; justify-content: center; border: 1px solid #334155;">
+                            <div id="liveTestPlaceholder" style="text-align: center; color: #94a3b8; padding: 40px 20px;">
+                                <i class="fa-solid fa-panorama" style="font-size: 3rem; margin-bottom: 12px; color: #475569;"></i>
+                                <div style="font-size: 0.95rem; font-weight: 600; color: #cbd5e1;">Chưa có ảnh thử nghiệm</div>
+                                <div style="font-size: 0.8rem; margin-top: 4px; color: #94a3b8;">Bấm "Dùng Ảnh Mẫu" hoặc "Tải Ảnh Lên" rồi bấm "Chạy Thử Nghiệm AI"</div>
+                            </div>
+                            <img id="liveTestResultImg" style="display: none; max-width: 100%; height: auto; object-fit: contain; border-radius: 6px;" alt="Kết quả nhận diện AI">
+                            <div id="liveTestSpinner" style="display: none; position: absolute; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(4px); align-items: center; justify-content: center; flex-direction: column; gap: 12px; color: #38bdf8; z-index: 5;">
+                                <i class="fa-solid fa-spinner fa-spin" style="font-size: 2.2rem;"></i>
+                                <span style="font-size: 0.9rem; font-weight: 600;">Đang gửi ảnh tới AI Microservice và xử lý...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Thêm Tài Khoản Mới -->
+    <div class="modal-backdrop" id="createUserModal">
+        <div class="modal-container modal-sm">
+            <div class="modal-header">
+                <div class="modal-header-content">
+                    <h3 class="modal-title">
+                        <i class="fa-solid fa-user-plus modal-title-icon"></i>
+                        Thêm Tài Khoản Mới
+                    </h3>
+                    <p class="modal-subtitle">Tạo tài khoản đăng nhập cho cán bộ, giáo viên hoặc nhân viên.</p>
+                </div>
+                <button class="modal-close-btn" type="button" data-close-create-modal aria-label="Đóng">&times;</button>
+            </div>
+            <form id="createUserForm">
+                <div class="modal-body">
+                    <div class="auth-field">
+                        <label for="userFullName"><i class="fa-solid fa-user"></i> Họ Tên (*)</label>
+                        <input class="form-control" id="userFullName" placeholder="Ví dụ: Nguyễn Văn A" required>
+                    </div>
+                    <div class="auth-field">
+                        <label for="userEmail"><i class="fa-solid fa-envelope"></i> Email Đăng Nhập (*)</label>
+                        <input class="form-control" type="email" id="userEmail"
+                            placeholder="nhanvien@truongdieucai.edu.vn" required>
+                    </div>
+                    <div class="auth-field">
+                        <label for="userRole"><i class="fa-solid fa-user-tag"></i> Vai Trò (*)</label>
+                        <select class="form-control" id="userRole">
+                            <option value="staff">Nhân Viên</option>
+                            <option value="admin">Quản Trị Viên</option>
+                        </select>
+                    </div>
+                    <div class="auth-field" style="margin-bottom: 0;">
+                        <label for="userPassword"><i class="fa-solid fa-lock"></i> Mật Khẩu Khởi Tạo (*)</label>
+                        <input class="form-control" type="password" id="userPassword"
+                            placeholder="Tối thiểu 8 ký tự" required minlength="8">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-btn modal-btn-secondary" type="button" data-close-create-modal>
+                        <i class="fa-solid fa-xmark"></i> Hủy
+                    </button>
+                    <button class="modal-btn modal-btn-primary" type="submit">
+                        <i class="fa-solid fa-plus"></i> Tạo Tài Khoản
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Chỉnh Sửa Thông Tin -->
+    <div class="modal-backdrop" id="editUserModal">
+        <div class="modal-container modal-sm">
+            <div class="modal-header">
+                <div class="modal-header-content">
+                    <h3 class="modal-title">
+                        <i class="fa-solid fa-pen-to-square modal-title-icon"></i>
+                        Chỉnh Sửa Thông Tin
+                    </h3>
+                    <p class="modal-subtitle">Cập nhật họ tên, email, vai trò hoặc mật khẩu tài khoản.</p>
+                </div>
+                <button class="modal-close-btn" type="button" data-close-modal aria-label="Đóng">&times;</button>
+            </div>
+            <form id="editUserForm">
+                <div class="modal-body">
+                    <input type="hidden" id="editUserId">
+                    <div class="auth-field">
+                        <label for="editUserFullName"><i class="fa-solid fa-user"></i> Họ Tên (*)</label>
+                        <input class="form-control" id="editUserFullName" required>
+                    </div>
+                    <div class="auth-field">
+                        <label for="editUserEmail"><i class="fa-solid fa-envelope"></i> Email (*)</label>
+                        <input class="form-control" type="email" id="editUserEmail" required>
+                    </div>
+                    <div class="auth-field">
+                        <label for="editUserRole"><i class="fa-solid fa-user-tag"></i> Vai Trò (*)</label>
+                        <select class="form-control" id="editUserRole">
+                            <option value="staff">Nhân Viên</option>
+                            <option value="admin">Quản Trị Viên</option>
+                        </select>
+                    </div>
+                    <div class="auth-field" style="margin-bottom: 0;">
+                        <label for="editUserPassword"><i class="fa-solid fa-lock"></i> Mật Khẩu Mới</label>
+                        <input class="form-control" type="password" id="editUserPassword" minlength="8"
+                            placeholder="Để trống nếu không đổi mật khẩu">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-btn modal-btn-secondary" type="button" data-close-modal>
+                        <i class="fa-solid fa-xmark"></i> Hủy
+                    </button>
+                    <button class="modal-btn modal-btn-primary" type="submit">
+                        <i class="fa-solid fa-floppy-disk"></i> Lưu Thay Đổi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Xem Tài Liệu Đặc Tả API (/api/predict) -->
+    <div id="modalApiDoc" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.78); backdrop-filter: blur(8px); z-index: 999999; justify-content: center; align-items: center; padding: 20px;">
+        <div class="modal-content modal-lg" style="background: #111827; border: 1px solid rgba(236, 72, 153, 0.4); border-radius: 14px; max-width: 900px; width: 100%; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.6); opacity: 1; transform: none;">
+            <!-- Modal Header -->
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #1f2937; background: #0f172a;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(236, 72, 153, 0.18); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(236, 72, 153, 0.4);">
+                        <i class="fa-solid fa-book-open" style="color: #f472b6; font-size: 1.1rem;"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.05rem; color: #f8fafc; font-weight: 700;">Tài Liệu API: Endpoint /api/predict</h3>
+                        <div style="font-size: 0.76rem; color: #94a3b8; margin-top: 2px;">Nhận diện và đếm số lượng học sinh bằng YOLO kết hợp Depth Anything V2 & Depth-NMS</div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-secondary" id="btnCloseApiDocModal" onclick="closeApiDocModal()" style="font-size: 1.1rem; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; padding: 0; border: none; background: rgba(255,255,255,0.08); color: #cbd5e1; border-radius: 6px; cursor: pointer;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="modal-body" style="padding: 20px; overflow-y: auto; color: #cbd5e1; font-size: 0.85rem; line-height: 1.6;">
+                <!-- 1. Tổng quan -->
+                <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid #1e293b; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                    <div style="font-weight: 700; color: #38bdf8; font-size: 0.92rem; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-circle-info"></i> 1. Tổng Quan Endpoint
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 10px;">
+                        <div style="background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155;">
+                            <div style="color: #94a3b8; font-size: 0.72rem;">Đường dẫn (URL):</div>
+                            <strong style="color: #f472b6; font-family: monospace; font-size: 0.85rem;">/api/predict</strong>
+                        </div>
+                        <div style="background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155;">
+                            <div style="color: #94a3b8; font-size: 0.72rem;">Phương thức (Method):</div>
+                            <strong style="color: #4ade80; font-family: monospace; font-size: 0.85rem;">POST</strong>
+                        </div>
+                        <div style="background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155;">
+                            <div style="color: #94a3b8; font-size: 0.72rem;">Content-Type gửi:</div>
+                            <strong style="color: #fbbf24; font-family: monospace; font-size: 0.82rem;">multipart/form-data</strong>
+                        </div>
+                        <div style="background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155;">
+                            <div style="color: #94a3b8; font-size: 0.72rem;">Định dạng trả về:</div>
+                            <strong style="color: #38bdf8; font-family: monospace; font-size: 0.82rem;">application/json (200 OK)</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Request Data -->
+                <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid #1e293b; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                    <div style="font-weight: 700; color: #a855f7; font-size: 0.92rem; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> 2. Dữ Liệu Đầu Vào (Request Form-Data)
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 8px;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid #334155; text-align: left; color: #94a3b8;">
+                                <th style="padding: 6px 8px;">Trường (Field)</th>
+                                <th style="padding: 6px 8px;">Kiểu (Type)</th>
+                                <th style="padding: 6px 8px;">Bắt buộc</th>
+                                <th style="padding: 6px 8px;">Mô tả</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid #1e293b;">
+                                <td style="padding: 8px; font-family: monospace; color: #f472b6; font-weight: 600;">image</td>
+                                <td style="padding: 8px;">File (Binary)</td>
+                                <td style="padding: 8px;"><span class="param-badge" style="font-size: 0.68rem; background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">Có</span></td>
+                                <td style="padding: 8px;">Tệp hình ảnh phòng học cần nhận diện (.jpg, .jpeg, .png, .webp). Tệp không được rỗng và OpenCV giải mã được.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 3. Response Structure -->
+                <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid #1e293b; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                    <div style="font-weight: 700; color: #10b981; font-size: 0.92rem; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-file-code"></i> 3. Cấu Trúc Dữ Liệu Trả Về (JSON 200 OK)
+                    </div>
+                    <div style="position: relative; margin-top: 8px;">
+                        <button type="button" class="btn btn-sm btn-secondary" id="btnCopyJsonSample" style="position: absolute; top: 8px; right: 8px; font-size: 0.72rem; z-index: 2; padding: 4px 8px; background: rgba(255,255,255,0.08); border: 1px solid #334155; color: #cbd5e1; border-radius: 4px; cursor: pointer;">
+                            <i class="fa-regular fa-copy"></i> Sao chép
+                        </button>
+                        <pre style="background: #090d16; border: 1px solid #1e293b; border-radius: 6px; padding: 12px; margin: 0; overflow-x: auto; font-size: 0.76rem; font-family: monospace; color: #a5f3fc;"><code id="codeApiDocSample">{
+  "id": "c1f7b7ad-4520-4e56-b08e-1f7c1184df9a",
+  "people_count": 44,
+  "kept_count": 44,
+  "suppressed_count": 1,
+  "detections": [
+    {
+      "box_id": 0,
+      "bbox": [730, 70, 774, 110],
+      "confidence": 0.7584,
+      "depth": 0.8245,
+      "depth_std": 0.0123,
+      "kept": true,
+      "suppressed_by": null,
+      "suppression_reason": null
+    },
+    {
+      "box_id": 12,
+      "bbox": [732, 72, 775, 112],
+      "confidence": 0.4120,
+      "depth": 0.8260,
+      "depth_std": 0.0115,
+      "kept": false,
+      "suppressed_by": 0,
+      "suppression_reason": "Duplicate of #0 (IoU=0.88 >= 0.25, depth_diff=0.0015 < 0.0100)"
+    }
+  ]
+}</code></pre>
+                    </div>
+                </div>
+
+                <!-- 4. Error Codes -->
+                <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid #1e293b; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                    <div style="font-weight: 700; color: #f59e0b; font-size: 0.92rem; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-triangle-exclamation"></i> 4. Các Mã Lỗi Thường Gặp (Error Codes)
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 8px;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid #334155; text-align: left; color: #94a3b8;">
+                                <th style="padding: 6px 8px; width: 120px;">Mã lỗi HTTP</th>
+                                <th style="padding: 6px 8px;">Tình huống xảy ra</th>
+                                <th style="padding: 6px 8px;">Chi tiết thông báo (detail)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid #1e293b;">
+                                <td style="padding: 8px;"><span class="param-badge" style="font-size: 0.68rem; background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">400 Bad Request</span></td>
+                                <td style="padding: 8px;">Tải lên file sai định dạng (không phải JPEG, PNG, WebP)</td>
+                                <td style="padding: 8px; font-family: monospace; color: #f87171;">"Invalid file type. Only JPEG, PNG, and WebP images are allowed."</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #1e293b;">
+                                <td style="padding: 8px;"><span class="param-badge" style="font-size: 0.68rem; background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">400 Bad Request</span></td>
+                                <td style="padding: 8px;">File tải lên không có dữ liệu (dung lượng 0 byte)</td>
+                                <td style="padding: 8px; font-family: monospace; color: #f87171;">"Uploaded file is empty."</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #1e293b;">
+                                <td style="padding: 8px;"><span class="param-badge" style="font-size: 0.68rem; background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">400 Bad Request</span></td>
+                                <td style="padding: 8px;">File bị hỏng, OpenCV không thể giải mã thành ảnh</td>
+                                <td style="padding: 8px; font-family: monospace; color: #f87171;">"Failed to decode image."</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px;"><span class="param-badge" style="font-size: 0.68rem; background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3);">500 Internal Error</span></td>
+                                <td style="padding: 8px;">Lỗi xử lý suy luận trong mô hình AI</td>
+                                <td style="padding: 8px; font-family: monospace; color: #fbbf24;">"Inference failed: &lt;chi tiết lỗi&gt;"</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 5. Code Examples -->
+                <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid #1e293b; border-radius: 8px; padding: 14px;">
+                    <div style="font-weight: 700; color: #38bdf8; font-size: 0.92rem; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+                        <span><i class="fa-solid fa-code"></i> 5. Ví Dụ Gọi API (cURL, Python, JavaScript)</span>
+                        <button type="button" class="btn btn-sm btn-secondary" id="btnCopySnippet" style="font-size: 0.72rem; padding: 4px 8px; background: rgba(255,255,255,0.08); border: 1px solid #334155; color: #cbd5e1; border-radius: 4px; cursor: pointer;">
+                            <i class="fa-regular fa-copy"></i> Sao chép code
+                        </button>
+                    </div>
+                    <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                        <button type="button" class="doc-tab-btn active" id="btnTabCurl">cURL</button>
+                        <button type="button" class="doc-tab-btn" id="btnTabPython">Python (requests)</button>
+                        <button type="button" class="doc-tab-btn" id="btnTabJs">JavaScript (Fetch)</button>
+                    </div>
+                    <pre style="background: #090d16; border: 1px solid #1e293b; border-radius: 6px; padding: 12px; margin: 0; overflow-x: auto; font-size: 0.78rem; font-family: monospace; color: #cbd5e1;"><code id="codeSnippetContent">curl -X POST "http://localhost:8010/api/predict" \
+  -H "accept: application/json" \
+  -H "Content-Type: multipart/form-data" \
+  -F "image=@data/samples/classroom.png;type=image/png"</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts Controller -->
+    <script type="module" src="js/shared/auth-guard.js?v=2.6"></script>
+    <script src="js/shared/app-shell.js?v=4.1"></script>
+    <script src="js/shared/confirmation-dialog.js?v=1.1"></script>
+    <script type="module" src="js/settings.js?v=6.0"></script>
+</body>
+
+</html>

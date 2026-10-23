@@ -1,18 +1,46 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class LoginRequest(BaseModel):
     email: str
     password: str
 
+    @field_validator("email", mode="before")
+    @classmethod
+    def clean_email(cls, v: str) -> str:
+        if isinstance(v, str):
+            return "".join(v.strip().split()).lower()
+        return v
+
+    @field_validator("password", mode="before")
+    @classmethod
+    def clean_password(cls, v: str) -> str:
+        if isinstance(v, str):
+            return v.strip()
+        return v
+
 
 class ForgotPasswordRequest(BaseModel):
     email: str
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def clean_email(cls, v: str) -> str:
+        if isinstance(v, str):
+            return "".join(v.strip().split()).lower()
+        return v
 
 
 class ResetPasswordRequest(BaseModel):
     token: str
     password: str = Field(min_length=8)
+
+    @field_validator("password", mode="before")
+    @classmethod
+    def clean_password(cls, v: str) -> str:
+        if isinstance(v, str):
+            return v.strip()
+        return v
 
 
 class UserCreateRequest(BaseModel):
@@ -20,6 +48,20 @@ class UserCreateRequest(BaseModel):
     full_name: str = ""
     password: str = Field(min_length=8)
     role: str = "staff"
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def clean_email(cls, v: str) -> str:
+        if isinstance(v, str):
+            return "".join(v.strip().split()).lower()
+        return v
+
+    @field_validator("password", mode="before")
+    @classmethod
+    def clean_password(cls, v: str) -> str:
+        if isinstance(v, str):
+            return v.strip()
+        return v
 
 
 class UserUpdateRequest(BaseModel):

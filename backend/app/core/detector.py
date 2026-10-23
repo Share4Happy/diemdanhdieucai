@@ -547,186 +547,146 @@ class StudentDetector:
             )
         return fused_boxes, fused_confs
 
-    def detect_students_in_classroom(
-        self,
-        image: np.ndarray,
-        red_zone: List[List[int]],
-        green_zone: List[List[int]] = None,
-        conf_threshold: float = None,
-        classroom_name: str = "Lớp Học",
-        standard_count: int = 40,
-        apply_clahe: bool = True,
-        roi_dims: Optional[Tuple[int, int]] = None
-    ) -> Tuple[int, List[Dict[str, Any]], np.ndarray]:
+    @staticmethod
+    def compute_iou(boxA: List[int], boxB: List[int]) -> float:
+        """Tính Intersection over Union (IoU) giữa 2 bounding box [x1, y1, x2, y2]."""
+        xA = max(boxA[0], boxB[0])
+        yA = max(boxA[1], boxB[1])
+        xB = min(boxA[2], boxB[2])
+        yB = min(boxA[3], boxB[3])
+
+        inter_w = max(0, xB - xA)
+        inter_h = max(0, yB - yA)
+        inter_area = inter_w * inter_h
+
+        boxA_area = max(0, boxA[2] - boxA[0]) * max(0, boxA[3] - boxA[1])
+        boxB_area = max(0, boxB[2] - boxB[0]) * max(0, boxB[3] - boxB[1])
+        denom = float(boxA_area + boxB_area - inter_area)
+
+        return (inter_area / denom) if denom > 0 else 0.0
+
+    @classmethod
+    def apply_depth_nms(
+        cls,
+        candidates: List[Dict[str, Any]],
+        img_h: int,
+        iou_threshold: float = 0.25,
+        depth_diff_threshold: float = 0.0100
+    ) -> List[Dict[str, Any]]:
         """
-        Quy trình xử lý AI toàn diện:
-        1. Tiền xử lý chống ngược sáng (CLAHE/Glare reduction).
-        2. Chạy suy luận đa tầng phân mảnh (Tiled Multi-Scale Inference) chống sót học sinh bị che khuất.
-        3. Tinh chỉnh bounding box đầu/thân trên thích ứng (Adaptive Head/Upper-body).
-        4. Lọc tọa độ theo Red Zone (bàn học) & Green Zone (bục giảng giáo viên).
-        5. Khử trùng lặp an toàn bảo đảm không bao giờ vẽ 2 số thứ tự / 2 chấm xanh lên cùng 1 học sinh.
-        6. Vẽ bounding box và khung chú thích đối chứng trực quan.
+        Thuật toán lọc trùng lặp Depth-NMS chuẩn hóa theo kiến trúc /api/predict:
+        Kết hợp IoU không gian 2D và khoảng cách độ sâu 3D (Depth-NMS).
         """
-        if image is None:
-            return 0, [], None
+        if not candidates:
+            return []
 
-        h, w = image.shape[:2]
-        if conf_threshold is None:
-            conf_threshold = settings.AI_CONFIDENCE_THRESHOLD
+        # Tính toán giá trị độ sâu tương đối (Relative Depth) dựa theo góc nhìn phối cảnh phòng học
+        for cand in candidates:
+            if "depth" not in cand:
+                bbox = cand["bbox"]
+                cy = (bbox[1] + bbox[3]) / 2.0
+                norm_y = float(cy) / float(max(1, img_h))
+                cand["depth"] = round(float(np.clip(0.96 - (norm_y * 0.72), 0.05, 0.98)), 4)
 
-        # Tự động đồng bộ tỉ lệ đa giác ROI nếu kích thước ảnh khác kích thước cấu hình ROI
-        if roi_dims and len(roi_dims) == 2:
-            rw, rh = roi_dims
-            if rw > 0 and rh > 0 and (rw != w or rh != h):
-                red_zone = ROIManager.scale_polygon(red_zone, rw, rh, w, h)
-                green_zone = ROIManager.scale_polygon(green_zone, rw, rh, w, h)
+        # Sắp xếp các ứng viên theo confidence giảm dần
+        sorted_cands = sorted(candidates, key=lambda x: x.get("confidence", 0.0), reverse=True)
+        kept_boxes = []
 
-        # 1. Tiền xử lý chống ngược sáng cửa sổ
-        processed_img = image.copy()
-        if apply_clahe:
-            processed_img = ImageEnhancer.preprocess_classroom_frame(processed_img)
-
-        # 2. Chạy YOLO đa tầng (Global + Tiled)
-        fused_boxes, fused_confs = self.run_multiscale_tiled_inference(
-            processed_img,
-            conf_threshold=conf_threshold
-        )
-
-        detected_boxes = []
-        for bbox, conf in zip(fused_boxes, fused_confs):
-            x1, y1, x2, y2 = bbox
-            box_w = x2 - x1
-            box_h = y2 - y1
-
-            # Loại bỏ các box nhiễu cực nhỏ (< 12px) hoặc box nhiễu sát mép trần camera (đèn tuýp/quạt trần)
-            if box_w < 12 or box_h < 12 or (y1 <= 5 and y2 <= 55):
-                continue
-
-            # Tinh chỉnh box thích ứng: Nếu là mô hình chuyên biệt đầu, bbox chính là head_bbox
-            if self.is_head_model:
-                head_bbox = [x1, y1, x2, y2]
-            else:
-                aspect = box_h / max(1, box_w)
-                if aspect >= 1.6:
-                    head_y2 = int(y1 + box_h * 0.50)
-                else:
-                    head_y2 = y2
-                head_bbox = [x1, y1, x2, max(y1 + 10, head_y2)]
-
-            cx = (head_bbox[0] + head_bbox[2]) / 2.0
-            cy = (head_bbox[1] + head_bbox[3]) / 2.0
-
-            detected_boxes.append({
-                "bbox": [x1, y1, x2, y2],
-                "head_bbox": head_bbox,
-                "centroid": (cx, cy),
-                "confidence": conf,
-                "class_id": 0
-            })
-
-        # 3. Lọc lại bằng thuật toán Polygon Centroid (Red Zone & Green Zone)
-        valid_students, ignored_people = ROIManager.filter_detections(
-            detected_boxes, red_zone, green_zone
-        )
-
-        # 4. Khử trùng lặp an toàn cấp 2 trên valid_students (Đảm bảo 100% không bao giờ có 2 số thứ tự / 2 chấm xanh trên 1 học sinh)
-        final_valid = []
-        final_indices = sorted(range(len(valid_students)), key=lambda k: valid_students[k]["confidence"], reverse=True)
-        for idx in final_indices:
-            st = valid_students[idx]
-            scx, scy = st["centroid"]
-            sb = st["head_bbox"]
-            sw, sh = sb[2] - sb[0], sb[3] - sb[1]
-
-            aspect = sh / max(1.0, float(sw))
-            if aspect < 0.25 or aspect > 1.58:
-                continue
-
-            dup = False
-            for existing in final_valid:
-                ecx, ecy = existing["centroid"]
-                eb = existing["head_bbox"]
-                ew, eh = eb[2] - eb[0], eb[3] - eb[1]
-
-                # 1. Centroid Distance Suppression (chỉ khi gần như trùng khít)
-                dist = np.hypot(scx - ecx, scy - ecy)
-                if dist < 8.0:
-                    dup = True
+        for cand in sorted_cands:
+            is_suppressed = False
+            for kept in kept_boxes:
+                iou = cls.compute_iou(cand["bbox"], kept["bbox"])
+                depth_diff = abs(cand["depth"] - kept["depth"])
+                # Nếu IoU cao (chồng đè 2D) VÀ depth_diff nhỏ (cùng mặt phẳng độ sâu 3D) -> Trùng lặp
+                if iou >= iou_threshold and depth_diff < depth_diff_threshold:
+                    is_suppressed = True
                     break
 
-                # 2. IoU & IoS Containment
-                y_overlap = min(sb[3], eb[3]) - max(sb[1], eb[1])
-                x_overlap = min(sb[2], eb[2]) - max(sb[0], eb[0])
-                if x_overlap > 0 and y_overlap > 0:
-                    inter = x_overlap * y_overlap
-                    ios = inter / float(min(sw * sh, ew * eh))
-                    iou = inter / float(sw * sh + ew * eh - inter)
-                    if ios >= 0.48 or iou >= 0.35:
-                        dup = True
-                        break
-                    if dist < max(14.0, min(sw, sh, ew, eh) * 0.45) and ios >= 0.25:
-                        dup = True
-                        break
+            if not is_suppressed:
+                kept_boxes.append(cand)
 
-                # 3. Triệt tiêu cánh tay / ống tay áo đặt trên bàn kề cận dưới đầu đã xác nhận
-                dy = scy - ecy
-                dx = abs(scx - ecx)
-                if 10 <= dy <= max(75.0, eh * 1.35) and dx <= max(70.0, ew * 1.25):
-                    if aspect >= 1.40 or (sw < ew * 0.65 and st["confidence"] < existing["confidence"] * 0.80):
-                        dup = True
-                        break
+        return kept_boxes
 
-            if not dup:
-                final_valid.append(st)
-
-        valid_students = final_valid
-        present_count = len(valid_students)
-        absent_count = max(0, standard_count - present_count)
-
-        # 4. Tạo ảnh đối chứng trực quan (Annotated Visualization Image)
-        annotated_img = image.copy()
-
-        # Vẽ Red Zone & Green Zone bán trong suốt
-        annotated_img = ROIManager.draw_roi_overlays(annotated_img, red_zone, green_zone, alpha=0.20)
-
-        # Vẽ bounding box và Huy hiệu số thứ tự (Smart High-Contrast Badges) cho từng học sinh
+    @classmethod
+    def draw_detection_annotations(
+        cls,
+        annotated_img: np.ndarray,
+        valid_students: List[Dict[str, Any]],
+        ignored_people: List[Dict[str, Any]],
+        visual_mode: str = "dot"
+    ) -> np.ndarray:
+        """
+        Vẽ ảnh đối chứng trực quan hỗ trợ chế độ 'dot' (chấm tròn tâm đầu phát sáng),
+        'box' (khung chữ nhật truyền thống), hoặc 'both' (cả hai).
+        """
+        h, w = annotated_img.shape[:2]
         font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 0.52
+        font_scale = 0.50
         font_thickness = 1
 
+        # 1. Tạo lớp vầng hào quang phát sáng mờ (Glow Aura) nếu ở chế độ dot hoặc both
+        if visual_mode in ("dot", "both") and valid_students:
+            halo_overlay = annotated_img.copy()
+            for student in valid_students:
+                cx, cy = [int(v) for v in student["centroid"]]
+                sb = student.get("head_bbox", student["bbox"])
+                bw = max(16, sb[2] - sb[0])
+                bh = max(16, sb[3] - sb[1])
+                radius_halo = max(11, int(min(bw, bh) * 0.36))
+                # Vầng hào quang xanh ngọc phát sáng mờ bán trong suốt
+                cv2.circle(halo_overlay, (cx, cy), radius_halo, (0, 240, 120), -1, cv2.LINE_AA)
+            cv2.addWeighted(halo_overlay, 0.28, annotated_img, 0.72, 0, annotated_img)
+
+        # 2. Vẽ từng học sinh hiện diện hợp lệ
         for idx, student in enumerate(valid_students, 1):
             hx1, hy1, hx2, hy2 = student["head_bbox"]
-            conf = student["confidence"]
-
-            # 1. Bounding box đầu/thân trên màu xanh neon sáng với nét khử răng cưa
-            cv2.rectangle(annotated_img, (hx1, hy1), (hx2, hy2), (255, 140, 0), 2, cv2.LINE_AA)
-
-            # 2. Điểm chấm tâm đầu định vị chính xác (chấm xanh lá viền đen chống chìm)
             cx, cy = [int(v) for v in student["centroid"]]
-            cv2.circle(annotated_img, (cx, cy), 5, (0, 0, 0), -1, cv2.LINE_AA)
-            cv2.circle(annotated_img, (cx, cy), 3, (0, 255, 120), -1, cv2.LINE_AA)
+            bw = max(16, hx2 - hx1)
+            bh = max(16, hy2 - hy1)
 
-            # 3. Huy hiệu số thứ tự tương phản cao (High-Contrast Number Badge)
+            # A. Vẽ Bounding Box (nếu ở chế độ box hoặc both)
+            if visual_mode in ("box", "both"):
+                cv2.rectangle(annotated_img, (hx1, hy1), (hx2, hy2), (255, 140, 0), 2, cv2.LINE_AA)
+
+            # B. Vẽ Chấm Tròn Tâm Đầu Phát Sáng (nếu ở chế độ dot hoặc both)
+            if visual_mode in ("dot", "both"):
+                radius_core = max(5, int(min(bw, bh) * 0.16))
+                # Viền tối ngoài chống chìm
+                cv2.circle(annotated_img, (cx, cy), radius_core + 2, (15, 23, 42), -1, cv2.LINE_AA)
+                # Chấm tròn lõi xanh ngọc Emerald sáng rực
+                cv2.circle(annotated_img, (cx, cy), radius_core, (0, 230, 115), -1, cv2.LINE_AA)
+                # Điểm sáng trắng trung tâm
+                cv2.circle(annotated_img, (cx, cy), max(2, radius_core - 3), (255, 255, 255), -1, cv2.LINE_AA)
+
+            # C. Huy hiệu số thứ tự (Smart High-Contrast Badges)
             label = f"#{idx:02d}"
             (tw, th), baseline = cv2.getTextSize(label, font, font_scale, font_thickness)
             badge_pad_x = 4
             badge_pad_y = 3
-            bw = tw + badge_pad_x * 2
-            bh = th + badge_pad_y * 2
+            badge_w = tw + badge_pad_x * 2
+            badge_h = th + badge_pad_y * 2
 
-            # Đặt nhãn căn giữa phía trên đầu học sinh (hoặc lọt trong box nếu sát mép trên)
-            bx1 = max(2, min(w - bw - 2, int((hx1 + hx2) / 2 - bw / 2)))
-            by2 = hy1 - 4
-            if by2 - bh < 2:
-                by2 = hy1 + bh + 4
-            by1 = by2 - bh
-            bx2 = bx1 + bw
+            if visual_mode == "dot":
+                # Đặt nhãn số ngay trên đỉnh vầng chấm tròn
+                radius_halo = max(11, int(min(bw, bh) * 0.36))
+                bx1 = max(2, min(w - badge_w - 2, int(cx - badge_w / 2)))
+                by2 = cy - radius_halo - 3
+                if by2 - badge_h < 2:
+                    by2 = cy + radius_halo + badge_h + 3
+                by1 = by2 - badge_h
+                bx2 = bx1 + badge_w
+            else:
+                # Đặt nhãn số trên đỉnh bounding box
+                bx1 = max(2, min(w - badge_w - 2, int((hx1 + hx2) / 2 - badge_w / 2)))
+                by2 = hy1 - 4
+                if by2 - badge_h < 2:
+                    by2 = hy1 + badge_h + 4
+                by1 = by2 - badge_h
+                bx2 = bx1 + badge_w
 
-            # Nền tối tương phản cao
+            # Nền tối bóng viền vàng neon chữ trắng
             cv2.rectangle(annotated_img, (bx1, by1), (bx2, by2), (18, 22, 26), -1)
-            # Viền neon vàng sáng sắc nét
             cv2.rectangle(annotated_img, (bx1, by1), (bx2, by2), (0, 235, 255), 1, cv2.LINE_AA)
-            # Chữ số trắng tinh siêu nét
             cv2.putText(
                 annotated_img,
                 label,
@@ -738,14 +698,19 @@ class StudentDetector:
                 cv2.LINE_AA
             )
 
-        # Vẽ bounding box mảnh & thanh lịch cho giáo viên/người ở bục giảng (loại trừ)
+        # 3. Giáo viên / Người ở bục giảng (loại trừ)
         if ignored_people:
             for ignored in ignored_people:
                 ix1, iy1, ix2, iy2 = ignored["bbox"]
-                cv2.rectangle(annotated_img, (ix1, iy1), (ix2, iy2), (120, 120, 120), 1, cv2.LINE_AA)
+                if visual_mode in ("box", "both"):
+                    cv2.rectangle(annotated_img, (ix1, iy1), (ix2, iy2), (120, 120, 120), 1, cv2.LINE_AA)
+                else:
+                    icx = int((ix1 + ix2) / 2)
+                    icy = int((iy1 + iy2) / 2)
+                    cv2.circle(annotated_img, (icx, icy), 6, (140, 140, 140), -1, cv2.LINE_AA)
 
             first_ignored = ignored_people[0]
-            ix1, iy1, ix2, iy2 = first_ignored["bbox"]
+            ix1, iy1 = first_ignored["bbox"][:2]
             cv2.putText(
                 annotated_img,
                 "Giao vien (Buc giang)",
@@ -757,7 +722,205 @@ class StudentDetector:
                 cv2.LINE_AA
             )
 
-        # GỠ BỎ BANNER ĐEN 75px: 100% diện tích camera được giữ trọn vẹn, không che khuất học sinh hàng đầu.
+        return annotated_img
+
+    def detect_via_predict_api(
+        self,
+        image: np.ndarray,
+        api_url: Optional[str] = None,
+        conf_threshold: Optional[float] = None,
+        iou_threshold: Optional[float] = None,
+        depth_diff_threshold: Optional[float] = None,
+        timeout: float = 10.0
+    ) -> Optional[List[Dict[str, Any]]]:
+        """
+        Gọi Endpoint /api/predict (mô hình student-detection AI thật) để nhận diện và lọc trùng lặp Depth-NMS.
+        Hỗ trợ gọi trực tiếp tới container student-detection, proxy backend hoặc máy chủ GPU ngoại vi.
+        """
+        if not getattr(settings, "USE_PREDICT_API_ENGINE", True):
+            logger.info("[Detector] USE_PREDICT_API_ENGINE=False, chuyển sang xử lý qua mô hình cục bộ")
+            return None
+
+        if api_url is None:
+            api_url = getattr(settings, "STUDENT_DETECTION_API_URL", "")
+
+        from backend.app.api.routers.predict import get_candidate_predict_urls
+        target_urls = get_candidate_predict_urls(api_url)
+        if "http://127.0.0.1:8000/api/predict" not in target_urls:
+            target_urls.append("http://127.0.0.1:8000/api/predict")
+
+        eff_iou = str(iou_threshold if iou_threshold is not None else getattr(settings, "DEPTH_NMS_IOU_THRESHOLD", 0.25))
+        eff_depth = str(depth_diff_threshold if depth_diff_threshold is not None else getattr(settings, "DEPTH_NMS_DIFF_THRESHOLD", 0.0100))
+        eff_conf = str(conf_threshold if conf_threshold is not None else getattr(settings, "AI_CONFIDENCE_THRESHOLD", 0.20))
+
+        # 1. Gửi tệp ảnh thuần túy sang Service AI API (student-detection service)
+        for target_url in target_urls:
+            import requests
+            try:
+                success, encoded_img = cv2.imencode(".jpg", image, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
+                if success:
+                    files = {"image": ("frame.jpg", encoded_img.tobytes(), "image/jpeg")}
+                    resp = requests.post(target_url, files=files, timeout=timeout)
+                    if resp.status_code == 200:
+                        res_json = resp.json()
+                        detections = res_json.get("detections", [])
+                        detected_boxes = []
+                        for d in detections:
+                            if not d.get("kept", True):
+                                continue
+                            bbox = d.get("bbox")
+                            if not bbox or len(bbox) != 4:
+                                continue
+                            x1, y1, x2, y2 = bbox
+                            conf = float(d.get("confidence", 0.85))
+                            depth = float(d.get("depth", 0.5))
+                            box_w = x2 - x1
+                            box_h = y2 - y1
+
+                            aspect = box_h / max(1, box_w)
+                            head_y2 = int(y1 + box_h * 0.50) if aspect >= 1.6 else y2
+                            head_bbox = [x1, y1, x2, max(y1 + 10, head_y2)]
+                            cx = (head_bbox[0] + head_bbox[2]) / 2.0
+                            cy = (head_bbox[1] + head_bbox[3]) / 2.0
+
+                            detected_boxes.append({
+                                "bbox": [x1, y1, x2, y2],
+                                "head_bbox": head_bbox,
+                                "centroid": (cx, cy),
+                                "confidence": conf,
+                                "depth": depth,
+                                "class_id": 0,
+                                "box_id": d.get("box_id", len(detected_boxes))
+                            })
+                        logger.info(f"[Hệ Thống Điểm Danh Chính - /api/predict] Đã nhận diện thành công {len(detected_boxes)} học sinh qua {target_url}")
+                        return detected_boxes
+            except Exception as e_ext:
+                logger.debug(f"[Predict API Engine] Thử gọi {target_url} thất bại: {e_ext}")
+
+        # 2. Xử lý trực tiếp siêu tốc qua Depth-NMS Engine nội bộ
+        try:
+            from backend.app.api.routers.predict import run_internal_depth_nms_predict
+            pred_resp = run_internal_depth_nms_predict(
+                image,
+                conf_threshold=float(eff_conf),
+                iou_threshold=float(eff_iou),
+                depth_diff_threshold=float(eff_depth)
+            )
+            detected_boxes = []
+            for d in pred_resp.detections:
+                if not d.kept:
+                    continue
+                bbox = d.bbox
+                if not bbox or len(bbox) != 4:
+                    continue
+                x1, y1, x2, y2 = bbox
+                conf = float(d.confidence or 0.85)
+                depth = float(d.depth or 0.5)
+                box_w = x2 - x1
+                box_h = y2 - y1
+
+                aspect = box_h / max(1, box_w)
+                head_y2 = int(y1 + box_h * 0.50) if aspect >= 1.6 else y2
+                head_bbox = [x1, y1, x2, max(y1 + 10, head_y2)]
+                cx = (head_bbox[0] + head_bbox[2]) / 2.0
+                cy = (head_bbox[1] + head_bbox[3]) / 2.0
+
+                detected_boxes.append({
+                    "bbox": [x1, y1, x2, y2],
+                    "head_bbox": head_bbox,
+                    "centroid": (cx, cy),
+                    "confidence": conf,
+                    "depth": depth,
+                    "class_id": 0,
+                    "box_id": d.box_id
+                })
+            return detected_boxes
+        except Exception as e_internal:
+            logger.warning(f"[Predict API Engine] Chạy nội bộ thất bại: {e_internal}")
+            return None
+
+    def detect_students_in_classroom(
+        self,
+        image: np.ndarray,
+        red_zone: Optional[List[List[int]]] = None,
+        green_zone: Optional[List[List[int]]] = None,
+        conf_threshold: float = None,
+        classroom_name: str = "Lớp Học",
+        standard_count: int = 40,
+        apply_clahe: bool = True,
+        roi_dims: Optional[Tuple[int, int]] = None,
+        visual_mode: Optional[str] = None
+    ) -> Tuple[int, List[Dict[str, Any]], np.ndarray]:
+        """
+        Quy trình nhận diện và đếm học sinh DUY NHẤT của hệ thống:
+        - Sử dụng thuần túy 100% Endpoint /api/predict (Depth-NMS với Depth Anything V2).
+        - Bỏ toàn bộ các thuật toán khác ra khỏi hệ thống.
+        - Toàn bộ cấu hình ROI (Green Zone, Red Zone) đã được COMMENT LẠI hoàn toàn.
+        - Hiển thị đối chứng đồng nhất dạng Chấm Tròn phát sáng (Dot Mode).
+        """
+        if image is None:
+            return 0, [], None
+
+        # 1. Chạy nhận diện DUY NHẤT qua Depth-NMS Predict API (/api/predict)
+        detected_boxes = self.detect_via_predict_api(
+            image=image,
+            conf_threshold=conf_threshold
+        )
+
+        # Fallback an toàn trực tiếp qua engine nội bộ nếu có gián đoạn kết nối
+        if detected_boxes is None:
+            from backend.app.api.routers.predict import run_internal_depth_nms_predict
+            pred_resp = run_internal_depth_nms_predict(
+                image,
+                iou_threshold=getattr(settings, "DEPTH_NMS_IOU_THRESHOLD", 0.25),
+                depth_diff_threshold=getattr(settings, "DEPTH_NMS_DIFF_THRESHOLD", 0.0100)
+            )
+            detected_boxes = []
+            for d in pred_resp.detections:
+                if not d.kept:
+                    continue
+                bbox = d.bbox
+                if not bbox or len(bbox) != 4:
+                    continue
+                x1, y1, x2, y2 = bbox
+                conf = float(d.confidence or 0.85)
+                depth = float(d.depth or 0.5)
+                cx = (x1 + x2) / 2.0
+                cy = (y1 + y2) / 2.0
+                detected_boxes.append({
+                    "bbox": [x1, y1, x2, y2],
+                    "head_bbox": [x1, y1, x2, y2],
+                    "centroid": (cx, cy),
+                    "confidence": conf,
+                    "depth": depth,
+                    "class_id": 0,
+                    "box_id": d.box_id
+                })
+
+        logger.info(f"[Hệ Thống AI Điều Cải - /api/predict] Đã nhận diện thuần túy {len(detected_boxes)} học sinh cho {classroom_name}")
+
+        valid_students = detected_boxes
+        for idx, st in enumerate(valid_students, 1):
+            st["student_no"] = idx
+
+        present_count = len(valid_students)
+
+        # =========================================================================
+        # [CÁC THUẬT TOÁN CŨ VÀ BỘ LỌC ROI ĐÃ ĐƯỢC BỎ / COMMENT LẠI HOÀN TOÀN]
+        # 1. ROIManager.filter_detections(detected_boxes, red_zone, green_zone) -> [COMMENTED OUT]
+        # 2. Khử trùng lặp an toàn cấp 2 (Aspect ratio, Centroid dist, IoU/IoS) -> [COMMENTED OUT]
+        # 3. ROIManager.draw_roi_overlays(...) -> [COMMENTED OUT]
+        # =========================================================================
+
+        # 2. Tạo ảnh đối chứng trực quan DẠNG CHẤM TRÒN ĐỒNG NHẤT (Dot Mode)
+        from backend.app.core.raw_ai_engine import draw_predict_api_dots
+        effective_visual_mode = visual_mode or getattr(settings, "VISUALIZATION_MODE", "dot")
+        annotated_img = draw_predict_api_dots(
+            image,
+            valid_students,
+            visual_mode=effective_visual_mode,
+            show_suppressed=False
+        )
 
         return present_count, valid_students, annotated_img
 

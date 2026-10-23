@@ -80,3 +80,9 @@ tokens/
 
 # Local Heavy Datasets & Videos (Chặn đẩy dataset hàng chục GB lên GitHub)
 dieucai/
+
+# Thư mục gom công cụ mock stream, thử nghiệm AI và dữ liệu mẫu kiểm thử
+mock_and_experiments/
+data/mock_streams/
+
+student-detection/
