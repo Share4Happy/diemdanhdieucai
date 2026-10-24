@@ -284,7 +284,13 @@ async function loadZaloConfig() {
         if (bi && cfg.bot_id) bi.value = cfg.bot_id;
 
         const bu = document.getElementById('zaloBotBaseUrlInput');
-        if (bu && cfg.bot_api_base_url) bu.value = cfg.bot_api_base_url;
+        if (bu) {
+            let base = cfg.bot_api_base_url || 'https://sms-service.talab.io.vn/api/gateway/v1.0';
+            if (base.includes('localhost:3000')) {
+                base = 'https://sms-service.talab.io.vn/api/gateway/v1.0';
+            }
+            bu.value = base;
+        }
 
         let loadedRecipients = [];
         if (cfg.recipients_json) {

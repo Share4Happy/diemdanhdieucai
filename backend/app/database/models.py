@@ -51,7 +51,7 @@ class Classroom(Base):
     nvr_id = Column(Integer, ForeignKey("nvr_devices.id", ondelete="SET NULL"), nullable=True)
     channel_number = Column(Integer, nullable=True)
     stream_type = Column(String(20), default="main")                   # "main" (1080p) | "sub" (D1)
-    codec = Column(String(20), default="H.264")                        # "H.264" | "H.265"
+    codec = Column(String(20), default="H.265")                        # "H.264" | "H.265"
     conf_threshold = Column(Float, nullable=True)                      # Ngưỡng tin cậy riêng (None dùng mặc định)
     laplacian_threshold = Column(Float, nullable=True)                 # Ngưỡng độ nét riêng (None dùng mặc định)
 

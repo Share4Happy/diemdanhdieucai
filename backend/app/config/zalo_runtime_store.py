@@ -40,6 +40,8 @@ def load_runtime_zalo(settings) -> None:
         value = data.get(field)
         if value in (None, ""):
             continue
+        if field == "ZALO_BOT_API_BASE_URL" and isinstance(value, str) and "localhost:3000" in value:
+            value = "https://sms-service.talab.io.vn/api/gateway/v1.0"
         setattr(settings, field, value if not isinstance(value, str) else value.strip())
 
 

@@ -723,7 +723,8 @@ async def refresh_single_classroom_snapshot(classroom_id: int, _user: User = Dep
 
     curr_is_sub = (cls.rtsp_url or "").endswith("02") or ("subtype=1" in (cls.rtsp_url or "")) or (cls.stream_type == "sub")
     stream_type = "sub" if curr_is_sub else "main"
-    aspect_ratio_str = "16:9 (Chuẩn Widescreen)" if not curr_is_sub else "4:3 (Tỷ lệ hẹp)"
+    ratio = (w / h) if h > 0 else 1.778
+    aspect_ratio_str = f"16:9 (Chuẩn Widescreen - {w}x{h})" if ratio >= 1.6 else f"4:3 (Bị bóp méo - {w}x{h})"
 
     if success:
         progress_tracker.finish(True, f"Đã cập nhật khung hình mới cho {cls.name}!", result={"snapshot_url": snap_url, "classroom_id": cls.id})
@@ -1336,7 +1337,7 @@ async def get_stream_profiles(db: Session = Depends(get_db)):
             "port": port,
             "rtsp_url": mask_stream_url(raw_url),
             "raw_rtsp_url": raw_url,
-            "codec": c.codec or "H.264",
+            "codec": c.codec or "H.265",
             "resolution": f"{width}x{height}",
             "width": width,
             "height": height,
@@ -1444,12 +1445,36 @@ async def compare_camera_streams(classroom_id: int, db: Session = Depends(get_db
     main_url = _convert_stream_url(raw_url, "main", ch)
     sub_url = _convert_stream_url(raw_url, "sub", ch)
 
-    # Thử bắt tay lấy thông số và snapshot trực quan cho cả 2 luồng
+    # Thử bắt tay lấy thông số và snapshot trực quan cho cả 2 luồng (tắt auto_fallback để soi đúng luồng gốc)
     loop = asyncio.get_event_loop()
-    main_res = await loop.run_in_executor(None, rtsp_client.test_camera_stream, main_url)
-    sub_res = await loop.run_in_executor(None, rtsp_client.test_camera_stream, sub_url)
+    main_res = await loop.run_in_executor(None, lambda: rtsp_client.test_camera_stream(main_url, allow_fallback=False))
+    sub_res = await loop.run_in_executor(None, lambda: rtsp_client.test_camera_stream(sub_url, allow_fallback=False))
 
     curr_is_sub = raw_url.endswith("02") or ("subtype=1" in raw_url) or (c.stream_type == "sub")
+
+    def _calc_aspect(res_dict: dict, default_val: str) -> str:
+        res_str = res_dict.get("resolution") or ""
+        try:
+            if "x" in res_str:
+                w, h = map(int, res_str.split("x"))
+                if h > 0:
+                    r = w / h
+                    if r >= 1.6:
+                        return f"16:9 (Chuẩn Widescreen - {w}x{h})"
+                    else:
+                        return f"4:3 (Bị bóp méo - {w}x{h})"
+        except Exception:
+            pass
+        return default_val
+
+    main_res_str = main_res.get("resolution") or ""
+    is_main_hd = main_res.get("success") and ("1920" in main_res_str or "1280" in main_res_str or "1080" in main_res_str)
+
+    ai_verdict_main = (
+        "CHUẨN 100%: Góc mở rộng sắc nét, bao quát trọn vẹn cả phòng học, đếm chính xác học sinh bàn cuối."
+        if is_main_hd
+        else ("CẢNH BÁO: Luồng chính chưa đạt chuẩn Widescreen 1080P." if main_res.get("success") else "LỖI KẾT NỐI: Không nhận được tín hiệu luồng chính.")
+    )
 
     return {
         "success": True,
@@ -1464,23 +1489,23 @@ async def compare_camera_streams(classroom_id: int, db: Session = Depends(get_db
             "label": "Luồng Chính CH01 (Full HD 1080P)",
             "url": mask_stream_url(main_url),
             "resolution": main_res.get("resolution") or "1920x1080",
-            "aspect_ratio": "16:9 (Chuẩn Widescreen)",
+            "aspect_ratio": _calc_aspect(main_res, "16:9 (Chuẩn Widescreen)"),
             "fps": 25,
             "bitrate_kbps": 2048,
-            "codec": c.codec or "H.264",
+            "codec": c.codec or "H.265",
             "latency_ms": main_res.get("latency_ms", 35),
             "success": main_res.get("success", False),
             "preview_url": main_res.get("preview_url", ""),
-            "ai_verdict": "CHUẨN 100%: Góc mở rộng sắc nét, bao quát trọn vẹn cả phòng học, đếm chính xác học sinh bàn cuối."
+            "ai_verdict": ai_verdict_main
         },
         "sub_stream": {
-            "label": "Luồng Phụ CH02 (VGA 480P)",
+            "label": "Luồng Phụ CH02 (VGA/D1)",
             "url": mask_stream_url(sub_url),
-            "resolution": sub_res.get("resolution") or "640x480",
-            "aspect_ratio": "4:3 (Bị bóp vuông viền đen)",
+            "resolution": sub_res.get("resolution") or "704x576",
+            "aspect_ratio": _calc_aspect(sub_res, "4:3 (Bị bóp vuông viền đen)"),
             "fps": 25,
             "bitrate_kbps": 320,
-            "codec": c.codec or "H.264",
+            "codec": "H.264",
             "latency_ms": sub_res.get("latency_ms", 18),
             "success": sub_res.get("success", False),
             "preview_url": sub_res.get("preview_url", ""),

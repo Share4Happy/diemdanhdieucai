@@ -1,6 +1,9 @@
 import pytest
 from fastapi.testclient import TestClient
-from app import app
+try:
+    from backend.app.main import app
+except ModuleNotFoundError:
+    from main import app
 from database.db_session import init_db, SessionLocal
 from database.models import Classroom, ROIPolygon, User
 from config.settings import settings
@@ -15,6 +18,8 @@ client = TestClient(app)
 @pytest.fixture(autouse=True)
 def setup_database():
     init_db(force_seed_classes=True)
+    app.dependency_overrides[get_current_user] = lambda: admin_user
+    app.dependency_overrides[require_admin] = lambda: admin_user
     yield
 
 def test_get_cameras_list():

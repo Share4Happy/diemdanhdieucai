@@ -41,8 +41,8 @@ def has_vertical_smear_artifacts(small: np.ndarray) -> bool:
         zero_diff_ratio = float((vert_diff < 1.0).mean())
         col_std = float(np.std(gray, axis=0).mean())
 
-        # Nếu có dấu hiệu kéo vệt sọc lặp pixel dọc rõ rệt:
-        if (dy < 3.5 and ratio < 0.35) or (zero_diff_ratio > 0.55) or (col_std < 2.0 and ratio < 0.25):
+        # Nếu có dấu hiệu kéo vệt sọc lặp pixel dọc rõ rệt (dy sụt giảm mạnh và pixel bị lặp liên tiếp):
+        if (dy < 3.5 and ratio < 0.35) or (zero_diff_ratio > 0.70 and dy < 3.5) or (col_std < 2.0 and ratio < 0.25):
             return True
             
         # Kiểm tra thêm phân vùng 40% đáy (vùng nhạy cảm nhất)
@@ -54,7 +54,7 @@ def has_vertical_smear_artifacts(small: np.ndarray) -> bool:
         vert_diff_deep = np.abs(np.diff(gray_deep, axis=0))
         zero_diff_deep = float((vert_diff_deep < 1.0).mean())
         
-        if (dy_deep < 2.5 and ratio_deep < 0.28) or (zero_diff_deep > 0.60):
+        if (dy_deep < 2.5 and ratio_deep < 0.28) or (zero_diff_deep > 0.70 and dy_deep < 2.5):
             return True
 
     except Exception:
@@ -131,7 +131,7 @@ class RTSPCameraClient:
         self._max_concurrency_per_nvr = 3
         # Quản lý chính sách dự phòng luồng (Stream Failover Policy)
         self.auto_fallback_enabled: bool = True
-        self.rtsp_timeout_threshold: float = 3.5
+        self.rtsp_timeout_threshold: float = 5.5
 
     def _get_nvr_semaphore(self, host: str) -> threading.Semaphore:
         """Lấy hoặc khởi tạo Semaphore giới hạn tải đồng thời riêng cho từng đầu ghi NVR."""
@@ -266,11 +266,11 @@ class RTSPCameraClient:
         logger.info(f"Đã phát hiện {len(webcams)} webcam khả dụng trên máy: {[w['name'] for w in webcams]}")
         return webcams
 
-    def _read_rtsp_stream(self, url: str, timeout: float = 3.5) -> Optional[np.ndarray]:
+    def _read_rtsp_stream(self, url: str, timeout: float = 5.5) -> Optional[np.ndarray]:
         """
         Đọc 1 khung hình sạch từ luồng RTSP H.264/H.265 với cơ chế Adaptive I-frame Synchronization.
         - Ép buộc giao vận TCP chống rớt gói tin trên hạ tầng mạng LAN/Switch.
-        - Mở rộng socket buffer lên 4MB để chống tràn bộ đệm khi quét đồng thời nhiều camera.
+        - Mở rộng socket buffer lên 8MB để chống tràn bộ đệm khi quét đồng thời nhiều camera 1080P H.265.
         - Vòng lặp đọc và thẩm định hình ảnh liên tục: loại bỏ các P-frame chưa đồng bộ hoặc frame vỡ luồng
           do lỗi decoder conceal macroblock, chỉ chấp nhận và trả về Keyframe (I-frame) hoàn toàn nguyên vẹn.
         """
@@ -278,11 +278,12 @@ class RTSPCameraClient:
         try:
             os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = (
                 "rtsp_transport;tcp|"
-                "buffer_size;4194304|"
+                "buffer_size;8388608|"
                 "max_delay;500000|"
-                "reorder_queue_size;500|"
-                "stimeout;5000000|"
-                "analyzeduration;1500000|probesize;1500000|"
+                "reorder_queue_size;1000|"
+                "stimeout;6000000|"
+                "analyzeduration;2000000|probesize;2000000|"
+                "flags;low_delay|"
                 "protocol_whitelist;file,rtsp,rtp,tcp,udp,crypto,data"
             )
             cap = cv2.VideoCapture(url, cv2.CAP_FFMPEG)
@@ -339,6 +340,9 @@ class RTSPCameraClient:
             username = parsed.username or "admin"
             password = parsed.password or ""
 
+            # Nhận diện luồng phụ hay luồng chính từ RTSP URL
+            is_sub = rtsp_url.endswith("02") or ("subtype=1" in rtsp_url) or ("/sub" in rtsp_url) or ("/ch1/1" in rtsp_url)
+
             # Trích xuất số kênh từ RTSP URL
             channel = 1
             if "channel=" in rtsp_url:
@@ -366,11 +370,14 @@ class RTSPCameraClient:
             if not self.is_host_reachable(f"http://{host}:80", probe_timeout=0.25):
                 return None
 
-            # Các endpoint snapshot phổ biến cho Dahua và Hikvision
+            stream_suffix = "02" if is_sub else "01"
+            sub_id = 1 if is_sub else 0
+
+            # Các endpoint snapshot theo từng luồng tương ứng
             candidate_endpoints = [
-                f"http://{host}:80/ISAPI/Streaming/channels/{channel}01/picture",
-                f"http://{host}:80/cgi-bin/snapshot.cgi?channel={channel}",
-                f"http://{host}:8000/ISAPI/Streaming/channels/{channel}01/picture"
+                f"http://{host}:80/ISAPI/Streaming/channels/{channel}{stream_suffix}/picture",
+                f"http://{host}:80/cgi-bin/snapshot.cgi?channel={channel}&subtype={sub_id}",
+                f"http://{host}:8000/ISAPI/Streaming/channels/{channel}{stream_suffix}/picture"
             ]
 
             for endpoint in candidate_endpoints:
@@ -382,6 +389,16 @@ class RTSPCameraClient:
                             img_arr = np.frombuffer(resp.content, dtype=np.uint8)
                             frame = cv2.imdecode(img_arr, cv2.IMREAD_COLOR)
                             if frame is not None and is_valid_frame(frame):
+                                h_f, w_f = frame.shape[:2]
+                                # BẢO VỆ CHẤT LƯỢNG LUỒNG CHÍNH:
+                                # Nếu là luồng chính nhưng ảnh HTTP Snapshot trả về là D1 / VGA (dưới 720p, vd: 704x576 do NVR Hikvision chỉ lưu preview buffer),
+                                # thì BẮT BUỘC BỎ QUA để chuyển sang RTSP Full HD 1080P thật, tránh bị bóp 4:3 và vỡ hạt đồ họa!
+                                if not is_sub and (w_f < 1280 or h_f < 720):
+                                    logger.warning(
+                                        f"⚠️ [HTTP-SNAPSHOT]: Ảnh snapshot kênh {channel} có độ phân giải thấp ({w_f}x{h_f}) "
+                                        f"không đạt chuẩn Luồng Chính (1080P). Bỏ qua HTTP Snapshot để kéo luồng RTSP Full HD trực tiếp!"
+                                    )
+                                    return None
                                 return frame
                     except Exception:
                         continue
@@ -389,7 +406,7 @@ class RTSPCameraClient:
             logger.debug(f"HTTP snapshot probe notice: {e}")
         return None
 
-    def _fetch_frame_from_source(self, source_url: str) -> Tuple[bool, Optional[np.ndarray], str, str]:
+    def _fetch_frame_from_source(self, source_url: str, allow_fallback: bool = True) -> Tuple[bool, Optional[np.ndarray], str, str]:
         """
         Đọc một khung hình từ nguồn bất kỳ:
         - Số nguyên (0, 1): Webcam cắm máy tính
@@ -529,29 +546,27 @@ class RTSPCameraClient:
                 except Exception:
                     pass
 
-            # Chuẩn bị phương án dự phòng nếu được bật trong chính sách (Auto-Fallback)
-            extended_urls = []
-            for u in candidate_urls:
-                extended_urls.append(u)
-                if self.auto_fallback_enabled:
+            # Chuẩn bị danh sách URL thử nghiệm
+            extended_urls = [u for u in candidate_urls]
+            # CHỈ kích hoạt fallback sang luồng phụ nếu allow_fallback=True VÀ auto_fallback_enabled=True
+            if allow_fallback and self.auto_fallback_enabled:
+                for u in candidate_urls:
                     if u.endswith("01"):
-                        extended_urls.append(u[:-2] + "02")
-                    elif u.endswith("02"):
-                        alt_01 = u[:-2] + "01"
-                        if alt_01 not in extended_urls:
-                            extended_urls.append(alt_01)
+                        sub_u = u[:-2] + "02"
+                        if sub_u not in extended_urls:
+                            extended_urls.append(sub_u)
                     elif "subtype=0" in u:
-                        extended_urls.append(u.replace("subtype=0", "subtype=1"))
-                    elif "subtype=1" in u:
-                        extended_urls.append(u.replace("subtype=1", "subtype=0"))
+                        sub_u = u.replace("subtype=0", "subtype=1")
+                        if sub_u not in extended_urls:
+                            extended_urls.append(sub_u)
 
             for target_url in extended_urls:
                 if self.is_host_reachable(target_url):
-                    timeout = self.rtsp_timeout_threshold if (target_url.endswith("01") or "subtype=0" in target_url) else 2.5
+                    is_sub_target = target_url.endswith("02") or "subtype=1" in target_url
+                    timeout = 2.5 if is_sub_target else self.rtsp_timeout_threshold
                     frame = self._read_rtsp_stream(target_url, timeout=timeout)
                     if frame is not None and is_valid_frame(frame):
-                        is_sub = target_url.endswith("02") or "subtype=1" in target_url
-                        label = "RTSP_SUBSTREAM" if is_sub else "RTSP_STREAM"
+                        label = "RTSP_SUBSTREAM" if is_sub_target else "RTSP_STREAM"
                         return True, frame, label, ""
 
             return False, None, "RTSP_STREAM", "Không nhận được tín hiệu hình ảnh sạch từ camera RTSP (Đang chờ I-frame H.265)"
@@ -571,7 +586,7 @@ class RTSPCameraClient:
 
         return False, None, "UNKNOWN", f"Định dạng nguồn camera không được nhận diện: {source_str}"
 
-    def test_camera_stream(self, source_url: str, trigger_signal: bool = False, relay_ip: str = "") -> dict:
+    def test_camera_stream(self, source_url: str, trigger_signal: bool = False, relay_ip: str = "", allow_fallback: bool = False) -> dict:
         """
         Kiểm tra kết nối và độ trễ tới nguồn camera.
         Nếu trigger_signal=True: Kích hoạt đèn hồng ngoại camera báo hiệu -> Chuyển về ảnh màu -> Bắt khung hình.
@@ -596,7 +611,7 @@ class RTSPCameraClient:
                 except Exception as e:
                     logger.debug(f"Không thể kích hoạt tín hiệu đèn camera: {e}")
 
-            success, frame, source_type, err_msg = self._fetch_frame_from_source(source_url)
+            success, frame, source_type, err_msg = self._fetch_frame_from_source(source_url, allow_fallback=allow_fallback)
         finally:
             # Luôn trả camera về chế độ tự động sau khi bắt hình kể cả khi gặp lỗi
             if trigger_signal:

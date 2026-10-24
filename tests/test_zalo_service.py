@@ -4,10 +4,13 @@ from services.zalo_service import zalo_service
 from database.db_session import init_db, SessionLocal
 from database.models import AttendanceSession, AttendanceDetail, Classroom, User
 from fastapi.testclient import TestClient
-from backend.main import app
 from config.settings import settings
-from config.zalo_runtime_store import RUNTIME_FILE
-from backend.api.deps import get_current_user
+try:
+    from backend.app.main import app
+    from backend.app.api.deps import get_current_user
+except ModuleNotFoundError:
+    from backend.main import app
+    from backend.api.deps import get_current_user
 
 client = TestClient(app)
 
@@ -16,7 +19,8 @@ def setup_db():
     init_db()
     app.dependency_overrides[get_current_user] = lambda: User(id=1, email="admin@truongdieucai.edu.vn", role="admin")
     # Backup runtime JSON để tránh endpoint save-zalo-config ghi đè config thật
-    runtime_path = settings.BASE_DIR / "storage" / RUNTIME_FILE
+    from config.zalo_runtime_store import _get_zalo_path
+    runtime_path = _get_zalo_path(settings)
     backup = runtime_path.read_bytes() if runtime_path.exists() else None
     yield
     app.dependency_overrides.pop(get_current_user, None)

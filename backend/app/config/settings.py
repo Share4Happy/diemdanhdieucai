@@ -109,7 +109,7 @@ class Settings(BaseModel):
     APP_PUBLIC_URL: str = os.getenv("APP_PUBLIC_URL", "http://localhost:8000")
     COOKIE_SECURE: bool = os.getenv("COOKIE_SECURE", "false").lower() in ("1", "true", "yes")
     # Danh sách host ngoài được phép gửi webhook/HTTP (vd: ZALO_BOT_API_BASE_URL). Phân cách bằng dấu phẩy.
-    ZALO_ALLOWED_HOSTS: str = os.getenv("ZALO_ALLOWED_HOSTS", "")
+    ZALO_ALLOWED_HOSTS: str = os.getenv("ZALO_ALLOWED_HOSTS", "sms-service.talab.io.vn")
     CORS_ORIGINS: str = os.getenv(
         "CORS_ORIGINS",
         "http://localhost:8000,http://127.0.0.1:8000,http://localhost:3000,http://127.0.0.1:3000",
@@ -127,7 +127,7 @@ class Settings(BaseModel):
     ENABLE_ZALO_NOTIFICATION: bool = True
     ZALO_NOTIFICATION_TYPE: str = os.getenv("ZALO_NOTIFICATION_TYPE", "BOT_API") # "BOT_API" (Khuyến nghị), "OA_API" hoặc "WEBHOOK"
     # Zalo Bot Gateway (Khuyến nghị - Gửi tin nhắn / kết bạn batch, resolve SĐT -> UID)
-    ZALO_BOT_API_BASE_URL: str = os.getenv("ZALO_BOT_API_BASE_URL", "http://localhost:3000/api/gateway/v1.0")
+    ZALO_BOT_API_BASE_URL: str = os.getenv("ZALO_BOT_API_BASE_URL", "https://sms-service.talab.io.vn/api/gateway/v1.0")
     ZALO_BOT_ID: str = os.getenv("ZALO_BOT_ID", "")
     ZALO_BOT_API_KEY: str = os.getenv("ZALO_BOT_API_KEY", "")
     ZALO_RECIPIENT_PHONES: str = os.getenv("ZALO_RECIPIENT_PHONES", "") # Phân cách bằng dấu phẩy (Legacy - chỉ dành cho nhóm Ban Giám Hiệu)
