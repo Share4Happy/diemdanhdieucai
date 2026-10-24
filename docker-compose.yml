@@ -8,7 +8,7 @@ services:
   # 1. BACKEND SERVICE: FastAPI, AI Engine (YOLO26m), RTSP Ingestion, SQLite
   # ---------------------------------------------------------------------------
   backend:
-    image: nguyenloc822004/dieucaiai-backend:v2
+    image: thanhnhat2510/dieu-cai-ai:backend-v1
     build:
       context: .
       dockerfile: docker/backend/Dockerfile
@@ -65,7 +65,7 @@ services:
   # 2. FRONTEND SERVICE: Nginx Alpine phục vụ giao diện tĩnh & Reverse Proxy API
   # ---------------------------------------------------------------------------
   frontend:
-    image: nguyenloc822004/dieucaiai-frontend:v2
+    image: thanhnhat2510/dieu-cai-ai:frontend-v1
     build:
       context: .
       dockerfile: docker/frontend/Dockerfile
@@ -137,6 +137,7 @@ services:
   # 5. STUDENT DETECTION AI SERVICE: YOLO + Depth Anything V2 (Port 8010)
   # ---------------------------------------------------------------------------
   student-detection:
+    image: thanhnhat2510/dieu-cai-ai:ai-v1
     build:
       context: ./student-detection
       dockerfile: docker/Dockerfile
