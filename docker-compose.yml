@@ -15,7 +15,8 @@ services:
     container_name: diemdanh_dieucai_backend
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      # Chỉ lắng nghe trên localhost máy chủ, ngăn chặn truy cập thẳng từ Internet bên ngoài:
+      - "${BACKEND_BIND_IP:-127.0.0.1}:8000:8000"
     environment:
       - TZ=Asia/Ho_Chi_Minh
       - PYTHONUNBUFFERED=1
@@ -50,16 +51,6 @@ services:
       - ./data/dataset:/app/dataset
     networks:
       - attendance-network
-
-    # (Tùy chọn) Kích hoạt GPU NVIDIA: Nếu máy chủ có card NVIDIA và đã cài NVIDIA Container Toolkit,
-    # hãy bỏ dấu '#' ở khối deploy bên dưới:
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: all
-    #           capabilities: [gpu]
 
   # ---------------------------------------------------------------------------
   # 2. FRONTEND SERVICE: Nginx Alpine phục vụ giao diện tĩnh & Reverse Proxy API

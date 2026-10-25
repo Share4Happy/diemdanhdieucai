@@ -463,7 +463,7 @@ async def batch_toggle_camera_status(data: BatchStatusRequest, _admin: User = De
     return {"success": True, "message": f"Đã {status_str} thành công {count} camera/lớp học!", "count": count}
 
 
-@router.get("/available-webcams")
+@router.get("/available-webcams", deprecated=True)
 async def get_available_webcams_endpoint(refresh: bool = False, _admin: User = Depends(require_admin)):
     """Quét và trả về danh sách tất cả Webcam vật lý và ảo đang kết nối trên máy tính kèm preview thumbnail (chỉ admin)."""
     webcams = rtsp_client.get_available_webcams(refresh=refresh)
@@ -487,7 +487,7 @@ async def test_camera_connection(req: TestCameraRequest, request: Request, _admi
     return res
 
 
-@router.post("/validate-new-camera")
+@router.post("/validate-new-camera", deprecated=True)
 async def validate_new_camera_wizard(
     req: ValidateNewCameraRequest,
     request: Request,
@@ -1134,6 +1134,79 @@ async def list_nvr_devices(_admin: User = Depends(require_admin), db: Session = 
             "created_at": n.created_at.strftime("%Y-%m-%d %H:%M:%S") if n.created_at else ""
         })
     return {"success": True, "nvrs": results}
+
+@router.get("/nvr/channels")
+async def get_nvr_channels_endpoint(
+    nvr_id: Optional[int] = None,
+    _admin: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Lấy danh sách các kênh camera từ Đầu Ghi NVR kèm thông tin lớp học và RTSP URL (chỉ admin)."""
+    nvr = None
+    if nvr_id:
+        nvr = db.query(NVRDevice).filter(NVRDevice.id == nvr_id).first()
+    if not nvr:
+        nvr = db.query(NVRDevice).order_by(NVRDevice.id.asc()).first()
+
+    host = nvr.ip_address if nvr else getattr(settings, "NVR_IP", "192.168.1.200")
+    port = nvr.rtsp_port if nvr else getattr(settings, "NVR_PORT", 554)
+    user = nvr.username if nvr else getattr(settings, "NVR_USERNAME", "admin")
+    pwd = nvr.password if nvr else getattr(settings, "NVR_PASSWORD", "Lhu@2025")
+    brand = nvr.brand if nvr else getattr(settings, "NVR_BRAND", "HIKVISION")
+    ch_count = nvr.channels_count if nvr else getattr(settings, "NVR_CHANNELS", 30)
+    custom_pat = nvr.custom_url_pattern if nvr else ""
+
+    assigned_cams = db.query(Classroom).all()
+    channel_to_cam = {c.channel_number: c for c in assigned_cams if c.channel_number}
+
+    from database.models import DEFAULT_30_CLASSES
+    channels = []
+    for ch in range(1, int(ch_count) + 1):
+        url = nvr_service.build_rtsp_url(
+            brand=brand,
+            ip_address=host,
+            rtsp_port=port,
+            username=user,
+            password=pwd,
+            channel=ch,
+            subtype=0,
+            custom_pattern=custom_pat
+        )
+        if ch <= len(DEFAULT_30_CLASSES):
+            cname, cstd, croom = DEFAULT_30_CLASSES[ch - 1]
+            code = f"LOP_{cname}"
+            name = f"Lớp {cname}"
+            room = croom
+            std = cstd
+        else:
+            code = f"CAM_CH{ch:02d}"
+            name = f"Camera Kênh {ch:02d}"
+            room = f"Phòng {100 + ch}"
+            std = 40
+
+        assigned = channel_to_cam.get(ch)
+        channels.append({
+            "channel_number": ch,
+            "code": assigned.code if assigned else code,
+            "name": assigned.name if assigned else name,
+            "room_number": assigned.room_number if assigned else room,
+            "standard_count": assigned.standard_count if assigned else std,
+            "rtsp_url": url,
+            "is_assigned": assigned is not None,
+            "assigned_classroom_id": assigned.id if assigned else None,
+            "assigned_classroom_name": assigned.name if assigned else None
+        })
+
+    return {
+        "success": True,
+        "nvr_id": nvr.id if nvr else None,
+        "nvr_name": nvr.name if nvr else "Đầu Ghi NVR THPT Điều Cải",
+        "ip_address": host,
+        "brand": brand,
+        "total_channels": len(channels),
+        "count": len(channels),
+        "channels": channels
+    }
 
 @router.delete("/nvr/{nvr_id}")
 async def delete_nvr_device(nvr_id: int, delete_cameras: bool = False, _admin: User = Depends(require_admin), db: Session = Depends(get_db)):

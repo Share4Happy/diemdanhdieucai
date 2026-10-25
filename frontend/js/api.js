@@ -139,7 +139,6 @@ export const CameraAPI = {
     create: (data) => fetchAPI('/api/cameras', { method: 'POST', body: data }),
     update: (id, data) => fetchAPI(`/api/cameras/${id}`, { method: 'PUT', body: data }),
     delete: (id) => fetchAPI(`/api/cameras/${id}`, { method: 'DELETE' }),
-    getWebcams: (refresh = false) => fetchAPI(`/api/cameras/available-webcams?refresh=${refresh}`),
     testConnection: (sourceUrl, triggerSignal = false, relayIp = "") => fetchAPI('/api/cameras/test-connection', {
         method: 'POST',
         body: { source_url: sourceUrl, trigger_signal: triggerSignal, relay_ip: relayIp }
@@ -147,16 +146,6 @@ export const CameraAPI = {
     testIRByUrl: (sourceUrl, relayIp = "") => fetchAPI('/api/cameras/test-ir-by-url', {
         method: 'POST',
         body: { source_url: sourceUrl, relay_ip: relayIp }
-    }),
-    validateNewCamera: (sourceUrl, relayIp = "", redZone = null, greenZone = null, standardCount = 40) => fetchAPI('/api/cameras/validate-new-camera', {
-        method: 'POST',
-        body: {
-            source_url: sourceUrl,
-            relay_ip: relayIp,
-            red_zone: redZone,
-            green_zone: greenZone,
-            standard_count: standardCount
-        }
     }),
     testClassroomIR: (classroomId, durationSeconds = 4, mode = "IR_ON") => fetchAPI(`/api/cameras/${classroomId}/test-ir`, {
         method: 'POST',
@@ -171,6 +160,7 @@ export const CameraAPI = {
     batchImportNVR: (data) => fetchAPI('/api/cameras/nvr/batch-import', { method: 'POST', body: data }),
     getMatrixWall: () => fetchAPI('/api/cameras/matrix-wall'),
     listNVRs: () => fetchAPI('/api/cameras/nvr/list'),
+    getNVRChannels: (nvrId = null) => fetchAPI(`/api/cameras/nvr/channels${nvrId ? `?nvr_id=${nvrId}` : ''}`),
     getSourceStatus: (folder = '') => fetchAPI(`/api/cameras/source-status${folder ? `?folder=${encodeURIComponent(folder)}` : ''}`),
     inspectFolder: (folderPath) => fetchAPI('/api/cameras/inspect-folder', { method: 'POST', body: { folder_path: folderPath } }),
     switchSourceMode: (data) => fetchAPI('/api/cameras/switch-source-mode', { method: 'POST', body: data }),

@@ -886,28 +886,50 @@
                         </div>
                     </div>
 
-                    <!-- NGUỒN CAMERA IP TRƯỜNG (RTSP) -->
+                    <!-- NGUỒN CAMERA (TAB CHỌN NVR HOẶC NHẬP THỦ CÔNG) -->
                     <div class="source-type-selector" style="margin-bottom: 12px;">
                         <label style="font-size: 0.88rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
                             <i class="fa-solid fa-server" style="color: var(--primary);"></i> Nguồn Camera:
                         </label>
-                        <div class="source-tabs" style="display: inline-flex; width: auto;">
-                            <button type="button" class="source-tab active" id="tabBtnRtsp" style="cursor: default;">
-                                <i class="fa-solid fa-server"></i> Camera IP Trường (RTSP)
+                        <div class="source-tabs" style="display: inline-flex; width: auto; gap: 6px;">
+                            <button type="button" class="source-tab active" id="tabBtnNvrSelect" style="cursor: pointer;" onclick="window.switchSourceTab && window.switchSourceTab('NVR')">
+                                <i class="fa-solid fa-server"></i> NVR
+                            </button>
+                            <button type="button" class="source-tab" id="tabBtnRtsp" style="cursor: pointer;" onclick="window.switchSourceTab && window.switchSourceTab('RTSP')">
+                                <i class="fa-solid fa-link"></i> RTSP
                             </button>
                         </div>
                     </div>
 
-                    <!-- PANEL RTSP NVR TRƯỜNG -->
-                    <div id="panelRtsp" class="source-panel" style="display: block;">
-                        <div class="preset-badge-group">
-                            <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; align-self: center;">Mẫu nhanh:</span>
-                            <button type="button" class="preset-btn" data-preset="DAHUA"><i class="fa-solid fa-server"></i> Dahua NVR Trường</button>
-                            <button type="button" class="preset-btn" data-preset="HIK"><i class="fa-solid fa-video"></i> Hikvision RTSP</button>
+                    <!-- PANEL 1: CHỌN TỪ ĐẦU GHI NVR (30 KÊNH CAMERA) -->
+                    <div id="panelNvrSelect" class="source-panel" style="display: block;">
+                        <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px;">
+                            <div class="form-group" style="margin: 0;">
+                                <label style="font-size: 0.82rem; font-weight: 600; color: #475569;"><i class="fa-solid fa-server" style="color: var(--primary);"></i> Đầu Ghi Hình (NVR):</label>
+                                <select id="selectNvrDevice" class="form-control" style="font-size: 0.85rem;" onchange="window.loadNvrDevicesAndChannels && window.loadNvrDevicesAndChannels()">
+                                    <option value="default">Đầu Ghi NVR THPT Điều Cải (192.168.1.200)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label style="font-size: 0.82rem; font-weight: 600; color: #475569;"><i class="fa-solid fa-video" style="color: var(--primary);"></i> Chọn Kênh Camera (*):</label>
+                                <select id="selectNvrChannel" class="form-control" style="font-size: 0.85rem;" onchange="window.applySelectedNvrChannel && window.applySelectedNvrChannel(this.value)">
+                                    <option value="">-- Đang nạp danh sách kênh --</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="form-group" style="margin-top: 8px;">
+                        <div id="nvrSelectedChannelHint" style="display: none; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 8px 12px; font-size: 0.82rem; color: #1e40af; margin-top: 6px;">
+                            <i class="fa-solid fa-circle-info"></i> <span id="nvrSelectedChannelText"></span>
+                        </div>
+                    </div>
+
+                    <!-- PANEL 2: NHẬP RTSP THỦ CÔNG (ĐÃ BỎ MẪU NHANH THEO YÊU CẦU) -->
+                    <div id="panelRtsp" class="source-panel" style="display: none;">
+                        <div class="form-group" style="margin-top: 0;">
                             <label><i class="fa-solid fa-link" style="color: var(--primary);"></i> Đường Dẫn Luồng RTSP (*):</label>
-                            <input type="text" id="inputRtsp" class="form-control" placeholder="rtsp://admin:matkhau@192.168.10.200:554/cam/realmonitor?channel=1&subtype=0" required>
+                            <input type="text" id="inputRtsp" class="form-control" placeholder="rtsp://admin:matkhau@192.168.10.200:554/cam/realmonitor?channel=1&subtype=0">
+                            <span class="form-hint" style="margin-top: 4px; display: block; font-size: 0.78rem; color: #64748b;">
+                                Nhập trực tiếp URL RTSP cho camera IP độc lập hoặc luồng phụ tùy chỉnh.
+                            </span>
                         </div>
                     </div>
 
@@ -936,7 +958,7 @@
                     </div>
 
 
-                    <!-- Khung Test Kết Nối Live & Chụp Thử Nghiệm -->
+                    <!-- Khung Test Kết Nối Live & Chụp Thử Nghiệm (ĐÃ BỎ 2 NÚT THEO YÊU CẦU) -->
                     <div class="test-box">
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                             <span style="font-weight: 700; font-size: 0.88rem; color: var(--text-main);">
@@ -946,18 +968,11 @@
                                 <button type="button" id="btnTestStream" class="btn btn-secondary btn-sm" style="font-weight: 600;">
                                     <i class="fa-solid fa-play"></i> Bắt Ảnh Xem Trước
                                 </button>
-                                <button type="button" id="btnTestSignalFlow" class="btn btn-primary btn-sm" style="font-weight: 600;">
-                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Bật Đèn Báo -> Bắt Ảnh
-                                </button>
-                                <button type="button" id="btnWizardValidateCamera" class="btn btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #4f46e5, #06b6d4); color: #fff; border: none; box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);">
-                                    <i class="fa-solid fa-clipboard-check"></i> Wizard Kiểm Định 5 Bước
-                                </button>
                             </div>
                         </div>
                         <div id="testStatusMsg" style="font-size: 0.82rem; margin-top: 6px; color: var(--text-muted);">
-                            Bấm "Wizard Kiểm Định 5 Bước" để chạy quy trình kiểm tra đầy đủ (kết nối, 5 frame, độ phân giải, ROI, AI).
+                            Bấm "Bắt Ảnh Xem Trước" để kiểm tra tín hiệu và thu nhận khung hình thực tế từ nguồn camera trên.
                         </div>
-                        <div id="wizardResultBox" style="display: none; margin-top: 12px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 12px;"></div>
                         <img id="testPreviewImg" class="test-preview-img" alt="Ảnh xem trước từ Camera">
                     </div>
                 </div>
@@ -1723,7 +1738,7 @@
     <script src="js/shared/header-actions.js?v=2.2"></script>
     <script src="js/shared/confirmation-dialog.js?v=1.0"></script>
     <script type="module" src="js/components/progress_modal.js?v=6.0"></script>
-    <script type="module" src="js/cameras.js?v=9.0"></script>
+    <script type="module" src="js/cameras.js?v=9.3"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             var tabMatrix = document.getElementById('tabBtnVmsMatrix');

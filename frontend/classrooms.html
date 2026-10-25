@@ -24,7 +24,6 @@
     <link rel="stylesheet" href="css/components/modal-system.css?v=2.0">
     <link rel="stylesheet" href="css/components/progress-modal.css?v=6.0">
     <link rel="stylesheet" href="css/cameras.css?v=2.2">
-    <link rel="stylesheet" href="css/roi_config.css?v=3.3">
     <!-- Global Balance - MUST LOAD LAST -->
     <link rel="stylesheet" href="css/global-table-balance.css?v=3.2">
 
@@ -459,116 +458,6 @@
 
         .btn-batch-cancel:hover {
             background: rgba(255, 255, 255, 0.25);
-            color: #ffffff;
-        }
-
-        /* =========================================================
-           ROI CONFIG MODAL - CĂN GIỮA MÀN HÌNH VÀ MỞ RỘNG TOÀN DIỆN
-           Khắc phục lỗi modal bị nhỏ (650px), lệch sang trái và bóp dọc
-           ========================================================= */
-        #roiConfigModal {
-            align-items: center !important;
-            justify-content: center !important;
-            padding: 1.5rem !important;
-            box-sizing: border-box !important;
-        }
-
-        #roiConfigModal.active,
-        #roiConfigModal[style*="display: flex"] {
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-        }
-
-        #roiConfigModal .modal-dialog {
-            max-width: 1440px !important;
-            width: 96vw !important;
-            height: 92vh !important;
-            max-height: 94vh !important;
-            margin: 0 auto !important;
-            display: flex !important;
-            justify-content: center !important;
-            align-items: center !important;
-        }
-
-        #roiConfigModal .modal-content {
-            max-width: 1440px !important;
-            width: 100% !important;
-            height: 100% !important;
-            max-height: 94vh !important;
-            margin: 0 auto !important;
-            display: flex !important;
-            flex-direction: column !important;
-            border-radius: 14px !important;
-            overflow: hidden !important;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
-            animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
-        }
-
-        #roiConfigModal .modal-header {
-            flex-shrink: 0 !important;
-        }
-
-        #roiConfigModal .modal-footer {
-            flex-shrink: 0 !important;
-        }
-
-        #roiConfigModal .modal-body {
-            flex: 1 1 0% !important;
-            height: 100% !important;
-            min-height: 0 !important;
-            overflow: hidden !important;
-            display: flex !important;
-            flex-direction: column !important;
-            padding: 12px 20px !important;
-            background: #ffffff !important;
-            box-sizing: border-box !important;
-        }
-
-        #roiConfigModal .tool-controls {
-            flex-shrink: 0 !important;
-            margin-bottom: 8px !important;
-        }
-
-        #roiConfigModal .roi-modal-hints {
-            flex-shrink: 0 !important;
-            margin-top: 6px !important;
-        }
-
-        #roiConfigModal .canvas-outer-wrapper {
-            flex: 1 1 0% !important;
-            min-height: 0 !important;
-            width: 100% !important;
-            height: 100% !important;
-            display: flex !important;
-            justify-content: center !important;
-            align-items: center !important;
-            background: #0f172a !important;
-            border: 1.5px solid #cbd5e1 !important;
-            border-radius: 10px !important;
-            position: relative !important;
-            overflow: hidden !important;
-            box-sizing: border-box !important;
-            padding: 8px !important;
-            margin: 0 !important;
-        }
-
-        #roiConfigModal .canvas-container {
-            position: relative !important;
-            display: flex !important;
-            justify-content: center !important;
-            align-items: center !important;
-            max-width: 100% !important;
-            max-height: 100% !important;
-            box-sizing: border-box !important;
-        }
-
-        #roiConfigModal #roiModalCanvas {
-            display: block !important;
-            max-width: 100% !important;
-            max-height: 100% !important;
-            cursor: crosshair !important;
-            border-radius: 4px !important;
         }
     </style>
 
@@ -795,28 +684,50 @@
                         </div>
                     </div>
 
-                    <!-- NGUỒN CAMERA IP TRƯỜNG (RTSP) -->
+                    <!-- NGUỒN CAMERA (TAB CHỌN NVR HOẶC NHẬP THỦ CÔNG) -->
                     <div class="source-type-selector" style="margin-bottom: 12px;">
                         <label style="font-size: 0.88rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
                             <i class="fa-solid fa-server" style="color: var(--primary);"></i> Nguồn Camera:
                         </label>
-                        <div class="source-tabs" style="display: inline-flex; width: auto;">
-                            <button type="button" class="source-tab active" id="tabBtnRtsp" style="cursor: default;">
-                                <i class="fa-solid fa-server"></i> Camera IP Trường (RTSP)
+                        <div class="source-tabs" style="display: inline-flex; width: auto; gap: 6px;">
+                            <button type="button" class="source-tab active" id="tabBtnNvrSelect" style="cursor: pointer;" onclick="window.switchSourceTab && window.switchSourceTab('NVR')">
+                                <i class="fa-solid fa-server"></i> NVR
+                            </button>
+                            <button type="button" class="source-tab" id="tabBtnRtsp" style="cursor: pointer;" onclick="window.switchSourceTab && window.switchSourceTab('RTSP')">
+                                <i class="fa-solid fa-link"></i> RTSP
                             </button>
                         </div>
                     </div>
 
-                    <!-- PANEL RTSP NVR TRƯỜNG -->
-                    <div id="panelRtsp" class="source-panel" style="display: block;">
-                        <div class="preset-badge-group">
-                            <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; align-self: center;">Mẫu nhanh:</span>
-                            <button type="button" class="preset-btn" data-preset="DAHUA"><i class="fa-solid fa-server"></i> Dahua NVR Trường</button>
-                            <button type="button" class="preset-btn" data-preset="HIK"><i class="fa-solid fa-video"></i> Hikvision RTSP</button>
+                    <!-- PANEL 1: CHỌN TỪ ĐẦU GHI NVR (30 KÊNH CAMERA) -->
+                    <div id="panelNvrSelect" class="source-panel" style="display: block;">
+                        <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px;">
+                            <div class="form-group" style="margin: 0;">
+                                <label style="font-size: 0.82rem; font-weight: 600; color: #475569;"><i class="fa-solid fa-server" style="color: var(--primary);"></i> Đầu Ghi Hình (NVR):</label>
+                                <select id="selectNvrDevice" class="form-control" style="font-size: 0.85rem;" onchange="window.loadNvrDevicesAndChannels && window.loadNvrDevicesAndChannels()">
+                                    <option value="default">Đầu Ghi NVR THPT Điều Cải (192.168.1.200)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label style="font-size: 0.82rem; font-weight: 600; color: #475569;"><i class="fa-solid fa-video" style="color: var(--primary);"></i> Chọn Kênh Camera (*):</label>
+                                <select id="selectNvrChannel" class="form-control" style="font-size: 0.85rem;" onchange="window.applySelectedNvrChannel && window.applySelectedNvrChannel(this.value)">
+                                    <option value="">-- Đang nạp danh sách kênh --</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="form-group" style="margin-top: 8px;">
+                        <div id="nvrSelectedChannelHint" style="display: none; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 8px 12px; font-size: 0.82rem; color: #1e40af; margin-top: 6px;">
+                            <i class="fa-solid fa-circle-info"></i> <span id="nvrSelectedChannelText"></span>
+                        </div>
+                    </div>
+
+                    <!-- PANEL 2: NHẬP RTSP THỦ CÔNG (ĐÃ BỎ MẪU NHANH THEO YÊU CẦU) -->
+                    <div id="panelRtsp" class="source-panel" style="display: none;">
+                        <div class="form-group" style="margin-top: 0;">
                             <label><i class="fa-solid fa-link" style="color: var(--primary);"></i> Đường Dẫn Luồng RTSP (*):</label>
-                            <input type="text" id="inputRtsp" class="form-control" placeholder="rtsp://admin:matkhau@192.168.10.200:554/cam/realmonitor?channel=1&subtype=0" required>
+                            <input type="text" id="inputRtsp" class="form-control" placeholder="rtsp://admin:matkhau@192.168.10.200:554/cam/realmonitor?channel=1&subtype=0">
+                            <span class="form-hint" style="margin-top: 4px; display: block; font-size: 0.78rem; color: #64748b;">
+                                Nhập trực tiếp URL RTSP cho camera IP độc lập hoặc luồng phụ tùy chỉnh.
+                            </span>
                         </div>
                     </div>
 
@@ -845,7 +756,7 @@
                     </div>
 
 
-                    <!-- Khung Test Kết Nối Live & Chụp Thử Nghiệm -->
+                    <!-- Khung Test Kết Nối Live & Chụp Thử Nghiệm (ĐÃ BỎ CÁC NÚT PHỤ THEO YÊU CẦU) -->
                     <div class="test-box">
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                             <span style="font-weight: 700; font-size: 0.88rem; color: var(--text-main);">
@@ -855,13 +766,10 @@
                                 <button type="button" id="btnTestStream" class="btn btn-secondary btn-sm" style="font-weight: 600;">
                                     <i class="fa-solid fa-play"></i> Bắt Ảnh Xem Trước
                                 </button>
-                                <button type="button" id="btnTestSignalFlow" class="btn btn-primary btn-sm" style="font-weight: 600;">
-                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Thử Chu Trình: Bật Đèn Báo -> Bắt Ảnh Màu
-                                </button>
                             </div>
                         </div>
                         <div id="testStatusMsg" style="font-size: 0.82rem; margin-top: 6px; color: var(--text-muted);">
-                            Bấm "Bắt Ảnh Xem Trước" hoặc "Thử Chu Trình: Bật Đèn Báo -> Bắt Ảnh Màu" để kiểm chứng ảnh thu được có đầy đủ màu sắc.
+                            Bấm "Bắt Ảnh Xem Trước" để kiểm tra tín hiệu và thu nhận khung hình thực tế từ nguồn camera trên.
                         </div>
                         <img id="testPreviewImg" class="test-preview-img" alt="Ảnh xem trước từ Camera">
                     </div>
@@ -1289,176 +1197,6 @@
         </div>
     </div>
 
-    <!-- MODAL CẤU HÌNH VÙNG ROI TRỰC TIẾP TRÊN TRANG (DIRECT IN-PAGE ROI CONFIGURATION) -->
-    <div class="modal-backdrop" id="roiConfigModal" style="display: none; z-index: 9999; align-items: center; justify-content: center;">
-        <div class="modal-dialog modal-xl" style="max-width: 1440px; width: 96vw; height: 92vh; margin: 0 auto; display: flex; justify-content: center; align-items: center;">
-            <div class="modal-content" style="background: #ffffff; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.25); max-width: 1440px !important; width: 100% !important; height: 100% !important; max-height: 94vh; margin: 0 auto !important; display: flex !important; flex-direction: column !important;">
-                <!-- Header -->
-                <div class="modal-header" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
-                    <div class="modal-header-content">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <i class="fa-solid fa-draw-polygon" style="color: #8b5cf6; font-size: 1.2rem;"></i>
-                            <h3 id="roiModalTitle" class="modal-title" style="margin: 0; font-size: 1.15rem; font-weight: 700; color: #0f172a;">
-                                Thiết Lập Vùng Nhận Diện ROI
-                            </h3>
-                        </div>
-                        <p id="roiModalSubtitle" class="modal-subtitle" style="margin: 3px 0 0 0; font-size: 0.82rem; color: #64748b;">
-                            Vẽ đa giác vùng bàn học sinh để AI tập trung nhận diện. Vùng ngoài sẽ tự động bỏ qua.
-                        </p>
-                    </div>
-                    <button type="button" class="modal-close-btn" id="roiModalCloseBtn" aria-label="Đóng" style="font-size: 1.5rem; line-height: 1; border: none; background: transparent; cursor: pointer; color: #64748b;">&times;</button>
-                </div>
-
-                <!-- Body -->
-                <div class="modal-body" style="padding: 12px 20px; background: #ffffff; flex: 1 1 0%; height: 100%; min-height: 0; overflow: hidden; display: flex; flex-direction: column;">
-                    <!-- Thanh công cụ vẽ ROI -->
-                    <div class="tool-controls" style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; flex-shrink: 0;">
-                        <div class="tool-actions-left" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                            <button type="button" id="btnModalModeGreen" class="btn-mode-green active"
-                                style="background: #059669; color: white; border: none; border-radius: 6px; padding: 6px 12px; font-size: 0.82rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-draw-polygon"></i> Vẽ Vùng Nhận Diện (Bàn Học)
-                            </button>
-                            <button type="button" id="btnModalFourCorners" class="btn btn-secondary btn-sm"
-                                style="font-size: 0.82rem; padding: 6px 12px; font-weight: 600;" title="Tạo nhanh 4 điểm sát đúng 4 góc biên ảnh">
-                                <i class="fa-solid fa-arrows-to-dot"></i> Bắt 4 Góc Ảnh
-                            </button>
-                            <button type="button" id="btnModalUndo" class="btn btn-secondary btn-sm"
-                                style="font-size: 0.82rem; padding: 6px 12px; font-weight: 600;" title="Hoàn tác điểm vừa vẽ (Ctrl+Z)">
-                                <i class="fa-solid fa-rotate-left"></i> Hoàn Tác
-                            </button>
-                            <button type="button" id="btnModalClear" class="btn btn-secondary btn-sm"
-                                style="font-size: 0.82rem; padding: 6px 12px; font-weight: 600; color: #dc2626;" title="Xóa toàn bộ các điểm">
-                                <i class="fa-solid fa-trash-can"></i> Xóa Vùng
-                            </button>
-                        </div>
-                        <div style="font-size: 0.8rem; color: #64748b; font-weight: 600;" id="roiModalCoordsInfo">
-                            Độ phân giải: <strong>Tự động</strong>
-                        </div>
-                    </div>
-
-                    <!-- Khung Canvas Vẽ ROI (Mở rộng kích thước to hơn) -->
-                    <div class="canvas-outer-wrapper" style="border: 1.5px solid #cbd5e1; border-radius: 10px; overflow: hidden; background: #0f172a; position: relative; width: 100%; height: 100%; flex: 1 1 0%; min-height: 0; display: flex; align-items: center; justify-content: center; margin: 0; padding: 8px;">
-                        <div class="canvas-container" style="position: relative; max-width: 100%; max-height: 100%; display: flex; justify-content: center; align-items: center;">
-                            <div id="roiModalSkeletonOverlay" class="canvas-skeleton-overlay hidden">
-                                <div class="skeleton" style="width: 100%; height: 100%; border-radius: 4px;"></div>
-                            </div>
-                            <canvas id="roiModalCanvas" style="display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; cursor: crosshair;"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- Thanh trạng thái nạp vùng & phân tích AI -->
-                    <div class="save-status-bar" id="roiModalStatusBar" style="margin-top: 6px; padding: 6px 14px; font-size: 0.8rem; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; flex-shrink: 0;">
-                        <span><i class="fa-solid fa-draw-polygon" style="color: #059669;"></i> Vùng Nhận Diện: <strong>Đang nạp...</strong></span>
-                        <span style="color: #64748b;"><i class="fa-solid fa-ban"></i> Ngoài vùng: Tự động bỏ qua</span>
-                        <span style="color: #475569;"><i class="fa-solid fa-database"></i> Sẵn sàng ghi CSDL</span>
-                    </div>
-
-                    <!-- Gợi ý thao tác -->
-                    <div class="roi-modal-hints" style="margin-top: 6px; font-size: 0.78rem; color: #64748b; line-height: 1.4; flex-shrink: 0;">
-                        💡 <strong>Hướng dẫn:</strong> Nhấp chuột trái để vẽ các điểm tạo vùng xanh quanh khu vực bàn học sinh. Kéo điểm neo để căn chỉnh viền. <strong>Chuột phải</strong> để xóa điểm. Nhấn <strong>Ctrl+Z</strong> để hoàn tác.
-                    </div>
-                </div>
-
-                <!-- Footer -->
-                <div class="modal-footer" style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;">
-                    <button type="button" id="btnModalSnapshot" class="btn btn-secondary btn-sm" style="font-weight: 600; padding: 7px 14px;">
-                        <i class="fa-solid fa-camera-rotate"></i> Chụp Lại Ảnh Camera
-                    </button>
-                    <div style="display: flex; gap: 8px; align-items: center;">
-                        <button type="button" id="btnModalApplyAllROI" class="btn btn-apply-all btn-sm" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; border: none; padding: 7px 16px; font-weight: 600; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;" title="Sao chép và áp dụng tọa độ vùng ROI hiện tại cho các phòng học khác">
-                            <i class="fa-solid fa-clone"></i> Áp Dụng Cho Tất Cả
-                        </button>
-                        <button type="button" id="btnModalSaveROI" class="btn btn-success modal-btn" style="background: #16a34a; border-color: #16a34a; color: white; padding: 7px 22px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
-                            <i class="fa-solid fa-floppy-disk"></i> Lưu Tọa Độ Vùng
-                        </button>
-                        <button type="button" id="btnModalCancelRoi" class="btn btn-secondary modal-btn modal-btn-secondary" style="padding: 7px 18px;">
-                            Đóng
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Xác Nhận Áp Dụng ROI Cho Các Lớp Học (Classrooms Direct ROI) -->
-    <div class="modal-backdrop" id="modalApplyAllRoi" role="dialog" aria-modal="true" style="display: none; z-index: 100000; align-items: center; justify-content: center;">
-        <div class="modal-dialog modal-md" style="max-width: 600px; width: 95vw; margin: auto;">
-            <div class="modal-content" style="background: #ffffff; border-radius: 14px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.35); border: 1px solid #cbd5e1;">
-                <div class="modal-header" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center;">
-                    <div class="modal-header-content">
-                        <h3 class="modal-title" style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-                            <i class="fa-solid fa-clone" style="color: #6366f1;"></i>
-                            <span>Áp Dụng ROI Cho Các Lớp Học</span>
-                        </h3>
-                        <p class="modal-subtitle" style="margin: 3px 0 0; font-size: 0.8rem; color: #64748b;">Đồng bộ vùng nhận diện từ lớp đang chọn sang các phòng học khác</p>
-                    </div>
-                    <button type="button" class="modal-close-btn" id="modalApplyAllCloseBtn" aria-label="Đóng" style="font-size: 1.5rem; line-height: 1; border: none; background: transparent; cursor: pointer; color: #64748b;">&times;</button>
-                </div>
-                <div class="modal-body" style="padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 14px;">
-                    <!-- Info card về ROI nguồn -->
-                    <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 12px 16px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                            <span style="font-weight: 700; color: #1e293b; font-size: 0.9rem;">
-                                <i class="fa-solid fa-door-open text-primary"></i> Lớp học mẫu:
-                            </span>
-                            <span id="applyAllSourceClass" style="font-weight: 700; color: #2563eb; font-size: 0.92rem;">Lớp 10A1</span>
-                        </div>
-                        <div style="display: flex; gap: 16px; font-size: 0.82rem; color: #475569;">
-                            <span><i class="fa-solid fa-draw-polygon" style="color: #059669;"></i> Vùng nhận diện: <strong id="applyAllPointCount">0</strong> điểm</span>
-                            <span><i class="fa-solid fa-expand" style="color: #6366f1;"></i> Độ phân giải: <strong id="applyAllResolution">1920x1080</strong></span>
-                        </div>
-                    </div>
-
-                    <!-- Lựa chọn phạm vi -->
-                    <div>
-                        <label style="font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 8px; display: block;">
-                            Phạm vi áp dụng:
-                        </label>
-                        <div style="display: flex; gap: 16px; margin-bottom: 10px;">
-                            <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.86rem; font-weight: 600; cursor: pointer;">
-                                <input type="radio" name="modalApplyTargetScope" value="all" checked id="modalScopeAllClasses">
-                                Tất cả các lớp trong trường (<span id="modalApplyTotalCount">30</span> lớp)
-                            </label>
-                            <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.86rem; font-weight: 600; cursor: pointer;">
-                                <input type="radio" name="modalApplyTargetScope" value="custom" id="modalScopeCustomClasses">
-                                Tùy chọn danh sách lớp
-                            </label>
-                        </div>
-
-                        <!-- Danh sách chọn lớp tùy chỉnh (ẩn mặc định) -->
-                        <div id="modalApplyCustomClassListWrap" style="display: none; max-height: 180px; overflow-y: auto; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 8px 12px; background: #ffffff;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #f1f5f9;">
-                                <label style="font-size: 0.8rem; font-weight: 700; color: #475569; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
-                                    <input type="checkbox" id="modalCheckSelectAllTargetClasses" checked> Chọn tất cả
-                                </label>
-                                <span id="modalSelectedTargetCountBadge" style="font-size: 0.76rem; font-weight: 700; background: #e0e7ff; color: #4338ca; padding: 2px 8px; border-radius: 10px;">30/30</span>
-                            </div>
-                            <div id="modalApplyTargetClassCheckboxes" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
-                                <!-- Checkboxes rendered dynamically -->
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Cảnh báo ghi đè -->
-                    <div class="modal-info-box warning" style="padding: 10px 14px; font-size: 0.82rem; margin: 0; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; display: flex; align-items: flex-start; gap: 10px;">
-                        <i class="fa-solid fa-triangle-exclamation modal-info-box-icon" style="color: #d97706; font-size: 1.1rem; margin-top: 2px;"></i>
-                        <span style="color: #92400e; line-height: 1.4;">
-                            Hành động này sẽ ghi đè tọa độ đa giác ROI hiện tại của các phòng học được chọn. Các phiên quét kế tiếp sẽ đồng loạt dùng tọa độ này để nhận diện học sinh.
-                        </span>
-                    </div>
-                </div>
-                <div class="modal-footer" style="padding: 12px 20px; display: flex; justify-content: flex-end; gap: 10px; background: #f8fafc; border-top: 1px solid #e2e8f0; border-radius: 0 0 14px 14px;">
-                    <button type="button" class="btn btn-secondary modal-btn modal-btn-secondary" id="btnCancelModalApplyAll">
-                        Hủy Bỏ
-                    </button>
-                    <button type="button" class="btn btn-primary modal-btn" id="btnConfirmModalApplyAll" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; font-weight: 700; border: none; padding: 8px 20px; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
-                        <i class="fa-solid fa-check-double"></i> Xác Nhận Áp Dụng
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Modal: Cài Đặt Lịch Quét Điểm Danh Tự Động -->
     <div class="modal-backdrop" id="scheduleModal" style="display: none; z-index: 9999;">
         <div class="modal-dialog modal-md" style="max-width: 580px; width: 95vw;">
@@ -1568,8 +1306,7 @@
     <script src="js/shared/header-actions.js?v=2.2"></script>
     <script src="js/shared/confirmation-dialog.js?v=1.0"></script>
     <script type="module" src="js/components/progress_modal.js?v=6.0"></script>
-    <script src="js/roi_canvas.js?v=6.0"></script>
-    <script type="module" src="js/cameras.js?v=7.2"></script>
+    <script type="module" src="js/cameras.js?v=9.3"></script>
 </body>
 
 </html>

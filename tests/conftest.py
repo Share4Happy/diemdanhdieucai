@@ -25,3 +25,10 @@ def preserve_live_database():
             backup_file.unlink()
         except Exception:
             pass
+
+@pytest.fixture(scope="session", autouse=True)
+def enable_test_debug_mode():
+    old_debug = getattr(settings, "DEBUG", False)
+    settings.DEBUG = True
+    yield
+    settings.DEBUG = old_debug

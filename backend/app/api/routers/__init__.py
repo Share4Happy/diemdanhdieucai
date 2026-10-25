@@ -6,6 +6,5 @@ from .system import router as system_router
 from .auth import router as auth_router
 from .backup import router as backup_router
 from .predict import router as predict_router
-# from .stream_mock import router as stream_mock_router, stream_mock_background_loop
 from .classrooms import router as classrooms_router
 

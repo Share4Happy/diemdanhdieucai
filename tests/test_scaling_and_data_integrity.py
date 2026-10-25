@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 from backend.main import app
 from database.db_session import init_db, SessionLocal
 from database.models import Classroom, AttendanceSession, AttendanceDetail, User
-from backend.core.rtsp_client import rtsp_client, is_valid_frame
+from backend.app.core.rtsp_client import rtsp_client, is_valid_frame
 from backend.api.deps import get_current_user
 
 app.dependency_overrides[get_current_user] = lambda: User(id=1, email="admin@truongdieucai.edu.vn", role="admin")
@@ -29,11 +29,14 @@ def test_per_nvr_semaphore_registry():
 
 def test_http_snapshot_probe_mock(monkeypatch):
     # Tạo ảnh có cấu trúc không gian lớp học để vượt qua bộ lọc is_valid_frame
+    np.random.seed(42)
     img = np.zeros((720, 1280, 3), dtype=np.uint8)
     img[:, :] = (180, 160, 140)
     cv2.rectangle(img, (100, 100), (600, 500), (40, 40, 180), -1)
     cv2.rectangle(img, (700, 100), (1200, 500), (180, 80, 40), -1)
     cv2.putText(img, "THPT DIEU CAI CAM 01", (150, 300), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 3)
+    noise = np.random.randint(-15, 15, img.shape, dtype=np.int16)
+    img = np.clip(img.astype(np.int16) + noise, 0, 255).astype(np.uint8)
 
     class MockResponse:
         status_code = 200

@@ -5,15 +5,12 @@
  * ===================================================================
  */
 
-import { CameraAPI, showToast, escapeHtml } from '../../api.js';
+import { CameraAPI, showToast, escapeHtml } from '../../api.js?v=9.2';
 
 const esc = (v) => escapeHtml(v);
 
-let availableWebcams = [];
-let selectedWebcamId = '0';
-let currentSourceType = 'WEBCAM';
+let currentSourceType = 'NVR';
 let crudCameras = [];
-
 let externalCallbacks = {
     onRefreshCameras: null
 };
@@ -26,184 +23,145 @@ export function setCrudCameras(cams) {
     crudCameras = cams || [];
 }
 
-export async function loadAvailableWebcams(forceRefresh = false) {
-    const icon = document.getElementById('webcamRefreshIcon');
-    const btn = document.getElementById('btnRefreshWebcams');
-    if (icon) icon.classList.add('fa-spin');
-    if (btn) btn.disabled = true;
+let nvrChannelsList = [];
 
-    const container = document.getElementById('webcamListContainer');
-    if (container && forceRefresh) {
-        container.innerHTML = `
-            <div class="webcam-card" style="pointer-events: none;">
-                <div class="webcam-thumb-box skeleton" style="height: 110px; border-radius: 6px;"></div>
-                <div class="webcam-card-info" style="margin-top: 6px;">
-                    <div class="skeleton" style="width: 80%; height: 14px; margin-bottom: 4px;"></div>
-                    <div class="skeleton" style="width: 50%; height: 12px;"></div>
-                </div>
-            </div>
-            <div class="webcam-card" style="pointer-events: none;">
-                <div class="webcam-thumb-box skeleton" style="height: 110px; border-radius: 6px;"></div>
-                <div class="webcam-card-info" style="margin-top: 6px;">
-                    <div class="skeleton" style="width: 70%; height: 14px; margin-bottom: 4px;"></div>
-                    <div class="skeleton" style="width: 45%; height: 12px;"></div>
-                </div>
-            </div>
-        `;
-    }
+export async function loadNvrDevicesAndChannels(selectedChannelNumber = null) {
+    const selNvr = document.getElementById('selectNvrDevice');
+    const selCh = document.getElementById('selectNvrChannel');
+    if (!selCh) return;
 
     try {
-        const data = await CameraAPI.getWebcams(forceRefresh);
-
-        if (data && data.webcams) {
-            availableWebcams = data.webcams;
-            renderWebcamCards();
-            updateBannerWebcamStatus();
-
-            if (availableWebcams.length > 0) {
-                const currentExists = availableWebcams.some(w => String(w.id) === String(selectedWebcamId));
-                if (!currentExists) {
-                    selectedWebcamId = String(availableWebcams[0].id);
+        if (selNvr) {
+            try {
+                let nvrData = null;
+                if (CameraAPI && typeof CameraAPI.listNVRs === 'function') {
+                    nvrData = await CameraAPI.listNVRs();
+                } else {
+                    const res = await fetch('/api/cameras/nvr/list');
+                    if (res.ok) nvrData = await res.json();
                 }
+                if (nvrData && nvrData.nvrs && nvrData.nvrs.length > 0) {
+                    selNvr.innerHTML = nvrData.nvrs.map(n => 
+                        `<option value="${n.id}">${esc(n.name)} (${esc(n.ip_address)} - ${esc(n.brand)})</option>`
+                    ).join('');
+                } else {
+                    selNvr.innerHTML = `<option value="default">Đầu Ghi NVR THPT Điều Cải (192.168.1.200 - HIKVISION)</option>`;
+                }
+            } catch (e) {
+                selNvr.innerHTML = `<option value="default">Đầu Ghi NVR THPT Điều Cải (192.168.1.200 - HIKVISION)</option>`;
             }
+        }
+
+        const nvrId = (selNvr && selNvr.value !== 'default') ? selNvr.value : null;
+        selCh.innerHTML = '<option value="">-- Đang nạp danh sách 30 kênh NVR... --</option>';
+        
+        let data = null;
+        if (CameraAPI && typeof CameraAPI.getNVRChannels === 'function') {
+            data = await CameraAPI.getNVRChannels(nvrId);
+        } else if (window.CameraAPI && typeof window.CameraAPI.getNVRChannels === 'function') {
+            data = await window.CameraAPI.getNVRChannels(nvrId);
+        } else {
+            const url = nvrId ? `/api/cameras/nvr/channels?nvr_id=${nvrId}` : '/api/cameras/nvr/channels';
+            const res = await fetch(url);
+            if (res.ok) data = await res.json();
+        }
+
+        if (data && data.channels && data.channels.length > 0) {
+            nvrChannelsList = data.channels;
+            renderNvrChannelSelectOptions(selectedChannelNumber);
+        } else {
+            selCh.innerHTML = '<option value="">-- Không tìm thấy kênh nào từ đầu ghi --</option>';
         }
     } catch (err) {
-        console.error('Lỗi khi tải danh sách webcam máy tính:', err);
-        if (container) {
-            container.innerHTML = `
-                <div class="webcam-empty-box" style="color: #ef4444; padding: 1.25rem;">
-                    <i class="fa-solid fa-circle-exclamation" style="font-size: 1.6rem; margin-bottom: 8px; display: block;"></i>
-                    <strong>Không thể dò quét webcam máy tính:</strong><br>
-                    <span style="font-size: 0.85rem; color: #64748b;">${esc(err.message || err)}</span>
-                    <div style="margin-top: 10px;">
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="window.loadAvailableWebcams ? window.loadAvailableWebcams(true) : location.reload()">
-                            <i class="fa-solid fa-rotate-right"></i> Thử Dò Tìm Lại
-                        </button>
-                    </div>
-                </div>`;
+        console.error('Lỗi nạp danh sách kênh NVR:', err);
+        if (selCh) {
+            selCh.innerHTML = '<option value="">-- Lỗi kết nối nạp kênh NVR --</option>';
         }
-    } finally {
-        if (icon) icon.classList.remove('fa-spin');
-        if (btn) btn.disabled = false;
     }
 }
 
-export function updateBannerWebcamStatus() {
-    const badge = document.getElementById('webcamBannerText');
-    if (!badge) return;
-    if (availableWebcams.length > 0) {
-        badge.innerHTML = `Webcam máy: <strong>${availableWebcams.length} camera</strong> sẵn sàng`;
-    } else {
-        badge.innerText = 'Chưa phát hiện Webcam máy';
+export function renderNvrChannelSelectOptions(selectedChannelNumber = null) {
+    const selCh = document.getElementById('selectNvrChannel');
+    if (!selCh || !nvrChannelsList.length) return;
+
+    let targetCh = selectedChannelNumber;
+    if (!targetCh) {
+        const firstUnassigned = nvrChannelsList.find(c => !c.is_assigned);
+        targetCh = firstUnassigned ? firstUnassigned.channel_number : nvrChannelsList[0].channel_number;
+    }
+
+    selCh.innerHTML = '<option value="">-- Chọn 1 kênh camera từ đầu ghi --</option>' +
+        nvrChannelsList.map(c => {
+            const isSel = String(c.channel_number) === String(targetCh);
+            const statusLabel = c.is_assigned ? ` [Đã gán: ${esc(c.assigned_classroom_name || c.name)}]` : ' [Chưa gán]';
+            return `<option value="${c.channel_number}" ${isSel ? 'selected' : ''}>Kênh ${String(c.channel_number).padStart(2, '0')} - ${esc(c.name)} (${esc(c.room_number)})${statusLabel}</option>`;
+        }).join('');
+
+    if (targetCh) {
+        applySelectedNvrChannel(targetCh);
     }
 }
 
-export function renderWebcamCards() {
-    const container = document.getElementById('webcamListContainer');
-    if (!container) return;
+export function applySelectedNvrChannel(channelNumber) {
+    const ch = nvrChannelsList.find(c => String(c.channel_number) === String(channelNumber));
+    if (!ch) return;
 
-    if (availableWebcams.length === 0) {
-        container.innerHTML = `
-            <div class="webcam-empty-box">
-                <i class="fa-solid fa-video-slash" style="font-size: 1.5rem; color: #94a3b8; margin-bottom: 6px; display: block;"></i>
-                Không tìm thấy camera/webcam nào đang kết nối trên máy tính.<br>
-                <small style="color: var(--text-muted);">Hãy cắm webcam USB hoặc kiểm tra quyền truy cập Camera của Windows, sau đó bấm <strong>"Dò Tìm Lại"</strong>.</small>
-            </div>
-        `;
-        return;
-    }
+    syncManualUrl(ch.rtsp_url);
+    const rInput = document.getElementById('inputRtsp');
+    if (rInput) rInput.value = ch.rtsp_url;
 
-    container.innerHTML = '';
-    availableWebcams.forEach(cam => {
-        const isSelected = String(cam.id) === String(selectedWebcamId);
-        const card = document.createElement('div');
-        card.className = `webcam-card ${isSelected ? 'selected' : ''}`;
-        card.id = `webcam_card_${cam.id}`;
-        card.onclick = () => selectWebcam(cam.id);
-
-        const thumbHtml = cam.thumbnail
-            ? `<img src="${cam.thumbnail}" class="webcam-thumb-img" alt="${esc(cam.name)}">`
-            : `<div style="text-align: center; color: #64748b;"><i class="fa-solid fa-camera" style="font-size: 1.8rem;"></i></div>`;
-
-        card.innerHTML = `
-            <div class="webcam-thumb-box">
-                ${thumbHtml}
-                <span class="webcam-badge-id">Cổng ${cam.id}</span>
-                <span class="webcam-badge-res">${esc(cam.resolution)}</span>
-                <div class="webcam-selected-check"><i class="fa-solid fa-check"></i></div>
-            </div>
-            <div class="webcam-card-info">
-                <div class="webcam-card-title" title="${esc(cam.name)}">${esc(cam.short_name || cam.name)}</div>
-                <div class="webcam-card-sub"><i class="fa-solid fa-circle-check"></i> ${esc(cam.quality_label || 'Hoạt động')}</div>
-            </div>
-        `;
-        container.appendChild(card);
-    });
-}
-
-export function selectWebcam(id) {
-    selectedWebcamId = String(id);
-    const rtspInput = document.getElementById('formRtspUrl');
-    if (rtspInput) rtspInput.value = selectedWebcamId;
-
-    document.querySelectorAll('.webcam-card').forEach(c => c.classList.remove('selected'));
-    const targetCard = document.getElementById(`webcam_card_${id}`);
-    if (targetCard) targetCard.classList.add('selected');
-
-    const cam = availableWebcams.find(w => String(w.id) === String(id));
-    if (cam) {
-        const testMsg = document.getElementById('testStatusMsg');
-        const testImg = document.getElementById('testPreviewImg');
-        if (cam.thumbnail && testImg) {
-            testImg.src = cam.thumbnail;
-            testImg.style.display = 'inline-block';
-        }
-        if (testMsg) {
-            testMsg.innerHTML = `<span style="color: #10b981; font-weight: 700;"><i class="fa-solid fa-circle-check"></i> Đã chọn ${esc(cam.name)} (${esc(cam.resolution)})</span>`;
-        }
-
-        const nameInput = document.getElementById('formName');
+    const isEdit = !!document.getElementById('formCamId')?.value;
+    if (!isEdit) {
         const codeInput = document.getElementById('formCode');
-        const isEdit = !!document.getElementById('formCamId')?.value;
-        if (!isEdit) {
-            if (!nameInput.value || nameInput.value.startsWith('Webcam')) {
-                nameInput.value = `Webcam Test (${cam.short_name || 'Cổng ' + id})`;
-            }
-            if (!codeInput.value || codeInput.value.startsWith('CAM_WEBCAM')) {
-                codeInput.value = `CAM_WEBCAM_${id}`;
-            }
+        const nameInput = document.getElementById('formName');
+        const roomInput = document.getElementById('formRoom');
+        const stdInput = document.getElementById('formStandard');
+
+        if (codeInput && (!codeInput.value || codeInput.value.startsWith('LOP_') || codeInput.value.startsWith('CAM_'))) {
+            codeInput.value = ch.code;
         }
+        if (nameInput && (!nameInput.value || nameInput.value.startsWith('Lớp ') || nameInput.value.startsWith('Camera '))) {
+            nameInput.value = ch.name;
+        }
+        if (roomInput && (!roomInput.value || roomInput.value.startsWith('Phòng '))) {
+            roomInput.value = ch.room_number;
+        }
+        if (stdInput) {
+            stdInput.value = ch.standard_count || 40;
+        }
+    }
+
+    const hintBox = document.getElementById('nvrSelectedChannelHint');
+    const hintText = document.getElementById('nvrSelectedChannelText');
+    if (hintBox && hintText) {
+        hintBox.style.display = 'block';
+        hintText.innerHTML = `<strong>Kênh ${ch.channel_number}:</strong> ${esc(ch.name)} (${esc(ch.room_number)}) &bull; Luồng: <code style="font-size: 0.8rem;">${esc(ch.rtsp_url)}</code>`;
     }
 }
 
-export function switchSourceTab(type = 'RTSP') {
+export function switchSourceTab(type = 'NVR') {
     currentSourceType = type;
-    const tabWebcam = document.getElementById('tabBtnWebcam');
+    const tabNvr = document.getElementById('tabBtnNvrSelect');
     const tabRtsp = document.getElementById('tabBtnRtsp');
-    const tabFile = document.getElementById('tabBtnFile');
 
-    if (tabWebcam) tabWebcam.classList.toggle('active', type === 'WEBCAM');
+    if (tabNvr) tabNvr.classList.toggle('active', type === 'NVR');
     if (tabRtsp) tabRtsp.classList.toggle('active', type === 'RTSP');
-    if (tabFile) tabFile.classList.toggle('active', type === 'FILE');
 
-    const pWebcam = document.getElementById('panelWebcam');
+    const pNvr = document.getElementById('panelNvrSelect');
     const pRtsp = document.getElementById('panelRtsp');
-    const pFile = document.getElementById('panelFile');
 
-    if (pWebcam) pWebcam.style.display = (type === 'WEBCAM') ? 'block' : 'none';
+    if (pNvr) pNvr.style.display = (type === 'NVR') ? 'block' : 'none';
     if (pRtsp) pRtsp.style.display = (type === 'RTSP') ? 'block' : 'none';
-    if (pFile) pFile.style.display = (type === 'FILE') ? 'block' : 'none';
 
     const rtspInput = document.getElementById('formRtspUrl');
     if (type === 'RTSP') {
         const val = (document.getElementById('inputRtsp')?.value || '').trim();
         if (rtspInput) rtspInput.value = val;
-    } else if (type === 'WEBCAM') {
-        if (rtspInput) rtspInput.value = selectedWebcamId || '0';
-        renderWebcamCards();
-    } else if (type === 'FILE') {
-        const val = (document.getElementById('inputFile')?.value || '').trim();
-        if (rtspInput) rtspInput.value = val || 'dataset/samples/classroom_sample_15s.mp4';
+    } else if (type === 'NVR') {
+        const selCh = document.getElementById('selectNvrChannel');
+        if (selCh && selCh.value) {
+            applySelectedNvrChannel(selCh.value);
+        }
     }
 }
 
@@ -215,49 +173,6 @@ export function syncManualUrl(val) {
 export function toggleAdvancedInput() {
     const box = document.getElementById('advancedUrlBox');
     if (box) box.style.display = (box.style.display === 'none') ? 'block' : 'none';
-}
-
-export function applyPreset(type) {
-    if (type === 'WEBCAM') {
-        switchSourceTab('WEBCAM');
-        if (availableWebcams.length > 0) {
-            selectWebcam(availableWebcams[0].id);
-        } else {
-            selectWebcam('0');
-        }
-    } else if (type === 'FILE_VIDEO') {
-        switchSourceTab('FILE');
-        const input = document.getElementById('inputFile');
-        if (input) {
-            input.value = 'dataset/samples/classroom_sample_15s.mp4';
-            syncManualUrl(input.value);
-        }
-    } else if (type === 'FILE_IMG') {
-        switchSourceTab('FILE');
-        const input = document.getElementById('inputFile');
-        if (input) {
-            input.value = 'dataset/samples/classroom_sample_1.jpg';
-            syncManualUrl(input.value);
-        }
-    } else if (type === 'DAHUA') {
-        switchSourceTab('RTSP');
-        const input = document.getElementById('inputRtsp');
-        if (input) {
-            input.value = 'rtsp://admin:Lhu%402025@192.168.10.200:554/cam/realmonitor?channel=1&subtype=0';
-            syncManualUrl(input.value);
-        }
-    } else if (type === 'HIK') {
-        switchSourceTab('RTSP');
-        const input = document.getElementById('inputRtsp');
-        if (input) {
-            input.value = 'rtsp://admin:matkhau@192.168.10.201:554/Streaming/Channels/101';
-            syncManualUrl(input.value);
-        }
-    }
-}
-
-export function openModalWithWebcam() {
-    openModal();
 }
 
 export function openModal(camera = null) {
@@ -294,14 +209,25 @@ export function openModal(camera = null) {
         previewImg.src = '';
     }
     const statusMsg = document.getElementById('testStatusMsg');
-    if (statusMsg) statusMsg.innerHTML = 'Bấm nút để thử kết nối và chụp 1 ảnh xem trước từ nguồn camera trên.';
+    if (statusMsg) statusMsg.innerHTML = 'Bấm "Bắt Ảnh Xem Trước" để kiểm tra tín hiệu và thu nhận khung hình thực tế từ nguồn camera trên.';
 
     const url = camera ? (camera.rtsp_url || '').trim() : '';
-
-    switchSourceTab('RTSP');
     const rInput = document.getElementById('inputRtsp');
     if (rInput) rInput.value = url;
     syncManualUrl(url);
+
+    if (camera) {
+        loadNvrDevicesAndChannels(camera.channel_number).then(() => {
+            if (camera.channel_number || (url && (url.includes('/Streaming/Channels/') || url.includes('/cam/realmonitor')))) {
+                switchSourceTab('NVR');
+            } else {
+                switchSourceTab('RTSP');
+            }
+        });
+    } else {
+        switchSourceTab('NVR');
+        loadNvrDevicesAndChannels();
+    }
 
     document.getElementById('cameraModal')?.classList.add('active');
 }
@@ -418,161 +344,6 @@ export async function testCameraIRNow() {
     }
 }
 
-export async function testSignalFlowAndCapture() {
-    const url = document.getElementById('formRtspUrl')?.value.trim();
-    const relayIp = document.getElementById('formRelayIp')?.value?.trim() || '';
-    if (!url) {
-        alert('Vui lòng nhập Đường dẫn nguồn Camera trước khi test!');
-        return;
-    }
-
-    const btn = document.getElementById('btnTestSignalFlow');
-    const msg = document.getElementById('testStatusMsg');
-    const img = document.getElementById('testPreviewImg');
-
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang thử chu trình...';
-    }
-    if (msg) msg.innerHTML = '<span style="color: #0284c7; font-weight: 700;"><i class="fa-solid fa-lightbulb" style="color: #ef4444;"></i> Bước 1: Bật đèn hồng ngoại báo hiệu (2.5s) -> Bước 2: Chuyển sang ẢNH MÀU...</span>';
-    if (img) img.style.display = 'none';
-
-    try {
-        const data = await CameraAPI.testConnection(url, true, relayIp);
-        if (data.success) {
-            if (msg) msg.innerHTML = `<span style="color: #10b981; font-weight: 700;"><i class="fa-solid fa-circle-check"></i> Hoàn tất chu trình: Đèn hồng ngoại đã báo hiệu thành công và thu nhận ẢNH MÀU chuẩn 100%!</span>`;
-            if (data.preview_url && img) {
-                img.src = data.preview_url;
-                img.style.display = 'inline-block';
-            }
-            showToast('Chu trình hoàn tất: Thu nhận ảnh màu chuẩn', 'success');
-        } else {
-            if (msg) msg.innerHTML = `<span style="color: #ef4444; font-weight: 600;"><i class="fa-solid fa-circle-xmark"></i> ${esc(data.message)}</span>`;
-            showToast(data.message || 'Thử chu trình thất bại', 'error');
-        }
-    } catch (err) {
-        if (msg) msg.innerHTML = `<span style="color: #ef4444;">Lỗi: ${esc(err.message || err)}</span>`;
-        showToast('Lỗi thử chu trình: ' + (err.message || err), 'error');
-    } finally {
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Bật Đèn Báo -> Bắt Ảnh';
-        }
-    }
-}
-
-export async function runCameraValidationWizard() {
-    const url = document.getElementById('formRtspUrl')?.value.trim();
-    const relayIp = document.getElementById('formRelayIp')?.value?.trim() || '';
-    const stdCount = parseInt(document.getElementById('formStandard')?.value) || 40;
-    const btn = document.getElementById('btnWizardValidateCamera');
-    const resBox = document.getElementById('wizardResultBox');
-    const img = document.getElementById('testPreviewImg');
-
-    if (!url) {
-        showToast('Vui lòng chọn hoặc nhập nguồn Camera trước khi chạy Wizard kiểm định!', 'warning');
-        return;
-    }
-
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang chạy Wizard 5 bước...';
-    }
-    if (resBox) {
-        resBox.style.display = 'block';
-        resBox.innerHTML = `
-            <div style="font-size: 0.88rem; font-weight: 700; color: #4338ca; margin-bottom: 8px;">
-                <i class="fa-solid fa-microchip"></i> Đang thực hiện quy trình kiểm định 5 bước...
-            </div>
-            <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.82rem; line-height: 1.8;">
-                <li><i class="fa-solid fa-spinner fa-spin" style="color: #6366f1;"></i> Bước 1: Kiểm tra kết nối mạng & bắt tay thiết bị...</li>
-                <li style="color: #94a3b8;"><i class="fa-regular fa-clock"></i> Bước 2: Thu nhận 5 frame liên tiếp & kiểm tra độ ổn định</li>
-                <li style="color: #94a3b8;"><i class="fa-regular fa-clock"></i> Bước 3: Thẩm định độ phân giải & phân tích kích thước đầu học sinh</li>
-                <li style="color: #94a3b8;"><i class="fa-regular fa-clock"></i> Bước 4: Kiểm tra và định vị vùng đa giác ROI</li>
-                <li style="color: #94a3b8;"><i class="fa-regular fa-clock"></i> Bước 5: Chạy thử nghiệm AI YOLO nhận diện sĩ số</li>
-            </ul>
-        `;
-    }
-
-    try {
-        const data = await CameraAPI.validateNewCamera(url, relayIp, null, null, stdCount);
-        if (data.success) {
-            const s1 = data.step1_connection;
-            const s2 = data.step2_frames;
-            const s3 = data.step3_resolution;
-            const s4 = data.step4_roi;
-            const s5 = data.step5_ai;
-
-            const s1Icon = s1.ok ? '<i class="fa-solid fa-circle-check" style="color: #10b981;"></i>' : '<i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i>';
-            const s2Icon = s2.ok ? '<i class="fa-solid fa-circle-check" style="color: #10b981;"></i>' : '<i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i>';
-            const s3Icon = s3.ok ? '<i class="fa-solid fa-circle-check" style="color: #10b981;"></i>' : '<i class="fa-solid fa-triangle-exclamation" style="color: #f59e0b;"></i>';
-            const s4Icon = s4.ok ? '<i class="fa-solid fa-circle-check" style="color: #10b981;"></i>' : '<i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i>';
-            const s5Icon = s5.ok ? '<i class="fa-solid fa-circle-check" style="color: #10b981;"></i>' : '<i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i>';
-
-            let html = `
-                <div style="font-size: 0.92rem; font-weight: 700; color: ${data.ready_for_save ? '#059669' : '#d97706'}; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-                    <i class="fa-solid ${data.ready_for_save ? 'fa-badge-check' : 'fa-triangle-exclamation'}"></i> ${esc(data.message)}
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.82rem; margin-bottom: 10px;">
-                    <div style="background: #fff; padding: 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                        ${s1Icon} <strong>Bước 1: Kết nối</strong>: ${s1.latency_ms}ms (${esc(s1.message || 'Tốt')})
-                    </div>
-                    <div style="background: #fff; padding: 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                        ${s2Icon} <strong>Bước 2: Mẫu 5 frames</strong>: Đọc được ${s2.frames_read}/5 frame (TB: ${s2.avg_latency_ms}ms)
-                    </div>
-                    <div style="background: #fff; padding: 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                        ${s3Icon} <strong>Bước 3: Độ phân giải</strong>: ${esc(s3.resolution || 'N/A')} (Kích thước đầu TB: ${s3.avg_head_px}px)
-                    </div>
-                    <div style="background: #fff; padding: 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                        ${s4Icon} <strong>Bước 4: Vùng ROI</strong>: ${s4.green_zone_points} điểm Bàn học, ${s4.red_zone_points} điểm Bục giảng
-                    </div>
-                </div>
-                <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 8px 12px; border-radius: 6px; font-size: 0.84rem; color: #1e40af; margin-bottom: 8px;">
-                    ${s5Icon} <strong>Bước 5: Thử nghiệm AI</strong>: Phát hiện <strong>${s5.students_detected}</strong> học sinh (Độ tin cậy TB: <strong>${Math.round(s5.confidence_avg * 100)}%</strong>)
-                </div>
-            `;
-
-            if (resBox) resBox.innerHTML = html;
-
-            if (s5.annotated_preview_url && img) {
-                img.src = s5.annotated_preview_url;
-                img.style.display = 'inline-block';
-            } else if (s4.preview_url && img) {
-                img.src = s4.preview_url;
-                img.style.display = 'inline-block';
-            }
-
-            if (data.ready_for_save) {
-                showToast('Camera đạt chuẩn 5 bước! Bạn có thể nhấn Lưu Camera để hoàn tất.', 'success');
-            } else {
-                showToast('Camera đã kiểm định kèm một số lưu ý kỹ thuật', 'warning');
-            }
-        } else {
-            if (resBox) {
-                resBox.innerHTML = `
-                    <div style="color: #ef4444; font-weight: 700; font-size: 0.88rem;">
-                        <i class="fa-solid fa-circle-xmark"></i> ${esc(data.message || 'Kiểm định thất bại')}
-                    </div>
-                `;
-            }
-            showToast(data.message || 'Kiểm định camera thất bại', 'error');
-        }
-    } catch (err) {
-        if (resBox) {
-            resBox.innerHTML = `
-                <div style="color: #ef4444; font-size: 0.84rem;">
-                    <i class="fa-solid fa-triangle-exclamation"></i> Lỗi thực thi Wizard: ${esc(err.message || err)}
-                </div>
-            `;
-        }
-        showToast('Lỗi gửi yêu cầu kiểm định: ' + (err.message || err), 'error');
-    } finally {
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-clipboard-check"></i> Wizard Kiểm Định 5 Bước';
-        }
-    }
-}
 
 export async function testCameraDirectly(url, name) {
     const titleEl = document.getElementById('liveViewTitle');

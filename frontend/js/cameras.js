@@ -5,7 +5,7 @@
  * ===================================================================
  */
 
-import { CameraAPI, AttendanceAPI, showToast, API_BASE, escapeHtml } from './api.js?v=9.0';
+import { CameraAPI, AttendanceAPI, showToast, API_BASE, escapeHtml } from './api.js?v=9.2';
 import SkeletonTemplates from './components/skeleton-templates.js';
 import { progressModal } from './components/progress_modal.js';
 import { VmsSurveillanceController } from './modules/cameras/vms-controller.js';
@@ -28,8 +28,6 @@ import {
     batchToggleCameraStatus,
     openLiveModal,
     closeLiveModal,
-    openRoiModal,
-    closeRoiModal,
     initImageControls,
     setMatrixCallbacks,
     setMatrixCameras,
@@ -38,22 +36,14 @@ import {
 } from './modules/cameras/matrix-wall.js';
 
 import {
-    loadAvailableWebcams,
-    updateBannerWebcamStatus,
-    renderWebcamCards,
-    selectWebcam,
     switchSourceTab,
     syncManualUrl,
     toggleAdvancedInput,
-    applyPreset,
-    openModalWithWebcam,
     openModal,
     closeModal,
     editCamera,
     testCurrentInputSource,
     testCameraIRNow,
-    testSignalFlowAndCapture,
-    runCameraValidationWizard,
     testCameraDirectly,
     saveCamera,
     deleteCamera,
@@ -61,9 +51,11 @@ import {
     closeDeleteModal,
     confirmBatchDelete,
     resetDefaults,
+    loadNvrDevicesAndChannels,
+    applySelectedNvrChannel,
     setCrudCallbacks,
     setCrudCameras
-} from './modules/cameras/camera-crud.js';
+} from './modules/cameras/camera-crud.js?v=9.3';
 
 import {
     initStreamProfilesTab,
@@ -136,7 +128,6 @@ function initApp() {
     window.vmsSurveillance = new VmsSurveillanceController();
 
     loadCameras();
-    loadAvailableWebcams();
     loadCameraSourceStatus();
     initImageControls();
     initSourceManagerEvents();
@@ -195,26 +186,25 @@ function initApp() {
     const btnTestIR = document.getElementById('btnTestCameraIR');
     if (btnTestIR) btnTestIR.addEventListener('click', testCameraIRNow);
 
-    const btnTestSignal = document.getElementById('btnTestSignalFlow');
-    if (btnTestSignal) btnTestSignal.addEventListener('click', testSignalFlowAndCapture);
-
-    const btnWizard = document.getElementById('btnWizardValidateCamera');
-    if (btnWizard) btnWizard.addEventListener('click', runCameraValidationWizard);
-
-    const btnWebcamBanner = document.getElementById('btnWebcamBanner');
-    if (btnWebcamBanner) btnWebcamBanner.addEventListener('click', openModalWithWebcam);
-
-    const btnRefreshWebcams = document.getElementById('btnRefreshWebcams');
-    if (btnRefreshWebcams) btnRefreshWebcams.addEventListener('click', () => loadAvailableWebcams(true));
-
-    const tabWebcam = document.getElementById('tabBtnWebcam');
-    if (tabWebcam) tabWebcam.addEventListener('click', () => switchSourceTab('WEBCAM'));
+    const tabNvr = document.getElementById('tabBtnNvrSelect');
+    if (tabNvr) tabNvr.addEventListener('click', () => switchSourceTab('NVR'));
 
     const tabRtsp = document.getElementById('tabBtnRtsp');
     if (tabRtsp) tabRtsp.addEventListener('click', () => switchSourceTab('RTSP'));
 
-    const tabFile = document.getElementById('tabBtnFile');
-    if (tabFile) tabFile.addEventListener('click', () => switchSourceTab('FILE'));
+    const selNvrChannel = document.getElementById('selectNvrChannel');
+    if (selNvrChannel) {
+        selNvrChannel.addEventListener('change', (e) => {
+            applySelectedNvrChannel(e.target.value);
+        });
+    }
+
+    const selNvrDevice = document.getElementById('selectNvrDevice');
+    if (selNvrDevice) {
+        selNvrDevice.addEventListener('change', () => {
+            loadNvrDevicesAndChannels();
+        });
+    }
 
     const linkAdv = document.getElementById('linkToggleAdvanced');
     if (linkAdv) linkAdv.addEventListener('click', toggleAdvancedInput);
@@ -279,15 +269,8 @@ function initApp() {
     const btnBatchDeact = document.getElementById('btnBatchDeactivate');
     if (btnBatchDeact) btnBatchDeact.addEventListener('click', () => batchToggleCameraStatus(false));
 
-    document.querySelectorAll('button[data-preset]').forEach(btn => {
-        btn.addEventListener('click', () => applyPreset(btn.dataset.preset));
-    });
-
     const inputRtsp = document.getElementById('inputRtsp');
     if (inputRtsp) inputRtsp.addEventListener('input', (e) => syncManualUrl(e.target.value));
-
-    const inputFile = document.getElementById('inputFile');
-    if (inputFile) inputFile.addEventListener('input', (e) => syncManualUrl(e.target.value));
 
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.matrix-card-menu')) {
@@ -888,13 +871,11 @@ export function initClassroomSearch() {
     }
 }
 
-// Gắn các hàm ra window để tương thích hoàn toàn các thuộc tính onclick trong HTML
-window.selectWebcam = selectWebcam;
-window.applyPreset = applyPreset;
 window.switchSourceTab = switchSourceTab;
+window.loadNvrDevicesAndChannels = loadNvrDevicesAndChannels;
+window.applySelectedNvrChannel = applySelectedNvrChannel;
 window.openModal = openModal;
 window.closeModal = closeModal;
-window.openModalWithWebcam = openModalWithWebcam;
 window.openDeleteModal = openDeleteModal;
 window.closeDeleteModal = closeDeleteModal;
 window.openNvrModal = openNvrModal;
@@ -922,8 +903,6 @@ window.triggerCaptureAll = handleCaptureAll;
 window.triggerAttendanceScan = handleTriggerScan;
 window.openLiveModal = openLiveModal;
 window.closeLiveModal = closeLiveModal;
-window.openRoiModal = openRoiModal;
-window.closeRoiModal = closeRoiModal;
 window.initClassroomSearch = initClassroomSearch;
 window.openScheduleModal = openScheduleModal;
 window.closeScheduleModal = closeScheduleModal;

@@ -23,7 +23,7 @@ class Settings(BaseModel):
     APP_VERSION: str = "1.0.0"
     HOST: str = "0.0.0.0"
     PORT: int = 8000
-    DEBUG: bool = True
+    DEBUG: bool = os.getenv("DEBUG", "false").lower() in ("1", "true", "yes")
     TIMEZONE: str = os.getenv("APP_TIMEZONE", "Asia/Ho_Chi_Minh") # Múi giờ chuẩn Việt Nam (GMT+7)
 
     # Data & Storage Paths (Ưu tiên ./data/ mới hoặc tương thích ngược thư mục cũ)

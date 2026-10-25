@@ -2,7 +2,6 @@
 Backend Core Package - Động cơ nghiệp vụ cốt lõi, AI YOLO và giao tiếp thiết bị Camera
 """
 from backend.app.core.timezone_utils import get_now, get_today, get_today_str, get_current_time_str, get_app_timezone
-from backend.app.core.image_enhancer import ImageEnhancer, image_enhancer
 from backend.app.core.roi_manager import ROIManager, roi_manager
 from backend.app.core.detector import StudentDetector, detector
 from backend.app.core.relay_service import RelayService, relay_service
@@ -16,8 +15,6 @@ __all__ = [
     "get_today_str",
     "get_current_time_str",
     "get_app_timezone",
-    "ImageEnhancer",
-    "image_enhancer",
     "ROIManager",
     "roi_manager",
     "StudentDetector",

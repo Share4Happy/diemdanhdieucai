@@ -30,8 +30,6 @@ from backend.app.api.routers import (
     auth_router,
     backup_router,
     predict_router,
-    # stream_mock_router,
-    # stream_mock_background_loop,
     classrooms_router,
 )
 
@@ -40,9 +38,7 @@ async def lifespan(app: FastAPI):
     logger.info("=== ĐANG KHỞI ĐỘNG HỆ THỐNG ĐIỂM DANH AI ĐIỀU CẢI (BACKEND REST API) ===")
     init_db()
     attendance_scheduler.start()
-    # stream_mock_task = asyncio.create_task(stream_mock_background_loop())
     yield
-    # stream_mock_task.cancel()
     attendance_scheduler.shutdown()
     logger.info("=== HỆ THỐNG BACKEND ĐÃ DỪNG AN TOÀN ===")
 
@@ -50,9 +46,10 @@ app = FastAPI(
     title=f"{settings.APP_NAME} - REST API",
     version=settings.APP_VERSION,
     lifespan=lifespan,
-    # Chỉ mở /docs, /redoc khi DEBUG=True (môi trường development).
+    # Chỉ mở /docs, /redoc và /openapi.json khi DEBUG=True (môi trường development).
     docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None,
+    openapi_url="/openapi.json" if settings.DEBUG else None,
 )
 
 # Cấu hình CORS cho cookie đăng nhập (tự động tích hợp APP_PUBLIC_URL từ biến môi trường)
@@ -81,7 +78,6 @@ app.include_router(system_router, prefix="/api")
 app.include_router(backup_router, prefix="/api")
 app.include_router(predict_router, prefix="/api")
 app.include_router(predict_router)
-# app.include_router(stream_mock_router, prefix="/api")
 app.include_router(classrooms_router, prefix="/api")
 
 

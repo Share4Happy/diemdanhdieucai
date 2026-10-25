@@ -115,3 +115,19 @@ def test_get_available_webcams():
         assert "index" in first_cam
         assert "name" in first_cam
         assert "resolution" in first_cam
+
+def test_get_nvr_channels():
+    response = client.get("/api/cameras/nvr/channels")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is True
+    assert "channels" in data
+    assert "count" in data
+    assert data["count"] == 30
+    assert len(data["channels"]) == 30
+    first_ch = data["channels"][0]
+    assert first_ch["channel_number"] == 1
+    assert "code" in first_ch
+    assert "name" in first_ch
+    assert "rtsp_url" in first_ch
+    assert "is_assigned" in first_ch
